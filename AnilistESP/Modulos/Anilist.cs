@@ -76,9 +76,7 @@ namespace AnilistESP
                     {
                         string siteurl = data.Data.User.siteUrl;
 
-                        DiscordChannel channel = await funciones.GetCanalUsuariosAnilist(ctx.Client);
-                        DiscordMessage mensaje = await channel.SendMessageAsync($"**Perfil de {ctx.User.Mention}**\n\n{siteurl}");
-                        await usuariosAnilist.SetAnilist(ctx, siteurl, mensaje.Id, ctx.User.Id);
+                        await usuariosAnilist.SetAnilist(ctx, siteurl, ctx.Member);
                         var msg = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
                         {
                             Color = DiscordColor.Green,
@@ -273,9 +271,7 @@ namespace AnilistESP
                 {
                     string siteurl = data.Data.User.siteUrl;
 
-                    DiscordChannel channel = await funciones.GetCanalUsuariosAnilist(ctx.Client);
-                    DiscordMessage mensaje = await channel.SendMessageAsync($"**Perfil de {usuario.Mention}**\n\n{siteurl}");
-                    await usuariosAnilist.SetAnilist(ctx, siteurl, mensaje.Id, usuario.Id);
+                    await usuariosAnilist.SetAnilist(ctx, siteurl, usuario);
                     var msg = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
                     {
                         Color = DiscordColor.Green,

@@ -50,20 +50,31 @@ namespace AnilistESP
             }
         }
 
-        public async Task SetAnilist(CommandContext ctx, string anilistUrl, ulong messageId, ulong userId)
+        public async Task SetAnilist(CommandContext ctx, string anilistUrl, DiscordMember miembro)
         {
             FirestoreDb db = funciones.GetFirestoreClient();
-            DocumentReference doc = db.Collection("Anilist").Document($"{ctx.Guild.Id}").Collection("Usuarios").Document($"{userId}");
+            DocumentReference doc = db.Collection("Anilist").Document($"{ctx.Guild.Id}").Collection("Usuarios").Document($"{miembro.Id}");
             var snap = await doc.GetSnapshotAsync();
             UsuarioAnilistFirebase registro;
+            DiscordChannel channel = await funciones.GetCanalUsuariosAnilist(ctx.Client);
             if (snap.Exists)
             {
                 registro = snap.ConvertTo<UsuarioAnilistFirebase>();
-                var oldMessageId = registro.MessageId;
+                DiscordMessage mensaje = null;
+                try
+                {
+                    mensaje = await channel.GetMessageAsync((ulong)registro.MessageId);
+                    await mensaje.ModifyAsync($"**Perfil de {miembro.Mention}**\n\n{anilistUrl}");
+                }
+                catch { }
+                if(mensaje == null)
+                {
+                    mensaje = await channel.SendMessageAsync($"**Perfil de {miembro.Mention}**\n\n{anilistUrl}");
+                }
 
                 registro.AnilistURL = anilistUrl;
-                registro.MessageId = (long)messageId;
-                registro.UserId = (long)userId;
+                registro.MessageId = (long)mensaje.Id;
+                registro.UserId = (long)miembro.Id;
                 Dictionary<string, object> data = new Dictionary<string, object>()
                 {
                     {"AnilistURL", registro.AnilistURL},
@@ -71,15 +82,15 @@ namespace AnilistESP
                     {"UserId", registro.UserId},
                 };
                 await doc.UpdateAsync(data);
-                await funciones.BorrarMensajeUsuarioAnilist(ctx.Client, oldMessageId);
             }
             else
             {
+                DiscordMessage mensaje = await channel.SendMessageAsync($"**Perfil de {miembro.Mention}**\n\n{anilistUrl}");
                 Dictionary<string, object> data = new Dictionary<string, object>()
                 {
                     {"AnilistURL", anilistUrl},
-                    {"MessageId", messageId},
-                    {"UserId", userId},
+                    {"MessageId", mensaje.Id},
+                    {"UserId", miembro.Id},
                 };
                 await doc.SetAsync(data);
             }

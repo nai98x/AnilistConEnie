@@ -155,16 +155,22 @@ namespace AnilistESP
             {
                 Footer = funciones.GetFooter(ctx),
                 Color = funciones.GetColor(),
-                Title = "Perfiles de Anilist vinculados",
-                Description = "Ingresa el numero para elegir un perfil si lo deseas"
+                Title = "Perfiles de Anilist vinculados"
             };
+            var msgInter = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder { 
+                Title = "Elije un perfil",
+                Description = $"{ctx.Member.Mention}, ingresa el numero para elegir un perfil si lo deseas",
+                Color = funciones.GetColor(),
+                Footer = funciones.GetFooter(ctx)
+            });
             var pages = interactivity.GeneratePagesInEmbed(profiles, DSharpPlus.Interactivity.Enums.SplitType.Line, embed);
             _ = ctx.Channel.SendPaginatedMessageAsync(ctx.User, pages).ConfigureAwait(false);
-            var msgElegirTagInter = await interactivity.WaitForMessageAsync(xm => xm.Channel == ctx.Channel && xm.Author == ctx.User && Regex.IsMatch(xm.Content.Trim(), @"^\d+$"), TimeSpan.FromSeconds(180));
-            if (!msgElegirTagInter.TimedOut)
+            var msgElegirUserInter = await interactivity.WaitForMessageAsync(xm => xm.Channel == ctx.Channel && xm.Author == ctx.User && Regex.IsMatch(xm.Content.Trim(), @"^\d+$"), TimeSpan.FromSeconds(180));
+            await funciones.BorrarMensaje(ctx, msgInter.Id);
+            if (!msgElegirUserInter.TimedOut)
             {
-                await funciones.BorrarMensaje(ctx, msgElegirTagInter.Result.Id);
-                bool result = int.TryParse(msgElegirTagInter.Result.Content, out int numTagElegir);
+                await funciones.BorrarMensaje(ctx, msgElegirUserInter.Result.Id);
+                bool result = int.TryParse(msgElegirUserInter.Result.Content, out int numTagElegir);
                 if (result && numTagElegir > 0 && numTagElegir <= perfiles.Count)
                 {
                     var elegido = perfiles[numTagElegir - 1];

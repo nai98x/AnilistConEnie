@@ -1,0 +1,8 @@
+{
+  "token_prod": "TOKEN_DISCORD_BOT_PROD",
+  "token_test": "TOKEN_DISCORD_BOT_TEST",
+  "topgg_token": "TOKEN_TOPGG_PROD"
+}
+
+//                             IMPORTANTE
+// Cambiarle el nombre a: config.json y poner la info correspondiente

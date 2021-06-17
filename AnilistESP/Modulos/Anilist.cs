@@ -49,7 +49,8 @@ namespace AnilistESP
                     }
                     else
                     {
-                        var msg = await ctx.Channel.SendMessageAsync($"{ctx.User.Mention}, debes ingresar la URL de tu perfil de Anilist!\nEjemplo").ConfigureAwait(false);
+                        var msg = await ctx.Channel.SendMessageAsync($"{ctx.User.Mention}, debes ingresar la URL de tu perfil de Anilist!\n" +
+                            $"Ejemplo: https://anilist.co/user/Josh/").ConfigureAwait(false);
                         await Task.Delay(3000);
                         await funciones.BorrarMensaje(ctx, msg.Id);
                         return;
@@ -58,11 +59,11 @@ namespace AnilistESP
                 var request = new GraphQLRequest
                 {
                     Query =
-                "query($nombre : String){" +
-                "   User(search: $nombre){" +
-                "       siteUrl," +
-                "   }" +
-                "}",
+                    "query($nombre : String){" +
+                    "   User(search: $nombre){" +
+                    "       siteUrl," +
+                    "   }" +
+                    "}",
                     Variables = new
                     {
                         nombre = usuario
@@ -137,7 +138,7 @@ namespace AnilistESP
             }
         }
 
-        [Command("usuarios"), Aliases("usuariosanilist"), Description("Muestra los perfiles registrados de Anilist."), RequireGuild]
+        [Command("usuarios"), Aliases("perfiles"), Description("Muestra los perfiles registrados de Anilist."), RequireGuild]
         public async Task AnilistProfiles(CommandContext ctx)
         {
             var interactivity = ctx.Client.GetInteractivity();
@@ -185,7 +186,7 @@ namespace AnilistESP
             }
         }
 
-        [Command("deleteanilist"), Aliases("eliminaranilist"), Description("Elimina tu perfil de Anilist."), RequireGuild]
+        [Command("deleteanilist"), Aliases("eliminaranilist", "removeanilist"), Description("Elimina tu perfil de Anilist."), RequireGuild]
         public async Task AnilistProfile(CommandContext ctx)
         {
             var userAnilist = await usuariosAnilist.GetPerfil(ctx.Guild.Id, ctx.Member.Id);

@@ -142,7 +142,6 @@ namespace AnilistESP
                         {
                             Title = categoria,
                             Description = comandosDesc,
-                            Url = ConfigurationManager.AppSettings["Web"] + "#" + categoria,
                             Footer = funciones.GetFooter(ctx),
                             Color = funciones.GetColor()
                         }).ConfigureAwait(false);

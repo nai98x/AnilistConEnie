@@ -69,46 +69,6 @@ namespace AnilistESP
             return lista;
         }
 
-        public async Task<List<UserCumple>> GetBirthdaysGuild(long guildId, bool month)
-        {
-            List<UserCumple> lista = new List<UserCumple>();
-            var listaFirebase = await GetListaUsuarios(guildId);
-            listaFirebase.ForEach(x =>
-            {
-                DateTime fchAux = new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.Now.Year);
-                DateTime nuevoCumple;
-                if (DateTime.Now > new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.Now.Year))
-                    nuevoCumple = new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.Now.Year + 1);
-                else
-                    nuevoCumple = new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.Now.Year);
-                if (month)
-                {
-                    if (fchAux >= DateTime.Now && fchAux <= DateTime.Now.AddMonths(1))
-                    {
-                        lista.Add(new UserCumple
-                        {
-                            Id = x.user_id,
-                            Birthday = x.Birthday,
-                            BirthdayActual = nuevoCumple,
-                            MostrarYear = x.MostrarYear
-                        });
-                    }
-                }
-                else
-                {
-                    lista.Add(new UserCumple
-                    {
-                        Id = x.user_id,
-                        Birthday = x.Birthday,
-                        BirthdayActual = nuevoCumple,
-                        MostrarYear = x.MostrarYear
-                    });
-                }
-            });
-            lista.Sort((x, y) => x.BirthdayActual.CompareTo(y.BirthdayActual));
-            return lista;
-        }
-
         public async Task SetBirthday(CommandContext ctx, DateTime fecha, bool mostrarEdad)
         {
             FirestoreDb db = funciones.GetFirestoreClient();

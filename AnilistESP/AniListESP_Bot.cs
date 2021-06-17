@@ -107,6 +107,8 @@ namespace AnilistESP
             Commands.RegisterCommands<Otros>();
             Commands.RegisterCommands<Help>();
 
+            Commands.RegisterConverter(new MemberConverter());
+
             await Client.ConnectAsync(new DiscordActivity { ActivityType = ActivityType.Playing, Name = prefix + "help" }, UserStatus.Online);
 
             var LogGuild = await Client.GetGuildAsync(787033852258418768);

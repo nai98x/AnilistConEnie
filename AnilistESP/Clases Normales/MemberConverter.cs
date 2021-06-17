@@ -24,9 +24,6 @@ namespace AnilistESP
             return await ConvertMemberAsync(value, ctx);
         }
 
-
-        // Basically ripped from the source since we can't call this from the built-in one *shrug*
-
         private static async Task<Optional<DiscordMember>> ConvertMemberAsync(string value, CommandContext ctx)
         {
             if (ctx.Guild == null)
@@ -58,9 +55,9 @@ namespace AnilistESP
 
             IEnumerable<DiscordMember>? us = ctx.Guild?.Members.Values
                 .Where(xm =>
-                    xm.Username.ToLowerInvariant() == un &&
-                    (dv != null && xm.Discriminator == dv || dv == null)
-                    || xm.Nickname?.ToLowerInvariant() == value);
+                    (xm.Username.ToLowerInvariant() == un) &&
+                    ((dv != null && xm.Discriminator == dv) || dv == null
+                    || xm.Nickname?.ToLowerInvariant() == value));
 
             DiscordMember? mbr = us?.FirstOrDefault();
             return mbr != null ? Optional.FromValue(mbr) : Optional.FromNoValue<DiscordMember>();

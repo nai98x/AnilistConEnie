@@ -116,7 +116,8 @@ namespace AnilistESP
             }
             else
             {
-                LogChannelGeneral = LogGuild.GetChannel(854383530582999071);
+                var LogGeneral = await Client.GetGuildAsync(701813281718927441);
+                LogChannelGeneral = LogGeneral.GetChannel(702997924740726795);
                 LogChannelErrores = LogGuild.GetChannel(854383583031328790);
             }
 

@@ -17,41 +17,12 @@ namespace AnilistESP
         [Command("say"), Aliases("s"), Description("Yumiko habla en el chat."), RequireUserPermissions(DSharpPlus.Permissions.ManageGuild)]
         public async Task Say(CommandContext ctx, [Description("Mensaje para replicar")][RemainingText] string mensaje = null)
         {
-            if (String.IsNullOrEmpty(mensaje))
+            var interactivty = ctx.Client.GetInteractivity();
+
+            bool usarEmbed = await funciones.GetSiNoInteractivity(ctx, interactivty, "Usar embed", "Determina si se mandará un embed o un mensaje normal");
+            if (usarEmbed)
             {
-                var interactivity = ctx.Client.GetInteractivity();
-                var msgAnime = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
-                {
-                    Title = "Escribe un mensaje",
-                    Description = "Ejemplo: Hola! Soy Yumiko",
-                    Footer = funciones.GetFooter(ctx),
-                    Color = funciones.GetColor(),
-                });
-                var msgAnimeInter = await interactivity.WaitForMessageAsync(xm => xm.Channel == ctx.Channel && xm.Author == ctx.User, TimeSpan.FromSeconds(Convert.ToDouble(ConfigurationManager.AppSettings["TimeoutGeneral"])));
-                if (!msgAnimeInter.TimedOut)
-                {
-                    mensaje = msgAnimeInter.Result.Content;
-                    if (msgAnime != null)
-                        await funciones.BorrarMensaje(ctx, msgAnime.Id);
-                    if (msgAnimeInter.Result != null)
-                        await funciones.BorrarMensaje(ctx, msgAnimeInter.Result.Id);
-                }
-                else
-                {
-                    var msgError = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
-                    {
-                        Title = "Error",
-                        Description = "Tiempo agotado esperando un mensaje",
-                        Footer = funciones.GetFooter(ctx),
-                        Color = DiscordColor.Red,
-                    });
-                    await Task.Delay(3000);
-                    if (msgError != null)
-                        await funciones.BorrarMensaje(ctx, msgError.Id);
-                    if (msgAnime != null)
-                        await funciones.BorrarMensaje(ctx, msgAnime.Id);
-                    return;
-                }
+
             }
             await ctx.Channel.SendMessageAsync(mensaje);
         }

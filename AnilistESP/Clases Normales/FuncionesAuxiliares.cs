@@ -9,6 +9,7 @@ using DSharpPlus;
 using System.Configuration;
 using Google.Cloud.Firestore;
 using static DSharpPlus.Entities.DiscordEmbedBuilder;
+using DSharpPlus.Interactivity;
 
 namespace AnilistESP
 {
@@ -368,6 +369,35 @@ namespace AnilistESP
                 if (msgUsuario != null)
                     await BorrarMensaje(ctx, msgUsuario.Id);
                 return string.Empty;
+            }
+        }
+
+        public async Task<bool> GetSiNoInteractivity(CommandContext ctx, InteractivityExtension interactivity, string titulo, string descripcion)
+        {
+            DiscordButtonComponent buttonSi = new DiscordButtonComponent(ButtonStyle.Success, "true", "Si");
+            DiscordButtonComponent buttonNo = new DiscordButtonComponent(ButtonStyle.Danger, "false", "No");
+
+            DiscordMessageBuilder mensajeRondas = new DiscordMessageBuilder()
+            {
+                Embed = new DiscordEmbedBuilder
+                {
+                    Title = titulo,
+                    Description = descripcion
+                }
+            };
+
+            mensajeRondas.AddComponents(buttonSi, buttonNo);
+
+            DiscordMessage msgElegir = await mensajeRondas.SendAsync(ctx.Channel);
+            var msgElegirInter = await interactivity.WaitForButtonAsync(msgElegir, ctx.User, TimeSpan.FromSeconds(Convert.ToDouble(ConfigurationManager.AppSettings["TimeoutGeneral"])));
+            await BorrarMensaje(ctx, msgElegir.Id);
+            if (!msgElegirInter.TimedOut)
+            {
+                return bool.Parse(msgElegirInter.Result.Id);
+            }
+            else
+            {
+                return false;
             }
         }
     }

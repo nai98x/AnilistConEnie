@@ -21,7 +21,7 @@ namespace AnilistESP
         private readonly UsuariosAnilist usuariosAnilist = new UsuariosAnilist();
 
         [Command("setanilist"), Description("Registra tu anilist.")]
-        public async Task SetAnilist(CommandContext ctx, string usuario = null)
+        public async Task SetAnilist(CommandContext ctx, [RemainingText]string usuario = null)
         {
             if (String.IsNullOrEmpty(usuario))
             {
@@ -62,6 +62,7 @@ namespace AnilistESP
                     "query($nombre : String){" +
                     "   User(search: $nombre){" +
                     "       siteUrl," +
+                    "       name" +
                     "   }" +
                     "}",
                     Variables = new
@@ -75,17 +76,22 @@ namespace AnilistESP
                     if (data.Data != null)
                     {
                         string siteurl = data.Data.User.siteUrl;
-
-                        await usuariosAnilist.SetAnilist(ctx, siteurl, ctx.Member);
-                        var msg = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
+                        string name = data.Data.User.name;
+                        bool confirmar = await funciones.GetSiNoInteractivity(ctx, ctx.Client.GetInteractivity(), "Confirma que quieres guardar este perfil", $"**Tu perfil es:**\n\n   **Nickname:** {name}\n   **Url:** {siteurl}");
+                        if (confirmar)
                         {
-                            Color = DiscordColor.Green,
-                            Footer = funciones.GetFooter(ctx),
-                            Title = "Perfil guardado",
-                            Description = $"{ctx.User.Mention}, haz guardado tu perfil de Anilist satisfactoriamente"
-                        });
-                        await Task.Delay(5000);
-                        await funciones.BorrarMensaje(ctx, msg.Id);
+                            await usuariosAnilist.SetAnilist(ctx, siteurl, ctx.Member);
+                            var msg = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
+                            {
+                                Color = DiscordColor.Green,
+                                Footer = funciones.GetFooter(ctx),
+                                Title = "Perfil guardado",
+                                Description = $"{ctx.User.Mention}, haz guardado tu perfil de Anilist satisfactoriamente"
+                            });
+                            await Task.Delay(5000);
+                            await funciones.BorrarMensaje(ctx, msg.Id);
+                        }
+                        
                     }
                     else
                     {

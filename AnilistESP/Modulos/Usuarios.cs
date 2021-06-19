@@ -23,18 +23,43 @@ namespace AnilistESP
         public async Task Birthdays(CommandContext ctx, string flag = null)
         {
             List<UserCumple> lista;
-            string titulo;
-            if (!string.IsNullOrEmpty(flag) && flag == "-all")
+            bool flagTotal = !string.IsNullOrEmpty(flag) && flag == "-all";
+            if (flagTotal)
             {
-                lista = await usuariosService.GetBirthdays(ctx, false);
-                titulo = "Próximos cumpleaños";
+                lista = await usuariosService.GetBirthdays((long)ctx.Guild.Id, false);
             }
             else
             {
-                lista = await usuariosService.GetBirthdays(ctx, true);
-                titulo = "Próximos cumpleaños en este mes";
+                lista = await usuariosService.GetBirthdays((long)ctx.Guild.Id, true);
             }
             string desc = string.Empty;
+            var usuarios = await usuariosService.GetBirthdaysHoy((long)ctx.Guild.Id);
+            if (usuarios.Count > 0)
+            {
+                desc += "**Cumplen años hoy:**\n";
+                foreach (var user in usuarios)
+                {
+                    try
+                    {
+                        var miembro = await ctx.Guild.GetMemberAsync((ulong)user.Id);
+                        if (user.MostrarYear ?? false)
+                            desc += $"- **{miembro.DisplayName}** - Cumple **{DateTime.Now.Year - user.Birthday.Year} años**\n";
+                        else
+                            desc += $"- **{miembro.DisplayName}**\n";
+                    }
+                    catch (Exception) { }
+                }
+                desc += "\n";
+            }
+            
+            if (flagTotal)
+            {
+                desc += "**Cumplen años próximamente:**\n";
+            }
+            else
+            {
+                desc += "**Cumplen años en el próximo mes:**\n";
+            }
             foreach (var user in lista)
             {
                 try
@@ -64,7 +89,7 @@ namespace AnilistESP
             {
                 Footer = funciones.GetFooter(ctx),
                 Color = funciones.GetColor(),
-                Title = titulo,
+                Title = "Próximos cumpleaños",
                 Description = desc
             }).ConfigureAwait(false);
         }

@@ -29,10 +29,31 @@ namespace AnilistESP
             return ret;
         }
 
-        public async Task<List<UserCumple>> GetBirthdays(CommandContext ctx, bool month)
+        public async Task<List<UserCumple>> GetBirthdaysHoy(long guildId)
         {
             List<UserCumple> lista = new List<UserCumple>();
-            var listaFirebase = await GetListaUsuarios((long)ctx.Guild.Id);
+            var listaFirebase = await GetListaUsuarios(guildId);
+            listaFirebase.ForEach(x =>
+            {
+                DateTime fchAux = new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.Now.Year);
+                if (fchAux >= DateTime.Today && fchAux <= DateTime.Now)
+                {
+                    lista.Add(new UserCumple()
+                    {
+                        Id = x.user_id,
+                        Birthday = x.Birthday,
+                        BirthdayActual = fchAux,
+                        MostrarYear = x.MostrarYear
+                    });
+                }
+            });
+            return lista;
+        }
+
+        public async Task<List<UserCumple>> GetBirthdays(long guildId, bool month)
+        {
+            List<UserCumple> lista = new List<UserCumple>();
+            var listaFirebase = await GetListaUsuarios(guildId);
             listaFirebase.ForEach(x =>
             {
                 DateTime fchAux = new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.Now.Year);

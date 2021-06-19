@@ -8,8 +8,8 @@ using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus;
 using System.Configuration;
 using Google.Cloud.Firestore;
-using static DSharpPlus.Entities.DiscordEmbedBuilder;
 using DSharpPlus.Interactivity;
+using static DSharpPlus.Entities.DiscordEmbedBuilder;
 
 namespace AnilistESP
 {

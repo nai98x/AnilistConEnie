@@ -20,10 +20,7 @@ namespace AnilistESP
             var interactivty = ctx.Client.GetInteractivity();
 
             bool usarEmbed = await funciones.GetSiNoInteractivity(ctx, interactivty, "Usar embed", "Determina si se mandará un embed o un mensaje normal");
-            if (usarEmbed)
-            {
-
-            }
+            if (usarEmbed){}
             await ctx.Channel.SendMessageAsync(mensaje);
         }
 

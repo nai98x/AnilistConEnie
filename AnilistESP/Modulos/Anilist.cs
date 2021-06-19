@@ -91,7 +91,6 @@ namespace AnilistESP
                             await Task.Delay(5000);
                             await funciones.BorrarMensaje(ctx, msg.Id);
                         }
-                        
                     }
                     else
                     {

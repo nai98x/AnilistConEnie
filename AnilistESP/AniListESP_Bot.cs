@@ -46,18 +46,15 @@ namespace AnilistESP
             string token, prefix;
             IDebuggingService mode = new DebuggingService();
             Debug = mode.RunningInDebugMode();
-            LogLevel loglevel;
             if (Debug)
             {
                 token = configJson.TokenTest;
                 prefix = ConfigurationManager.AppSettings["PrefixTest"];
-                loglevel = LogLevel.Debug;
             }
             else
             {
                 token = configJson.TokenProd;
                 prefix = ConfigurationManager.AppSettings["PrefixProd"];
-                loglevel = LogLevel.Information;
             }
 
             var Config = new DiscordConfiguration
@@ -66,7 +63,7 @@ namespace AnilistESP
                 TokenType = TokenType.Bot,
                 AutoReconnect = true,
                 ReconnectIndefinitely = true,
-                MinimumLogLevel = loglevel,
+                MinimumLogLevel = LogLevel.Information,
                 Intents = DiscordIntents.All
             };
             Client = new DiscordClient(Config);
@@ -137,6 +134,7 @@ namespace AnilistESP
                 {
                     await funciones.BorrarMensajeUsuarioAnilist(sender, usuario.MessageId);
                     await helper.DeleteAnilist(e.Guild.Id, e.Member.Id);
+                    await funciones.GrabarLogUsuarioOutAnilist(Client, e.Member);
                 }
             });
             return Task.CompletedTask;

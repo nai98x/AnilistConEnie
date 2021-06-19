@@ -335,6 +335,32 @@ namespace AnilistESP
             }
         }
 
+        public async Task GrabarLogUsuarioOutAnilist(DiscordClient Client, DiscordMember user)
+        {
+            ulong guildId;
+            ulong channelId;
+            IDebuggingService mode = new DebuggingService();
+            bool Debug = mode.RunningInDebugMode();
+            if (Debug)
+            {
+                guildId = 787033852258418768;
+                channelId = 854383940231233597;
+            }
+            else
+            {
+                guildId = 701813281718927441;
+                channelId = 702997924740726795;
+            }
+            var Guild = await Client.GetGuildAsync(guildId);
+            var ChannelErrores = Guild.GetChannel(channelId);
+            await ChannelErrores.SendMessageAsync(new DiscordEmbedBuilder
+            {
+                Title = "Perfil eliminado",
+                Description = $"{user.Username}#{user.Discriminator} ya no está en el servidor y se ha borrado su perfil de Anilist",
+                Color = GetColor()
+            });
+        }
+
         public async Task<string> GetStringInteractivity(CommandContext ctx, string tituloBusqueda, string descBusqueda, string descError)
         {
             var interactivity = ctx.Client.GetInteractivity();

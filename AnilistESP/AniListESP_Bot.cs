@@ -1,5 +1,6 @@
 ﻿using DSharpPlus;
 using DSharpPlus.CommandsNext;
+using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.CommandsNext.Exceptions;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
@@ -281,44 +282,45 @@ namespace AnilistESP
                 {
                     if (e.Exception is ChecksFailedException ex)
                     {
-                        List<DiscordMessage> mensajes = new List<DiscordMessage>();
-                        foreach (var exep in ex.FailedChecks)
+                        List<DiscordMessage> mensajes = new();
+                        string titulo, descripcion;
+                        foreach (CheckBaseAttribute check in ex.FailedChecks)
                         {
-                            string exepcion = exep.ToString();
-                            dynamic obj = exep;
-                            string titulo, descripcion;
-                            switch (exepcion)
+                            switch (check)
                             {
-                                case "DSharpPlus.CommandsNext.Attributes.CooldownAttribute":
-                                    var tiempo = obj.Reset;
-                                    titulo = "Cooldown";
-                                    descripcion = $"Este comando se puede ejecutar cada {tiempo.Minutes} minutos";
-                                    break;
-                                case "DSharpPlus.CommandsNext.Attributes.RequirePermissions":
-                                case "DSharpPlus.CommandsNext.Attributes.RequirePermissionsAttribute":
-                                case "DSharpPlus.CommandsNext.Attributes.RequireUserPermissionsAttribute":
-                                    titulo = "Acceso denegado";
-                                    descripcion = "No tienes los suficientes permisos para ejecutar este comando.";
-                                    break;
-                                case "DSharpPlus.CommandsNext.Attributes.RequireBotPermissionsAttribute":
-                                    titulo = "Permisos insuficientes";
-                                    descripcion = "El bot no tiene los suficientes permisos para ejecutar este comando.";
-                                    break;
-                                case "DSharpPlus.CommandsNext.Attributes.RequireOwnerAttribute":
+                                case RequireOwnerAttribute:
                                     titulo = "Acceso denegado";
                                     descripcion = "Solo el dueño del bot puede ejecutar este comando.";
                                     break;
-                                case "DSharpPlus.CommandsNext.Attributes.RequireNsfwAttribute":
+                                case RequireNsfwAttribute:
                                     titulo = "Requiere NSFW";
                                     descripcion = "Este comando debe ser invocado en un canal NSFW.";
                                     break;
+                                case CooldownAttribute ca:
+                                    TimeSpan cd = ca.GetRemainingCooldown(e.Context);
+                                    titulo = "Cooldown";
+                                    descripcion = $"Debes esperar `{cd.Hours} horas, {cd.Minutes} minutos y {cd.Seconds} segundos` para volver a ejecutar este comando.";
+                                    break;
+                                case RequirePermissionsAttribute:
+                                    titulo = "Permisos insuficientes";
+                                    descripcion = "Tu o Yumiko no tiene los suficientes permisos para ejecutar este comando.";
+                                    break;
+                                case RequireUserPermissionsAttribute up:
+                                    //up.Permissions listar permisos necesarios
+                                    titulo = "Permisos insuficientes";
+                                    descripcion = "No tienes los suficientes permisos para ejecutar este comando.";
+                                    break;
+                                case RequireBotPermissionsAttribute:
+                                    titulo = "Permisos insuficientes";
+                                    descripcion = "Yumiko no tiene los suficientes permisos para ejecutar este comando.";
+                                    break;
                                 default:
                                     titulo = "Error inesperado";
-                                    descripcion = $"Ha ocurrido un error que no puedo manejar.\nExcepcion: {exepcion}";
+                                    descripcion = $"Ha ocurrido un error que no puedo manejar.";
                                     await LogChannelErrores.SendMessageAsync(embed: new DiscordEmbedBuilder
                                     {
                                         Title = titulo,
-                                        Description = descripcion,
+                                        Description = $"Atributo: {check}",
                                         Footer = funciones.GetFooter(e.Context),
                                         Author = new EmbedAuthor()
                                         {
@@ -334,19 +336,19 @@ namespace AnilistESP
                                     break;
                             }
                             var miembro = e.Context.Member;
-                            EmbedFooter footer = new EmbedFooter()
+                            EmbedFooter footer = new()
                             {
                                 Text = "Invocado por " + miembro.DisplayName + " (" + miembro.Username + "#" + miembro.Discriminator + ")",
                                 IconUrl = miembro.AvatarUrl
                             };
-                            var msg = e.Context.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
+                            DiscordMessage msg = await e.Context.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
                             {
                                 Title = titulo,
                                 Description = descripcion,
                                 Color = new DiscordColor(0xFF0000),
                                 Footer = footer
                             });
-                            mensajes.Add(msg.Result);
+                            mensajes.Add(msg);
                         }
                         await Task.Delay(5000);
                         if (e.Context.Message != null)

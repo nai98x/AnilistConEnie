@@ -76,7 +76,7 @@ namespace AnilistESP
 
             Client.ComponentInteractionCreated += async (DiscordClient client, ComponentInteractionCreateEventArgs args) =>
             {
-                await args.Interaction.CreateResponseAsync(InteractionResponseType.DefferedMessageUpdate);
+                await args.Interaction.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
             };
 
             Client.UseInteractivity(new InteractivityConfiguration());

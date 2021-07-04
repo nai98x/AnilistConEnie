@@ -41,7 +41,7 @@ namespace AnilistESP
                             Footer = funciones.GetFooter(ctx),
                             Color = DiscordColor.Cyan,
                             Title = "Aqua",
-                            Description = $"Triunfo de los {rol.Mention}!",
+                            Description = $"¡Ahora soy {rol.Mention}!",
                             ImageUrl = "https://media.discordapp.net/attachments/816379048477065217/848254027639816202/b89362-ibkc0eoECaW1.png"
                         }).ConfigureAwait(false);
                         break;
@@ -52,7 +52,7 @@ namespace AnilistESP
                             Footer = funciones.GetFooter(ctx),
                             Color = DiscordColor.Yellow,
                             Title = "Darkness",
-                            Description = $"Triunfo de los {rol.Mention}!",
+                            Description = $"¡Ahora soy {rol.Mention}!",
                             ImageUrl = "https://media.discordapp.net/attachments/816379048477065217/848254149966561300/b89363-mm21Ll4NegUD.png"
                         }).ConfigureAwait(false);
                         break;
@@ -63,7 +63,7 @@ namespace AnilistESP
                             Footer = funciones.GetFooter(ctx),
                             Color = DiscordColor.Red,
                             Title = "Megumin",
-                            Description = $"Triunfo de los {rol.Mention}!",
+                            Description = $"¡Ahora soy {rol.Mention}!",
                             ImageUrl = "https://media.discordapp.net/attachments/816379048477065217/848254129084432428/b89361-x71P6YLrndd8.png"
                         }).ConfigureAwait(false);
                         break;
@@ -74,7 +74,7 @@ namespace AnilistESP
                             Footer = funciones.GetFooter(ctx),
                             Color = DiscordColor.Green,
                             Title = "Kazuma",
-                            Description = $"Triunfo de los {rol.Mention}!",
+                            Description = $"¡Ahora soy {rol.Mention}!",
                             ImageUrl = "https://media.discordapp.net/attachments/854384291734356009/859576198748176453/b89364-7Th8Tv1XKJtt.png"
                         }).ConfigureAwait(false);
                         break;

@@ -7,11 +7,6 @@ using System;
 using System.Configuration;
 using DSharpPlus.Interactivity.Extensions;
 using System.Globalization;
-using GraphQL;
-using GraphQL.Client.Http;
-using GraphQL.Client.Serializer.Newtonsoft;
-using System.Text.RegularExpressions;
-using DSharpPlus;
 
 namespace AnilistESP
 {
@@ -69,10 +64,12 @@ namespace AnilistESP
                     int anios = DateTime.Now.Year - user.Birthday.Year;
                     if (DateTime.Now > new DateTime(day: user.Birthday.Day, month: user.Birthday.Month, year: DateTime.Now.Year))
                         anios += 1;
+                    string dia = user.BirthdayActual.ToString("dddd", CultureInfo.CreateSpecificCulture("es"));
+                    string mes = user.BirthdayActual.ToString("MMMM", CultureInfo.CreateSpecificCulture("es"));
                     if (user.MostrarYear ?? false)
-                        desc += $"- **{miembro.DisplayName}** - Cumple **{anios} años** el {Formatter.Timestamp(user.BirthdayActual, TimestampFormat.LongDate)}\n";
+                        desc += $"- **{miembro.DisplayName}** - Cumple **{anios} años** el {dia} {user.BirthdayActual.Day} de {mes} del {user.BirthdayActual.Year}\n";
                     else
-                        desc += $"- **{miembro.DisplayName}** - Cumple el {Formatter.Timestamp(user.BirthdayActual, TimestampFormat.LongDate)}\n";
+                        desc += $"- **{miembro.DisplayName}** - Cumple el {dia} {user.BirthdayActual.Day} de {mes} del {user.BirthdayActual.Year}\n";
                 }
                 catch (Exception){}
             }

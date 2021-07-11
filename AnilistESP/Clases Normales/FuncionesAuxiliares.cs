@@ -10,6 +10,7 @@ using System.Configuration;
 using Google.Cloud.Firestore;
 using DSharpPlus.Interactivity;
 using static DSharpPlus.Entities.DiscordEmbedBuilder;
+using System.Collections.Generic;
 
 namespace AnilistESP
 {
@@ -22,25 +23,35 @@ namespace AnilistESP
             return FirestoreDb.Create(ConfigurationManager.AppSettings["NombreDbFirebase"]);
         }
 
-        public async Task<DiscordChannel> GetCanalUsuariosAnilist(DiscordClient client)
+        public async Task<DiscordChannel> GetCanalUsuariosAnilist(DiscordClient client, DiscordGuild guild)
         {
             IDebuggingService mode = new DebuggingService();
             bool debug = mode.RunningInDebugMode();
             if (debug)
-            {
-                var guild = await client.GetGuildAsync(853766076122005565);
+            { 
+                guild = await client.GetGuildAsync(853766076122005565); // Nai Pruebitas
                 return guild.GetChannel(854476365834485770);
             }
             else
             {
-                var guild = await client.GetGuildAsync(701813281718927441);
-                return guild.GetChannel(854772817667948574);
+                if(guild.Id == 701813281718927441) // Anilist Esp
+                {
+                    return guild.GetChannel(854772817667948574);
+                }
+                else if(guild.Id == 862408834693070898) // Añilist
+                {
+                    return guild.GetChannel(862934726553501736);
+                }
+                else
+                {
+                    return null;
+                }
             }
         }
 
-        public async Task BorrarMensajeUsuarioAnilist(DiscordClient client, long oldMessageId)
+        public async Task BorrarMensajeUsuarioAnilist(DiscordClient client, DiscordGuild guild, long oldMessageId)
         {
-            DiscordChannel canal = await GetCanalUsuariosAnilist(client);
+            DiscordChannel canal = await GetCanalUsuariosAnilist(client, guild);
             DiscordMessage mensaje = await canal.GetMessageAsync((ulong)oldMessageId);
             if (mensaje != null)
             {
@@ -335,33 +346,24 @@ namespace AnilistESP
             }
         }
 
-        public async Task GrabarLogUsuarioOutAnilist(DiscordClient Client, DiscordMember user)
+        public async Task GrabarLogUsuarioOutAnilist(DiscordClient Client, DiscordMember user, DiscordGuild guild)
         {
-            ulong guildId;
-            ulong channelId;
-            IDebuggingService mode = new DebuggingService();
-            bool Debug = mode.RunningInDebugMode();
-            if (Debug)
-            {
-                guildId = 787033852258418768;
-                channelId = 854383940231233597;
-            }
-            else
-            {
-                guildId = 701813281718927441;
-                channelId = 702997924740726795;
-            }
-            var Guild = await Client.GetGuildAsync(guildId);
-            var ChannelErrores = Guild.GetChannel(channelId);
+            var Guild = await Client.GetGuildAsync(787033852258418768);
+            var ChannelErrores = Guild.GetChannel(854383940231233597);
             await ChannelErrores.SendMessageAsync(new DiscordEmbedBuilder
             {
                 Title = "Perfil eliminado",
                 Description = $"{user.Username}#{user.Discriminator} ya no está en el servidor y se ha borrado su perfil de Anilist",
-                Color = GetColor()
+                Color = GetColor(),
+                Author = new EmbedAuthor
+                {
+                    IconUrl = guild.IconUrl,
+                    Name = guild.Name
+                }
             });
         }
 
-        public async Task<string> GetStringInteractivity(CommandContext ctx, string tituloBusqueda, string descBusqueda, string descError)
+        public async Task<string> GetStringInteractivity(CommandContext ctx, string tituloBusqueda, string descBusqueda, string descError, bool permitirVacio)
         {
             var interactivity = ctx.Client.GetInteractivity();
             var msgUsuario = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
@@ -382,18 +384,21 @@ namespace AnilistESP
             }
             else
             {
-                var msgError = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
+                if (!permitirVacio)
                 {
-                    Title = "Error",
-                    Description = descError,
-                    Footer = GetFooter(ctx),
-                    Color = DiscordColor.Red,
-                });
-                await Task.Delay(3000);
-                if (msgError != null)
-                    await BorrarMensaje(ctx, msgError.Id);
-                if (msgUsuario != null)
-                    await BorrarMensaje(ctx, msgUsuario.Id);
+                    var msgError = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
+                    {
+                        Title = "Error",
+                        Description = descError,
+                        Footer = GetFooter(ctx),
+                        Color = DiscordColor.Red,
+                    });
+                    await Task.Delay(3000);
+                    if (msgError != null)
+                        await BorrarMensaje(ctx, msgError.Id);
+                    if (msgUsuario != null)
+                        await BorrarMensaje(ctx, msgUsuario.Id);
+                }
                 return string.Empty;
             }
         }
@@ -425,6 +430,133 @@ namespace AnilistESP
             {
                 return false;
             }
+        }
+
+        public async Task<DiscordEmbedBuilder> CrearEmbed(CommandContext ctx, InteractivityExtension interactivity)
+        {
+            DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
+            builder.WithColor(GetColor());
+
+            if(await GetSiNoInteractivity(ctx, interactivity, "Ingresar titulo", "Opcional"))
+            {
+                string titulo = await GetStringInteractivity(ctx, "Ingrese el titulo del embed", "No puede ser vacío", "Tiempo agotado esperando el titulo", true);
+                if (!string.IsNullOrEmpty(titulo))
+                    builder.WithTitle(titulo);
+            }
+
+            if (await GetSiNoInteractivity(ctx, interactivity, "Ingresar descripción", "Opcional"))
+            {
+                string desc = await GetStringInteractivity(ctx, "Ingrese la descripción del embed", "No puede ser vacía", "Tiempo agotado esperando la descripción", true);
+                if (!string.IsNullOrEmpty(desc))
+                    builder.WithDescription(desc);
+            }
+                
+            if (await GetSiNoInteractivity(ctx, interactivity, "Ingresar URL de la imagen", "Opcional"))
+            {
+                string imageUrl = await GetStringInteractivity(ctx, "Ingrese la url de la imagen del embed", "No puede ser vacío", "Tiempo agotado esperando la url", true);
+                if (!string.IsNullOrEmpty(imageUrl))
+                    builder.WithImageUrl(imageUrl);
+            }
+
+            if (await GetSiNoInteractivity(ctx, interactivity, "Ingresar footer", "Opcional"))
+            {
+                string textoFooter = string.Empty;
+                string iconUrlFooter = string.Empty;
+
+
+                if (await GetSiNoInteractivity(ctx, interactivity, "Ingresar URL del icono del footer", "Opcional"))
+                {
+                    iconUrlFooter = await GetStringInteractivity(ctx, "Ingrese la url del icono del footer", "No puede ser vacío", "Tiempo agotado esperando la url", true);
+                }
+
+                if (await GetSiNoInteractivity(ctx, interactivity, "Ingresar el texto del footer", "Opcional"))
+                {
+                    textoFooter = await GetStringInteractivity(ctx, "Ingrese el texto del footer", "No puede ser vacío", "Tiempo agotado esperando el texto", true);
+                }
+
+                builder.WithFooter(textoFooter, iconUrlFooter);
+            }
+
+            return builder;
+        }
+
+        public List<ulong> IDRolesColoresAnilistEsp2()
+        {
+            List<ulong> ret = new();
+
+            ret.Add(862813602527707187); // Bright Navy Blue
+            ret.Add(862813733381865482); // Picton Blue
+            ret.Add(862813867343609896); // Baby Blue
+            ret.Add(862813949430595625); // Non-Photo Blue
+            ret.Add(862814035807174756); // Electric Blue
+            ret.Add(862814112631226388); // Pale Aquamarine
+            ret.Add(863155130123026463); // Yellow
+            ret.Add(862877534165401631); // Meat Brown
+            ret.Add(862877649454104598); // Naples Yellow
+            ret.Add(862877720899616788); // Brown
+            ret.Add(862877806656749587); // Blast-Off Bronze
+            ret.Add(862877878442393600); // Rose Ebony
+            ret.Add(862877947265155072); // Coral
+            ret.Add(862878045371498527); // Deep Saffron
+            ret.Add(862878114999435275); // Orange
+            ret.Add(862878195601637376); // Giants Orange
+            ret.Add(862878279626522624); // Bright red
+            ret.Add(862878351965290556); // Dark Red
+            ret.Add(862878454302769193); // Fire Brick
+            ret.Add(862879022722449460); // Red
+            ret.Add(862879102380671007); // Light Coral
+            ret.Add(862879172980768819); // Indian Red
+            ret.Add(862879294452006913); // Salmon
+            ret.Add(862879403154604062); // Light Salmon
+            ret.Add(862879505759993857); // Lavender Blush
+            ret.Add(862879631744958474); // Pale Pink
+            ret.Add(862879709166436372); // Cameo Pink
+            ret.Add(862879806604181515); // Lavender Rose
+            ret.Add(862879911328612352); // Sky Magenta
+            ret.Add(862879987068960799); // Hot Pink
+            ret.Add(862880081252974610); // Frostbite
+            ret.Add(862880182268461106); // Barbie Pink
+            ret.Add(862880267526078474); // Blue Violet
+            ret.Add(862880348571303986); // Violet
+            ret.Add(862880440040816701); // Plump Purple
+            ret.Add(862880517346820126); // Harlequin Green
+            ret.Add(862880602264305665); // Kelly Green
+            ret.Add(862880684700073984); // Pastel Green
+            ret.Add(862880766324768798); // Light Green
+            ret.Add(862880851221413918); // Granny Smith Apple
+            ret.Add(862880971249418251); // Tea Green
+            ret.Add(862881612441845790); // White
+            ret.Add(862881726756945930); // Black
+
+            return ret;
+        }
+
+        public List<ulong> IDRolesPaisesAnilistEsp2()
+        {
+            List<ulong> ret = new();
+
+            ret.Add(863687575331012618); // Argentina
+            ret.Add(863688124696625153); // Bolivia
+            ret.Add(863687136543899658); // Chile
+            ret.Add(863687047842889748); // Colombia
+            ret.Add(863686892549570560); // Costa Rica
+            ret.Add(863688054279766068); // Cuba
+            ret.Add(863687910997229591); // Ecuador
+            ret.Add(863687219448643584); // El Salvador
+            ret.Add(863687790762655794); // España
+            ret.Add(863687501734215692); // Guatemala
+            ret.Add(863688360178876416); // Honduras
+            ret.Add(863687990349135882); // México
+            ret.Add(863688263122681877); // Nicaragua
+            ret.Add(863688518081314846); // Panama
+            ret.Add(863687727065202708); // Paraguay
+            ret.Add(863688438842785812); // Peru
+            ret.Add(863687661150797844); // Puerto Rico
+            ret.Add(863688589572702208); // Rep. Dominicana
+            ret.Add(863687410881265674); // Uruguay
+            ret.Add(863687332880580609); // Venezuela
+
+            return ret;
         }
     }
 }

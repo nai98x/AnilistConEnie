@@ -25,7 +25,7 @@ namespace AnilistESP
         {
             if (String.IsNullOrEmpty(usuario))
             {
-                usuario = await funciones.GetStringInteractivity(ctx, "Escriba un nombre de usuario de AniList", "Ejemplo: Josh", "Tiempo agotado esperando el usuario de AniList");
+                usuario = await funciones.GetStringInteractivity(ctx, "Escriba un nombre de usuario de AniList", "Ejemplo: Josh", "Tiempo agotado esperando el usuario de AniList", false);
             }
             if (!String.IsNullOrEmpty(usuario))
             {
@@ -107,9 +107,9 @@ namespace AnilistESP
                     DiscordMessage msg = ex.Message switch
                     {
                         "The HTTP request failed with status code NotFound" => await ctx.Channel.SendMessageAsync($"No se ha encontrado al usuario de anilist `{usuario}`").ConfigureAwait(false),
-                        _ => await ctx.Channel.SendMessageAsync($"Error inesperado").ConfigureAwait(false),
+                        _ => await ctx.Channel.SendMessageAsync($"Error inesperado: {ex.Message}").ConfigureAwait(false),
                     };
-                    await Task.Delay(3000);
+                    await Task.Delay(5000);
                     await funciones.BorrarMensaje(ctx, msg.Id);
                 }
             }
@@ -201,7 +201,7 @@ namespace AnilistESP
             var userAnilist = await usuariosAnilist.GetPerfil(ctx.Guild.Id, ctx.Member.Id);
             if (userAnilist != null)
             {
-                await funciones.BorrarMensajeUsuarioAnilist(ctx.Client, userAnilist.MessageId);
+                await funciones.BorrarMensajeUsuarioAnilist(ctx.Client, ctx.Guild, userAnilist.MessageId);
                 await usuariosAnilist.DeleteAnilist(ctx.Guild.Id, ctx.Member.Id);
                 var msg = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
                 {

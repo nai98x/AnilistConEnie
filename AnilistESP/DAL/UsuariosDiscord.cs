@@ -90,10 +90,10 @@ namespace AnilistESP
             return lista;
         }
 
-        public async Task SetBirthday(CommandContext ctx, DateTime fecha, bool mostrarEdad)
+        public async Task SetBirthday(ulong guildId, ulong userId, DateTime fecha, bool mostrarEdad)
         {
             FirestoreDb db = funciones.GetFirestoreClient();
-            DocumentReference doc = db.Collection("Cumpleaños").Document($"{ctx.Guild.Id}").Collection("Usuarios").Document($"{ctx.User.Id}");
+            DocumentReference doc = db.Collection("Cumpleaños").Document($"{guildId}").Collection("Usuarios").Document($"{userId}");
             var snap = await doc.GetSnapshotAsync();
             UsuarioDiscordFirebase registro;
             var timeutc = new DateTime(day: fecha.Day, month: fecha.Month, year: fecha.Year, hour: 5, minute: 0, second: 0, kind: DateTimeKind.Utc);
@@ -114,7 +114,7 @@ namespace AnilistESP
             {
                 Dictionary<string, object> data = new Dictionary<string, object>()
                 {
-                    {"user_id", ctx.User.Id},
+                    {"user_id", userId},
                     {"Birthday", timeutc},
                     {"MostrarYear", mostrarEdad},
                 };

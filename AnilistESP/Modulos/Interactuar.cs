@@ -14,16 +14,6 @@ namespace AnilistESP
     {
         private readonly FuncionesAuxiliares funciones = new FuncionesAuxiliares();
 
-        [Command("say"), Aliases("s"), Description("Yumiko habla en el chat."), RequireUserPermissions(DSharpPlus.Permissions.ManageGuild)]
-        public async Task Say(CommandContext ctx, [Description("Mensaje para replicar")][RemainingText] string mensaje = null)
-        {
-            var interactivty = ctx.Client.GetInteractivity();
-
-            bool usarEmbed = await funciones.GetSiNoInteractivity(ctx, interactivty, "Usar embed", "Determina si se mandará un embed o un mensaje normal");
-            if (usarEmbed){}
-            await ctx.Channel.SendMessageAsync(mensaje);
-        }
-
         [Command("bestgirl"), Description("Best girl de Konosuba."), Cooldown(1, 300, CooldownBucketType.Guild)]
         public async Task BestGirl(CommandContext ctx)
         {

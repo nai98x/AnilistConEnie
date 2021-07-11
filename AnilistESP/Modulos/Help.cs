@@ -52,7 +52,10 @@ namespace AnilistESP
                     comandosDesc = string.Join(", ", listaComandos);
                     if (nomGrupo == "NSFW" && !ctx.Channel.IsNSFW)
                         comandosDesc = "`Para ver estos comandos ejecutalo en un canal NSFW`";
-                    builder.AddField(nomGrupo, comandosDesc, false);
+                    if(!string.IsNullOrEmpty(nomGrupo) && !string.IsNullOrEmpty(comandosDesc))
+                    {
+                        builder.AddField(nomGrupo, comandosDesc, false);
+                    }
                 }
                 await ctx.Channel.SendMessageAsync(embed: builder).ConfigureAwait(false);
             }

@@ -56,7 +56,7 @@ namespace AnilistESP
             DocumentReference doc = db.Collection("Anilist").Document($"{ctx.Guild.Id}").Collection("Usuarios").Document($"{miembro.Id}");
             var snap = await doc.GetSnapshotAsync();
             UsuarioAnilistFirebase registro;
-            DiscordChannel channel = await funciones.GetCanalUsuariosAnilist(ctx.Client);
+            DiscordChannel channel = await funciones.GetCanalUsuariosAnilist(ctx.Client, ctx.Guild);
             if (snap.Exists)
             {
                 registro = snap.ConvertTo<UsuarioAnilistFirebase>();

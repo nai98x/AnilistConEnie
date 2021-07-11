@@ -115,10 +115,10 @@ namespace AnilistESP
                         switch (mostrarEdadInt)
                         {
                             case 1:
-                                await usuariosService.SetBirthday(ctx, fecha, true);
+                                await usuariosService.SetBirthday(ctx.Guild.Id, ctx.User.Id, fecha, true);
                                 break;
                             case 2:
-                                await usuariosService.SetBirthday(ctx, fecha, false);
+                                await usuariosService.SetBirthday(ctx.Guild.Id, ctx.User.Id, fecha, false);
                                 break;
                             default:
                                 msgError = await ctx.Channel.SendMessageAsync("Ingresa bien la respuesta");
@@ -129,9 +129,9 @@ namespace AnilistESP
                     {
                         string content = msgOcultarInter.Result.Content.ToLower().Trim();
                         if (content == "1- si" || content == "si")
-                            await usuariosService.SetBirthday(ctx, fecha, true);
+                            await usuariosService.SetBirthday(ctx.Guild.Id, ctx.User.Id, fecha, true);
                         else if (content == "2- no" || content == "no")
-                            await usuariosService.SetBirthday(ctx, fecha, false);
+                            await usuariosService.SetBirthday(ctx.Guild.Id, ctx.User.Id, fecha, false);
                         else
                             msgError = await ctx.Channel.SendMessageAsync("Ingresa bien la respuesta");
                         await funciones.BorrarMensaje(ctx, msgOcultarInter.Result.Id);

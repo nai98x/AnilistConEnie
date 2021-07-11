@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static DSharpPlus.Entities.DiscordEmbedBuilder;
@@ -73,11 +74,7 @@ namespace AnilistESP
             Client.ClientErrored += Client_ClientError;
             Client.Resumed += Client_Resumed;
             Client.GuildMemberRemoved += Client_GuildMemberRemoved;
-
-            Client.ComponentInteractionCreated += async (DiscordClient client, ComponentInteractionCreateEventArgs args) =>
-            {
-                await args.Interaction.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
-            };
+            Client.ComponentInteractionCreated += Client_ComponentInteractionCreated;
 
             Client.UseInteractivity(new InteractivityConfiguration());
 
@@ -99,6 +96,7 @@ namespace AnilistESP
             Commands.CommandExecuted += Commands_CommandExecuted;
             Commands.CommandErrored += Commands_CommandErrored;
 
+            Commands.RegisterCommands<Administracion>();
             Commands.RegisterCommands<Anilist>();
             Commands.RegisterCommands<Interactuar>();
             Commands.RegisterCommands<Usuarios>();
@@ -117,12 +115,94 @@ namespace AnilistESP
             }
             else
             {
-                var LogGeneral = await Client.GetGuildAsync(701813281718927441);
-                LogChannelGeneral = LogGeneral.GetChannel(702997924740726795);
+                LogChannelGeneral = LogGuild.GetChannel(854383940231233597);
                 LogChannelErrores = LogGuild.GetChannel(854383583031328790);
             }
 
             await Task.Delay(-1);
+        }
+
+        private Task Client_ComponentInteractionCreated(DiscordClient sender, ComponentInteractionCreateEventArgs e)
+        {
+            _ = Task.Run(async () =>
+            {
+                await e.Interaction.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
+
+
+                if (e.Guild.Id == 862408834693070898)
+                {
+                    if (e.Interaction.Data.CustomId == "ReactionRolesColores" || e.Interaction.Data.CustomId == "ReactionRolesPaises")
+                    {
+                        foreach (var rolId in e.Interaction.Data.Values)
+                        {
+                            var rol = e.Guild.GetRole(ulong.Parse(rolId));
+                            if (rol != null)
+                            {
+                                DiscordMember miembro = (DiscordMember)e.User;
+                                try
+                                {
+                                    await miembro.GrantRoleAsync(rol);
+                                    await e.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
+                                    {
+                                        Content = $"Se te ha asignado el rol `{rol.Name}` exitosamente!",
+                                        IsEphemeral = true
+                                    });
+                                    List<ulong> lista;
+                                    if(e.Interaction.Data.CustomId == "ReactionRolesColores")
+                                    {
+                                        lista = funciones.IDRolesColoresAnilistEsp2();
+                                    }
+                                    else // Paises
+                                    {
+                                        lista = funciones.IDRolesPaisesAnilistEsp2();
+                                    }
+                                    var roles = miembro.Roles.ToList();
+                                    foreach (var r in lista)
+                                    {
+                                        DiscordRole check = roles.Find(x => x.Id == r);
+                                        if (r != rol.Id && check != null)
+                                        {
+                                            try
+                                            {
+                                                await miembro.RevokeRoleAsync(check);
+                                            }
+                                            catch (Exception exx)
+                                            {
+                                                await e.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
+                                                {
+                                                    Content = $"Error asignando rol `{check.Name}`!",
+                                                    IsEphemeral = true
+                                                });
+                                                await LogChannelErrores.SendMessageAsync(new DiscordEmbedBuilder
+                                                {
+                                                    Color = DiscordColor.Red,
+                                                    Title = $"Error asignando rol `{check.Name} (id: {check.Id})`",
+                                                    Description = exx.Message
+                                                });
+                                            }
+                                        }
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    await e.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
+                                    {
+                                        Content = $"Error asignando rol `{rol.Name}`!",
+                                        IsEphemeral = true
+                                    });
+                                    await LogChannelErrores.SendMessageAsync(new DiscordEmbedBuilder
+                                    {
+                                        Color = DiscordColor.Red,
+                                        Title = $"Error asignando rol `{rol.Name} (id: {rol.Id})`",
+                                        Description = ex.Message
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            return Task.CompletedTask;
         }
 
         private Task Client_GuildMemberRemoved(DiscordClient sender, GuildMemberRemoveEventArgs e)
@@ -134,9 +214,9 @@ namespace AnilistESP
                 var usuario = await helper.GetPerfil(e.Guild.Id, e.Member.Id);
                 if(usuario != null)
                 {
-                    await funciones.BorrarMensajeUsuarioAnilist(sender, usuario.MessageId);
+                    await funciones.BorrarMensajeUsuarioAnilist(sender, e.Guild, usuario.MessageId);
                     await helper.DeleteAnilist(e.Guild.Id, e.Member.Id);
-                    await funciones.GrabarLogUsuarioOutAnilist(Client, e.Member);
+                    await funciones.GrabarLogUsuarioOutAnilist(Client, e.Member, e.Guild);
                 }
             });
             return Task.CompletedTask;

@@ -80,6 +80,15 @@ namespace AnilistESP
 
             SlashCommands = Client.UseSlashCommands();
 
+            if (Debug)
+            {
+                SlashCommands.RegisterCommands<SlashCommands>(853766076122005565);
+            }
+            else
+            {
+                SlashCommands.RegisterCommands<SlashCommands>(862408834693070898);
+            }
+
             var commandsConfig = new CommandsNextConfiguration
             {
                 StringPrefixes = new string[] { prefix },
@@ -224,14 +233,12 @@ namespace AnilistESP
 
         private Task OnClientReady(DiscordClient c, ReadyEventArgs e)
         {
-            e.Handled = true;
             c.Logger.LogInformation("El cliente esta listo para procesar eventos.", DateTime.Now);
             return Task.CompletedTask;
         }
 
         private Task Client_Resumed(DiscordClient c, ReadyEventArgs e)
         {
-            e.Handled = true;
             c.Logger.LogInformation("El cliente vuelve a estar listo para procesar eventos.", DateTime.Now);
             return Task.CompletedTask;
         }

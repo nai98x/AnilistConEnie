@@ -9,13 +9,19 @@ using DSharpPlus;
 using System.Configuration;
 using Google.Cloud.Firestore;
 using DSharpPlus.Interactivity;
-using static DSharpPlus.Entities.DiscordEmbedBuilder;
 using System.Collections.Generic;
+using GraphQL.Client.Http;
+using GraphQL.Client.Serializer.Newtonsoft;
+using GraphQL;
+using DSharpPlus.SlashCommands;
+using static DSharpPlus.Entities.DiscordEmbedBuilder;
 
 namespace AnilistESP
 {
     public class FuncionesAuxiliares
     {
+        private readonly UsuariosAnilist usuariosAnilist = new UsuariosAnilist();
+
         public FirestoreDb GetFirestoreClient()
         {
             string path = AppDomain.CurrentDomain.BaseDirectory + @"firebase.json";
@@ -119,6 +125,18 @@ namespace AnilistESP
             };
         }
 
+        public EmbedFooter GetFooter(InteractionContext ctx) => new()
+        {
+            Text = $"Invocado por {ctx.Member.DisplayName} ({ctx.Member.Username}#{ctx.Member.Discriminator})",
+            IconUrl = ctx.Member.AvatarUrl
+        };
+
+        public EmbedFooter GetFooter(Context ctx) => new()
+        {
+            Text = $"Invocado por {ctx.Member.DisplayName} ({ctx.Member.Username}#{ctx.Member.Discriminator})",
+            IconUrl = ctx.Member.AvatarUrl
+        };
+
         public EmbedAuthor GetAuthor(string nombre, string avatar, string url)
         {
             return new EmbedAuthor()
@@ -160,6 +178,27 @@ namespace AnilistESP
                 }
                 catch (Exception){ }
             }
+        }
+
+        public async Task BorrarMensaje(Context ctx, ulong msgId)
+        {
+            if (ChequearPermisoYumiko(ctx, Permissions.ManageMessages))
+            {
+                try
+                {
+                    var mensaje = await ctx.Channel.GetMessageAsync(msgId);
+                    if (mensaje != null)
+                    {
+                        await mensaje.DeleteAsync("Auto borrado de Yumiko");
+                    }
+                }
+                catch (Exception) { }
+            }
+        }
+
+        public bool ChequearPermisoYumiko(Context ctx, Permissions permiso)
+        {
+            return PermissionMethods.HasPermission(ctx.Channel.PermissionsFor(ctx.Guild.CurrentMember), permiso);
         }
 
         public async Task<DateTime?> CrearDate(CommandContext ctx)
@@ -432,6 +471,35 @@ namespace AnilistESP
             }
         }
 
+        public async Task<bool> GetSiNoInteractivity(Context ctx, InteractivityExtension interactivity, string titulo, string descripcion)
+        {
+            DiscordButtonComponent buttonSi = new DiscordButtonComponent(ButtonStyle.Success, "true", "Si");
+            DiscordButtonComponent buttonNo = new DiscordButtonComponent(ButtonStyle.Danger, "false", "No");
+
+            DiscordMessageBuilder mensajeRondas = new DiscordMessageBuilder()
+            {
+                Embed = new DiscordEmbedBuilder
+                {
+                    Title = titulo,
+                    Description = descripcion
+                }
+            };
+
+            mensajeRondas.AddComponents(buttonSi, buttonNo);
+
+            DiscordMessage msgElegir = await mensajeRondas.SendAsync(ctx.Channel);
+            var msgElegirInter = await interactivity.WaitForButtonAsync(msgElegir, ctx.User, TimeSpan.FromSeconds(Convert.ToDouble(ConfigurationManager.AppSettings["TimeoutGeneral"])));
+            await BorrarMensaje(ctx, msgElegir.Id);
+            if (!msgElegirInter.TimedOut)
+            {
+                return bool.Parse(msgElegirInter.Result.Id);
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         public async Task<DiscordEmbedBuilder> CrearEmbed(CommandContext ctx, InteractivityExtension interactivity)
         {
             DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
@@ -557,6 +625,122 @@ namespace AnilistESP
             ret.Add(863687332880580609); // Venezuela
 
             return ret;
+        }
+
+        public Context GetContext(InteractionContext itx)
+        {
+            return new()
+            {
+                Client = itx.Client,
+                Channel = itx.Channel,
+                Guild = itx.Guild,
+                Member = itx.Member,
+                User = itx.User,
+                Interaction = itx.Interaction
+            };
+        }
+
+        public Context GetContext(CommandContext ctx)
+        {
+            return new()
+            {
+                Client = ctx.Client,
+                Command = ctx.Command,
+                Channel = ctx.Channel,
+                Guild = ctx.Guild,
+                Member = ctx.Member,
+                Message = ctx.Message,
+                Prefix = ctx.Prefix,
+                User = ctx.User
+            };
+        }
+
+        public async Task SetPerfilAnilist(Context ctx, string usuario)
+        {
+            Uri uriResult;
+            bool porUrl = Uri.TryCreate(usuario, UriKind.Absolute, out uriResult)
+                && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+            if (porUrl)
+            {
+                bool match = usuario.Contains("https://anilist.co/user/");
+                if (match)
+                {
+                    string inputUrl = usuario.Trim();
+                    string userName = inputUrl;
+                    if (inputUrl.EndsWith("/"))
+                    {
+                        userName = inputUrl.Remove(inputUrl.Length - 1);
+                    }
+
+                    var index = userName.LastIndexOf('/');
+                    usuario = userName.Substring(index + 1);
+                }
+                else
+                {
+                    var msg = await ctx.Channel.SendMessageAsync($"{ctx.User.Mention}, debes ingresar la URL de tu perfil de Anilist!\n" +
+                        $"Ejemplo: https://anilist.co/user/Josh/").ConfigureAwait(false);
+                    await Task.Delay(3000);
+                    await BorrarMensaje(ctx, msg.Id);
+                    return;
+                }
+            }
+            var request = new GraphQLRequest
+            {
+                Query =
+                "query($nombre : String){" +
+                "   User(search: $nombre){" +
+                "       siteUrl," +
+                "       name" +
+                "   }" +
+                "}",
+                Variables = new
+                {
+                    nombre = usuario
+                }
+            };
+            try
+            {
+                GraphQLHttpClient graphQLClient = new GraphQLHttpClient("https://graphql.anilist.co", new NewtonsoftJsonSerializer());
+                var data = await graphQLClient.SendQueryAsync<dynamic>(request);
+                if (data.Data != null)
+                {
+                    string siteurl = data.Data.User.siteUrl;
+                    string name = data.Data.User.name;
+                    bool confirmar = await GetSiNoInteractivity(ctx, ctx.Client.GetInteractivity(), "Confirma que quieres guardar este perfil", $"**Tu perfil es:**\n\n   **Nickname:** {name}\n   **Url:** {siteurl}");
+                    if (confirmar)
+                    {
+                        await usuariosAnilist.SetAnilist(ctx, siteurl, ctx.Member);
+                        var msg = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Green,
+                            Footer = GetFooter(ctx),
+                            Title = "Perfil guardado",
+                            Description = $"{ctx.User.Mention}, haz guardado tu perfil de Anilist satisfactoriamente"
+                        });
+                        await Task.Delay(5000);
+                        await BorrarMensaje(ctx, msg.Id);
+                    }
+                }
+                else
+                {
+                    foreach (var x in data.Errors)
+                    {
+                        var msg = await ctx.Channel.SendMessageAsync($"Error: {x.Message}").ConfigureAwait(false);
+                        await Task.Delay(3000);
+                        await BorrarMensaje(ctx, msg.Id);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DiscordMessage msg = ex.Message switch
+                {
+                    "The HTTP request failed with status code NotFound" => await ctx.Channel.SendMessageAsync($"No se ha encontrado al usuario de anilist `{usuario}`").ConfigureAwait(false),
+                    _ => await ctx.Channel.SendMessageAsync($"Error inesperado: {ex.Message}").ConfigureAwait(false),
+                };
+                await Task.Delay(5000);
+                await BorrarMensaje(ctx, msg.Id);
+            }
         }
     }
 }

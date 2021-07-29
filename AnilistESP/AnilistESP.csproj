@@ -22,12 +22,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DSharpPlus" Version="4.1.0-nightly-00917" />
-    <PackageReference Include="DSharpPlus.CommandsNext" Version="4.1.0-nightly-00917" />
-    <PackageReference Include="DSharpPlus.Interactivity" Version="4.1.0-nightly-00917" />
-    <PackageReference Include="DSharpPlus.Lavalink" Version="4.1.0-nightly-00917" />
-    <PackageReference Include="DSharpPlus.Rest" Version="4.1.0-nightly-00917" />
-    <PackageReference Include="DSharpPlus.VoiceNext" Version="4.1.0-nightly-00917" />
+    <PackageReference Include="DSharpPlus" Version="4.1.0-nightly-00930" />
+    <PackageReference Include="DSharpPlus.CommandsNext" Version="4.1.0-nightly-00930" />
+    <PackageReference Include="DSharpPlus.Interactivity" Version="4.1.0-nightly-00930" />
+    <PackageReference Include="DSharpPlus.Lavalink" Version="4.1.0-nightly-00930" />
+    <PackageReference Include="DSharpPlus.Rest" Version="4.1.0-nightly-00930" />
+    <PackageReference Include="DSharpPlus.VoiceNext" Version="4.1.0-nightly-00930" />
     <PackageReference Include="Google.Cloud.Firestore" Version="2.3.1" />
     <PackageReference Include="GraphQL" Version="3.3.2" />
     <PackageReference Include="GraphQL-Parser" Version="7.0.0" />
@@ -37,7 +37,7 @@
     <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="3.2.2" />
     <PackageReference Include="GraphQL.Primitives" Version="3.2.2" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.31" />
-    <PackageReference Include="IDoEverything.DSharpPlus.SlashCommands" Version="1.4.1" />
+    <PackageReference Include="IDoEverything.DSharpPlus.SlashCommands" Version="1.7.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="RestSharp" Version="106.11.7" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />

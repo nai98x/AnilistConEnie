@@ -29,89 +29,8 @@ namespace AnilistESP
             }
             if (!String.IsNullOrEmpty(usuario))
             {
-                Uri uriResult;
-                bool porUrl = Uri.TryCreate(usuario, UriKind.Absolute, out uriResult)
-                    && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
-                if (porUrl)
-                {
-                    bool match = usuario.Contains("https://anilist.co/user/");
-                    if (match)
-                    {
-                        string inputUrl = usuario.Trim();
-                        string userName = inputUrl;
-                        if (inputUrl.EndsWith("/"))
-                        {
-                            userName = inputUrl.Remove(inputUrl.Length - 1);
-                        }
-
-                        var index = userName.LastIndexOf('/');
-                        usuario = userName.Substring(index + 1);
-                    }
-                    else
-                    {
-                        var msg = await ctx.Channel.SendMessageAsync($"{ctx.User.Mention}, debes ingresar la URL de tu perfil de Anilist!\n" +
-                            $"Ejemplo: https://anilist.co/user/Josh/").ConfigureAwait(false);
-                        await Task.Delay(3000);
-                        await funciones.BorrarMensaje(ctx, msg.Id);
-                        return;
-                    }
-                }
-                var request = new GraphQLRequest
-                {
-                    Query =
-                    "query($nombre : String){" +
-                    "   User(search: $nombre){" +
-                    "       siteUrl," +
-                    "       name" +
-                    "   }" +
-                    "}",
-                    Variables = new
-                    {
-                        nombre = usuario
-                    }
-                };
-                try
-                {
-                    var data = await graphQLClient.SendQueryAsync<dynamic>(request);
-                    if (data.Data != null)
-                    {
-                        string siteurl = data.Data.User.siteUrl;
-                        string name = data.Data.User.name;
-                        bool confirmar = await funciones.GetSiNoInteractivity(ctx, ctx.Client.GetInteractivity(), "Confirma que quieres guardar este perfil", $"**Tu perfil es:**\n\n   **Nickname:** {name}\n   **Url:** {siteurl}");
-                        if (confirmar)
-                        {
-                            await usuariosAnilist.SetAnilist(ctx, siteurl, ctx.Member);
-                            var msg = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
-                            {
-                                Color = DiscordColor.Green,
-                                Footer = funciones.GetFooter(ctx),
-                                Title = "Perfil guardado",
-                                Description = $"{ctx.User.Mention}, haz guardado tu perfil de Anilist satisfactoriamente"
-                            });
-                            await Task.Delay(5000);
-                            await funciones.BorrarMensaje(ctx, msg.Id);
-                        }
-                    }
-                    else
-                    {
-                        foreach (var x in data.Errors)
-                        {
-                            var msg = await ctx.Channel.SendMessageAsync($"Error: {x.Message}").ConfigureAwait(false);
-                            await Task.Delay(3000);
-                            await funciones.BorrarMensaje(ctx, msg.Id);
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    DiscordMessage msg = ex.Message switch
-                    {
-                        "The HTTP request failed with status code NotFound" => await ctx.Channel.SendMessageAsync($"No se ha encontrado al usuario de anilist `{usuario}`").ConfigureAwait(false),
-                        _ => await ctx.Channel.SendMessageAsync($"Error inesperado: {ex.Message}").ConfigureAwait(false),
-                    };
-                    await Task.Delay(5000);
-                    await funciones.BorrarMensaje(ctx, msg.Id);
-                }
+                var context = funciones.GetContext(ctx);
+                await funciones.SetPerfilAnilist(context, usuario);
             }
         }
 
@@ -275,8 +194,8 @@ namespace AnilistESP
                 if (data.Data != null)
                 {
                     string siteurl = data.Data.User.siteUrl;
-
-                    await usuariosAnilist.SetAnilist(ctx, siteurl, usuario);
+                    var context = funciones.GetContext(ctx);
+                    await usuariosAnilist.SetAnilist(context, siteurl, usuario);
                     var msg = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
                     {
                         Color = DiscordColor.Green,

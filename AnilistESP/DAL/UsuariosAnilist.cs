@@ -9,10 +9,9 @@ namespace AnilistESP
 {
     public class UsuariosAnilist
     {
-        private readonly FuncionesAuxiliares funciones = new FuncionesAuxiliares();
-
         public async Task<List<UsuarioAnilistFirebase>> GetListaUsuarios(long guildId)
         {
+            FuncionesAuxiliares funciones = new FuncionesAuxiliares();
             var ret = new List<UsuarioAnilistFirebase>();
             FirestoreDb db = funciones.GetFirestoreClient();
 
@@ -37,6 +36,7 @@ namespace AnilistESP
 
         public async Task<UsuarioAnilistFirebase> GetPerfil(ulong guildId, ulong userId)
         {
+            FuncionesAuxiliares funciones = new FuncionesAuxiliares();
             FirestoreDb db = funciones.GetFirestoreClient();
             DocumentReference doc = db.Collection("Anilist").Document($"{guildId}").Collection("Usuarios").Document($"{userId}");
             var snap = await doc.GetSnapshotAsync();
@@ -50,8 +50,9 @@ namespace AnilistESP
             }
         }
 
-        public async Task SetAnilist(CommandContext ctx, string anilistUrl, DiscordMember miembro)
+        public async Task SetAnilist(Context ctx, string anilistUrl, DiscordMember miembro)
         {
+            FuncionesAuxiliares funciones = new FuncionesAuxiliares();
             FirestoreDb db = funciones.GetFirestoreClient();
             DocumentReference doc = db.Collection("Anilist").Document($"{ctx.Guild.Id}").Collection("Usuarios").Document($"{miembro.Id}");
             var snap = await doc.GetSnapshotAsync();
@@ -67,7 +68,7 @@ namespace AnilistESP
                     await mensaje.ModifyAsync($"**Perfil de {miembro.Mention}**\n\n{anilistUrl}");
                 }
                 catch { }
-                if(mensaje == null)
+                if (mensaje == null)
                 {
                     mensaje = await channel.SendMessageAsync($"**Perfil de {miembro.Mention}**\n\n{anilistUrl}");
                 }
@@ -98,6 +99,7 @@ namespace AnilistESP
 
         public async Task DeleteAnilist(ulong guildId, ulong userId)
         {
+            FuncionesAuxiliares funciones = new FuncionesAuxiliares();
             FirestoreDb db = funciones.GetFirestoreClient();
             DocumentReference doc = db.Collection("Anilist").Document($"{guildId}").Collection("Usuarios").Document($"{userId}");
             var snap = await doc.GetSnapshotAsync();

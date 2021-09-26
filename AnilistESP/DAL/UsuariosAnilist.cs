@@ -11,7 +11,7 @@ namespace AnilistESP
     {
         public async Task<List<UsuarioAnilistFirebase>> GetListaUsuarios(long guildId)
         {
-            FuncionesAuxiliares funciones = new FuncionesAuxiliares();
+            FuncionesAuxiliares funciones = new();
             var ret = new List<UsuarioAnilistFirebase>();
             FirestoreDb db = funciones.GetFirestoreClient();
 
@@ -36,7 +36,7 @@ namespace AnilistESP
 
         public async Task<UsuarioAnilistFirebase> GetPerfil(ulong guildId, ulong userId)
         {
-            FuncionesAuxiliares funciones = new FuncionesAuxiliares();
+            FuncionesAuxiliares funciones = new();
             FirestoreDb db = funciones.GetFirestoreClient();
             DocumentReference doc = db.Collection("Anilist").Document($"{guildId}").Collection("Usuarios").Document($"{userId}");
             var snap = await doc.GetSnapshotAsync();
@@ -52,7 +52,7 @@ namespace AnilistESP
 
         public async Task SetAnilist(Context ctx, string anilistUrl, DiscordMember miembro)
         {
-            FuncionesAuxiliares funciones = new FuncionesAuxiliares();
+            FuncionesAuxiliares funciones = new();
             FirestoreDb db = funciones.GetFirestoreClient();
             DocumentReference doc = db.Collection("Anilist").Document($"{ctx.Guild.Id}").Collection("Usuarios").Document($"{miembro.Id}");
             var snap = await doc.GetSnapshotAsync();
@@ -76,7 +76,7 @@ namespace AnilistESP
                 registro.AnilistURL = anilistUrl;
                 registro.MessageId = (long)mensaje.Id;
                 registro.UserId = (long)miembro.Id;
-                Dictionary<string, object> data = new Dictionary<string, object>()
+                Dictionary<string, object> data = new()
                 {
                     {"AnilistURL", registro.AnilistURL},
                     {"MessageId", registro.MessageId},
@@ -87,7 +87,7 @@ namespace AnilistESP
             else
             {
                 DiscordMessage mensaje = await channel.SendMessageAsync($"**Perfil de {miembro.Mention}**\n\n{anilistUrl}");
-                Dictionary<string, object> data = new Dictionary<string, object>()
+                Dictionary<string, object> data = new()
                 {
                     {"AnilistURL", anilistUrl},
                     {"MessageId", mensaje.Id},
@@ -99,13 +99,46 @@ namespace AnilistESP
 
         public async Task DeleteAnilist(ulong guildId, ulong userId)
         {
-            FuncionesAuxiliares funciones = new FuncionesAuxiliares();
+            FuncionesAuxiliares funciones = new();
             FirestoreDb db = funciones.GetFirestoreClient();
             DocumentReference doc = db.Collection("Anilist").Document($"{guildId}").Collection("Usuarios").Document($"{userId}");
             var snap = await doc.GetSnapshotAsync();
             if (snap.Exists)
             {
                 await doc.DeleteAsync();
+            }
+        }
+
+        // LISTA DE YUMIKO
+
+        public async Task SetAnilistYumiko(int anilistId, ulong userId)
+        {
+            FuncionesAuxiliares funciones = new();
+            FirestoreDb db = funciones.GetFirestoreClient();
+            DocumentReference doc = db.Collection("AnilistUsers").Document($"{userId}");
+            var snap = await doc.GetSnapshotAsync();
+            UsuarioAnilistYumFirebase registro;
+            if (snap.Exists)
+            {
+                registro = snap.ConvertTo<UsuarioAnilistYumFirebase>();
+
+                registro.AnilistId = anilistId;
+                registro.UserId = (long)userId;
+                Dictionary<string, object> data = new()
+                {
+                    { "AnilistId", registro.AnilistId },
+                    { "UserId", registro.UserId },
+                };
+                await doc.UpdateAsync(data);
+            }
+            else
+            {
+                Dictionary<string, object> data = new()
+                {
+                    { "AnilistId", anilistId },
+                    { "UserId", userId },
+                };
+                await doc.SetAsync(data);
             }
         }
     }

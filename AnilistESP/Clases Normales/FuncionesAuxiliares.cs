@@ -15,12 +15,19 @@ using GraphQL.Client.Serializer.Newtonsoft;
 using GraphQL;
 using DSharpPlus.SlashCommands;
 using static DSharpPlus.Entities.DiscordEmbedBuilder;
+using System.Drawing;
+using System.Net;
+using System.IO;
+using System.Drawing.Imaging;
+using System.Text;
+using Newtonsoft.Json;
+using RestSharp;
 
 namespace AnilistESP
 {
     public class FuncionesAuxiliares
     {
-        private readonly UsuariosAnilist usuariosAnilist = new UsuariosAnilist();
+        private readonly UsuariosAnilist usuariosAnilist = new();
 
         public FirestoreDb GetFirestoreClient()
         {
@@ -40,11 +47,7 @@ namespace AnilistESP
             }
             else
             {
-                if(guild.Id == 701813281718927441) // Anilist Esp
-                {
-                    return guild.GetChannel(854772817667948574);
-                }
-                else if(guild.Id == 862408834693070898) // Añilist
+                if(guild.Id == 862408834693070898) // Añilist
                 {
                     return guild.GetChannel(862934726553501736);
                 }
@@ -73,7 +76,7 @@ namespace AnilistESP
         {
             if (min <= 0 && max <= 0)
                 return 0;
-            Random rnd = new Random();
+            Random rnd = new();
             return rnd.Next(minValue: min, maxValue: max);
         }
 
@@ -182,7 +185,7 @@ namespace AnilistESP
 
         public async Task BorrarMensaje(Context ctx, ulong msgId)
         {
-            if (ChequearPermisoYumiko(ctx, Permissions.ManageMessages))
+            if (ChequearPermisoBot(ctx, Permissions.ManageMessages))
             {
                 try
                 {
@@ -196,9 +199,14 @@ namespace AnilistESP
             }
         }
 
-        public bool ChequearPermisoYumiko(Context ctx, Permissions permiso)
+        public bool ChequearPermisoBot(Context ctx, Permissions permiso)
         {
             return PermissionMethods.HasPermission(ctx.Channel.PermissionsFor(ctx.Guild.CurrentMember), permiso);
+        }
+
+        public bool ChequearPermisoMember(Context ctx, DiscordMember member, Permissions permiso)
+        {
+            return PermissionMethods.HasPermission(ctx.Channel.PermissionsFor(member), permiso);
         }
 
         public async Task<DateTime?> CrearDate(CommandContext ctx)
@@ -359,7 +367,7 @@ namespace AnilistESP
             return null;
         }
 
-        public async Task GrabarLogError(CommandContext ctx, string descripcion)
+        public async Task GrabarLogError(Context ctx, string descripcion)
         {
             var Guild = await ctx.Client.GetGuildAsync(713809173573271613);
             if(Guild != null)
@@ -444,10 +452,10 @@ namespace AnilistESP
 
         public async Task<bool> GetSiNoInteractivity(CommandContext ctx, InteractivityExtension interactivity, string titulo, string descripcion)
         {
-            DiscordButtonComponent buttonSi = new DiscordButtonComponent(ButtonStyle.Success, "true", "Si");
-            DiscordButtonComponent buttonNo = new DiscordButtonComponent(ButtonStyle.Danger, "false", "No");
+            DiscordButtonComponent buttonSi = new(ButtonStyle.Success, "true", "Si");
+            DiscordButtonComponent buttonNo = new(ButtonStyle.Danger, "false", "No");
 
-            DiscordMessageBuilder mensajeRondas = new DiscordMessageBuilder()
+            DiscordMessageBuilder mensajeRondas = new()
             {
                 Embed = new DiscordEmbedBuilder
                 {
@@ -473,10 +481,10 @@ namespace AnilistESP
 
         public async Task<bool> GetSiNoInteractivity(Context ctx, InteractivityExtension interactivity, string titulo, string descripcion)
         {
-            DiscordButtonComponent buttonSi = new DiscordButtonComponent(ButtonStyle.Success, "true", "Si");
-            DiscordButtonComponent buttonNo = new DiscordButtonComponent(ButtonStyle.Danger, "false", "No");
+            DiscordButtonComponent buttonSi = new(ButtonStyle.Success, "true", "Si");
+            DiscordButtonComponent buttonNo = new(ButtonStyle.Danger, "false", "No");
 
-            DiscordMessageBuilder mensajeRondas = new DiscordMessageBuilder()
+            DiscordMessageBuilder mensajeRondas = new()
             {
                 Embed = new DiscordEmbedBuilder
                 {
@@ -502,7 +510,7 @@ namespace AnilistESP
 
         public async Task<DiscordEmbedBuilder> CrearEmbed(CommandContext ctx, InteractivityExtension interactivity)
         {
-            DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
+            DiscordEmbedBuilder builder = new();
             builder.WithColor(GetColor());
 
             if(await GetSiNoInteractivity(ctx, interactivity, "Ingresar titulo", "Opcional"))
@@ -657,8 +665,7 @@ namespace AnilistESP
 
         public async Task SetPerfilAnilist(Context ctx, string usuario)
         {
-            Uri uriResult;
-            bool porUrl = Uri.TryCreate(usuario, UriKind.Absolute, out uriResult)
+            bool porUrl = Uri.TryCreate(usuario, UriKind.Absolute, out Uri uriResult)
                 && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
             if (porUrl)
             {
@@ -673,7 +680,7 @@ namespace AnilistESP
                     }
 
                     var index = userName.LastIndexOf('/');
-                    usuario = userName.Substring(index + 1);
+                    usuario = userName[(index + 1)..];
                 }
                 else
                 {
@@ -690,6 +697,7 @@ namespace AnilistESP
                 "query($nombre : String){" +
                 "   User(search: $nombre){" +
                 "       siteUrl," +
+                "       id," +
                 "       name" +
                 "   }" +
                 "}",
@@ -700,16 +708,19 @@ namespace AnilistESP
             };
             try
             {
-                GraphQLHttpClient graphQLClient = new GraphQLHttpClient("https://graphql.anilist.co", new NewtonsoftJsonSerializer());
+                GraphQLHttpClient graphQLClient = new("https://graphql.anilist.co", new NewtonsoftJsonSerializer());
                 var data = await graphQLClient.SendQueryAsync<dynamic>(request);
                 if (data.Data != null)
                 {
                     string siteurl = data.Data.User.siteUrl;
                     string name = data.Data.User.name;
+                    string idString = data.Data.User.id;
+                    int idAnilist = int.Parse(idString);
                     bool confirmar = await GetSiNoInteractivity(ctx, ctx.Client.GetInteractivity(), "Confirma que quieres guardar este perfil", $"**Tu perfil es:**\n\n   **Nickname:** {name}\n   **Url:** {siteurl}");
                     if (confirmar)
                     {
                         await usuariosAnilist.SetAnilist(ctx, siteurl, ctx.Member);
+                        await usuariosAnilist.SetAnilistYumiko(idAnilist, ctx.Member.Id);
                         var msg = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
                         {
                             Color = DiscordColor.Green,
@@ -741,6 +752,100 @@ namespace AnilistESP
                 await Task.Delay(5000);
                 await BorrarMensaje(ctx, msg.Id);
             }
+        }
+
+        public DiscordEmbedBuilder LogInteractionCommand(dynamic e, string titulo, bool parms, bool errored)
+        {
+            var builder = new DiscordEmbedBuilder()
+            {
+                Title = titulo,
+                Footer = new EmbedFooter()
+                {
+                    Text = $"{e.Context.User.Username}#{e.Context.User.Discriminator}",
+                    IconUrl = e.Context.User.AvatarUrl
+                },
+                Author = new EmbedAuthor()
+                {
+                    IconUrl = e.Context.Guild.IconUrl,
+                    Name = $"{e.Context.Guild.Name}"
+                }
+            }.AddField("Id Servidor", $"{e.Context.Guild.Id}", true)
+            .AddField("Id Canal", $"{e.Context.Channel.Id}", true)
+            .AddField("Id Usuario", $"{e.Context.User.Id}", true)
+            .AddField("Canal", $"#{e.Context.Channel.Name}", false);
+
+            if (errored)
+            {
+                builder.WithDescription($"{e.Exception.Message}\n```{e.Exception.StackTrace}```");
+                builder.WithColor(DiscordColor.Red);
+            }
+            else
+            {
+                builder.WithColor(DiscordColor.Green);
+            }
+
+            if (parms)
+            {
+                string options = string.Empty;
+                var args = e.Context.Interaction.Data.Options;
+                if (args != null)
+                {
+                    foreach (var arg in args)
+                    {
+                        options += $"`{arg.Name}: {arg.Value}` ";
+                    }
+                }
+                builder.AddField("Comando", $"/{e.Context.CommandName} {options}", false);
+            }
+            else
+            {
+                builder.AddField("Comando", $"/{e.Context.CommandName}", false);
+            }
+
+            return builder;
+        }
+
+        public Bitmap MergeImage(string link1, string link2)
+        {
+            WebClient wc = new();
+            byte[] bytes = wc.DownloadData(link1);
+            MemoryStream ms = new(bytes);
+            Image ImageOne = Image.FromStream(ms);
+
+            byte[] bytes2 = wc.DownloadData(link2);
+            MemoryStream ms2 = new(bytes2);
+            Image ImageTwo = Image.FromStream(ms2);
+
+            int NewImageHeight = ImageOne.Height > ImageTwo.Height ? ImageOne.Height : ImageTwo.Height; //To calculate height of new image
+            int NewImageWidth = ImageOne.Width + ImageTwo.Width; // width of new image
+
+            Bitmap NewImageBmp = new(NewImageWidth, NewImageHeight, PixelFormat.Format32bppArgb); // you can change the bpp as per your requirment. Size of image directly propotionate to bpp of image
+
+            Graphics NewImageGrx = Graphics.FromImage(NewImageBmp);
+
+            NewImageGrx.DrawImageUnscaled(ImageOne, 0, 0); //draw first image at coordinate 0,0 
+            NewImageGrx.DrawImageUnscaled(ImageTwo, ImageOne.Width, 0); //draw second image at coordinate image1.width,0
+
+            // Para guardar la imagen en el sistema con un nombre aleatorio
+            //string CombineImage = Guid.NewGuid().ToString() + ".png";
+            //NewImageBmp.Save(CombineImage, System.Drawing.Imaging.ImageFormat.Png); // saving combined image. You can specify the ImageFormat as per your requirment. // works!
+
+            //disposing objects after use
+            ImageOne.Dispose();
+            ImageTwo.Dispose();
+
+            //NewImageBmp.Dispose();
+            NewImageGrx.Dispose();
+
+            return NewImageBmp;
+        }
+
+        public Stream ToStream(Bitmap image)
+        {
+            var stream = new MemoryStream();
+            image.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
+            stream.Position = 0;
+            return stream;
         }
     }
 }

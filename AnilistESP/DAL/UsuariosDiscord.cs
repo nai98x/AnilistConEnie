@@ -1,4 +1,5 @@
 ﻿using DSharpPlus.CommandsNext;
+using DSharpPlus.SlashCommands;
 using Google.Cloud.Firestore;
 using System;
 using System.Collections.Generic;
@@ -122,7 +123,7 @@ namespace AnilistESP
             }
         }
 
-        public async Task DeleteBirthday(CommandContext ctx)
+        public async Task DeleteBirthday(InteractionContext ctx)
         {
             FirestoreDb db = funciones.GetFirestoreClient();
             DocumentReference doc = db.Collection("Cumpleaños").Document($"{ctx.Guild.Id}").Collection("Usuarios").Document($"{ctx.User.Id}");

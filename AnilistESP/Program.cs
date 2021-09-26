@@ -4,7 +4,7 @@
     {
         static void Main()
         {
-            var anilistEspBot = new AniListESP_Bot();
+            var anilistEspBot = new AniListConEnie_Bot();
             anilistEspBot.RunAsync().GetAwaiter().GetResult();
         }
     }

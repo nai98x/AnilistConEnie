@@ -1,9 +1,11 @@
 ﻿using DSharpPlus;
 using DSharpPlus.Entities;
+using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AnilistESP
@@ -11,12 +13,13 @@ namespace AnilistESP
     public class Usuarios : ApplicationCommandModule
     {
         private readonly FuncionesAuxiliares funciones = new();
-        private readonly UsuariosDiscord usuariosService = new UsuariosDiscord();
+        private readonly UsuariosDiscord usuariosService = new();
 
         [SlashCommand("birthdays", "Muestra los cumpleaños de los usuarios")]
         public async Task Birthdays(InteractionContext ctx, [Option("Mes", "Si quieres ver los cumpleaños del mes o todos los registrados")] bool month)
         {
             await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+            await ctx.DeleteResponseAsync();
             List<UserCumple> lista = await usuariosService.GetBirthdays((long)ctx.Guild.Id, month);
             string desc = string.Empty;
             var usuarios = await usuariosService.GetBirthdaysHoy((long)ctx.Guild.Id);
@@ -29,9 +32,9 @@ namespace AnilistESP
                     {
                         var miembro = await ctx.Guild.GetMemberAsync((ulong)user.Id);
                         if (user.MostrarYear ?? false)
-                            desc += $"- **{miembro.DisplayName}** - Cumple **{DateTime.Now.Year - user.Birthday.Year} años**\n";
+                            desc += $"- **{miembro.Mention}** - Cumple **{DateTime.Now.Year - user.Birthday.Year} años**\n";
                         else
-                            desc += $"- **{miembro.DisplayName}**\n";
+                            desc += $"- **{miembro.Mention}**\n";
                     }
                     catch (Exception) { }
                 }
@@ -57,9 +60,9 @@ namespace AnilistESP
                     string dia = user.BirthdayActual.ToString("dddd", CultureInfo.CreateSpecificCulture("es"));
                     string mes = user.BirthdayActual.ToString("MMMM", CultureInfo.CreateSpecificCulture("es"));
                     if (user.MostrarYear ?? false)
-                        desc += $"- **{miembro.DisplayName}** - Cumple **{anios} años** el {dia} {user.BirthdayActual.Day} de {mes} del {user.BirthdayActual.Year}\n";
+                        desc += $"- **{miembro.Mention}** - Cumple **{anios} años** el {dia} {user.BirthdayActual.Day} de {mes} del {user.BirthdayActual.Year}\n";
                     else
-                        desc += $"- **{miembro.DisplayName}** - Cumple el {dia} {user.BirthdayActual.Day} de {mes} del {user.BirthdayActual.Year}\n";
+                        desc += $"- **{miembro.Mention}** - Cumple el {dia} {user.BirthdayActual.Day} de {mes} del {user.BirthdayActual.Year}\n";
                 }
                 catch (Exception) { }
             }
@@ -68,13 +71,16 @@ namespace AnilistESP
                 desc = "(No hay ningún usuario registrado que cumpla años este mes)\n";
             }
 
-            await ctx.EditResponseAsync(builder: new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+            var embed = new DiscordEmbedBuilder
             {
                 Footer = funciones.GetFooter(ctx),
                 Color = funciones.GetColor(),
-                Title = "Cumpleaños",
-                Description = desc
-            }));
+                Title = "Cumpleaños"
+            };
+
+            var interactivity = ctx.Client.GetInteractivity();
+            var pages = interactivity.GeneratePagesInEmbed(desc, DSharpPlus.Interactivity.Enums.SplitType.Line, embed);
+            _ = interactivity.SendPaginatedMessageAsync(ctx.Channel, ctx.User, pages, token: new CancellationTokenSource(TimeSpan.FromSeconds(300)).Token).ConfigureAwait(false);
         }
 
         [SlashCommand("setbirthday", "Agrega o modifica tu cumpleaños")]

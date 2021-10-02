@@ -35,6 +35,8 @@ namespace AnilistESP
 
         private bool Debug;
 
+        private List<DiscordChannel> CanalesCreados = new();
+
         public async Task RunAsync()
         {
             var json = string.Empty;
@@ -76,8 +78,9 @@ namespace AnilistESP
             Client.Resumed += Client_Resumed;
             Client.GuildMemberRemoved += Client_GuildMemberRemoved;
             Client.ComponentInteractionCreated += Client_ComponentInteractionCreated;
-            Client.MessageDeleted += Client_MessageDeleted;
-            Client.MessageUpdated += Client_MessageUpdated;
+            //Client.MessageDeleted += Client_MessageDeleted;
+            //Client.MessageUpdated += Client_MessageUpdated;
+            //Client.VoiceStateUpdated += Client_VoiceStateUpdated;
 
             Client.UseInteractivity(new InteractivityConfiguration());
 
@@ -126,19 +129,84 @@ namespace AnilistESP
 
             Commands.RegisterConverter(new MemberConverter());
 
-            await Client.ConnectAsync(new DiscordActivity { ActivityType = ActivityType.Playing, Name = prefix + "help" }, UserStatus.Online);
+            await Client.ConnectAsync(new DiscordActivity { ActivityType = ActivityType.Playing, Name = "/help" }, UserStatus.Online);
 
-            var LogGuild = await Client.GetGuildAsync(862408834693070898);
-            LogChannel = LogGuild.GetChannel(862410338577547324);
+            DiscordGuild LogGuild;
+            if (!Debug)
+            {
+                LogGuild = await Client.GetGuildAsync(862408834693070898);
+                LogChannel = LogGuild.GetChannel(862410338577547324);
+            }
+            else 
+            {
+                LogGuild = await Client.GetGuildAsync(853766076122005565);
+                LogChannel = LogGuild.GetChannel(891840653162582087);
+            }
 
             await Task.Delay(-1);
+        }
+
+        private Task Client_VoiceStateUpdated(DiscordClient sender, VoiceStateUpdateEventArgs e)
+        {
+            _ = Task.Run(async () =>
+            {
+                if (e.Guild.Id == 862408834693070898 || e.Guild.Id == 853766076122005565)
+                {
+                    if (e.Before != null && e.Before.Channel.Users.Count == 0) // Salir del canal
+                    {
+                        var canalOld = CanalesCreados.Find(x => x.Id == e.Before.Channel.Id);
+                        if (canalOld != null)
+                        {
+                            CanalesCreados.Remove(canalOld);
+                            await canalOld.DeleteAsync();
+                        }
+                    }
+                    else // Cambiar de canal o entrar desde 0
+                    {
+                        if ((e.Guild.Id == 862408834693070898 && e.After.Channel.Id == 866057800093007903) || // Prod 
+                            (e.Guild.Id == 853766076122005565 && e.After.Channel.Id == 891842909622644757)) // Test
+                        {
+                            DiscordMember miembro = (DiscordMember)e.User;
+                            DiscordChannel parent;
+                            if (!Debug)
+                            {
+                                parent = e.Guild.GetChannel(862408834693070900);
+                            }
+                            else
+                            {
+                                parent = e.Guild.GetChannel(853766076122005567);
+                            }
+
+                            string channelName = $"Canal de {miembro.DisplayName}";
+                            List<DiscordOverwriteBuilder> overwrites = new();
+
+                            DiscordOverwriteBuilder ow;
+
+                            ow = new DiscordOverwriteBuilder().Allow(Permissions.ManageChannels).For(miembro);
+                            overwrites.Add(ow);
+
+                            ow = new DiscordOverwriteBuilder().Allow(Permissions.AccessChannels).For(miembro);
+                            overwrites.Add(ow);
+
+                            ow = new DiscordOverwriteBuilder().Allow(Permissions.Speak).For(miembro);
+                            overwrites.Add(ow);
+
+                            var canal = await e.Guild.CreateVoiceChannelAsync(channelName, parent, overwrites: overwrites);
+                            CanalesCreados.Add(canal);
+
+                            await miembro.PlaceInAsync(canal);
+                        }
+                    }
+                }
+            });
+            return Task.CompletedTask;
         }
 
         private Task Client_MessageUpdated(DiscordClient sender, MessageUpdateEventArgs e)
         {
             _ = Task.Run(async () =>
             {
-                if (e.Guild.Id == 862408834693070898 && e.Message.Channel.Id != LogChannel.Id && !e.Message.Author.IsBot)
+                if ((e.Guild.Id == 862408834693070898 || e.Guild.Id == 853766076122005565) && e.Message.Channel.Id != LogChannel.Id && !e.Message.Author.IsBot)
                 {
                     await LogChannel.SendMessageAsync(new DiscordEmbedBuilder
                     {
@@ -162,7 +230,7 @@ namespace AnilistESP
         {
             _ = Task.Run(async () =>
             {
-                if(e.Guild.Id == 862408834693070898 && e.Message.Channel.Id != LogChannel.Id && !e.Message.Author.IsBot)
+                if((e.Guild.Id == 862408834693070898 || e.Guild.Id == 853766076122005565) && e.Message.Channel.Id != LogChannel.Id && !e.Message.Author.IsBot)
                 {
                     await LogChannel.SendMessageAsync(new DiscordEmbedBuilder
                     {

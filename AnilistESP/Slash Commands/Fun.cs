@@ -48,16 +48,16 @@ namespace AnilistESP
             await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
             if (ctx.Guild.Id == 862408834693070898 || ctx.Guild.Id == 853766076122005565)
             {
-                DiscordGuild discordOOC = await ctx.Client.GetGuildAsync(787033852258418768);
+                DiscordGuild discordOOC = await ctx.Client.GetGuildAsync(862408834693070898);
                 if (discordOOC == null)
                 {
-                    await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Error al obtener servidor **Añilist Extra**"));
+                    await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Error al obtener servidor **Añilist**"));
                     return;
                 }
-                DiscordChannel channel = discordOOC.GetChannel(787033979274264577);
+                DiscordChannel channel = discordOOC.GetChannel(886699448393146378);
                 if (channel == null)
                 {
-                    await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Error al obtener canal **#capturas** del servidor **Añilist Extra**"));
+                    await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Error al obtener canal **#capturas** del servidor **Añilist**"));
                     return;
                 }
                 IReadOnlyList<DiscordMessage> mensajes = await channel.GetMessagesAsync();

@@ -42,6 +42,36 @@ namespace AnilistESP
             }).AddFile("imagen.png", funciones.ToStream(imagen)));
         }
 
+        [SlashCommand("shiprandom", "Elijo una ship del servidor")]
+        public async Task Shiprandom(InteractionContext ctx)
+        {
+            await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+
+            Random rnd = new();
+            DiscordMember elegido1;
+            DiscordMember elegido2;
+
+            var miembros = ctx.Guild.Members.Where(x => x.Value.IsBot == false);
+            elegido1 = miembros.ElementAt(rnd.Next(miembros.Count() - 1)).Value;
+            do
+            {
+                elegido2 = miembros.ElementAt(rnd.Next(miembros.Count() - 1)).Value;
+            } while (elegido1.Id == elegido2.Id);
+
+            string avatar1 = elegido1.GetAvatarUrl(ImageFormat.Png, 128);
+            string avatar2 = elegido2.GetAvatarUrl(ImageFormat.Png, 128);
+            var imagen = funciones.MergeImage(avatar1, avatar2);
+
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+            {
+                Title = "Shippeo Random",
+                Description = $"Shippeo a {elegido1.Mention} con **{elegido2.Mention}** 💘",
+                ImageUrl = "attachment://imagen.png"
+            }).AddFile("imagen.png", funciones.ToStream(imagen)));
+
+            imagen.Dispose();
+        }
+
         [SlashCommand("ooc", "Out of Context")]
         public async Task OOC(InteractionContext ctx)
         {

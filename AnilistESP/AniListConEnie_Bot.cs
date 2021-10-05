@@ -10,6 +10,7 @@ using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
 using DSharpPlus.SlashCommands.EventArgs;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
@@ -78,6 +79,7 @@ namespace AnilistESP
             Client.Resumed += Client_Resumed;
             Client.GuildMemberRemoved += Client_GuildMemberRemoved;
             Client.ComponentInteractionCreated += Client_ComponentInteractionCreated;
+            Client.MessageCreated += Client_MessageCreated;
             //Client.MessageDeleted += Client_MessageDeleted;
             //Client.MessageUpdated += Client_MessageUpdated;
             //Client.VoiceStateUpdated += Client_VoiceStateUpdated;
@@ -101,6 +103,7 @@ namespace AnilistESP
                 ApplicationCommands.RegisterCommands<Usuarios>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Fun>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Roles>(pruebasBacklog);
+                ApplicationCommands.RegisterCommands<Administrativo>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Help>(pruebasBacklog);
             }
             else
@@ -109,6 +112,7 @@ namespace AnilistESP
                 ApplicationCommands.RegisterCommands<Usuarios>(guildProd);
                 ApplicationCommands.RegisterCommands<Fun>(guildProd);
                 ApplicationCommands.RegisterCommands<Roles>(guildProd);
+                ApplicationCommands.RegisterCommands<Administrativo>(guildProd);
                 ApplicationCommands.RegisterCommands<Help>(guildProd);
             }
 
@@ -144,6 +148,29 @@ namespace AnilistESP
             }
 
             await Task.Delay(-1);
+        }
+
+        private Task Client_MessageCreated(DiscordClient sender, MessageCreateEventArgs e)
+        {
+            ServiciosSingleton balancerNew = ServiciosSingleton.GetServiciosSingleton();
+
+            bool yepmode = balancerNew.YepMode;
+
+            _ = Task.Run(async () =>
+            {
+                if (e.Guild.Id == 862408834693070898 && e.Channel.Id == 862408834693070901)
+                {
+                    if (yepmode)
+                    {
+                        bool ok = DiscordEmoji.TryFromGuildEmote(sender, 867256754931892264, out DiscordEmoji emoji);
+                        if (ok)
+                        {
+                            await e.Message.CreateReactionAsync(emoji);
+                        }
+                    }
+                }
+            });
+            return Task.CompletedTask;
         }
 
         private Task Client_VoiceStateUpdated(DiscordClient sender, VoiceStateUpdateEventArgs e)

@@ -1,0 +1,811 @@
+﻿using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
+using Google.Cloud.Firestore;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace AnilistESP
+{
+    public class IntercambiosDAL
+    {
+        private readonly FuncionesAuxiliares funciones = new FuncionesAuxiliares();
+
+        public async Task<List<IntercambiosFirebase>> GetInscriptos(ulong guildId, string tipo)
+        {
+            List<IntercambiosFirebase> ret = new();
+
+            FirestoreDb db = funciones.GetFirestoreClient();
+            CollectionReference col = db.Collection("Intercambios").Document($"{guildId}").Collection("Tipo").Document($"{tipo}").Collection("Usuarios");
+            var snap = await col.GetSnapshotAsync();
+
+            if (snap.Count > 0)
+            {
+                foreach (var document in snap.Documents)
+                {
+                    ret.Add(document.ConvertTo<IntercambiosFirebase>());
+                }
+            }
+
+            return ret;
+        }
+
+        public async Task<List<IntercambiosFirebase>> GetInscriptosOrdenado(ulong guildId, string tipo)
+        {
+            List<IntercambiosFirebase> ret = new();
+
+            FirestoreDb db = funciones.GetFirestoreClient();
+            var query = db.Collection("Intercambios").Document($"{guildId}").Collection("Tipo").Document($"{tipo}").Collection("Usuarios").OrderBy("Orden");
+            var snap = await query.GetSnapshotAsync();
+
+            if (snap.Count > 0)
+            {
+                foreach (var document in snap.Documents)
+                {
+                    ret.Add(document.ConvertTo<IntercambiosFirebase>());
+                }
+            }
+
+            return ret;
+        }
+
+        public async Task<List<IntercambiosRecomendacionFirebase>> GetRecomendados(ulong guildId, string tipo)
+        {
+            List<IntercambiosRecomendacionFirebase> ret = new();
+
+            FirestoreDb db = funciones.GetFirestoreClient();
+            var query = db.Collection("Intercambios").Document($"{guildId}").Collection("Tipo").Document($"{tipo}").Collection("Recomendaciones");
+            var snap = await query.GetSnapshotAsync();
+
+            if (snap.Count > 0)
+            {
+                foreach (var document in snap.Documents)
+                {
+                    ret.Add(document.ConvertTo<IntercambiosRecomendacionFirebase>());
+                }
+            }
+
+            return ret;
+        }
+
+        public async Task<IntercambiosFirebase> GetUserRecomendarA(InteractionContext ctx, string tipo)
+        {
+            var lista = await GetInscriptosOrdenado(ctx.Guild.Id, tipo);
+            int index = 0;
+            foreach (var item in lista)
+            {
+                if (item.UserId == (long)ctx.User.Id)
+                {
+                    IntercambiosFirebase elegido;
+                    if (index == lista.Count - 1) // ultimo registro
+                    {
+                        elegido = lista[0];
+                    }
+                    else
+                    {
+                        elegido = lista[index + 1];
+                    }
+
+                    return elegido;
+                }
+                index++;
+            }
+            return null;
+        }
+
+        public async Task<IntercambiosFirebase> GetUserRecomendadoPor(InteractionContext ctx, string tipo)
+        {
+            var lista = await GetInscriptosOrdenado(ctx.Guild.Id, tipo);
+            int index = 0;
+            foreach (var item in lista)
+            {
+                if (item.UserId == (long)ctx.User.Id)
+                {
+                    IntercambiosFirebase elegido;
+                    if (index == 0) // primer registro
+                    {
+                        elegido = lista[lista.Count - 1];
+                    }
+                    else
+                    {
+                        elegido = lista[index - 1];
+                    }
+
+                    return elegido;
+                }
+                index++;
+            }
+            return null;
+        }
+
+        public async Task ActualizarListaInscriptos(DiscordGuild guild, IntercambiosSettingsFirebase settings, string tipo)
+        {
+            DiscordChannel canal = guild.GetChannel((ulong)settings.ChannelId);
+            DiscordMessage mensaje = await canal.GetMessageAsync((ulong)settings.MessageInscriptosId);
+            var embedMsg = mensaje.Embeds[0];
+            var lista = await GetInscriptos(guild.Id, tipo);
+            string desc = string.Empty;
+            foreach (var reg in lista)
+            {
+                var usuario = await guild.GetMemberAsync((ulong)reg.UserId);
+                desc += $"{usuario.Mention}\n" +
+                    $"**Preferencias:**\n" +
+                    $"  1: {reg.Pref1 ?? "(No asignada)"}\n" +
+                    $"  2: {reg.Pref2 ?? "(No asignada)"}\n" +
+                    $"**Ban:** {reg.Ban ?? "(No asignado)"}\n\n";
+            }
+            DiscordEmbedBuilder builder = new(embedMsg);
+            builder.Description = desc;
+            await mensaje.ModifyAsync(new DiscordMessageBuilder().AddEmbed(builder));
+        }
+
+        public async Task IniciarInscripcion(InteractionContext ctx, string tipo)
+        {
+            var embedInscripcion = new DiscordEmbedBuilder
+            {
+                Color = DiscordColor.Green,
+                Title = "Intercambios - Fase de inscripción",
+                Description = "Se ha iniciado la fase de inscripción de los intercambios.\n\n" +
+                        "Si quieres participar, utilizanda el comando `/intercambio inscribirse`"
+            };
+
+            FirestoreDb db = funciones.GetFirestoreClient();
+            DocumentReference doc = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}");
+            var snap = await doc.GetSnapshotAsync();
+            if (snap.Exists)
+            {
+                IntercambiosSettingsFirebase registro = snap.ConvertTo<IntercambiosSettingsFirebase>();
+
+                if (!registro.Inscripciones && !registro.Elecciones && !registro.Iniciado)
+                {
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedInscripcion));
+                    var msgInscriptos = await ctx.Channel.SendMessageAsync(new DiscordEmbedBuilder { 
+                        Color = DiscordColor.CornflowerBlue,
+                        Title = "Inscriptos al intercambio"
+                    });
+
+                    registro.Inscripciones = true;
+                    registro.Elecciones = false;
+                    registro.Iniciado = false;
+                    registro.ChannelId = (long)ctx.Channel.Id;
+                    registro.MessageInscriptosId = (long)msgInscriptos.Id;
+
+                    Dictionary<string, object> data = new()
+                    {
+                        { "Inscripciones", registro.Inscripciones },
+                        { "Elecciones", registro.Elecciones },
+                        { "Iniciado", registro.Iniciado },
+                        { "ChannelId", registro.ChannelId },
+                        { "MessageInscriptosId", registro.MessageInscriptosId }
+                    };
+                    await doc.UpdateAsync(data);
+                }
+                else
+                {
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                    {
+                        Color = DiscordColor.Red,
+                        Title = "Error",
+                        Description = "Ya hay un intercambio iniciado"
+                    }));
+                }
+            }
+            else
+            {
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedInscripcion));
+                var msgInscriptos = await ctx.Channel.SendMessageAsync(new DiscordEmbedBuilder
+                {
+                    Color = DiscordColor.CornflowerBlue,
+                    Title = "Inscriptos al intercambio"
+                });
+
+                Dictionary<string, object> data = new()
+                {
+                    { "Inscripciones", true },
+                    { "Elecciones", false },
+                    { "Iniciado", false },
+                    { "ChannelId", (long)ctx.Channel.Id },
+                    { "MessageInscriptosId", (long)msgInscriptos.Id }
+                };
+                await doc.CreateAsync(data);
+            }
+        }
+
+        public async Task IniciarElecciones(InteractionContext ctx, string tipo)
+        {
+            FirestoreDb db = funciones.GetFirestoreClient();
+            DocumentReference doc = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}");
+            var snap = await doc.GetSnapshotAsync();
+            if (snap.Exists)
+            {
+                IntercambiosSettingsFirebase registro = snap.ConvertTo<IntercambiosSettingsFirebase>();
+                if(registro.Inscripciones && !registro.Elecciones && !registro.Iniciado)
+                {
+                    var lista = await GetInscriptos(ctx.Guild.Id, tipo);
+                    lista.Shuffle();
+                    var orden = 1;
+                    foreach(var r in lista)
+                    {
+                        DocumentReference docUser = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}").Collection("Usuarios").Document($"{r.UserId}");
+                        var snapUser = await docUser.GetSnapshotAsync();
+                        if (snapUser.Exists)
+                        {
+                            IntercambiosFirebase reg = snapUser.ConvertTo<IntercambiosFirebase>();
+                            reg.Orden = orden;
+                            Dictionary<string, object> data = new()
+                            {
+                                { "UserId", reg.UserId },
+                                { "Pref1", reg.Pref1 },
+                                { "Pref2", reg.Pref2 },
+                                { "Ban", reg.Ban },
+                                { "Orden", reg.Orden }
+                            };
+                            await docUser.UpdateAsync(data); 
+                        }
+                        orden++;
+                    }
+
+                    Dictionary<string, object> dataSet = new()
+                    {
+                        { "Inscripciones", false },
+                        { "Elecciones", true },
+                        { "Iniciado", false },
+                        { "ChannelId", registro.ChannelId },
+                        { "MessageInscriptosId", registro.MessageInscriptosId }
+                    };
+                    await doc.UpdateAsync(dataSet);
+
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                    {
+                        Color = DiscordColor.Green,
+                        Title = "Intercambios - Fase de elección",
+                        Description = $"Debes utilizar el comando `/intercambio reveal` para ver a quien te tocó recomendar.\n\n Una vez tengas un {tipo.ToLower()} para recomendar utiliza el comando `/intercambio recomendar`"
+                    }));
+                }
+                else
+                {
+                    if (registro.Elecciones)
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Red,
+                            Title = "Error",
+                            Description = "El intercambio ya está en fase de elecciones"
+                        }));
+                    }
+                    if (registro.Iniciado)
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Red,
+                            Title = "Error",
+                            Description = "El intercambio ya está iniciado"
+                        }));
+                    }
+                }
+            }
+            else
+            {
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                {
+                    Color = DiscordColor.Red,
+                    Title = "Error",
+                    Description = "No existe el intercambio"
+                }));
+            }
+        }
+
+        public async Task InscribirseIntercambio(InteractionContext ctx, string tipo, string pref1, string pref2, string ban)
+        {
+            FirestoreDb db = funciones.GetFirestoreClient();
+            DocumentReference doc = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}");
+            var snap = await doc.GetSnapshotAsync();
+            if (snap.Exists)
+            {
+                IntercambiosSettingsFirebase registro = snap.ConvertTo<IntercambiosSettingsFirebase>();
+                if(registro.Inscripciones && !registro.Elecciones && !registro.Iniciado)
+                {
+                    DocumentReference docUser = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}").Collection("Usuarios").Document($"{ctx.User.Id}");
+                    var snapUser = await docUser.GetSnapshotAsync();
+                    int orden = 0;
+                    if (snapUser.Exists)
+                    {
+                        IntercambiosFirebase reg = snapUser.ConvertTo<IntercambiosFirebase>();
+
+                        reg.UserId = (long)ctx.User.Id;
+                        reg.Pref1 = pref1;
+                        reg.Pref2 = pref2;
+                        reg.Ban = ban;
+                        reg.Orden = orden;
+
+                        Dictionary<string, object> data = new()
+                        {
+                            { "UserId", reg.UserId },
+                            { "Pref1", reg.Pref1 },
+                            { "Pref2", reg.Pref2 },
+                            { "Ban", reg.Ban },
+                            { "Orden", reg.Orden }
+                        };
+                        await docUser.UpdateAsync(data);
+
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Green,
+                            Title = "Inscripcion",
+                            Description = "Tu inscripción ha sido actualizada con éxito"
+                        }));
+                    }
+                    else
+                    {
+                        Dictionary<string, object> data = new()
+                        {
+                            { "UserId", (long)ctx.User.Id },
+                            { "Pref1", pref1 },
+                            { "Pref2", pref2 },
+                            { "Ban", ban },
+                            { "Orden", orden }
+                        };
+                        await docUser.CreateAsync(data);
+
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Green,
+                            Title = "Inscripcion",
+                            Description = "Tu inscripción ha sido registrada con éxito"
+                        }));
+                    }
+
+                    await ActualizarListaInscriptos(ctx.Guild, registro, tipo);
+                }
+                else
+                {
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                    {
+                        Color = DiscordColor.Red,
+                        Title = "Error",
+                        Description = "El intercambio no está en su fase de inscripción"
+                    }));
+                }
+            }
+            else
+            {
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                {
+                    Color = DiscordColor.Red,
+                    Title = "Error",
+                    Description = "El intercambio no se ha creado"
+                }));
+            }
+        }
+
+        public async Task DesinscribirseIntercambio(InteractionContext ctx, string tipo)
+        {
+            FirestoreDb db = funciones.GetFirestoreClient();
+            DocumentReference doc = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}");
+            var snap = await doc.GetSnapshotAsync();
+            if (snap.Exists)
+            {
+                IntercambiosSettingsFirebase registro = snap.ConvertTo<IntercambiosSettingsFirebase>();
+                if (registro.Inscripciones && !registro.Elecciones && !registro.Iniciado)
+                {
+                    DocumentReference docUser = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}").Collection("Usuarios").Document($"{ctx.User.Id}");
+                    var snapUser = await docUser.GetSnapshotAsync();
+                    if (snapUser.Exists)
+                    {
+                        await docUser.DeleteAsync();
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Green,
+                            Title = "Inscripcion",
+                            Description = "Tu inscripción ha sido eliminada con éxito"
+                        }));
+
+                        await ActualizarListaInscriptos(ctx.Guild, registro, tipo);
+                    }
+                    else
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Red,
+                            Title = "Error",
+                            Description = "No estas inscripto al intercambio"
+                        }));
+                    }
+                }
+                else
+                {
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                    {
+                        Color = DiscordColor.Red,
+                        Title = "Error",
+                        Description = "El intercambio no está en su fase de inscripción"
+                    }));
+                }
+            }
+            else
+            {
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                {
+                    Color = DiscordColor.Red,
+                    Title = "Error",
+                    Description = "El intercambio no se ha creado"
+                }));
+            }
+        }
+
+        public async Task RevealIntercambio(InteractionContext ctx, string tipo)
+        {
+            FirestoreDb db = funciones.GetFirestoreClient();
+            DocumentReference doc = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}");
+            var snap = await doc.GetSnapshotAsync();
+            if (snap.Exists)
+            {
+                IntercambiosSettingsFirebase registro = snap.ConvertTo<IntercambiosSettingsFirebase>();
+                if (!registro.Inscripciones && registro.Elecciones && !registro.Iniciado)
+                {
+                    DocumentReference docUser = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}").Collection("Usuarios").Document($"{ctx.User.Id}");
+                    var snapUser = await docUser.GetSnapshotAsync();
+                    if (snapUser.Exists)
+                    {
+                        var lista = await GetInscriptosOrdenado(ctx.Guild.Id, tipo);
+                        int index = 0;
+                        foreach (var item in lista)
+                        {
+                            if (item.UserId == (long)ctx.User.Id)
+                            {
+                                IntercambiosFirebase elegido = await GetUserRecomendarA(ctx, tipo);
+                                
+                                var miembro = await ctx.Client.GetUserAsync((ulong)elegido.UserId);
+
+                                string desc = $"Tienes que recomendarle un {tipo.ToLower()} a {miembro.Mention}\n\n" +
+                                                $"**Preferencias:**\n" +
+                                                $"  1: {elegido.Pref1 ?? "(No asignada)"}\n" +
+                                                $"  2: {elegido.Pref2 ?? "(No asignada)"}\n" +
+                                                $"**Ban:** {elegido.Ban ?? "(No asignado)"}\n";
+
+                                var servicio = new UsuariosAnilist();
+                                var user = await servicio.GetPerfil(ctx.Guild.Id, (ulong)elegido.UserId);
+                                if(user!= null)
+                                {
+                                    desc += $"\n**Anilist:** {user.AnilistURL}";
+                                }
+
+                                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                                {
+                                    Color = DiscordColor.Green,
+                                    Title = "Intercambio",
+                                    Description = desc
+                                }));
+
+                                return;
+                            }
+                            index++;
+                        }
+                    }
+                    else
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Red,
+                            Title = "Error",
+                            Description = "No estas inscripto al intercambio"
+                        }));
+                    }
+                }
+                else
+                {
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                    {
+                        Color = DiscordColor.Red,
+                        Title = "Error",
+                        Description = "El intercambio no está en su fase de elección"
+                    }));
+                }
+            }
+            else
+            {
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                {
+                    Color = DiscordColor.Red,
+                    Title = "Error",
+                    Description = "El intercambio no se ha creado"
+                }));
+            }
+        }
+
+        public async Task RecomendarIntercambio(InteractionContext ctx, string tipo, string media)
+        {
+            FirestoreDb db = funciones.GetFirestoreClient();
+            DocumentReference doc = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}");
+            var snap = await doc.GetSnapshotAsync();
+            if (snap.Exists)
+            {
+                IntercambiosSettingsFirebase registro = snap.ConvertTo<IntercambiosSettingsFirebase>();
+                if (!registro.Inscripciones && registro.Elecciones && !registro.Iniciado)
+                {
+                    DocumentReference docUser = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}").Collection("Usuarios").Document($"{ctx.User.Id}");
+                    var snapUser = await docUser.GetSnapshotAsync();
+                    if (snapUser.Exists)
+                    {
+                        FuncionesAnilist _funcionesAnilist = new();
+                        var result = await _funcionesAnilist.GetAniListMedia(ctx, media, tipo.ToLower());
+                        if (result.Ok == true)
+                        {
+                            IntercambiosFirebase elegido = await GetUserRecomendarA(ctx, tipo);
+                            DocumentReference docNuevo = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}").Collection("Recomendaciones").Document($"{elegido.UserId}");
+                            Dictionary<string, object> dataN = new()
+                            {
+                                { "UserId", elegido.UserId },
+                                { "UserIdRecomendadoPor", ctx.User.Id },
+                                { "AnimeRecomendadoName", result.TituloRomaji },
+                                { "AnimeRecomendadoURL", result.UrlAnilist }
+                            };
+                            var snapNuevo = await docNuevo.GetSnapshotAsync();
+                            if (snapNuevo.Exists)
+                            {
+                                await docNuevo.UpdateAsync(dataN);
+                            }
+                            else
+                            {
+                                await docNuevo.CreateAsync(dataN);
+                            }
+
+                            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
+                            {
+                                Color = DiscordColor.Green,
+                                Title = "Recomendacion",
+                                Description = "Haz ingresado tu recomendación correctamente"
+                            }));
+                        }
+                        else
+                        {
+                            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(result.MsgError));
+                        }
+
+                    }
+                    else
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Red,
+                            Title = "Error",
+                            Description = "No estas inscripto al intercambio"
+                        }));
+                    }
+                }
+                else
+                {
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                    {
+                        Color = DiscordColor.Red,
+                        Title = "Error",
+                        Description = "El intercambio no está en su fase de elección"
+                    }));
+                }
+            }
+            else
+            {
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                {
+                    Color = DiscordColor.Red,
+                    Title = "Error",
+                    Description = "El intercambio no se ha creado"
+                }));
+            }
+        }
+
+        public async Task IniciarIntercambio(InteractionContext ctx, string tipo)
+        {
+            FirestoreDb db = funciones.GetFirestoreClient();
+            DocumentReference doc = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}");
+            var snap = await doc.GetSnapshotAsync();
+            if (snap.Exists)
+            {
+                IntercambiosSettingsFirebase registro = snap.ConvertTo<IntercambiosSettingsFirebase>();
+                if (!registro.Inscripciones && registro.Elecciones && !registro.Iniciado)
+                {
+                    var inscriptos = await GetInscriptosOrdenado(ctx.Guild.Id, tipo);
+                    var recomendados = await GetRecomendados(ctx.Guild.Id, tipo);
+                    List<DiscordUser> noRecomendados = new();
+
+                    foreach(var insc in inscriptos)
+                    {
+                        if(recomendados.Find(x => x.UserIdRecomendadoPor == insc.UserId) == null)
+                        {
+                            noRecomendados.Add(await ctx.Client.GetUserAsync((ulong)insc.UserId));
+                        }
+                    }
+
+                    if(noRecomendados.Count > 0)
+                    {
+                        string usuarios = string.Empty;
+                        foreach(var usr in noRecomendados)
+                        {
+                            usuarios += $"{usr.Mention}\n";
+                        }
+
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Red,
+                            Title = "Error",
+                            Description = $"**Hay usuarios que no han recomendado su {tipo.ToLower()}**\n\n**Estos son:**\n{usuarios}"
+                        }));
+                    }
+                    else
+                    {
+                        Dictionary<string, object> data = new()
+                        {
+                            { "Inscripciones", false },
+                            { "Elecciones", false },
+                            { "Iniciado", true },
+                            { "ChannelId", registro.ChannelId },
+                            { "MessageInscriptosId", registro.MessageInscriptosId }
+                        };
+                        await doc.UpdateAsync(data);
+
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Green,
+                            Title = "Intercambios - Iniciado",
+                            Description = "El intercambio se ha iniciado correctamente"
+                        }));
+                    }
+                }
+                else
+                {
+                    if (registro.Inscripciones)
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Red,
+                            Title = "Error",
+                            Description = "No se puede hacer esto en la fase de inscripciones"
+                        }));
+                    }
+                    if (registro.Iniciado)
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Red,
+                            Title = "Error",
+                            Description = "El intercambio ya está iniciado"
+                        }));
+                    }
+                }
+            }
+            else
+            {
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                {
+                    Color = DiscordColor.Red,
+                    Title = "Error",
+                    Description = "No existe el intercambio"
+                }));
+            }
+        }
+
+        public async Task GetRecomendado(InteractionContext ctx, string tipo)
+        {
+            FirestoreDb db = funciones.GetFirestoreClient();
+            DocumentReference doc = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}");
+            var snap = await doc.GetSnapshotAsync();
+            if (snap.Exists)
+            {
+                IntercambiosSettingsFirebase registro = snap.ConvertTo<IntercambiosSettingsFirebase>();
+                if (registro.Elecciones || registro.Iniciado)
+                {
+                    DocumentReference docNuevo = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}").Collection("Recomendaciones").Document($"{ctx.User.Id}");
+                    var snapNuevo = await docNuevo.GetSnapshotAsync();
+                    if (snapNuevo.Exists)
+                    {
+                        IntercambiosRecomendacionFirebase reg = snapNuevo.ConvertTo<IntercambiosRecomendacionFirebase>();
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Green,
+                            Title = $"{tipo} recomendado",
+                            Description = $"Nombre: {reg.AnimeRecomendadoName}\nURL: {reg.AnimeRecomendadoURL}"
+                        }));
+                    }
+                    else
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Red,
+                            Title = "Error",
+                            Description = $"Aún no te han recomendado ningún {tipo.ToLower()}"
+                        }));
+                    }
+                }
+                else
+                {
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                    {
+                        Color = DiscordColor.Red,
+                        Title = "Error",
+                        Description = "Debes esperar a la fase de selección para ver tu anime"
+                    }));
+                }
+            }
+            else
+            {
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                {
+                    Color = DiscordColor.Red,
+                    Title = "Error",
+                    Description = "No existe el intercambio"
+                }));
+            }
+        }
+
+        public async Task TerminarIntercambio(InteractionContext ctx, string tipo)
+        {
+            FirestoreDb db = funciones.GetFirestoreClient();
+            DocumentReference doc = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}");
+            var snap = await doc.GetSnapshotAsync();
+            if (snap.Exists)
+            {
+                IntercambiosSettingsFirebase registro = snap.ConvertTo<IntercambiosSettingsFirebase>();
+                if (!registro.Inscripciones && !registro.Elecciones && registro.Iniciado)
+                {
+                    var inscripcionesRef = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}").Collection("Recomendaciones");
+                    IAsyncEnumerable<DocumentReference> subcollections = inscripcionesRef.ListDocumentsAsync();
+                    IAsyncEnumerator<DocumentReference> subcollectionsEnumerator = subcollections.GetAsyncEnumerator(default);
+                    while (await subcollectionsEnumerator.MoveNextAsync())
+                    {
+                        DocumentReference subcollectionRef = subcollectionsEnumerator.Current;
+                        DocumentReference doc1 = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}").Collection("Recomendaciones").Document(subcollectionRef.Id);
+                        var snap1 = await doc1.GetSnapshotAsync();
+                        if (snap1.Exists)
+                            await doc1.DeleteAsync();
+                    }
+
+                    var recomendacionesRef = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}").Collection("Recomendaciones");
+                    IAsyncEnumerable<DocumentReference> subcollections1 = recomendacionesRef.ListDocumentsAsync();
+                    IAsyncEnumerator<DocumentReference> subcollectionsEnumerator1 = subcollections1.GetAsyncEnumerator(default);
+                    while (await subcollectionsEnumerator1.MoveNextAsync())
+                    {
+                        DocumentReference subcollectionRef = subcollectionsEnumerator1.Current;
+                        DocumentReference doc2 = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}").Collection("Usuarios").Document(subcollectionRef.Id);
+                        var snap2 = await doc2.GetSnapshotAsync();
+                        if (snap2.Exists)
+                            await doc2.DeleteAsync();
+                    }
+
+                    Dictionary<string, object> data = new()
+                    {
+                        { "Inscripciones", false },
+                        { "Elecciones", false },
+                        { "Iniciado", false },
+                        { "ChannelId", null },
+                        { "MessageInscriptosId", null }
+                    };
+                    await doc.UpdateAsync(data);
+
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                    {
+                        Color = DiscordColor.Green,
+                        Title = "Intercambios - Finalizado",
+                        Description = "El intercambio ha finalizado correctamente"
+                    }));
+                }
+                else
+                {
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                    {
+                        Color = DiscordColor.Red,
+                        Title = "Error",
+                        Description = "Solo puedes terminar el intercambio cuando esté iniciado"
+                    }));
+                }
+            }
+            else
+            {
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                {
+                    Color = DiscordColor.Red,
+                    Title = "Error",
+                    Description = "No existe el intercambio"
+                }));
+            }
+        }
+    }
+}

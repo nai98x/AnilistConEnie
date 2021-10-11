@@ -103,6 +103,7 @@ namespace AnilistESP
                 ApplicationCommands.RegisterCommands<Usuarios>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Fun>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Roles>(pruebasBacklog);
+                ApplicationCommands.RegisterCommands<Intercambios>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Administrativo>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Help>(pruebasBacklog);
             }
@@ -112,6 +113,7 @@ namespace AnilistESP
                 ApplicationCommands.RegisterCommands<Usuarios>(guildProd);
                 ApplicationCommands.RegisterCommands<Fun>(guildProd);
                 ApplicationCommands.RegisterCommands<Roles>(guildProd);
+                ApplicationCommands.RegisterCommands<Intercambios>(guildProd);
                 ApplicationCommands.RegisterCommands<Administrativo>(guildProd);
                 ApplicationCommands.RegisterCommands<Help>(guildProd);
             }
@@ -152,9 +154,9 @@ namespace AnilistESP
 
         private Task Client_MessageCreated(DiscordClient sender, MessageCreateEventArgs e)
         {
-            ServiciosSingleton balancerNew = ServiciosSingleton.GetServiciosSingleton();
+            ServiciosSingleton service = ServiciosSingleton.GetServiciosSingleton();
 
-            bool yepmode = balancerNew.YepMode;
+            bool yepmode = service.YepMode;
 
             _ = Task.Run(async () =>
             {
@@ -162,8 +164,8 @@ namespace AnilistESP
                 {
                     if (yepmode)
                     {
-                        bool ok = DiscordEmoji.TryFromGuildEmote(sender, 867256754931892264, out DiscordEmoji emoji);
-                        if (ok)
+                        DiscordEmoji emoji = service.Emote;
+                        if (emoji != null)
                         {
                             await e.Message.CreateReactionAsync(emoji);
                         }

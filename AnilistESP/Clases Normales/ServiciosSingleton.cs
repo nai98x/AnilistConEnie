@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DSharpPlus.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,6 +12,7 @@ namespace AnilistESP
     {
         private static ServiciosSingleton _instance;
         private bool _yepMode;
+        private DiscordEmoji _emoji;
 
         private static object syncLock = new object();
 
@@ -43,15 +45,33 @@ namespace AnilistESP
             }
         }
 
-        public void CambiarYepMode()
+        public DiscordEmoji Emote
+        {
+            get
+            {
+                return _emoji;
+            }
+        }
+
+        public void ActivarYepmpde(DiscordEmoji emojiNuevo)
+        {
+            if (!_yepMode)
+            {
+                _yepMode = true;
+                _emoji = emojiNuevo;
+            }
+            else
+            {
+                _emoji = emojiNuevo;
+            }
+        }
+
+        public void DesactivarYepMode()
         {
             if (_yepMode)
             {
                 _yepMode = false;
-            }
-            else
-            {
-                _yepMode = true;
+                _emoji = null;
             }
         }
 

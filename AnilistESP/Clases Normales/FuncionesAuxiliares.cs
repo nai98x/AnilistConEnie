@@ -28,7 +28,7 @@ namespace AnilistESP
     public class FuncionesAuxiliares
     {
         private readonly UsuariosAnilist usuariosAnilist = new();
-
+        private static Random rng = new Random();
         public FirestoreDb GetFirestoreClient()
         {
             string path = AppDomain.CurrentDomain.BaseDirectory + @"firebase.json";
@@ -70,6 +70,16 @@ namespace AnilistESP
                 }
                 catch (Exception) { }
             }
+        }
+
+        public DiscordEmoji ToEmoji(string text)
+        {
+            text = text.Trim();
+            var match = Regex.Match(text, @"^<?a?:?([a-zA-Z0-9_]+):([0-9]+)>?$");
+            if (!match.Success) return DiscordEmoji.TryFromUnicode(text, out var emoji) ? emoji : null;
+            string json = $"{{\"name\":\"{match.Groups[1].Value}\", \"id\":{match.Groups[2].Value}," +
+                $"\"animated\":{text.StartsWith("<a:").ToString().ToLower()}, \"require_colons\":true, \"available\":true}}";
+            return JsonConvert.DeserializeObject<DiscordEmoji>(json);
         }
 
         public int GetNumeroRandom(int min, int max)
@@ -846,6 +856,83 @@ namespace AnilistESP
             image.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
             stream.Position = 0;
             return stream;
+        }
+
+        public string LimpiarTexto(string texto)
+        {
+            if (texto != null)
+            {
+                texto = texto.Replace("<br>", "");
+                texto = texto.Replace("<Br>", "");
+                texto = texto.Replace("<bR>", "");
+                texto = texto.Replace("<BR>", "");
+                texto = texto.Replace("<i>", "*");
+                texto = texto.Replace("<I>", "*");
+                texto = texto.Replace("</i>", "*");
+                texto = texto.Replace("</I>", "*");
+                texto = texto.Replace("~!", "||");
+                texto = texto.Replace("!~", "||");
+                texto = texto.Replace("__", "**");
+                texto = texto.Replace("<b>", "**");
+                texto = texto.Replace("<B>", "**");
+                texto = texto.Replace("</b>", "**");
+                texto = texto.Replace("</B>", "**");
+            }
+            else
+            {
+                texto = string.Empty;
+            }
+            return texto;
+        }
+
+        public async Task<int> GetElegido(InteractionContext ctx, List<string> opciones)
+        {
+            int cantidadOpciones = opciones.Count;
+            if (cantidadOpciones == 1)
+                return 1;
+            else
+            {
+                var interactivity = ctx.Client.GetInteractivity();
+
+                List<DiscordComponent> componentes = new();
+                int i = 0;
+                foreach (var opc in opciones)
+                {
+                    if (i > 5)
+                    {
+                        break;
+                    }
+                    var aux = NormalizarBoton(opc);
+                    i++;
+                    DiscordButtonComponent button = new(ButtonStyle.Primary, $"{i}", $"{aux}");
+                    componentes.Add(button);
+                }
+
+                var embed = new DiscordEmbedBuilder
+                {
+                    Color = GetColor(),
+                    Title = "Elije la opcion",
+                };
+                DiscordMessage elegirMsg = await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddComponents(componentes).AddEmbed(embed));
+
+                var msgElegirInter = await interactivity.WaitForButtonAsync(elegirMsg, ctx.User, TimeSpan.FromSeconds(Convert.ToDouble(ConfigurationManager.AppSettings["TimeoutGeneral"])));
+
+                if (!msgElegirInter.TimedOut)
+                {
+                    var resultElegir = msgElegirInter.Result;
+                    return int.Parse(resultElegir.Id);
+                }
+            }
+            return -1;
+        }
+
+        public string NormalizarBoton(string s)
+        {
+            if (s.Length > 80)
+            {
+                return s.Remove(76) + " ...";
+            }
+            return s;
         }
     }
 }

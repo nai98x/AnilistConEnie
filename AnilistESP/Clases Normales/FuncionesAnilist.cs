@@ -1,0 +1,510 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
+using GraphQL;
+using GraphQL.Client.Http;
+using GraphQL.Client.Serializer.Newtonsoft;
+
+namespace AnilistESP
+{
+    public class FuncionesAnilist
+    {
+        private readonly FuncionesAuxiliares _funciones = new();
+        private readonly GraphQLHttpClient _graphQlClient = new("https://graphql.anilist.co", new NewtonsoftJsonSerializer());
+
+        public async Task<Media> GetAniListMedia(InteractionContext ctx, string busqueda, string tipo)
+        {
+            string query = "query($busqueda : String){" +
+            "   Page(perPage:5){" +
+            "       media(type: " + tipo.ToUpper() + ", search: $busqueda){" +
+            "           id," +
+            "           title{" +
+            "               romaji" +
+            "           }," +
+            "           coverImage{" +
+            "               large" +
+            "           }," +
+            "           siteUrl," +
+            "           description," +
+            "           format," +
+            "           chapters" +
+            "           episodes" +
+            "           status," +
+            "           meanScore," +
+            "           genres," +
+            "           startDate{" +
+            "               year," +
+            "               month," +
+            "               day" +
+            "           }," +
+            "           endDate{" +
+            "               year," +
+            "               month," +
+            "               day" +
+            "           }," +
+            "           genres," +
+            "           tags{" +
+            "               name," +
+            "               isMediaSpoiler" +
+            "           }," +
+            "           synonyms," +
+            "           studios{" +
+            "               nodes{" +
+            "                   name," +
+            "                   siteUrl" +
+            "               }" +
+            "           }," +
+            "           externalLinks{" +
+            "               site," +
+            "               url" +
+            "           }," +
+            "           isAdult" +
+            "       }" +
+            "   }" +
+            "}";
+
+            var request = new GraphQLRequest
+            {
+                Query = query,
+                Variables = new
+                {
+                    busqueda
+                }
+            };
+
+            try
+            {
+                var data = await _graphQlClient.SendQueryAsync<dynamic>(request);
+                if (data.Data != null)
+                {
+                    if(data.Data.Page.media != null && data.Data.Page.media.Count > 0)
+                    {
+                        int cont = 0;
+                        List<string> opc = new();
+                        foreach (var animeP in data.Data.Page.media)
+                        {
+                            cont++;
+                            string opcStr = animeP.title.romaji;
+                            opc.Add(opcStr);
+                        }
+                        var elegido = await _funciones.GetElegido(ctx, opc);
+                        if (elegido > 0)
+                        {
+                            var datos = data.Data.Page.media[elegido - 1];
+                            return DecodeMedia(datos);
+                        }
+                        else
+                        {
+                            return new()
+                            {
+                                Ok = false,
+                                MsgError = $"Tiempo agotado esperando la opción"
+                            };
+                        }
+                    }
+                }
+                return new()
+                {
+                    Ok = false,
+                    MsgError = $"No se encontró el {tipo} `{busqueda}`"
+                };
+            }
+            catch (Exception e)
+            {
+                var context = _funciones.GetContext(ctx);
+                await _funciones.GrabarLogError(context, $"Error en query en FuncionesAnilist - GetAnilistMedia, utilizado: {tipo}\nError: {e.Message}");
+                return new()
+                {
+                    Ok = false,
+                    MsgError = $"{e.Message}"
+                };
+            }
+        }
+
+        public async Task<Media> GetAniListCharacter(InteractionContext ctx, string busqueda, string tipo)
+        {
+            var request = new GraphQLRequest
+            {
+                Query =
+                "query($nombre : String){" +
+                "   Page(perPage:5){" +
+                "       characters(search: $nombre){" +
+                "           name{" +
+                "               full" +
+                "           }," +
+                "           image{" +
+                "               large" +
+                "           }," +
+                "           siteUrl," +
+                "           description," +
+                "           animes: media(type: ANIME){" +
+                "               nodes{" +
+                "                   title{" +
+                "                       romaji" +
+                "                   }," +
+                "                   siteUrl" +
+                "               }" +
+                "           }" +
+                "           mangas: media(type: MANGA){" +
+                "               nodes{" +
+                "                   title{" +
+                "                       romaji" +
+                "                   }," +
+                "                   siteUrl" +
+                "               }" +
+                "           }" +
+                "       }" +
+                "   }" +
+                "}",
+                Variables = new
+                {
+                    nombre = busqueda
+                }
+            };
+
+            try
+            {
+                var data = await _graphQlClient.SendQueryAsync<dynamic>(request);
+                if (data.Data != null && data.Data.Page.media != null)
+                {
+                    int cont = 0;
+                    List<string> opc = new();
+                    foreach (var animeP in data.Data.Page.media)
+                    {
+                        cont++;
+                        string opcStr = animeP.title.romaji;
+                        opc.Add(opcStr);
+                    }
+                    var elegido = await _funciones.GetElegido(ctx, opc);
+                    if (elegido > 0)
+                    {
+                        var datos = data.Data.Page.characters[elegido - 1];
+                        return DecodeCharacter(datos);
+                    }
+                    else
+                    {
+                        return new()
+                        {
+                            Ok = false,
+                            MsgError = $"Tiempo agotado esperando la opción"
+                        };
+                    }
+                }
+                else
+                {
+                    return new()
+                    {
+                        Ok = false,
+                        MsgError = $"No se encontró el {tipo} `{busqueda}`"
+                    };
+                }
+            }
+            catch (Exception e)
+            {
+                var context = _funciones.GetContext(ctx);
+                await _funciones.GrabarLogError(context, $"Error en query en FuncionesAnilist - GetAnilistMedia, utilizado: {tipo}\nError: {e.Message}");
+                return new()
+                {
+                    Ok = false,
+                    MsgError = $"{e.Message}"
+                };
+            }
+        }
+
+        public Media DecodeMedia(dynamic datos)
+        {
+            if(datos != null)
+            {
+                string idStr = datos.id;
+                string isadult = datos.isAdult;
+
+                Media media = new();
+
+                media.Ok = true;
+                media.Id = int.Parse(idStr);
+                media.IsAdult = bool.Parse(isadult);
+                media.Descripcion = datos.description;
+                media.Descripcion = _funciones.NormalizarDescription(_funciones.LimpiarTexto(media.Descripcion));
+                if (media.Descripcion == "")
+                    media.Descripcion = "(Sin descripción)";
+                media.Estado = datos.status;
+                media.Episodios = datos.episodes;
+                media.Chapters = datos.chapters;
+                media.Formato = datos.format;
+                media.Score = $"{datos.meanScore}/100";
+                media.Generos = string.Empty;
+                foreach (var genero in datos.genres)
+                {
+                    media.Generos += genero;
+                    media.Generos += ", ";
+                }
+                if (media.Generos.Length >= 2)
+                    media.Generos = media.Generos.Remove(media.Generos.Length - 2);
+                media.Tags = string.Empty;
+                foreach (var tag in datos.tags)
+                {
+                    if (tag.isMediaSpoiler == "false")
+                    {
+                        media.Tags += tag.name;
+                    }
+                    else
+                    {
+                        media.Tags += $"||{tag.name}||";
+                    }
+                    media.Tags += ", ";
+                }
+                if (media.Tags.Length >= 2)
+                    media.Tags = media.Tags.Remove(media.Tags.Length - 2);
+
+                media.Titulos = new();
+                foreach (string title in datos.synonyms)
+                {
+                    media.Titulos.Add(title);
+                }
+
+                media.Estudios = string.Empty;
+                var nodos = datos.studios.nodes;
+                if (nodos.HasValues)
+                {
+                    foreach (var studio in datos.studios.nodes)
+                    {
+                        media.Estudios += $"[{studio.name}]({studio.siteUrl}), ";
+                    }
+                }
+                if (media.Estudios.Length >= 2)
+                    media.Estudios = media.Estudios.Remove(media.Estudios.Length - 2);
+                media.LinksExternos = string.Empty;
+                foreach (var external in datos.externalLinks)
+                {
+                    media.LinksExternos += $"[{external.site}]({external.url}), ";
+                }
+                if (media.LinksExternos.Length >= 2)
+                    media.LinksExternos = media.LinksExternos.Remove(media.LinksExternos.Length - 2);
+                if (datos.startDate.day != null)
+                {
+                    if (datos.endDate.day != null)
+                        media.Fechas = $"{datos.startDate.day}/{datos.startDate.month}/{datos.startDate.year} al {datos.endDate.day}/{datos.endDate.month}/{datos.endDate.year}";
+                    else
+                        media.Fechas = $"En emisión desde {datos.startDate.day}/{datos.startDate.month}/{datos.startDate.year}";
+                }
+                else
+                {
+                    media.Fechas = $"Este anime no tiene fecha de emisión";
+                }
+                media.TituloRomaji = datos.title.romaji;
+                media.UrlAnilist = datos.siteUrl;
+                media.CoverImage = datos.coverImage.large;
+
+                return media;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public Character DecodeCharacter(dynamic datos)
+        {
+            if (datos != null)
+            {
+                Character character = new();
+
+                string descripcion = datos.description;
+                character.Description = _funciones.NormalizarDescription(_funciones.LimpiarTexto(descripcion));
+                if (character.Description == "")
+                    character.Description = "(Sin descripción)";
+                character.NameFull = datos.name.full;
+                character.Image = datos.image.large;
+                character.SiteUrl = datos.siteUrl;
+                character.Animes = new();
+                foreach (var anime in datos.animes.nodes)
+                {
+                    character.Animes.Add(new()
+                    {
+                        //TituloRomaji = anime.title.romaji,
+                        //UrlAnilist = anime.siteUrl
+                    });
+                }
+                string mangas = string.Empty;
+                foreach (var manga in datos.mangas.nodes)
+                {
+                    character.Mangas.Add(new()
+                    {
+                        //TitleRomaji = anime.title.romaji,
+                        //SiteUrl = anime.siteUrl
+                    });
+                    mangas += $"[{manga.title.romaji}]({manga.siteUrl})\n";
+                }
+
+                return character;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public async Task<DiscordEmbedBuilder> GetInfoMediaUser(InteractionContext ctx, int anilistId, int mediaId)
+        {
+            var context = _funciones.GetContext(ctx);
+            var requestPers = new GraphQLRequest
+            {
+                Query =
+                    @"query ($codigoal: Int, $codigome: Int) {
+                        MediaList(userId: $codigoal, mediaId: $codigome){
+                            status,
+                            progress,
+                            startedAt {
+                                year,
+                                month,
+                                day
+                            },
+                            completedAt {
+                                year,
+                                month,
+                                day
+                            },
+                            notes,
+                            score,
+                            repeat,
+                            media {
+                                episodes,
+                                chapters
+                            },
+                            user {
+                                name,
+                                avatar {
+                                    large
+                                },
+                                mediaListOptions {
+                                    scoreFormat
+                                }
+                            }
+                        }
+                    }",
+                Variables = new
+                {
+                    codigoal = anilistId,
+                    codigome = mediaId
+                }
+            };
+            try
+            {
+                var data = await _graphQlClient.SendQueryAsync<dynamic>(requestPers);
+                if (data.Data != null)
+                {
+                    dynamic datos = data.Data.MediaList;
+                    string status = datos.status;
+                    string progress = datos.progress;
+                    string episodiosMedia = datos.media.episodes;
+                    string chaptersMedia = datos.media.chapters;
+                    string scorePers = datos.score;
+                    string startedd = datos.startedAt.day;
+                    string startedm = datos.startedAt.month;
+                    string startedy = datos.startedAt.year;
+                    string completedd = datos.completedAt.day;
+                    string completedm = datos.completedAt.month;
+                    string completedy = datos.completedAt.year;
+                    string notas = datos.notes;
+                    string rewatches = datos.repeat;
+                    string scoreFormat = datos.user.mediaListOptions.scoreFormat;
+                    string nameAl = datos.user.name;
+                    string avatarAl = datos.user.avatar.large;
+
+                    if (string.IsNullOrEmpty(notas))
+                    {
+                        notas = "(Sin notas)";
+                    }
+
+                    var builderPers = new DiscordEmbedBuilder
+                    {
+                        Title = $"Estadisticas de {nameAl}",
+                        Description = _funciones.NormalizarDescription("**Notas**\n" + notas),
+                        Color = _funciones.GetColor()
+                    }.WithThumbnail(avatarAl);
+
+                    builderPers.AddField("Estado", status, true);
+                    if (!string.IsNullOrEmpty(progress))
+                    {
+                        string episodios = progress;
+                        if (!string.IsNullOrEmpty(episodiosMedia))
+                        {
+                            episodios += $"/{episodiosMedia}";
+                        }
+                        if (!string.IsNullOrEmpty(chaptersMedia))
+                        {
+                            episodios += $"/{chaptersMedia}";
+                        }
+                        builderPers.AddField("Episodios", episodios, true);
+                    }
+                    string scoreMostrar = string.Empty;
+                    if (!string.IsNullOrEmpty(scorePers) && !string.IsNullOrEmpty(scoreFormat) && scorePers != "0")
+                    {
+                        string scoreF = string.Empty;
+                        switch (scoreFormat)
+                        {
+                            case "POINT_10":
+                            case "POINT_10_DECIMAL":
+                                scoreF = $"{scorePers}/10";
+                                break;
+                            case "POINT_100":
+                                scoreF = $"{scorePers}/100";
+                                break;
+                            case "POINT_5":
+                                int scoreS = int.Parse(scorePers);
+                                for (int i = 0; i < scoreS; i++)
+                                {
+                                    scoreF += "★";
+                                }
+                                break;
+                            case "POINT_3":
+                                int score3 = int.Parse(scorePers);
+                                switch (score3)
+                                {
+                                    case 1:
+                                        scoreF = "🙁";
+                                        break;
+                                    case 2:
+                                        scoreF = "😐";
+                                        break;
+                                    case 3:
+                                        scoreF = "🙂";
+                                        break;
+                                }
+                                break;
+                        }
+                        builderPers.AddField("Puntuación", scoreF, true);
+                    }
+                    else
+                    {
+                        builderPers.AddField("Puntuación", "No asignada", true);
+                    }
+                    if (!string.IsNullOrEmpty(rewatches))
+                    {
+                        builderPers.AddField("Rewatches", $"{rewatches}", false);
+                    }
+                    if (!string.IsNullOrEmpty(startedd) && !string.IsNullOrEmpty(startedm) && !string.IsNullOrEmpty(startedy))
+                    {
+                        builderPers.AddField("Fecha de inicio", $"{startedd}/{startedm}/{startedy}", true);
+                    }
+                    if (!string.IsNullOrEmpty(completedd) && !string.IsNullOrEmpty(completedm) && !string.IsNullOrEmpty(completedy))
+                    {
+                        builderPers.AddField("Fecha completado", $"{completedd}/{completedm}/{completedy}", true);
+                    }
+
+                    return builderPers;
+                }
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message != "The HTTP request failed with status code NotFound")
+                {
+                    await _funciones.GrabarLogError(context, $"Error en GetPersMedia /anime: {ex.Message}\n```{ex.StackTrace}```");
+                }
+            }
+            return null;
+        }
+    }
+}

@@ -20,5 +20,8 @@ namespace AnilistESP
 
         [FirestoreProperty]
         public long MessageInscriptosId { get; set; }
+
+        [FirestoreProperty]
+        public long MessageRecomendacionesId { get; set; }
     }
 }

@@ -69,13 +69,13 @@ namespace AnilistESP
             return ret;
         }
 
-        public async Task<IntercambiosFirebase> GetUserRecomendarA(InteractionContext ctx, string tipo)
+        public async Task<IntercambiosFirebase> GetUserRecomendarA(ulong guildId, ulong userId, string tipo)
         {
-            var lista = await GetInscriptosOrdenado(ctx.Guild.Id, tipo);
+            var lista = await GetInscriptosOrdenado(guildId, tipo);
             int index = 0;
             foreach (var item in lista)
             {
-                if (item.UserId == (long)ctx.User.Id)
+                if (item.UserId == (long)userId)
                 {
                     IntercambiosFirebase elegido;
                     if (index == lista.Count - 1) // ultimo registro
@@ -85,31 +85,6 @@ namespace AnilistESP
                     else
                     {
                         elegido = lista[index + 1];
-                    }
-
-                    return elegido;
-                }
-                index++;
-            }
-            return null;
-        }
-
-        public async Task<IntercambiosFirebase> GetUserRecomendadoPor(InteractionContext ctx, string tipo)
-        {
-            var lista = await GetInscriptosOrdenado(ctx.Guild.Id, tipo);
-            int index = 0;
-            foreach (var item in lista)
-            {
-                if (item.UserId == (long)ctx.User.Id)
-                {
-                    IntercambiosFirebase elegido;
-                    if (index == 0) // primer registro
-                    {
-                        elegido = lista[lista.Count - 1];
-                    }
-                    else
-                    {
-                        elegido = lista[index - 1];
                     }
 
                     return elegido;
@@ -135,6 +110,61 @@ namespace AnilistESP
                     $"  2: {reg.Pref2 ?? "(No asignada)"}\n" +
                     $"**Ban:** {reg.Ban ?? "(No asignado)"}\n\n";
             }
+            DiscordEmbedBuilder builder = new(embedMsg);
+            builder.Description = desc;
+            await mensaje.ModifyAsync(new DiscordMessageBuilder().AddEmbed(builder));
+        }
+
+        public async Task ActualizarListaRecomendaciones(InteractionContext ctx, IntercambiosSettingsFirebase settings, string tipo)
+        {
+            DiscordChannel canal = ctx.Guild.GetChannel((ulong)settings.ChannelId);
+            DiscordMessage mensaje = await canal.GetMessageAsync((ulong)settings.MessageRecomendacionesId);
+            var embedMsg = mensaje.Embeds[0];
+            string desc = string.Empty;
+
+            var inscriptos = await GetInscriptosOrdenado(ctx.Guild.Id, tipo);
+            var recomendados = await GetRecomendados(ctx.Guild.Id, tipo);
+            List<DiscordUser> recommendeds = new();
+            List<DiscordUser> noRecomendados = new();
+
+            foreach (var insc in inscriptos)
+            {
+                if (recomendados.Find(x => x.UserIdRecomendadoPor == insc.UserId) != null)
+                {
+                    recommendeds.Add(await ctx.Client.GetUserAsync((ulong)insc.UserId));
+                }
+                else
+                {
+                    noRecomendados.Add(await ctx.Client.GetUserAsync((ulong)insc.UserId));
+                }
+            }
+
+            desc += $"**Usuarios que han recomendado su {tipo.ToLower()}:**\n";
+            if(recommendeds.Count == 0)
+            {
+                desc += "(Sin registros)\n";
+            }
+            else
+            {
+                foreach(var x in recommendeds)
+                {
+                    desc += $"- {x.Mention}\n";
+                }
+            }
+
+            desc += $"\n**Usuarios que les falta recomendar su {tipo.ToLower()}:**\n";
+            if (noRecomendados.Count == 0)
+            {
+                desc += "(Sin registros)\n";
+            }
+            else
+            {
+                foreach (var x in noRecomendados)
+                {
+                    desc += $"- {x.Mention}\n";
+                }
+            }
+
             DiscordEmbedBuilder builder = new(embedMsg);
             builder.Description = desc;
             await mensaje.ModifyAsync(new DiscordMessageBuilder().AddEmbed(builder));
@@ -177,7 +207,8 @@ namespace AnilistESP
                         { "Elecciones", registro.Elecciones },
                         { "Iniciado", registro.Iniciado },
                         { "ChannelId", registro.ChannelId },
-                        { "MessageInscriptosId", registro.MessageInscriptosId }
+                        { "MessageInscriptosId", registro.MessageInscriptosId },
+                        { "MessageRecomendacionesId", registro.MessageRecomendacionesId }
                     };
                     await doc.UpdateAsync(data);
                 }
@@ -206,7 +237,8 @@ namespace AnilistESP
                     { "Elecciones", false },
                     { "Iniciado", false },
                     { "ChannelId", (long)ctx.Channel.Id },
-                    { "MessageInscriptosId", (long)msgInscriptos.Id }
+                    { "MessageInscriptosId", (long)msgInscriptos.Id },
+                    { "MessageRecomendacionesId", 1 }
                 };
                 await doc.CreateAsync(data);
             }
@@ -246,15 +278,64 @@ namespace AnilistESP
                         orden++;
                     }
 
+                    var msgRecomendaciones = await ctx.Channel.SendMessageAsync(new DiscordEmbedBuilder { 
+                        Title = "Recomendaciones del intercambio",
+                        Color = DiscordColor.CornflowerBlue
+                    });
+
                     Dictionary<string, object> dataSet = new()
                     {
                         { "Inscripciones", false },
                         { "Elecciones", true },
                         { "Iniciado", false },
                         { "ChannelId", registro.ChannelId },
-                        { "MessageInscriptosId", registro.MessageInscriptosId }
+                        { "MessageInscriptosId", registro.MessageInscriptosId },
+                        { "MessageRecomendacionesId",  msgRecomendaciones.Id}
                     };
                     await doc.UpdateAsync(dataSet);
+
+                    var listInscriptos = await GetInscriptosOrdenado(ctx.Guild.Id, tipo);
+                    int index = 0;
+                    foreach (var r in listInscriptos)
+                    {
+                        IntercambiosFirebase elegido;
+                        if (index == listInscriptos.Count - 1) // ultimo registro
+                        {
+                            elegido = listInscriptos[0];
+                        }
+                        else
+                        {
+                            elegido = listInscriptos[index + 1];
+                        }
+                        DiscordMember usuarioDM = await ctx.Guild.GetMemberAsync((ulong)r.UserId);
+                        DiscordMember choosen = await ctx.Guild.GetMemberAsync((ulong)elegido.UserId);
+                        try
+                        {
+                            var channel = await usuarioDM.CreateDmChannelAsync();
+                            await channel.SendMessageAsync(new DiscordEmbedBuilder
+                            {
+                                Color = DiscordColor.Green,
+                                Title = $"¡Haz tu recomendación!",
+                                Description = $"Debes recomendarle un {tipo.ToLower()} a `{choosen.Nickname}#{choosen.Discriminator}`.\n" +
+                                $"Entra al canal del intercambio en el servidor e invoca el comando `/intercambio recomendar`",
+                                Footer = new DiscordEmbedBuilder.EmbedFooter
+                                {
+                                    IconUrl = ctx.Guild.IconUrl,
+                                    Text = ctx.Guild.Name
+                                }
+                            });
+                        }
+                        catch (Exception)
+                        {
+                            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                            {
+                                Color = DiscordColor.Yellow,
+                                Title = "Intercambios - Mensaje privado no enviado",
+                                Description = $"No se ha podido enviar un mensaje privado a {usuarioDM.Mention}"
+                            }));
+                        }
+                        index++;
+                    }
 
                     await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
                     {
@@ -354,6 +435,13 @@ namespace AnilistESP
                             Title = "Inscripcion",
                             Description = "Tu inscripción ha sido registrada con éxito"
                         }));
+
+                        await ctx.Channel.SendMessageAsync(new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Green,
+                            Title = "Inscripcion",
+                            Description = $"{ctx.Member.Mention} se ha inscripto al intercambio"
+                        });
                     }
 
                     await ActualizarListaInscriptos(ctx.Guild, registro, tipo);
@@ -400,6 +488,13 @@ namespace AnilistESP
                             Title = "Inscripcion",
                             Description = "Tu inscripción ha sido eliminada con éxito"
                         }));
+
+                        await ctx.Channel.SendMessageAsync(new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Green,
+                            Title = "Desinscripcion",
+                            Description = $"{ctx.Member.Mention} se ha desinscripto del intercambio"
+                        });
 
                         await ActualizarListaInscriptos(ctx.Guild, registro, tipo);
                     }
@@ -454,7 +549,7 @@ namespace AnilistESP
                         {
                             if (item.UserId == (long)ctx.User.Id)
                             {
-                                IntercambiosFirebase elegido = await GetUserRecomendarA(ctx, tipo);
+                                IntercambiosFirebase elegido = await GetUserRecomendarA(ctx.Guild.Id, ctx.User.Id, tipo);
                                 
                                 var miembro = await ctx.Client.GetUserAsync((ulong)elegido.UserId);
 
@@ -532,7 +627,7 @@ namespace AnilistESP
                         var result = await _funcionesAnilist.GetAniListMedia(ctx, media, tipo.ToLower());
                         if (result.Ok == true)
                         {
-                            IntercambiosFirebase elegido = await GetUserRecomendarA(ctx, tipo);
+                            IntercambiosFirebase elegido = await GetUserRecomendarA(ctx.Guild.Id, ctx.User.Id, tipo);
                             DocumentReference docNuevo = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}").Collection("Recomendaciones").Document($"{elegido.UserId}");
                             Dictionary<string, object> dataN = new()
                             {
@@ -549,6 +644,33 @@ namespace AnilistESP
                             else
                             {
                                 await docNuevo.CreateAsync(dataN);
+                                await ActualizarListaRecomendaciones(ctx, registro, tipo);
+                            }
+
+                            DiscordMember usuarioDM = await ctx.Guild.GetMemberAsync((ulong)elegido.UserId);
+                            try
+                            {
+                                var channel = await usuarioDM.CreateDmChannelAsync();
+                                await channel.SendMessageAsync(new DiscordEmbedBuilder
+                                {
+                                    Color = DiscordColor.Green,
+                                    Title = $"¡Te ha llegado tu {tipo.ToLower()} recomendado!",
+                                    Description = $"**Nombre:** {result.TituloRomaji}\n**URL:** {result.UrlAnilist}",
+                                    Footer = new DiscordEmbedBuilder.EmbedFooter 
+                                    { 
+                                        IconUrl = ctx.Guild.IconUrl,
+                                        Text = ctx.Guild.Name
+                                    }
+                                });
+                            }
+                            catch (Exception)
+                            {
+                                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                                {
+                                    Color = DiscordColor.Yellow,
+                                    Title = "Intercambios - Mensaje privado no enviado",
+                                    Description = $"No se ha podido enviar un mensaje privado a {usuarioDM.Mention}"
+                                }));
                             }
 
                             await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
@@ -643,30 +765,6 @@ namespace AnilistESP
                             { "MessageInscriptosId", registro.MessageInscriptosId }
                         };
                         await doc.UpdateAsync(data);
-
-                        foreach(var s in recomendados)
-                        {
-                            DiscordMember usuarioDM = await ctx.Guild.GetMemberAsync((ulong)s.UserId);
-                            try
-                            {
-                                var channel = await usuarioDM.CreateDmChannelAsync();
-                                await channel.SendMessageAsync(new DiscordEmbedBuilder
-                                {
-                                    Color = DiscordColor.Green,
-                                    Title = $"{tipo} recomendado",
-                                    Description = $"Nombre: {s.AnimeRecomendadoName}\nURL: {s.AnimeRecomendadoURL}"
-                                });
-                            }
-                            catch (Exception)
-                            {
-                                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
-                                {
-                                    Color = DiscordColor.Yellow,
-                                    Title = "Intercambios - Mensaje privado no enviado",
-                                    Description = $"No se ha podido enviar un mensaje privado a {usuarioDM.Mention}"
-                                }));
-                            }
-                        }
 
                         await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
                         {
@@ -801,8 +899,8 @@ namespace AnilistESP
                         { "Inscripciones", false },
                         { "Elecciones", false },
                         { "Iniciado", false },
-                        { "ChannelId", null },
-                        { "MessageInscriptosId", null }
+                        { "ChannelId", 1 },
+                        { "MessageInscriptosId", 1 }
                     };
                     await doc.UpdateAsync(data);
 

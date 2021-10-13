@@ -20,6 +20,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static AnilistESP.Intercambios;
 using static DSharpPlus.Entities.DiscordEmbedBuilder;
 
 namespace AnilistESP
@@ -104,6 +105,7 @@ namespace AnilistESP
                 ApplicationCommands.RegisterCommands<Fun>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Roles>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Intercambios>(pruebasBacklog);
+                ApplicationCommands.RegisterCommands<IntercambiosAdmin>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Administrativo>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Help>(pruebasBacklog);
             }
@@ -114,6 +116,7 @@ namespace AnilistESP
                 ApplicationCommands.RegisterCommands<Fun>(guildProd);
                 ApplicationCommands.RegisterCommands<Roles>(guildProd);
                 ApplicationCommands.RegisterCommands<Intercambios>(guildProd);
+                ApplicationCommands.RegisterCommands<IntercambiosAdmin>(guildProd);
                 ApplicationCommands.RegisterCommands<Administrativo>(guildProd);
                 ApplicationCommands.RegisterCommands<Help>(guildProd);
             }

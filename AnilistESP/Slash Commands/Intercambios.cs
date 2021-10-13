@@ -17,7 +17,7 @@ namespace AnilistESP
         private readonly IntercambiosDAL service = new();
 
         [SlashCommand("inscribirse", "Te inscribes en el intercambio")]
-        public async Task Inscribirse(InteractionContext ctx, [Choice("Anime", "Anime")][Choice("Manga", "Manga")][Option("Tipo", "Tipo de intercambio")] string tipo, [Option("Preferencia_1", "Preferencia 1")] string pref1 = null, [Option("Preferencia_2", "Preferencia 2")] string pref2 = null, [Option("Ban", "Baneo")] string ban = null)
+        public async Task Inscribirse(InteractionContext ctx, [Choice("Anime", "Anime")][Choice("Manga", "Manga")][Option("Tipo", "Tipo de intercambio")] string tipo, [Option("Preferencia_1", "Preferencia 1")] string pref1, [Option("Preferencia_2", "Preferencia 2")] string pref2, [Option("Ban", "Baneo")] string ban)
         {
             await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
             await service.InscribirseIntercambio(ctx, tipo, pref1, pref2, ban);

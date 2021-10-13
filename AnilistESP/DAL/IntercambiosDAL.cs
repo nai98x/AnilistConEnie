@@ -298,8 +298,12 @@ namespace AnilistESP
                             {
                                 Color = DiscordColor.Green,
                                 Title = $"¡Haz tu recomendación!",
-                                Description = $"Debes recomendarle un {tipo.ToLower()} a `{choosen.Nickname}#{choosen.Discriminator}`.\n" +
-                                $"Entra al canal del intercambio en el servidor e invoca el comando `/intercambio recomendar`",
+                                Description = $"Debes recomendarle un {tipo.ToLower()} a `{choosen.Username}#{choosen.Discriminator}`.\n\n" +
+                                $"Entra al canal del intercambio en el servidor e invoca el comando `/intercambio recomendar`\n\n" +
+                                $"**Preferencias:**\n" +
+                                $"  1: {elegido.Pref1 ?? "(No asignada)"}\n" +
+                                $"  2: {elegido.Pref2 ?? "(No asignada)"}\n" +
+                                $"**Ban:** {elegido.Ban ?? "(No asignado)"}",
                                 Footer = new DiscordEmbedBuilder.EmbedFooter
                                 {
                                     IconUrl = ctx.Guild.IconUrl,

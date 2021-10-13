@@ -1,6 +1,8 @@
 ﻿using DSharpPlus.Entities;
+using DSharpPlus.Exceptions;
 using DSharpPlus.SlashCommands;
 using Google.Cloud.Firestore;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -641,6 +643,30 @@ namespace AnilistESP
                             { "MessageInscriptosId", registro.MessageInscriptosId }
                         };
                         await doc.UpdateAsync(data);
+
+                        foreach(var s in recomendados)
+                        {
+                            DiscordMember usuarioDM = await ctx.Guild.GetMemberAsync((ulong)s.UserId);
+                            try
+                            {
+                                var channel = await usuarioDM.CreateDmChannelAsync();
+                                await channel.SendMessageAsync(new DiscordEmbedBuilder
+                                {
+                                    Color = DiscordColor.Green,
+                                    Title = $"{tipo} recomendado",
+                                    Description = $"Nombre: {s.AnimeRecomendadoName}\nURL: {s.AnimeRecomendadoURL}"
+                                });
+                            }
+                            catch (Exception)
+                            {
+                                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                                {
+                                    Color = DiscordColor.Yellow,
+                                    Title = "Intercambios - Mensaje privado no enviado",
+                                    Description = $"No se ha podido enviar un mensaje privado a {usuarioDM.Mention}"
+                                }));
+                            }
+                        }
 
                         await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
                         {

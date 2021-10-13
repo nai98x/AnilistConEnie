@@ -124,31 +124,13 @@ namespace AnilistESP
 
             var inscriptos = await GetInscriptosOrdenado(ctx.Guild.Id, tipo);
             var recomendados = await GetRecomendados(ctx.Guild.Id, tipo);
-            List<DiscordUser> recommendeds = new();
             List<DiscordUser> noRecomendados = new();
 
             foreach (var insc in inscriptos)
             {
-                if (recomendados.Find(x => x.UserIdRecomendadoPor == insc.UserId) != null)
-                {
-                    recommendeds.Add(await ctx.Client.GetUserAsync((ulong)insc.UserId));
-                }
-                else
+                if (recomendados.Find(x => x.UserIdRecomendadoPor == insc.UserId) == null)
                 {
                     noRecomendados.Add(await ctx.Client.GetUserAsync((ulong)insc.UserId));
-                }
-            }
-
-            desc += $"**Usuarios que han recomendado su {tipo.ToLower()}:**\n";
-            if(recommendeds.Count == 0)
-            {
-                desc += "(Sin registros)\n";
-            }
-            else
-            {
-                foreach(var x in recommendeds)
-                {
-                    desc += $"- {x.Mention}\n";
                 }
             }
 
@@ -433,15 +415,8 @@ namespace AnilistESP
                         {
                             Color = DiscordColor.Green,
                             Title = "Inscripcion",
-                            Description = "Tu inscripción ha sido registrada con éxito"
-                        }));
-
-                        await ctx.Channel.SendMessageAsync(new DiscordEmbedBuilder
-                        {
-                            Color = DiscordColor.Green,
-                            Title = "Inscripcion",
                             Description = $"{ctx.Member.Mention} se ha inscripto al intercambio"
-                        });
+                        }));
                     }
 
                     await ActualizarListaInscriptos(ctx.Guild, registro, tipo);

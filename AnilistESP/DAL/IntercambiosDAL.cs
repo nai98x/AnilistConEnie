@@ -1,4 +1,5 @@
-﻿using DSharpPlus.Entities;
+﻿using DSharpPlus;
+using DSharpPlus.Entities;
 using DSharpPlus.Exceptions;
 using DSharpPlus.SlashCommands;
 using Google.Cloud.Firestore;
@@ -293,17 +294,27 @@ namespace AnilistESP
                         DiscordMember choosen = await ctx.Guild.GetMemberAsync((ulong)elegido.UserId);
                         try
                         {
+                            string desc = $"Debes recomendarle un {tipo.ToLower()} a `{choosen.Username}#{choosen.Discriminator}`.\n\n" +
+                                $"Entra al canal del intercambio en el servidor e invoca el comando `/intercambio recomendar`\n\n";
+
+                            var servicio = new UsuariosAnilist();
+                            var user = await servicio.GetPerfil(ctx.Guild.Id, (ulong)elegido.UserId);
+                            if (user != null)
+                            {
+                                desc += $"**Anilist:** {user.AnilistURL}\n\n";
+                            }
+
+                            desc += $"**Preferencias:**\n" +
+                                $"  1: {elegido.Pref1 ?? "(No asignada)"}\n" +
+                                $"  2: {elegido.Pref2 ?? "(No asignada)"}\n" +
+                                $"**Ban:** {elegido.Ban ?? "(No asignado)"}";
+
                             var channel = await usuarioDM.CreateDmChannelAsync();
                             await channel.SendMessageAsync(new DiscordEmbedBuilder
                             {
                                 Color = DiscordColor.Green,
                                 Title = $"¡Haz tu recomendación!",
-                                Description = $"Debes recomendarle un {tipo.ToLower()} a `{choosen.Username}#{choosen.Discriminator}`.\n\n" +
-                                $"Entra al canal del intercambio en el servidor e invoca el comando `/intercambio recomendar`\n\n" +
-                                $"**Preferencias:**\n" +
-                                $"  1: {elegido.Pref1 ?? "(No asignada)"}\n" +
-                                $"  2: {elegido.Pref2 ?? "(No asignada)"}\n" +
-                                $"**Ban:** {elegido.Ban ?? "(No asignado)"}",
+                                Description = desc,
                                 Footer = new DiscordEmbedBuilder.EmbedFooter
                                 {
                                     IconUrl = ctx.Guild.IconUrl,
@@ -751,6 +762,21 @@ namespace AnilistESP
                             Title = "Intercambios - Iniciado",
                             Description = "El intercambio se ha iniciado correctamente"
                         }));
+
+                        string descrip = string.Empty;
+                        var listt = await GetRecomendados(ctx.Guild.Id, tipo);
+                        listt.Shuffle();
+
+                        foreach(var regg in listt)
+                        {
+                            descrip += $"- [{regg.AnimeRecomendadoName}]({regg.AnimeRecomendadoURL})\n";
+                        }
+
+                        await ctx.Channel.SendMessageAsync(new DiscordEmbedBuilder {
+                            Title = $"Lista de {tipo.ToLower()}s",
+                            Description = descrip,
+                            Color = DiscordColor.CornflowerBlue
+                        });
                     }
                 }
                 else
@@ -861,7 +887,7 @@ namespace AnilistESP
                             await doc1.DeleteAsync();
                     }
 
-                    var recomendacionesRef = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}").Collection("Recomendaciones");
+                    var recomendacionesRef = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}").Collection("Usuarios");
                     IAsyncEnumerable<DocumentReference> subcollections1 = recomendacionesRef.ListDocumentsAsync();
                     IAsyncEnumerator<DocumentReference> subcollectionsEnumerator1 = subcollections1.GetAsyncEnumerator(default);
                     while (await subcollectionsEnumerator1.MoveNextAsync())

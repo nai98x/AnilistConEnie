@@ -17,5 +17,8 @@ namespace AnilistESP
 
         [FirestoreProperty]
         public string AnimeRecomendadoURL { get; set; }
+
+        [FirestoreProperty]
+        public int VecesReclamada { get; set; }
     }
 }

@@ -5,6 +5,7 @@ using DSharpPlus.SlashCommands;
 using Google.Cloud.Firestore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace AnilistESP
@@ -619,20 +620,31 @@ namespace AnilistESP
                         {
                             IntercambiosFirebase elegido = await GetUserRecomendarA(ctx.Guild.Id, ctx.User.Id, tipo);
                             DocumentReference docNuevo = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}").Collection("Recomendaciones").Document($"{elegido.UserId}");
-                            Dictionary<string, object> dataN = new()
-                            {
-                                { "UserId", elegido.UserId },
-                                { "UserIdRecomendadoPor", ctx.User.Id },
-                                { "AnimeRecomendadoName", result.TituloRomaji },
-                                { "AnimeRecomendadoURL", result.UrlAnilist }
-                            };
                             var snapNuevo = await docNuevo.GetSnapshotAsync();
+                            
                             if (snapNuevo.Exists)
                             {
+                                IntercambiosRecomendacionFirebase registro1 = snapNuevo.ConvertTo<IntercambiosRecomendacionFirebase>();
+                                Dictionary<string, object> dataN = new()
+                                {
+                                    { "UserId", elegido.UserId },
+                                    { "UserIdRecomendadoPor", ctx.User.Id },
+                                    { "AnimeRecomendadoName", result.TituloRomaji },
+                                    { "AnimeRecomendadoURL", result.UrlAnilist },
+                                    { "VecesReclamada", registro1.VecesReclamada }
+                                };
                                 await docNuevo.UpdateAsync(dataN);
                             }
                             else
                             {
+                                Dictionary<string, object> dataN = new()
+                                {
+                                    { "UserId", elegido.UserId },
+                                    { "UserIdRecomendadoPor", ctx.User.Id },
+                                    { "AnimeRecomendadoName", result.TituloRomaji },
+                                    { "AnimeRecomendadoURL", result.UrlAnilist },
+                                    { "VecesReclamada", 0 }
+                                };
                                 await docNuevo.CreateAsync(dataN);
                                 await ActualizarListaRecomendaciones(ctx, registro, tipo);
                             }
@@ -645,7 +657,8 @@ namespace AnilistESP
                                 {
                                     Color = DiscordColor.Green,
                                     Title = $"¡Te ha llegado tu {tipo.ToLower()} recomendado!",
-                                    Description = $"**Nombre:** {result.TituloRomaji}\n**URL:** {result.UrlAnilist}",
+                                    Description = $"**Nombre:** {result.TituloRomaji}\n**URL:** {result.UrlAnilist}\n\n" +
+                                    $"Si consideras esta recomendación troll o por cualquier otro motivo no dudes en hacer una reclamación utilizando el comando `/intercambio reclamar`",
                                     Footer = new DiscordEmbedBuilder.EmbedFooter 
                                     { 
                                         IconUrl = ctx.Guild.IconUrl,
@@ -875,6 +888,23 @@ namespace AnilistESP
                 IntercambiosSettingsFirebase registro = snap.ConvertTo<IntercambiosSettingsFirebase>();
                 if (!registro.Inscripciones && !registro.Elecciones && registro.Iniciado)
                 {
+                    string descrip = string.Empty;
+                    var listt = await GetRecomendados(ctx.Guild.Id, tipo);
+
+                    foreach (var regg in listt)
+                    {
+                        var user1 = await ctx.Guild.GetMemberAsync((ulong)regg.UserIdRecomendadoPor);
+                        var user2 = await ctx.Guild.GetMemberAsync((ulong)regg.UserId);
+                        descrip += $"- {user1.Mention} -> [{regg.AnimeRecomendadoName}]({regg.AnimeRecomendadoURL}) -> {user2.Mention}\n";
+                    }
+
+                    await ctx.Channel.SendMessageAsync(new DiscordEmbedBuilder
+                    {
+                        Title = $"Lista de {tipo.ToLower()}s",
+                        Description = descrip,
+                        Color = DiscordColor.CornflowerBlue
+                    });
+
                     var inscripcionesRef = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}").Collection("Recomendaciones");
                     IAsyncEnumerable<DocumentReference> subcollections = inscripcionesRef.ListDocumentsAsync();
                     IAsyncEnumerator<DocumentReference> subcollectionsEnumerator = subcollections.GetAsyncEnumerator(default);
@@ -924,6 +954,178 @@ namespace AnilistESP
                         Title = "Error",
                         Description = "Solo puedes terminar el intercambio cuando esté iniciado"
                     }));
+                }
+            }
+            else
+            {
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                {
+                    Color = DiscordColor.Red,
+                    Title = "Error",
+                    Description = "No existe el intercambio"
+                }));
+            }
+        }
+
+        public async Task HacerReclamacion(InteractionContext ctx, string tipo, string motivo)
+        {
+            FirestoreDb db = funciones.GetFirestoreClient();
+            DocumentReference doc = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}");
+            var snap = await doc.GetSnapshotAsync();
+            if (snap.Exists)
+            {
+                IntercambiosSettingsFirebase registro = snap.ConvertTo<IntercambiosSettingsFirebase>();
+                if (!registro.Inscripciones && registro.Elecciones && !registro.Iniciado)
+                {
+                    var lista = await GetRecomendados(ctx.Guild.Id, tipo);
+                    var reg = lista.Find(x => x.UserId == (long)ctx.User.Id);
+                    if (reg != null)
+                    {
+                        DocumentReference docNuevo = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}").Collection("Recomendaciones").Document($"{reg.UserId}");
+                        var snapNuevo = await docNuevo.GetSnapshotAsync();
+
+                        IntercambiosRecomendacionFirebase registro1 = snapNuevo.ConvertTo<IntercambiosRecomendacionFirebase>();
+                        int reclamadaNew = registro1.VecesReclamada + 1;
+
+                        if(reclamadaNew <= 2)
+                        {
+                            Dictionary<string, object> dataN = new()
+                            {
+                                { "UserId", registro1.UserId },
+                                { "UserIdRecomendadoPor", registro1.UserIdRecomendadoPor },
+                                { "AnimeRecomendadoName", registro1.AnimeRecomendadoName },
+                                { "AnimeRecomendadoURL", registro1.AnimeRecomendadoURL },
+                                { "VecesReclamada", reclamadaNew }
+                            };
+                            await docNuevo.UpdateAsync(dataN);
+
+                            DiscordMember usuario = await ctx.Guild.GetMemberAsync((ulong)reg.UserId);
+                            DiscordMember usuarioRec = await ctx.Guild.GetMemberAsync((ulong)reg.UserIdRecomendadoPor);
+                            try
+                            {
+                                var channel = await usuarioRec.CreateDmChannelAsync();
+                                await channel.SendMessageAsync(new DiscordEmbedBuilder
+                                {
+                                    Color = DiscordColor.Red,
+                                    Title = $"Reclamación de {usuario.Username}#{usuario.Discriminator}",
+                                    Description = $"Este usuario ha reclamado que no está satisfecho con el {tipo.ToLower()} que le has recomendado.\n\n" +
+                                    $"**Motivo:**{Formatter.BlockCode(motivo)}\n" +
+                                    $"Le recomendaste [{reg.AnimeRecomendadoName}]({reg.AnimeRecomendadoURL})\n\n" +
+                                    $"Si esta reclamación no te convence por algún motivo no dudes en hablarlo con el organizador del intercambio.\n\n" +
+                                    $"**Reclamación {reclamadaNew}/2**",
+                                    Footer = new DiscordEmbedBuilder.EmbedFooter
+                                    {
+                                        IconUrl = ctx.Guild.IconUrl,
+                                        Text = ctx.Guild.Name
+                                    }
+                                });
+                            }
+                            catch (Exception)
+                            {
+                                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                                {
+                                    Color = DiscordColor.Yellow,
+                                    Title = "Intercambios - Mensaje privado no enviado",
+                                    Description = $"No se ha podido enviar un mensaje privado al usuario que te ha recomendado tu {tipo.ToLower()}"
+                                }));
+                            }
+
+                            DiscordRole organizadorRole;
+                            if (ctx.Guild.Id == 862408834693070898) // Añilist
+                            {
+                                organizadorRole = ctx.Guild.GetRole(870049184185733120);
+                            }
+                            else
+                            {
+                                organizadorRole = ctx.Guild.GetRole(896936028672258098);
+                            }
+                            var organizadores = ctx.Guild.Members.Where(x => x.Value.IsBot == false && x.Value.Roles.Contains(organizadorRole));
+                            foreach (var organizador in organizadores)
+                            {
+                                try
+                                {
+                                    var channel = await organizador.Value.CreateDmChannelAsync();
+                                    await channel.SendMessageAsync(new DiscordEmbedBuilder
+                                    {
+                                        Color = DiscordColor.Yellow,
+                                        Title = $"Reclamación de {usuario.Username}#{usuario.Discriminator}",
+                                        Description = $"Este usuario ha reclamado que no está satisfecho con el {tipo.ToLower()} que le han recomendado.\n" +
+                                        $"Motivo:{Formatter.BlockCode(motivo)}\n" +
+                                        $"El usuario que ha recomendado es {usuarioRec.Username}#{usuarioRec.Discriminator} y este usuario recomendó [{reg.AnimeRecomendadoName}]({reg.AnimeRecomendadoURL})",
+                                        Footer = new DiscordEmbedBuilder.EmbedFooter
+                                        {
+                                            IconUrl = ctx.Guild.IconUrl,
+                                            Text = ctx.Guild.Name
+                                        }
+                                    });
+                                }
+                                catch (Exception)
+                                {
+                                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AsEphemeral(false).AddEmbed(new DiscordEmbedBuilder
+                                    {
+                                        Color = DiscordColor.Yellow,
+                                        Title = "Intercambios - Mensaje privado no enviado",
+                                        Description = $"No se ha podido enviar un mensaje privado al organizador {organizador.Value.Mention}"
+                                    }));
+                                }
+                            }
+
+                            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                            {
+                                Color = DiscordColor.Green,
+                                Title = "Reclamación",
+                                Description = $"Tu reclamación del intercambio ha sido enviada correctamente.\n\n**Reclamación {reclamadaNew}/2**"
+                            }));
+                        }
+                        else
+                        {
+                            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                            {
+                                Color = DiscordColor.Red,
+                                Title = "Error",
+                                Description = "Puedes reclamar dos veces como máximo"
+                            }));
+                        }
+                    }
+                    else
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Red,
+                            Title = "Error",
+                            Description = "No estas inscripto al intercambio"
+                        }));
+                    }
+                }
+                else
+                {
+                    if (registro.Inscripciones)
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Red,
+                            Title = "Error",
+                            Description = "No se puede hacer esto en la fase de inscripciones"
+                        }));
+                    }
+                    if (registro.Iniciado)
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Red,
+                            Title = "Error",
+                            Description = "No se puede hacer esto una vez iniciado el intercambio"
+                        }));
+                    }
+                    if (!registro.Inscripciones && !registro.Iniciado)
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Red,
+                            Title = "Error",
+                            Description = "No se puede hacer esto una vez terminado el intercambio"
+                        }));
+                    }
                 }
             }
             else

@@ -50,5 +50,12 @@ namespace AnilistESP
             await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, new DiscordInteractionResponseBuilder().AsEphemeral(true));
             await service.GetRecomendado(ctx, tipo);
         }
+
+        [SlashCommand("reclamar", "Reclama que quieres un nuevo anime")]
+        public async Task Recomendado(InteractionContext ctx, [Choice("Anime", "Anime")][Choice("Manga", "Manga")][Option("Tipo", "Tipo de intercambio")] string tipo, [Option("Motivo", "Razón por la que deseas una nueva recomendación (troll/obra vista/etc)")] string motivo)
+        {
+            await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, new DiscordInteractionResponseBuilder().AsEphemeral(true));
+            await service.HacerReclamacion(ctx, tipo, motivo);
+        }
     }
 }

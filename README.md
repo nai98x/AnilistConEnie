@@ -1,6 +1,6 @@
-# Anilist ESP
+# Añilist
 ## Bot para Discord desarrollado en DSharpPlus - .NET Core 
-[![CodeFactor](https://www.codefactor.io/repository/github/nai98x/anilistesp/badge)](https://www.codefactor.io/repository/github/nai98x/anilistesp)
+[![CodeFactor](https://www.codefactor.io/repository/github/nai98x/anilistconenie/badge)](https://www.codefactor.io/repository/github/nai98x/anilistconenie)
 
 Bot multi propósito para el servidor de Discord Anilist ESP.
 

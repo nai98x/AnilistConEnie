@@ -81,6 +81,7 @@ namespace AnilistESP
             Client.GuildMemberRemoved += Client_GuildMemberRemoved;
             Client.ComponentInteractionCreated += Client_ComponentInteractionCreated;
             Client.MessageCreated += Client_MessageCreated;
+            Client.MessageReactionAdded += Client_MessageReactionAdded;
             //Client.MessageDeleted += Client_MessageDeleted;
             //Client.MessageUpdated += Client_MessageUpdated;
             //Client.VoiceStateUpdated += Client_VoiceStateUpdated;
@@ -153,6 +154,24 @@ namespace AnilistESP
             }
 
             await Task.Delay(-1);
+        }
+
+        private Task Client_MessageReactionAdded(DiscordClient sender, MessageReactionAddEventArgs e)
+        {
+            _ = Task.Run(async () =>
+            {
+                if(e.Guild.Id == 862408834693070898 && e.Channel.Id == 862486026937040916) // Sugerencias Añilist
+                {
+                    DiscordEmoji yes = DiscordEmoji.FromUnicode(sender, "✅");
+                    DiscordEmoji no = DiscordEmoji.FromUnicode(sender, "❌");
+
+                    if (!e.Emoji.Equals(yes) && !e.Emoji.Equals(no))
+                    {
+                        await e.Message.DeleteReactionAsync(e.Emoji, e.User);
+                    }
+                }
+            });
+            return Task.CompletedTask;
         }
 
         private Task Client_MessageCreated(DiscordClient sender, MessageCreateEventArgs e)

@@ -186,15 +186,6 @@ namespace AnilistESP
                     ImageUrl = $"{meme.Url}"
                 }));
             }
-            else
-            {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-                {
-                    Title = "Comando no habilitado",
-                    Description = $"Este comando no está disponible para este servidor",
-                    Color = DiscordColor.Red
-                }));
-            }
         }
     }
 }

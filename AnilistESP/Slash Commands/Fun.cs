@@ -1,6 +1,7 @@
 ﻿using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
+using DSharpPlus.SlashCommands.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,30 @@ namespace AnilistESP
     public class Fun : ApplicationCommandModule
     {
         private readonly FuncionesAuxiliares funciones = new();
+
+        [SlashRequireUserPermissions(Permissions.ManageGuild)]
+        [SlashRequireBotPermissions(Permissions.ManageWebhooks)]
+        [SlashCommand("fakesay", "Usurpa la identidad de un usuario y di algo en su nombre")]
+        public async Task FakeSay(InteractionContext ctx, [Option("Usuario", "El usuario del que quieres usurpar su identidad")] DiscordUser usuario, [Option("Mensaje", "El mensaje a replicar")] string mensaje)
+        {
+            await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+            await ctx.DeleteResponseAsync();
+
+            DiscordMember member = await ctx.Guild.GetMemberAsync(usuario.Id);
+
+            DiscordWebhook? webhook = (await ctx.Channel.GetWebhooksAsync()).FirstOrDefault(wbhk => wbhk.Name.Equals("AnilistConEnie"));
+            if (webhook == null)
+            {
+                webhook = await ctx.Channel.CreateWebhookAsync("AnilistConEnie");
+            }
+
+            DiscordWebhookBuilder wBuilder = new DiscordWebhookBuilder()
+                .WithContent(mensaje)
+                .WithAvatarUrl(member.AvatarUrl)
+                .WithUsername(member.DisplayName)
+                .AddMentions(Mentions.None.Union(new List<IMention> { new UserMention(), }));
+            await webhook.ExecuteAsync(wBuilder);
+        }
 
         [SlashCommand("ship", "Elegir la ship de un usuario")]
         public async Task Ship(InteractionContext ctx, [Option("Usuario", "El usuario del que quieres ver su ship")] DiscordUser usuario = null)

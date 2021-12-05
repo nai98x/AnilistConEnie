@@ -12,7 +12,7 @@ namespace AnilistESP
 {
     public class IntercambiosDAL
     {
-        private readonly FuncionesAuxiliares funciones = new FuncionesAuxiliares();
+        private readonly FuncionesAuxiliares funciones = new();
 
         public async Task<List<IntercambiosFirebase>> GetInscriptos(ulong guildId, string tipo)
         {
@@ -528,7 +528,7 @@ namespace AnilistESP
             if (snap.Exists)
             {
                 IntercambiosSettingsFirebase registro = snap.ConvertTo<IntercambiosSettingsFirebase>();
-                if (!registro.Inscripciones && registro.Elecciones && !registro.Iniciado)
+                if (!registro.Inscripciones && (registro.Elecciones || registro.Iniciado))
                 {
                     DocumentReference docUser = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}").Collection("Usuarios").Document($"{ctx.User.Id}");
                     var snapUser = await docUser.GetSnapshotAsync();

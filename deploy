@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Stop previous instance of the bot if it's running
+pkill Bot;
+
+# Clean out previous build
+rm -rf /bots/anilistconenie/AnilistConEnie/AnilistESP/bin/;
+
+# Build bot
+cd /bots/anilistconenie/AnilistConEnie/AnilistESP;
+dotnet build -c Release --source=https://api.nuget.org/v3/index.json --source=https://nuget.emzi0767.com/api/v3/index.json;
+
+# Set up and start the bot
+cd /bots/anilistconenie/AnilistConEnie/AnilistESP/bin/Release/net5.0;
+chmod +x Bot;
+./Bot;

@@ -73,14 +73,13 @@ namespace AnilistESP
 
             string avatar1 = usuario.GetAvatarUrl(ImageFormat.Png, 128);
             string avatar2 = elegido.GetAvatarUrl(ImageFormat.Png, 128);
-            var imagen = funciones.MergeImage(avatar1, avatar2);
 
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
             {
                 Title = "Shippeo",
                 Description = $"Shippeo a {ctxMiembro.Mention} con **{elegido.Mention}** 💘",
                 ImageUrl = "attachment://imagen.png"
-            }).AddFile("imagen.png", funciones.ToStream(imagen)));
+            }).AddFile("imagen.png", await funciones.MergeImage(avatar1, avatar2)));
         }
 
         [SlashCommand("shiprandom", "Elijo una ship del servidor")]
@@ -118,16 +117,13 @@ namespace AnilistESP
 
             string avatar1 = elegido1.GetAvatarUrl(ImageFormat.Png, 128);
             string avatar2 = elegido2.GetAvatarUrl(ImageFormat.Png, 128);
-            var imagen = funciones.MergeImage(avatar1, avatar2);
 
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
             {
                 Title = "Shippeo Random",
                 Description = $"Shippeo a {elegido1.Mention} con **{elegido2.Mention}** 💘",
                 ImageUrl = "attachment://imagen.png"
-            }).AddFile("imagen.png", funciones.ToStream(imagen)));
-
-            imagen.Dispose();
+            }).AddFile("imagen.png", await funciones.MergeImage(avatar1, avatar2)));
         }
 
         [SlashCommand("ooc", "Out of Context")]

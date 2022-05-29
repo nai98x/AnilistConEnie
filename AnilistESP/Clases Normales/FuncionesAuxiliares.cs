@@ -15,13 +15,13 @@ using GraphQL.Client.Serializer.Newtonsoft;
 using GraphQL;
 using DSharpPlus.SlashCommands;
 using static DSharpPlus.Entities.DiscordEmbedBuilder;
-using System.Drawing;
-using System.Net;
-using System.IO;
-using System.Drawing.Imaging;
-using System.Text;
 using Newtonsoft.Json;
-using RestSharp;
+using System.Net.Http;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp;
+using System.IO;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Formats.Png;
 
 namespace AnilistESP
 {
@@ -815,47 +815,45 @@ namespace AnilistESP
             return builder;
         }
 
-        public Bitmap MergeImage(string link1, string link2)
+        public async Task<MemoryStream> MergeImage(string link1, string link2)
         {
-            WebClient wc = new();
-            byte[] bytes = wc.DownloadData(link1);
-            MemoryStream ms = new(bytes);
-            Image ImageOne = Image.FromStream(ms);
+            var client = new HttpClient();
+            var bytes1 = await client.GetByteArrayAsync(link1);
+            var bytes2 = await client.GetByteArrayAsync(link2);
 
-            byte[] bytes2 = wc.DownloadData(link2);
-            MemoryStream ms2 = new(bytes2);
-            Image ImageTwo = Image.FromStream(ms2);
+            using (var memoryStream = new MemoryStream())
+            using (Image<Rgba32> img1 = Image.Load<Rgba32>(bytes1)) // load up source images
+            using (Image<Rgba32> img2 = Image.Load<Rgba32>(bytes2))
 
-            int NewImageHeight = ImageOne.Height > ImageTwo.Height ? ImageOne.Height : ImageTwo.Height; //To calculate height of new image
-            int NewImageWidth = ImageOne.Width + ImageTwo.Width; // width of new image
+            using (Image<Rgba32> outputImage = new Image<Rgba32>(500, 375)) // create output image of the correct dimensions
+            {
+                // reduce source images to correct dimensions
+                // skip if already correct size
+                // if you need to use source images else where use Clone and take the result instead
+                img1.Mutate(o => o.Resize(new Size(250, 375)));
+                img2.Mutate(o => o.Resize(new Size(250, 375)));
 
-            Bitmap NewImageBmp = new(NewImageWidth, NewImageHeight, PixelFormat.Format32bppArgb); // you can change the bpp as per your requirment. Size of image directly propotionate to bpp of image
+                // take the 2 source images and draw them onto the image
+                outputImage.Mutate(o => o
+                    .DrawImage(img1, new Point(0, 0), 1f) // draw the first one top left
+                    .DrawImage(img2, new Point(250, 0), 1f)); // draw the second next to it
 
-            Graphics NewImageGrx = Graphics.FromImage(NewImageBmp);
+                // Encode here for quality
+                var encoder = new PngEncoder();
 
-            NewImageGrx.DrawImageUnscaled(ImageOne, 0, 0); //draw first image at coordinate 0,0 
-            NewImageGrx.DrawImageUnscaled(ImageTwo, ImageOne.Width, 0); //draw second image at coordinate image1.width,0
+                // This saves to the memoryStream with encoder
+                outputImage.Save(memoryStream, encoder);
+                memoryStream.Position = 0; // The position needs to be reset.
 
-            // Para guardar la imagen en el sistema con un nombre aleatorio
-            //string CombineImage = Guid.NewGuid().ToString() + ".png";
-            //NewImageBmp.Save(CombineImage, System.Drawing.Imaging.ImageFormat.Png); // saving combined image. You can specify the ImageFormat as per your requirment. // works!
+                // prepare result to byte[]
+                var myByteArray = memoryStream.ToArray();
 
-            //disposing objects after use
-            ImageOne.Dispose();
-            ImageTwo.Dispose();
-
-            //NewImageBmp.Dispose();
-            NewImageGrx.Dispose();
-
-            return NewImageBmp;
-        }
-
-        public Stream ToStream(Bitmap image)
-        {
-            var stream = new MemoryStream();
-            image.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
-            stream.Position = 0;
-            return stream;
+                // return new stream
+                return new MemoryStream(myByteArray)
+                {
+                    Position = 0,
+                };
+            }
         }
 
         public string LimpiarTexto(string texto)

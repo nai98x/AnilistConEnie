@@ -9,6 +9,27 @@ namespace AnilistESP
 {
     public class UsuariosAnilist
     {
+        public async Task<List<UsuarioAnilistFirebase>> GetPerfilesServidor(ulong guildId)
+        {
+            FuncionesAuxiliares funciones = new();
+            List<UsuarioAnilistFirebase> ret = new();
+            FirestoreDb db = funciones.GetFirestoreClient();
+            CollectionReference collection = db.Collection("AnilistUsers");
+            IAsyncEnumerable<DocumentReference> subcollections = collection.ListDocumentsAsync();
+            IAsyncEnumerator<DocumentReference> subcollectionsEnumerator = subcollections.GetAsyncEnumerator(default);
+            while (await subcollectionsEnumerator.MoveNextAsync())
+            {
+                DocumentReference subcollectionRef = subcollectionsEnumerator.Current;
+                DocumentSnapshot subcollectionSnapshot = await subcollectionRef.GetSnapshotAsync();
+                if (subcollectionSnapshot.Exists)
+                {
+                    ret.Add(subcollectionSnapshot.ConvertTo<UsuarioAnilistFirebase>());
+                }
+            }
+
+            return ret;
+        }
+
         public async Task<List<UsuarioAnilistFirebase>> GetListaUsuarios(long guildId)
         {
             FuncionesAuxiliares funciones = new();

@@ -37,8 +37,6 @@ namespace AnilistESP
 
         private bool Debug;
 
-        private List<DiscordChannel> CanalesCreados = new();
-
         public async Task RunAsync()
         {
             var json = string.Empty;
@@ -50,23 +48,12 @@ namespace AnilistESP
 
             var configJson = JsonConvert.DeserializeObject<ConfigJson>(json);
 
-            string token, prefix;
             IDebuggingService mode = new DebuggingService();
             Debug = mode.RunningInDebugMode();
-            if (Debug)
-            {
-                token = configJson.TokenTest;
-                prefix = ConfigurationManager.AppSettings["PrefixTest"];
-            }
-            else
-            {
-                token = configJson.TokenProd;
-                prefix = ConfigurationManager.AppSettings["PrefixProd"];
-            }
 
             var Config = new DiscordConfiguration
             {
-                Token = token,
+                Token = Debug ? configJson.TokenTest : configJson.TokenProd,
                 TokenType = TokenType.Bot,
                 AutoReconnect = true,
                 ReconnectIndefinitely = true,
@@ -82,9 +69,8 @@ namespace AnilistESP
             Client.ComponentInteractionCreated += Client_ComponentInteractionCreated;
             Client.MessageCreated += Client_MessageCreated;
             Client.MessageReactionAdded += Client_MessageReactionAdded;
-            //Client.MessageDeleted += Client_MessageDeleted;
-            //Client.MessageUpdated += Client_MessageUpdated;
-            //Client.VoiceStateUpdated += Client_VoiceStateUpdated;
+            //Client.GuildMemberUpdated += Client_GuildMemberUpdated;
+            Client.GuildDownloadCompleted += Client_GuildDownloadCompleted;
 
             Client.UseInteractivity(new InteractivityConfiguration());
 
@@ -124,7 +110,7 @@ namespace AnilistESP
 
             var commandsConfig = new CommandsNextConfiguration
             {
-                StringPrefixes = new string[] { prefix },
+                StringPrefixes = new string[] { Debug ? ConfigurationManager.AppSettings["PrefixTest"] : ConfigurationManager.AppSettings["PrefixProd"] },
                 EnableMentionPrefix = true,
                 EnableDms = false,
                 DmHelp = false,
@@ -154,6 +140,19 @@ namespace AnilistESP
             }
 
             await Task.Delay(-1);
+        }
+
+        private Task Client_GuildDownloadCompleted(DiscordClient sender, GuildDownloadCompletedEventArgs e)
+        {
+            _ = Task.Run(async () =>
+            {
+                var service = new UsuariosAnilist();
+                ServiciosSingleton servicio = ServiciosSingleton.GetServiciosSingleton();
+                var usuarios = await service.GetPerfilesServidor(862408834693070898);
+                servicio.SetUsuarios(usuarios);
+            });
+
+            return Task.CompletedTask;
         }
 
         private Task Client_MessageReactionAdded(DiscordClient sender, MessageReactionAddEventArgs e)
@@ -197,187 +196,11 @@ namespace AnilistESP
             return Task.CompletedTask;
         }
 
-        private Task Client_VoiceStateUpdated(DiscordClient sender, VoiceStateUpdateEventArgs e)
-        {
-            _ = Task.Run(async () =>
-            {
-                if (e.Guild.Id == 862408834693070898 || e.Guild.Id == 853766076122005565)
-                {
-                    if (e.Before != null && e.Before.Channel.Users.Count == 0) // Salir del canal
-                    {
-                        var canalOld = CanalesCreados.Find(x => x.Id == e.Before.Channel.Id);
-                        if (canalOld != null)
-                        {
-                            CanalesCreados.Remove(canalOld);
-                            await canalOld.DeleteAsync();
-                        }
-                    }
-                    else // Cambiar de canal o entrar desde 0
-                    {
-                        if ((e.Guild.Id == 862408834693070898 && e.After.Channel.Id == 866057800093007903) || // Prod 
-                            (e.Guild.Id == 853766076122005565 && e.After.Channel.Id == 891842909622644757)) // Test
-                        {
-                            DiscordMember miembro = (DiscordMember)e.User;
-                            DiscordChannel parent;
-                            if (!Debug)
-                            {
-                                parent = e.Guild.GetChannel(862408834693070900);
-                            }
-                            else
-                            {
-                                parent = e.Guild.GetChannel(853766076122005567);
-                            }
-
-                            string channelName = $"Canal de {miembro.DisplayName}";
-                            List<DiscordOverwriteBuilder> overwrites = new();
-
-                            DiscordOverwriteBuilder ow;
-
-                            ow = new DiscordOverwriteBuilder().Allow(Permissions.ManageChannels).For(miembro);
-                            overwrites.Add(ow);
-
-                            ow = new DiscordOverwriteBuilder().Allow(Permissions.AccessChannels).For(miembro);
-                            overwrites.Add(ow);
-
-                            ow = new DiscordOverwriteBuilder().Allow(Permissions.Speak).For(miembro);
-                            overwrites.Add(ow);
-
-                            var canal = await e.Guild.CreateVoiceChannelAsync(channelName, parent, overwrites: overwrites);
-                            CanalesCreados.Add(canal);
-
-                            await miembro.PlaceInAsync(canal);
-                        }
-                    }
-                }
-            });
-            return Task.CompletedTask;
-        }
-
-        private Task Client_MessageUpdated(DiscordClient sender, MessageUpdateEventArgs e)
-        {
-            _ = Task.Run(async () =>
-            {
-                if ((e.Guild.Id == 862408834693070898 || e.Guild.Id == 853766076122005565) && e.Message.Channel.Id != LogChannel.Id && !e.Message.Author.IsBot)
-                {
-                    await LogChannel.SendMessageAsync(new DiscordEmbedBuilder
-                    {
-                        Title = $"Mensaje editado en #{e.Message.Channel.Name}",
-                        Color = DiscordColor.Yellow,
-                        Author = new EmbedAuthor
-                        {
-                            IconUrl = e.Message.Author.AvatarUrl,
-                            Name = $"{e.Message.Author.Username}#{e.Message.Author.Discriminator}"
-                        }
-                    }
-                    .AddField("Antes:", e.MessageBefore.Content)
-                    .AddField("Después:", e.Message.Content)
-                    );
-                }
-            });
-            return Task.CompletedTask;
-        }
-
-        private Task Client_MessageDeleted(DiscordClient sender, MessageDeleteEventArgs e)
-        {
-            _ = Task.Run(async () =>
-            {
-                if((e.Guild.Id == 862408834693070898 || e.Guild.Id == 853766076122005565) && e.Message.Channel.Id != LogChannel.Id && !e.Message.Author.IsBot)
-                {
-                    await LogChannel.SendMessageAsync(new DiscordEmbedBuilder
-                    {
-                        Title = $"Mensaje eliminado en #{e.Message.Channel.Name}",
-                        Color = DiscordColor.Red,
-                        Description = e.Message.Content,
-                        Author = new EmbedAuthor
-                        {
-                            IconUrl = e.Message.Author.AvatarUrl,
-                            Name = $"{e.Message.Author.Username}#{e.Message.Author.Discriminator}"
-                        }
-                    });
-                }
-            });
-            return Task.CompletedTask;
-        }
-
         private Task Client_ComponentInteractionCreated(DiscordClient sender, ComponentInteractionCreateEventArgs e)
         {
             _ = Task.Run(async () =>
             {
                 await e.Interaction.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
-
-
-                if (e.Guild.Id == 862408834693070898)
-                {
-                    if (e.Interaction.Data.CustomId == "ReactionRolesColores" || e.Interaction.Data.CustomId == "ReactionRolesPaises")
-                    {
-                        foreach (var rolId in e.Interaction.Data.Values)
-                        {
-                            var rol = e.Guild.GetRole(ulong.Parse(rolId));
-                            if (rol != null)
-                            {
-                                DiscordMember miembro = (DiscordMember)e.User;
-                                try
-                                {
-                                    await miembro.GrantRoleAsync(rol);
-                                    await e.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
-                                    {
-                                        Content = $"Se te ha asignado el rol `{rol.Name}` exitosamente!",
-                                        IsEphemeral = true
-                                    });
-                                    List<ulong> lista;
-                                    if(e.Interaction.Data.CustomId == "ReactionRolesColores")
-                                    {
-                                        lista = funciones.IDRolesColoresAnilistEsp2();
-                                    }
-                                    else // Paises
-                                    {
-                                        lista = funciones.IDRolesPaisesAnilistEsp2();
-                                    }
-                                    var roles = miembro.Roles.ToList();
-                                    foreach (var r in lista)
-                                    {
-                                        DiscordRole check = roles.Find(x => x.Id == r);
-                                        if (r != rol.Id && check != null)
-                                        {
-                                            try
-                                            {
-                                                await miembro.RevokeRoleAsync(check);
-                                            }
-                                            catch (Exception exx)
-                                            {
-                                                await e.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
-                                                {
-                                                    Content = $"Error asignando rol `{check.Name}`!",
-                                                    IsEphemeral = true
-                                                });
-                                                await LogChannel.SendMessageAsync(new DiscordEmbedBuilder
-                                                {
-                                                    Color = DiscordColor.Red,
-                                                    Title = $"Error asignando rol `{check.Name} (id: {check.Id})`",
-                                                    Description = exx.Message
-                                                });
-                                            }
-                                        }
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    await e.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
-                                    {
-                                        Content = $"Error asignando rol `{rol.Name}`!",
-                                        IsEphemeral = true
-                                    });
-                                    await LogChannel.SendMessageAsync(new DiscordEmbedBuilder
-                                    {
-                                        Color = DiscordColor.Red,
-                                        Title = $"Error asignando rol `{rol.Name} (id: {rol.Id})`",
-                                        Description = ex.Message
-                                    });
-                                }
-                            }
-                        }
-                    }
-                }
             });
             return Task.CompletedTask;
         }

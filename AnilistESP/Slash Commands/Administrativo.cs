@@ -115,56 +115,42 @@ namespace AnilistESP
             }
         }
 
-        [SlashCommand("embed", "Manda un mensaje con embed")]
-        public async Task Embed(InteractionContext ctx, [Option("Canal", "Donde se enviará el embed")] DiscordChannel canal)
+        [SlashCommand("silvia", "Actualiza la cuenta regresiva de Silvia")]
+        [SlashRequireUserPermissions(Permissions.None)]
+        [SlashRequireBotPermissions(Permissions.ManageNicknames)]
+        public async Task Silvia(InteractionContext ctx)
         {
-            await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
-            await ctx.DeleteResponseAsync();
-
-            var interactivity = ctx.Client.GetInteractivity();
-            string customIdSelect = "select";
-
-            var msgbuilder = new DiscordMessageBuilder();
-            msgbuilder.AddEmbed(new DiscordEmbedBuilder { 
-                Color = _funciones.GetColor()
-            });
-
-            msgbuilder.AddComponents(new DiscordSelectComponent(customIdSelect, "Selecciona una opción", new DiscordSelectComponentOption[] {
-                new DiscordSelectComponentOption("Titulo", "Titulo", "El titulo del embed", false, null),
-                new DiscordSelectComponentOption("Descripcion", "Descripcion", "La descripcion del embed", false, null),
-                new DiscordSelectComponentOption("Imagen", "Imagen", "La imagen del embed", false, null),
-                new DiscordSelectComponentOption("Footer", "Footer", "El footer del embed", false, null),
-                new DiscordSelectComponentOption("Thumbnail", "Thumbnail", "El thumbnail del embed", false, null),
-                new DiscordSelectComponentOption("URL", "URL", "URL del embed", false, null),
-                new DiscordSelectComponentOption("PUBLICAR", "PUBLICAR", "Publica el embed", false, null),
-                new DiscordSelectComponentOption("CANCELAR", "CANCELAR", "Cancela el embed", false, null),
-            }));
-
-            //var boton1 = new DiscordButtonComponent(ButtonStyle.Success, "publicar", "Publicar");
-            //var boton2 = new DiscordButtonComponent(ButtonStyle.Danger, "cancelar", "Cancelar");
-            //whbuilder.AddComponents(boton1, boton2);
-
-            var msg = await msgbuilder.SendAsync(ctx.Channel);
-
-            var response = await interactivity.WaitForSelectAsync(msg, ctx.User, customIdSelect, TimeSpan.FromMinutes(5));
-
-            if (!response.TimedOut)
+            if (ctx.Guild.Id == 862408834693070898)
             {
-                var result = response.Result;
-                string idSeleccionado = result.Interaction.Data.Values[0];
-                switch (idSeleccionado)
+                await ctx.DeferAsync(true);
+
+                var cumple = new DateTimeOffset(day: 17, month: 9, year: 2022, hour: 0, minute: 0, second: 0, offset: TimeSpan.FromHours(1));
+                if (DateTime.Now < new DateTime(day: 17, month: 9, year: 2022))
                 {
-                    case "Titulo":
-                        //string titulo = await _funciones.GetStringInteractivity(ctx, "Escribe un titulo", "Titulo del embed", "Error", true);
-
-                        break;
+                    var cantidad = (DateTimeOffset.Now - cumple).TotalDays;
+                    cantidad = Math.Abs(Math.Round(cantidad) - 1);
+                    var silvia = await ctx.Guild.GetMemberAsync(392434346314825728);
+                    await silvia.ModifyAsync(x => x.Nickname = $"{cantidad} dias");
                 }
+
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(
+                    new DiscordEmbedBuilder
+                    {
+                        Title = "Dias actualizados",
+                        Color = DiscordColor.Green,
+                    }));
             }
-
-            await msg.DeleteAsync();
-
-            DiscordEmbedBuilder builder = new();
-            builder.WithColor(_funciones.GetColor());
+            else
+            {
+                await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder()
+                {
+                    IsEphemeral = true,
+                }.AddEmbed(new DiscordEmbedBuilder
+                {
+                    Title = "Error",
+                    Description = "Comando no habilitado para este servidor",
+                }));
+            }
         }
     }
 }

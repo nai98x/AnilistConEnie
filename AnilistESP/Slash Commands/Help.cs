@@ -7,8 +7,6 @@ namespace AnilistESP
 {
     public class Help : ApplicationCommandModule
     {
-        private readonly FuncionesAuxiliares funciones = new();
-
         [SlashCommand("help", "Informacion y ayuda del bot")]
         public async Task HelpCommand(InteractionContext ctx)
         {
@@ -36,7 +34,7 @@ namespace AnilistESP
             {
                 Title = "Acerca del bot",
                 Description = descGeneral + comandos,
-                Color = funciones.GetColor()
+                Color = Funciones.GetColor()
             };
 
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embed));

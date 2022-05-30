@@ -13,17 +13,15 @@ namespace AnilistESP
     [RequireUserPermissions(DSharpPlus.Permissions.ManageGuild)]
     public class Administracion : BaseCommandModule
     {
-        private readonly FuncionesAuxiliares funciones = new FuncionesAuxiliares();
-
         [Command("say"), Aliases("s"), Description("Yumiko habla en el chat.")]
         public async Task Say(CommandContext ctx, [Description("Mensaje para replicar")][RemainingText] string mensaje = null)
         {
             var interactivty = ctx.Client.GetInteractivity();
 
-            bool usarEmbed = await funciones.GetSiNoInteractivity(ctx, interactivty, "Usar embed", "Determina si se mandará un embed o un mensaje normal");
+            bool usarEmbed = await Funciones.GetSiNoInteractivity(ctx, interactivty, "Usar embed", "Determina si se mandará un embed o un mensaje normal");
             if (usarEmbed)
             {
-                DiscordEmbedBuilder embed = await funciones.CrearEmbed(ctx, interactivty);
+                DiscordEmbedBuilder embed = await Funciones.CrearEmbed(ctx, interactivty);
                 if(embed != null)
                 {
                     await ctx.Channel.SendMessageAsync(embed);
@@ -41,7 +39,7 @@ namespace AnilistESP
         [Command("paises"), Aliases("arrpaises"), Description("Agrega reaction roles de paises."), Hidden, RequireOwner]
         public async Task AddReactionRolesPaises(CommandContext ctx, DiscordChannel canal)
         {
-            DiscordEmbedBuilder embed = await funciones.CrearEmbed(ctx, ctx.Client.GetInteractivity());
+            DiscordEmbedBuilder embed = await Funciones.CrearEmbed(ctx, ctx.Client.GetInteractivity());
 
             await canal.SendMessageAsync(new DiscordMessageBuilder()
                 .WithEmbed(embed)
@@ -78,7 +76,7 @@ namespace AnilistESP
             string error = string.Empty;
 
             string customId, placeholder;
-            if (await funciones.GetSiNoInteractivity(ctx, interactivty, "¿Vas a agregar colores?", "Para funcionamiento interno"))
+            if (await Funciones.GetSiNoInteractivity(ctx, interactivty, "¿Vas a agregar colores?", "Para funcionamiento interno"))
             {
                 customId = "ReactionRolesColores";
                 placeholder = "Selecciona un color";
@@ -95,7 +93,7 @@ namespace AnilistESP
                 opciones.Add(new(label: $"{rol.Name}", value: $"{rol.Id}"));
             }
 
-            DiscordEmbedBuilder embed = await funciones.CrearEmbed(ctx, interactivty);
+            DiscordEmbedBuilder embed = await Funciones.CrearEmbed(ctx, interactivty);
             if(embed != null)
             {
                 await canal.SendMessageAsync(new DiscordMessageBuilder()
@@ -114,10 +112,10 @@ namespace AnilistESP
                     Title = "Error",
                     Description = error,
                     Color = DiscordColor.Red,
-                    Footer = funciones.GetFooter(ctx)
+                    Footer = Funciones.GetFooter(ctx)
                 });
                 await Task.Delay(5000);
-                await funciones.BorrarMensaje(ctx, msg.Id);
+                await Funciones.BorrarMensaje(ctx, msg.Id);
             }
         }
     }

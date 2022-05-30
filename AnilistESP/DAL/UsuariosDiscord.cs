@@ -9,12 +9,11 @@ namespace AnilistESP
 {
     public class UsuariosDiscord
     {
-        private readonly FuncionesAuxiliares funciones = new FuncionesAuxiliares();
+        private static readonly FirestoreDb db = Funciones.GetFirestoreClient();
 
         public async Task<List<UsuarioDiscordFirebase>> GetListaUsuarios(long guildId)
         {
             var ret = new List<UsuarioDiscordFirebase>();
-            FirestoreDb db = funciones.GetFirestoreClient();
 
             CollectionReference col = db.Collection("Cumpleaños").Document($"{guildId}").Collection("Usuarios");
             var snap = await col.GetSnapshotAsync();
@@ -32,11 +31,11 @@ namespace AnilistESP
 
         public async Task<List<UserCumple>> GetBirthdaysHoy(long guildId)
         {
-            List<UserCumple> lista = new List<UserCumple>();
+            List<UserCumple> lista = new ();
             var listaFirebase = await GetListaUsuarios(guildId);
             listaFirebase.ForEach(x =>
             {
-                DateTime fchAux = new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.Now.Year);
+                var fchAux = new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.Now.Year);
                 if (fchAux >= DateTime.Today && fchAux <= DateTime.Now)
                 {
                     lista.Add(new UserCumple()
@@ -53,11 +52,11 @@ namespace AnilistESP
 
         public async Task<List<UserCumple>> GetBirthdays(long guildId, bool month)
         {
-            List<UserCumple> lista = new List<UserCumple>();
+            List<UserCumple> lista = new ();
             var listaFirebase = await GetListaUsuarios(guildId);
             listaFirebase.ForEach(x =>
             {
-                DateTime fchAux = new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.Now.Year);
+                var fchAux = new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.Now.Year);
                 DateTime nuevoCumple;
                 if (DateTime.Now > new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.Now.Year))
                     nuevoCumple = new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.Now.Year + 1);
@@ -93,7 +92,6 @@ namespace AnilistESP
 
         public async Task SetBirthday(ulong guildId, ulong userId, DateTime fecha, bool mostrarEdad)
         {
-            FirestoreDb db = funciones.GetFirestoreClient();
             DocumentReference doc = db.Collection("Cumpleaños").Document($"{guildId}").Collection("Usuarios").Document($"{userId}");
             var snap = await doc.GetSnapshotAsync();
             UsuarioDiscordFirebase registro;
@@ -103,7 +101,7 @@ namespace AnilistESP
                 registro = snap.ConvertTo<UsuarioDiscordFirebase>();
                 registro.Birthday = timeutc;
                 registro.MostrarYear = mostrarEdad;
-                Dictionary<string, object> data = new Dictionary<string, object>()
+                Dictionary<string, object> data = new ()
                 {
                     {"user_id", registro.user_id},
                     {"Birthday", registro.Birthday},
@@ -113,7 +111,7 @@ namespace AnilistESP
             }
             else
             {
-                Dictionary<string, object> data = new Dictionary<string, object>()
+                Dictionary<string, object> data = new ()
                 {
                     {"user_id", userId},
                     {"Birthday", timeutc},
@@ -125,7 +123,6 @@ namespace AnilistESP
 
         public async Task DeleteBirthday(InteractionContext ctx)
         {
-            FirestoreDb db = funciones.GetFirestoreClient();
             DocumentReference doc = db.Collection("Cumpleaños").Document($"{ctx.Guild.Id}").Collection("Usuarios").Document($"{ctx.User.Id}");
             var snap = await doc.GetSnapshotAsync();
             if (snap.Exists)

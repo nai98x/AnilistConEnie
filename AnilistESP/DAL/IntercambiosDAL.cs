@@ -12,13 +12,12 @@ namespace AnilistESP
 {
     public class IntercambiosDAL
     {
-        private readonly FuncionesAuxiliares funciones = new();
-
+        private static readonly FirestoreDb db = Funciones.GetFirestoreClient();
+        
         public async Task<List<IntercambiosFirebase>> GetInscriptos(ulong guildId, string tipo)
         {
             List<IntercambiosFirebase> ret = new();
 
-            FirestoreDb db = funciones.GetFirestoreClient();
             CollectionReference col = db.Collection("Intercambios").Document($"{guildId}").Collection("Tipo").Document($"{tipo}").Collection("Usuarios");
             var snap = await col.GetSnapshotAsync();
 
@@ -37,7 +36,6 @@ namespace AnilistESP
         {
             List<IntercambiosFirebase> ret = new();
 
-            FirestoreDb db = funciones.GetFirestoreClient();
             var query = db.Collection("Intercambios").Document($"{guildId}").Collection("Tipo").Document($"{tipo}").Collection("Usuarios").OrderBy("Orden");
             var snap = await query.GetSnapshotAsync();
 
@@ -56,7 +54,6 @@ namespace AnilistESP
         {
             List<IntercambiosRecomendacionFirebase> ret = new();
 
-            FirestoreDb db = funciones.GetFirestoreClient();
             var query = db.Collection("Intercambios").Document($"{guildId}").Collection("Tipo").Document($"{tipo}").Collection("Recomendaciones");
             var snap = await query.GetSnapshotAsync();
 
@@ -164,7 +161,6 @@ namespace AnilistESP
                         "Si quieres participar, utilizanda el comando `/intercambio inscribirse`"
             };
 
-            FirestoreDb db = funciones.GetFirestoreClient();
             DocumentReference doc = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}");
             var snap = await doc.GetSnapshotAsync();
             if (snap.Exists)
@@ -230,7 +226,6 @@ namespace AnilistESP
 
         public async Task IniciarElecciones(InteractionContext ctx, string tipo)
         {
-            FirestoreDb db = funciones.GetFirestoreClient();
             DocumentReference doc = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}");
             var snap = await doc.GetSnapshotAsync();
             if (snap.Exists)
@@ -377,7 +372,6 @@ namespace AnilistESP
 
         public async Task InscribirseIntercambio(InteractionContext ctx, string tipo, string pref1, string pref2, string ban)
         {
-            FirestoreDb db = funciones.GetFirestoreClient();
             DocumentReference doc = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}");
             var snap = await doc.GetSnapshotAsync();
             if (snap.Exists)
@@ -460,7 +454,6 @@ namespace AnilistESP
 
         public async Task DesinscribirseIntercambio(InteractionContext ctx, string tipo)
         {
-            FirestoreDb db = funciones.GetFirestoreClient();
             DocumentReference doc = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}");
             var snap = await doc.GetSnapshotAsync();
             if (snap.Exists)
@@ -522,7 +515,6 @@ namespace AnilistESP
 
         public async Task RevealIntercambio(InteractionContext ctx, string tipo)
         {
-            FirestoreDb db = funciones.GetFirestoreClient();
             DocumentReference doc = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}");
             var snap = await doc.GetSnapshotAsync();
             if (snap.Exists)
@@ -602,7 +594,6 @@ namespace AnilistESP
 
         public async Task RecomendarIntercambio(InteractionContext ctx, string tipo, string media)
         {
-            FirestoreDb db = funciones.GetFirestoreClient();
             DocumentReference doc = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}");
             var snap = await doc.GetSnapshotAsync();
             if (snap.Exists)
@@ -722,7 +713,6 @@ namespace AnilistESP
 
         public async Task IniciarIntercambio(InteractionContext ctx, string tipo)
         {
-            FirestoreDb db = funciones.GetFirestoreClient();
             DocumentReference doc = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}");
             var snap = await doc.GetSnapshotAsync();
             if (snap.Exists)
@@ -827,7 +817,6 @@ namespace AnilistESP
 
         public async Task GetRecomendado(InteractionContext ctx, string tipo)
         {
-            FirestoreDb db = funciones.GetFirestoreClient();
             DocumentReference doc = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}");
             var snap = await doc.GetSnapshotAsync();
             if (snap.Exists)
@@ -880,7 +869,6 @@ namespace AnilistESP
 
         public async Task TerminarIntercambio(InteractionContext ctx, string tipo)
         {
-            FirestoreDb db = funciones.GetFirestoreClient();
             DocumentReference doc = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}");
             var snap = await doc.GetSnapshotAsync();
             if (snap.Exists)
@@ -969,7 +957,6 @@ namespace AnilistESP
 
         public async Task HacerReclamacion(InteractionContext ctx, string tipo, string motivo)
         {
-            FirestoreDb db = funciones.GetFirestoreClient();
             DocumentReference doc = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}");
             var snap = await doc.GetSnapshotAsync();
             if (snap.Exists)

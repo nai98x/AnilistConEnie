@@ -11,8 +11,6 @@ namespace AnilistESP
 {
     public class Fun : ApplicationCommandModule
     {
-        private readonly FuncionesAuxiliares funciones = new();
-
         [SlashRequireUserPermissions(Permissions.ManageGuild)]
         [SlashRequireBotPermissions(Permissions.ManageWebhooks)]
         [SlashCommand("fakesay", "Usurpa la identidad de un usuario y di algo en su nombre")]
@@ -79,7 +77,7 @@ namespace AnilistESP
                 Title = "Shippeo",
                 Description = $"Shippeo a {ctxMiembro.Mention} con **{elegido.Mention}** 💘",
                 ImageUrl = "attachment://imagen.png"
-            }).AddFile("imagen.png", await funciones.MergeImage(avatar1, avatar2)));
+            }).AddFile("imagen.png", await Funciones.MergeImage(avatar1, avatar2)));
         }
 
         [SlashCommand("shiprandom", "Elijo una ship del servidor")]
@@ -123,7 +121,7 @@ namespace AnilistESP
                 Title = "Shippeo Random",
                 Description = $"Shippeo a {elegido1.Mention} con **{elegido2.Mention}** 💘",
                 ImageUrl = "attachment://imagen.png"
-            }).AddFile("imagen.png", await funciones.MergeImage(avatar1, avatar2)));
+            }).AddFile("imagen.png", await Funciones.MergeImage(avatar1, avatar2)));
         }
 
         [SlashCommand("ooc", "Out of Context")]

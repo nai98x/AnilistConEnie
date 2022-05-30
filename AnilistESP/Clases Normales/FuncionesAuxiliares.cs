@@ -25,18 +25,18 @@ using SixLabors.ImageSharp.Formats.Png;
 
 namespace AnilistESP
 {
-    public class FuncionesAuxiliares
+    public static class Funciones
     {
-        private readonly UsuariosAnilist usuariosAnilist = new();
-        private static Random rng = new Random();
-        public FirestoreDb GetFirestoreClient()
+        private static readonly UsuariosAnilist usuariosAnilist = new();
+        private static readonly Random rng = new ();
+        public static FirestoreDb GetFirestoreClient()
         {
             string path = AppDomain.CurrentDomain.BaseDirectory + @"firebase.json";
             Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", path);
             return FirestoreDb.Create(ConfigurationManager.AppSettings["NombreDbFirebase"]);
         }
 
-        public async Task<DiscordChannel> GetCanalUsuariosAnilist(DiscordClient client, DiscordGuild guild)
+        public static async Task<DiscordChannel> GetCanalUsuariosAnilist(DiscordClient client, DiscordGuild guild)
         {
             IDebuggingService mode = new DebuggingService();
             bool debug = mode.RunningInDebugMode();
@@ -58,7 +58,7 @@ namespace AnilistESP
             }
         }
 
-        public async Task BorrarMensajeUsuarioAnilist(DiscordClient client, DiscordGuild guild, long oldMessageId)
+        public static async Task BorrarMensajeUsuarioAnilist(DiscordClient client, DiscordGuild guild, long oldMessageId)
         {
             DiscordChannel canal = await GetCanalUsuariosAnilist(client, guild);
             DiscordMessage mensaje = await canal.GetMessageAsync((ulong)oldMessageId);
@@ -72,7 +72,7 @@ namespace AnilistESP
             }
         }
 
-        public DiscordEmoji ToEmoji(string text)
+        public static DiscordEmoji ToEmoji(string text)
         {
             text = text.Trim();
             var match = Regex.Match(text, @"^<?a?:?([a-zA-Z0-9_]+):([0-9]+)>?$");
@@ -82,7 +82,7 @@ namespace AnilistESP
             return JsonConvert.DeserializeObject<DiscordEmoji>(json);
         }
 
-        public int GetNumeroRandom(int min, int max)
+        public static int GetNumeroRandom(int min, int max)
         {
             if (min <= 0 && max <= 0)
                 return 0;
@@ -90,7 +90,7 @@ namespace AnilistESP
             return rnd.Next(minValue: min, maxValue: max);
         }
 
-        public string NormalizarField(string s)
+        public static string NormalizarField(string s)
         {
             if (s.Length > 1024)
             {
@@ -104,7 +104,7 @@ namespace AnilistESP
             return s;
         }
 
-        public string NormalizarDescription(string s)
+        public static string NormalizarDescription(string s)
         {
             if (s.Length > 2048)
             {
@@ -118,7 +118,7 @@ namespace AnilistESP
             return s;
         }
 
-        public string UppercaseFirst(string s)
+        public static string UppercaseFirst(string s)
         {
             if (string.IsNullOrEmpty(s))
             {
@@ -129,7 +129,7 @@ namespace AnilistESP
             return new string(a);
         }
 
-        public EmbedFooter GetFooter(CommandContext ctx)
+        public static EmbedFooter GetFooter(CommandContext ctx)
         {
             return  new EmbedFooter()
             {
@@ -138,19 +138,19 @@ namespace AnilistESP
             };
         }
 
-        public EmbedFooter GetFooter(InteractionContext ctx) => new()
+        public static EmbedFooter GetFooter(InteractionContext ctx) => new()
         {
             Text = $"Invocado por {ctx.Member.DisplayName} ({ctx.Member.Username}#{ctx.Member.Discriminator})",
             IconUrl = ctx.Member.AvatarUrl
         };
 
-        public EmbedFooter GetFooter(Context ctx) => new()
+        public static EmbedFooter GetFooter(Context ctx) => new()
         {
             Text = $"Invocado por {ctx.Member.DisplayName} ({ctx.Member.Username}#{ctx.Member.Discriminator})",
             IconUrl = ctx.Member.AvatarUrl
         };
 
-        public EmbedAuthor GetAuthor(string nombre, string avatar, string url)
+        public static EmbedAuthor GetAuthor(string nombre, string avatar, string url)
         {
             return new EmbedAuthor()
             {
@@ -160,24 +160,24 @@ namespace AnilistESP
             };
         }
 
-        public DiscordColor GetColor()
+        public static DiscordColor GetColor()
         {
             return DiscordColor.Blurple;
         }
 
-        public string QuitarCaracteresEspeciales(string str)
+        public static string QuitarCaracteresEspeciales(string str)
         {
             if(str != null)
                 return Regex.Replace(str, @"[^a-zA-Z0-9]+", " ").Trim();
             return null;
         }
 
-        public bool ChequearPermisoYumiko(CommandContext ctx, DSharpPlus.Permissions permiso)
+        public static bool ChequearPermisoYumiko(CommandContext ctx, DSharpPlus.Permissions permiso)
         {
             return DSharpPlus.PermissionMethods.HasPermission(ctx.Channel.PermissionsFor(ctx.Guild.CurrentMember), permiso);
         }
 
-        public async Task BorrarMensaje(CommandContext ctx, ulong msgId)
+        public async static Task BorrarMensaje(CommandContext ctx, ulong msgId)
         {
             if(ChequearPermisoYumiko(ctx, Permissions.ManageMessages))
             {
@@ -193,7 +193,7 @@ namespace AnilistESP
             }
         }
 
-        public async Task BorrarMensaje(Context ctx, ulong msgId)
+        public async static Task BorrarMensaje(Context ctx, ulong msgId)
         {
             if (ChequearPermisoBot(ctx, Permissions.ManageMessages))
             {
@@ -209,17 +209,17 @@ namespace AnilistESP
             }
         }
 
-        public bool ChequearPermisoBot(Context ctx, Permissions permiso)
+        public static bool ChequearPermisoBot(Context ctx, Permissions permiso)
         {
             return PermissionMethods.HasPermission(ctx.Channel.PermissionsFor(ctx.Guild.CurrentMember), permiso);
         }
 
-        public bool ChequearPermisoMember(Context ctx, DiscordMember member, Permissions permiso)
+        public static bool ChequearPermisoMember(Context ctx, DiscordMember member, Permissions permiso)
         {
             return PermissionMethods.HasPermission(ctx.Channel.PermissionsFor(member), permiso);
         }
 
-        public async Task<DateTime?> CrearDate(CommandContext ctx)
+        public async static Task<DateTime?> CrearDate(CommandContext ctx)
         {
             DiscordMessage msgDia, msgMes, msgAnio, error;
             DSharpPlus.Interactivity.InteractivityResult<DiscordMessage> msgDiaInter, msgMesInter, msgAnioInter;
@@ -377,7 +377,7 @@ namespace AnilistESP
             return null;
         }
 
-        public async Task GrabarLogError(Context ctx, string descripcion)
+        public async static Task GrabarLogError(Context ctx, string descripcion)
         {
             var Guild = await ctx.Client.GetGuildAsync(713809173573271613);
             if(Guild != null)
@@ -403,7 +403,7 @@ namespace AnilistESP
             }
         }
 
-        public async Task GrabarLogUsuarioOutAnilist(DiscordClient Client, DiscordMember user, DiscordGuild guild)
+        public async static Task GrabarLogUsuarioOutAnilist(DiscordClient Client, DiscordMember user, DiscordGuild guild)
         {
             var Guild = await Client.GetGuildAsync(787033852258418768);
             var ChannelErrores = Guild.GetChannel(854383940231233597);
@@ -420,7 +420,7 @@ namespace AnilistESP
             });
         }
 
-        public async Task<string> GetStringInteractivity(CommandContext ctx, string tituloBusqueda, string descBusqueda, string descError, bool permitirVacio)
+        public async static Task<string> GetStringInteractivity(CommandContext ctx, string tituloBusqueda, string descBusqueda, string descError, bool permitirVacio)
         {
             var interactivity = ctx.Client.GetInteractivity();
             var msgUsuario = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
@@ -460,7 +460,7 @@ namespace AnilistESP
             }
         }
 
-        public async Task<bool> GetSiNoInteractivity(CommandContext ctx, InteractivityExtension interactivity, string titulo, string descripcion)
+        public async static Task<bool> GetSiNoInteractivity(CommandContext ctx, InteractivityExtension interactivity, string titulo, string descripcion)
         {
             DiscordButtonComponent buttonSi = new(ButtonStyle.Success, "true", "Si");
             DiscordButtonComponent buttonNo = new(ButtonStyle.Danger, "false", "No");
@@ -489,7 +489,7 @@ namespace AnilistESP
             }
         }
 
-        public async Task<bool> GetSiNoInteractivity(Context ctx, InteractivityExtension interactivity, string titulo, string descripcion)
+        public async static Task<bool> GetSiNoInteractivity(Context ctx, InteractivityExtension interactivity, string titulo, string descripcion)
         {
             DiscordButtonComponent buttonSi = new(ButtonStyle.Success, "true", "Si");
             DiscordButtonComponent buttonNo = new(ButtonStyle.Danger, "false", "No");
@@ -518,7 +518,7 @@ namespace AnilistESP
             }
         }
 
-        public async Task<DiscordEmbedBuilder> CrearEmbed(CommandContext ctx, InteractivityExtension interactivity)
+        public async static Task<DiscordEmbedBuilder> CrearEmbed(CommandContext ctx, InteractivityExtension interactivity)
         {
             DiscordEmbedBuilder builder = new();
             builder.WithColor(GetColor());
@@ -566,7 +566,7 @@ namespace AnilistESP
             return builder;
         }
 
-        public List<ulong> IDRolesColoresAnilistEsp2()
+        public static List<ulong> IDRolesColoresAnilistEsp2()
         {
             List<ulong> ret = new();
 
@@ -617,7 +617,7 @@ namespace AnilistESP
             return ret;
         }
 
-        public List<ulong> IDRolesPaisesAnilistEsp2()
+        public static List<ulong> IDRolesPaisesAnilistEsp2()
         {
             List<ulong> ret = new();
 
@@ -645,7 +645,7 @@ namespace AnilistESP
             return ret;
         }
 
-        public Context GetContext(InteractionContext itx)
+        public static Context GetContext(InteractionContext itx)
         {
             return new()
             {
@@ -658,7 +658,7 @@ namespace AnilistESP
             };
         }
 
-        public Context GetContext(CommandContext ctx)
+        public static Context GetContext(CommandContext ctx)
         {
             return new()
             {
@@ -673,7 +673,7 @@ namespace AnilistESP
             };
         }
 
-        public async Task SetPerfilAnilist(Context ctx, string usuario)
+        public static async Task SetPerfilAnilist(Context ctx, string usuario)
         {
             bool porUrl = Uri.TryCreate(usuario, UriKind.Absolute, out Uri uriResult)
                 && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
@@ -764,7 +764,7 @@ namespace AnilistESP
             }
         }
 
-        public DiscordEmbedBuilder LogInteractionCommand(dynamic e, string titulo, bool parms, bool errored)
+        public static DiscordEmbedBuilder LogInteractionCommand(dynamic e, string titulo, bool parms, bool errored)
         {
             var builder = new DiscordEmbedBuilder()
             {
@@ -815,7 +815,7 @@ namespace AnilistESP
             return builder;
         }
 
-        public async Task<MemoryStream> MergeImage(string link1, string link2)
+        public async static Task<MemoryStream> MergeImage(string link1, string link2)
         {
             var client = new HttpClient();
             var bytes1 = await client.GetByteArrayAsync(link1);
@@ -824,8 +824,8 @@ namespace AnilistESP
             using (var memoryStream = new MemoryStream())
             using (Image<Rgba32> img1 = Image.Load<Rgba32>(bytes1)) // load up source images
             using (Image<Rgba32> img2 = Image.Load<Rgba32>(bytes2))
-
-            using (Image<Rgba32> outputImage = new Image<Rgba32>(500, 375)) // create output image of the correct dimensions
+                
+            using (var outputImage = new Image<Rgba32>(500, 375)) // create output image of the correct dimensions
             {
                 // reduce source images to correct dimensions
                 // skip if already correct size
@@ -856,7 +856,7 @@ namespace AnilistESP
             }
         }
 
-        public string LimpiarTexto(string texto)
+        public static string LimpiarTexto(string texto)
         {
             if (texto != null)
             {
@@ -883,7 +883,7 @@ namespace AnilistESP
             return texto;
         }
 
-        public async Task<int> GetElegido(InteractionContext ctx, List<string> opciones)
+        public async static Task<int> GetElegido(InteractionContext ctx, List<string> opciones)
         {
             int cantidadOpciones = opciones.Count;
             if (cantidadOpciones == 1)
@@ -924,7 +924,7 @@ namespace AnilistESP
             return -1;
         }
 
-        public string NormalizarBoton(string s)
+        public static string NormalizarBoton(string s)
         {
             if (s.Length > 80)
             {

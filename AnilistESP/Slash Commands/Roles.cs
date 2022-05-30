@@ -10,8 +10,6 @@ namespace AnilistESP
 {
     public class Roles : ApplicationCommandModule
     {
-        private readonly FuncionesAuxiliares funciones = new();
-
         [SlashCommand("birthdayroleadd", "Le agrega a un usuario el rol de cumpleañero (Staff)")]
         [SlashRequireUserPermissions(Permissions.ManageRoles)]
         [SlashRequireBotPermissions(Permissions.ManageRoles)]
@@ -19,7 +17,7 @@ namespace AnilistESP
         {
             if (ctx.Guild.Id == 862408834693070898)
             {
-                var context = funciones.GetContext(ctx);
+                var context = Funciones.GetContext(ctx);
                 DiscordMember miembro = (DiscordMember)user;
                 ulong idRol = 869257331484004363;
                 var rol = ctx.Guild.GetRole(idRol);
@@ -47,7 +45,7 @@ namespace AnilistESP
                             Title = "Rol no otorgado",
                             Description = $"Error asignando rol `{rol.Name}`!"
                         }));
-                        await funciones.GrabarLogError(context, $"Error asignando rol `{rol.Name} (id: {rol.Id})`: {ex.Message}\n```{ex.StackTrace}```");
+                        await Funciones.GrabarLogError(context, $"Error asignando rol `{rol.Name} (id: {rol.Id})`: {ex.Message}\n```{ex.StackTrace}```");
                     }
                 }
             }
@@ -71,7 +69,7 @@ namespace AnilistESP
         {
             if (ctx.Guild.Id == 862408834693070898)
             {
-                var context = funciones.GetContext(ctx);
+                var context = Funciones.GetContext(ctx);
                 DiscordMember miembro = (DiscordMember)user;
                 ulong idRol = 869257331484004363;
                 var rol = ctx.Guild.GetRole(idRol);
@@ -99,7 +97,7 @@ namespace AnilistESP
                             Title = "Rol no quitado",
                             Description = $"Error removiendo rol `{rol.Name}`!"
                         }));
-                        await funciones.GrabarLogError(context, $"Error removiendo rol `{rol.Name} (id: {rol.Id})`: {ex.Message}\n```{ex.StackTrace}```");
+                        await Funciones.GrabarLogError(context, $"Error removiendo rol `{rol.Name} (id: {rol.Id})`: {ex.Message}\n```{ex.StackTrace}```");
                     }
                 }
             }

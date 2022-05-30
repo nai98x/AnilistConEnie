@@ -11,7 +11,6 @@ namespace AnilistESP
 {
     public class FuncionesAnilist
     {
-        private readonly FuncionesAuxiliares _funciones = new();
         private readonly GraphQLHttpClient _graphQlClient = new("https://graphql.anilist.co", new NewtonsoftJsonSerializer());
 
         public async Task<Media> GetAniListMedia(InteractionContext ctx, string busqueda, string tipo)
@@ -89,7 +88,7 @@ namespace AnilistESP
                             string opcStr = animeP.title.romaji;
                             opc.Add(opcStr);
                         }
-                        var elegido = await _funciones.GetElegido(ctx, opc);
+                        var elegido = await Funciones.GetElegido(ctx, opc);
                         if (elegido > 0)
                         {
                             var datos = data.Data.Page.media[elegido - 1];
@@ -113,8 +112,8 @@ namespace AnilistESP
             }
             catch (Exception e)
             {
-                var context = _funciones.GetContext(ctx);
-                await _funciones.GrabarLogError(context, $"Error en query en FuncionesAnilist - GetAnilistMedia, utilizado: {tipo}\nError: {e.Message}");
+                var context = Funciones.GetContext(ctx);
+                await Funciones.GrabarLogError(context, $"Error en query en FuncionesAnilist - GetAnilistMedia, utilizado: {tipo}\nError: {e.Message}");
                 return new()
                 {
                     Ok = false,
@@ -177,7 +176,7 @@ namespace AnilistESP
                         string opcStr = animeP.title.romaji;
                         opc.Add(opcStr);
                     }
-                    var elegido = await _funciones.GetElegido(ctx, opc);
+                    var elegido = await Funciones.GetElegido(ctx, opc);
                     if (elegido > 0)
                     {
                         var datos = data.Data.Page.characters[elegido - 1];
@@ -203,8 +202,8 @@ namespace AnilistESP
             }
             catch (Exception e)
             {
-                var context = _funciones.GetContext(ctx);
-                await _funciones.GrabarLogError(context, $"Error en query en FuncionesAnilist - GetAnilistMedia, utilizado: {tipo}\nError: {e.Message}");
+                var context = Funciones.GetContext(ctx);
+                await Funciones.GrabarLogError(context, $"Error en query en FuncionesAnilist - GetAnilistMedia, utilizado: {tipo}\nError: {e.Message}");
                 return new()
                 {
                     Ok = false,
@@ -226,7 +225,7 @@ namespace AnilistESP
                 media.Id = int.Parse(idStr);
                 media.IsAdult = bool.Parse(isadult);
                 media.Descripcion = datos.description;
-                media.Descripcion = _funciones.NormalizarDescription(_funciones.LimpiarTexto(media.Descripcion));
+                media.Descripcion = Funciones.NormalizarDescription(Funciones.LimpiarTexto(media.Descripcion));
                 if (media.Descripcion == "")
                     media.Descripcion = "(Sin descripción)";
                 media.Estado = datos.status;
@@ -312,7 +311,7 @@ namespace AnilistESP
                 Character character = new();
 
                 string descripcion = datos.description;
-                character.Description = _funciones.NormalizarDescription(_funciones.LimpiarTexto(descripcion));
+                character.Description = Funciones.NormalizarDescription(Funciones.LimpiarTexto(descripcion));
                 if (character.Description == "")
                     character.Description = "(Sin descripción)";
                 character.NameFull = datos.name.full;
@@ -348,7 +347,7 @@ namespace AnilistESP
 
         public async Task<DiscordEmbedBuilder> GetInfoMediaUser(InteractionContext ctx, int anilistId, int mediaId)
         {
-            var context = _funciones.GetContext(ctx);
+            var context = Funciones.GetContext(ctx);
             var requestPers = new GraphQLRequest
             {
                 Query =
@@ -421,8 +420,8 @@ namespace AnilistESP
                     var builderPers = new DiscordEmbedBuilder
                     {
                         Title = $"Estadisticas de {nameAl}",
-                        Description = _funciones.NormalizarDescription("**Notas**\n" + notas),
-                        Color = _funciones.GetColor()
+                        Description = Funciones.NormalizarDescription("**Notas**\n" + notas),
+                        Color = Funciones.GetColor()
                     }.WithThumbnail(avatarAl);
 
                     builderPers.AddField("Estado", status, true);
@@ -501,7 +500,7 @@ namespace AnilistESP
             {
                 if (ex.Message != "The HTTP request failed with status code NotFound")
                 {
-                    await _funciones.GrabarLogError(context, $"Error en GetPersMedia /anime: {ex.Message}\n```{ex.StackTrace}```");
+                    await Funciones.GrabarLogError(context, $"Error en GetPersMedia /anime: {ex.Message}\n```{ex.StackTrace}```");
                 }
             }
             return null;

@@ -12,7 +12,6 @@ namespace AnilistESP
 {
     public class Anilist : ApplicationCommandModule
     {
-        private readonly FuncionesAuxiliares funciones = new();
         private readonly UsuariosAnilist usuariosAnilist = new();
 
         [SlashCommand("vincularanilist", "Registra tu AniList en el servidor")]
@@ -20,8 +19,8 @@ namespace AnilistESP
         {
             await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
             await ctx.DeleteResponseAsync();
-            var context = funciones.GetContext(ctx);
-            await funciones.SetPerfilAnilist(context, perfil);
+            var context = Funciones.GetContext(ctx);
+            await Funciones.SetPerfilAnilist(context, perfil);
         }
 
         [SlashCommand("desvincularanilist", "Desvincula tu Anilist registrado en el servidor")]
@@ -30,12 +29,12 @@ namespace AnilistESP
             var userAnilist = await usuariosAnilist.GetPerfil(ctx.Guild.Id, ctx.Member.Id);
             if (userAnilist != null)
             {
-                await funciones.BorrarMensajeUsuarioAnilist(ctx.Client, ctx.Guild, userAnilist.MessageId);
+                await Funciones.BorrarMensajeUsuarioAnilist(ctx.Client, ctx.Guild, userAnilist.MessageId);
                 await usuariosAnilist.DeleteAnilist(ctx.Guild.Id, ctx.Member.Id);
                 await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
                 {
                     Color = DiscordColor.Green,
-                    Footer = funciones.GetFooter(ctx),
+                    Footer = Funciones.GetFooter(ctx),
                     Title = "Perfil eliminado",
                     Description = $"Haz borrado tu perfil satisfactoriamente."
                 }));
@@ -45,7 +44,7 @@ namespace AnilistESP
                 await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
                 {
                     Color = DiscordColor.Red,
-                    Footer = funciones.GetFooter(ctx),
+                    Footer = Funciones.GetFooter(ctx),
                     Title = "Perfil no encontrado",
                     Description = $"{ctx.User.Mention} no tiene ningún usuario de Anilist vinculado con su cuenta."
                 }));
@@ -104,12 +103,12 @@ namespace AnilistESP
                 if (data.Data != null)
                 {
                     string siteurl = data.Data.User.siteUrl;
-                    var context = funciones.GetContext(ctx);
+                    var context = Funciones.GetContext(ctx);
                     await usuariosAnilist.SetAnilist(context, siteurl, usuario);
                     await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
                     {
                         Color = DiscordColor.Green,
-                        Footer = funciones.GetFooter(ctx),
+                        Footer = Funciones.GetFooter(ctx),
                         Title = "Perfil guardado",
                         Description = $"{usuario.Mention}, haz guardado tu perfil de Anilist satisfactoriamente"
                     }));

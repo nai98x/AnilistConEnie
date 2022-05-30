@@ -1,6 +1,5 @@
 ﻿using DSharpPlus;
 using DSharpPlus.Entities;
-using DSharpPlus.Exceptions;
 using DSharpPlus.SlashCommands;
 using Google.Cloud.Firestore;
 using System;
@@ -13,7 +12,7 @@ namespace AnilistESP
     public class IntercambiosDAL
     {
         private static readonly FirestoreDb db = Funciones.GetFirestoreClient();
-        
+
         public async Task<List<IntercambiosFirebase>> GetInscriptos(ulong guildId, string tipo)
         {
             List<IntercambiosFirebase> ret = new();
@@ -170,7 +169,8 @@ namespace AnilistESP
                 if (!registro.Inscripciones && !registro.Elecciones && !registro.Iniciado)
                 {
                     await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedInscripcion));
-                    var msgInscriptos = await ctx.Channel.SendMessageAsync(new DiscordEmbedBuilder { 
+                    var msgInscriptos = await ctx.Channel.SendMessageAsync(new DiscordEmbedBuilder
+                    {
                         Color = DiscordColor.CornflowerBlue,
                         Title = "Inscriptos al intercambio"
                     });
@@ -231,12 +231,12 @@ namespace AnilistESP
             if (snap.Exists)
             {
                 IntercambiosSettingsFirebase registro = snap.ConvertTo<IntercambiosSettingsFirebase>();
-                if(registro.Inscripciones && !registro.Elecciones && !registro.Iniciado)
+                if (registro.Inscripciones && !registro.Elecciones && !registro.Iniciado)
                 {
                     var lista = await GetInscriptos(ctx.Guild.Id, tipo);
                     lista.Shuffle();
                     var orden = 1;
-                    foreach(var r in lista)
+                    foreach (var r in lista)
                     {
                         DocumentReference docUser = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}").Collection("Usuarios").Document($"{r.UserId}");
                         var snapUser = await docUser.GetSnapshotAsync();
@@ -252,12 +252,13 @@ namespace AnilistESP
                                 { "Ban", reg.Ban },
                                 { "Orden", reg.Orden }
                             };
-                            await docUser.UpdateAsync(data); 
+                            await docUser.UpdateAsync(data);
                         }
                         orden++;
                     }
 
-                    var msgRecomendaciones = await ctx.Channel.SendMessageAsync(new DiscordEmbedBuilder { 
+                    var msgRecomendaciones = await ctx.Channel.SendMessageAsync(new DiscordEmbedBuilder
+                    {
                         Title = "Recomendaciones del intercambio",
                         Color = DiscordColor.CornflowerBlue
                     });
@@ -269,7 +270,7 @@ namespace AnilistESP
                         { "Iniciado", false },
                         { "ChannelId", registro.ChannelId },
                         { "MessageInscriptosId", registro.MessageInscriptosId },
-                        { "MessageRecomendacionesId",  msgRecomendaciones.Id}
+                        { "MessageRecomendacionesId", msgRecomendaciones.Id }
                     };
                     await doc.UpdateAsync(dataSet);
 
@@ -377,7 +378,7 @@ namespace AnilistESP
             if (snap.Exists)
             {
                 IntercambiosSettingsFirebase registro = snap.ConvertTo<IntercambiosSettingsFirebase>();
-                if(registro.Inscripciones && !registro.Elecciones && !registro.Iniciado)
+                if (registro.Inscripciones && !registro.Elecciones && !registro.Iniciado)
                 {
                     DocumentReference docUser = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}").Collection("Usuarios").Document($"{ctx.User.Id}");
                     var snapUser = await docUser.GetSnapshotAsync();
@@ -533,7 +534,7 @@ namespace AnilistESP
                             if (item.UserId == (long)ctx.User.Id)
                             {
                                 IntercambiosFirebase elegido = await GetUserRecomendarA(ctx.Guild.Id, ctx.User.Id, tipo);
-                                
+
                                 var miembro = await ctx.Client.GetUserAsync((ulong)elegido.UserId);
 
                                 string desc = $"Tienes que recomendarle un {tipo.ToLower()} a {miembro.Mention}\n\n" +
@@ -544,7 +545,7 @@ namespace AnilistESP
 
                                 var servicio = new UsuariosAnilist();
                                 var user = await servicio.GetPerfil(ctx.Guild.Id, (ulong)elegido.UserId);
-                                if(user!= null)
+                                if (user != null)
                                 {
                                     desc += $"\n**Anilist:** {user.AnilistURL}";
                                 }
@@ -612,7 +613,7 @@ namespace AnilistESP
                             IntercambiosFirebase elegido = await GetUserRecomendarA(ctx.Guild.Id, ctx.User.Id, tipo);
                             DocumentReference docNuevo = db.Collection("Intercambios").Document($"{ctx.Guild.Id}").Collection("Tipo").Document($"{tipo}").Collection("Recomendaciones").Document($"{elegido.UserId}");
                             var snapNuevo = await docNuevo.GetSnapshotAsync();
-                            
+
                             if (snapNuevo.Exists)
                             {
                                 IntercambiosRecomendacionFirebase registro1 = snapNuevo.ConvertTo<IntercambiosRecomendacionFirebase>();
@@ -650,8 +651,8 @@ namespace AnilistESP
                                     Title = $"¡Te ha llegado tu {tipo.ToLower()} recomendado!",
                                     Description = $"**Nombre:** {result.TituloRomaji}\n**URL:** {result.UrlAnilist}\n\n" +
                                     $"Si consideras esta recomendación troll o por cualquier otro motivo no dudes en hacer una reclamación utilizando el comando `/intercambio reclamar`",
-                                    Footer = new DiscordEmbedBuilder.EmbedFooter 
-                                    { 
+                                    Footer = new DiscordEmbedBuilder.EmbedFooter
+                                    {
                                         IconUrl = ctx.Guild.IconUrl,
                                         Text = ctx.Guild.Name
                                     }
@@ -724,18 +725,18 @@ namespace AnilistESP
                     var recomendados = await GetRecomendados(ctx.Guild.Id, tipo);
                     List<DiscordUser> noRecomendados = new();
 
-                    foreach(var insc in inscriptos)
+                    foreach (var insc in inscriptos)
                     {
-                        if(recomendados.Find(x => x.UserIdRecomendadoPor == insc.UserId) == null)
+                        if (recomendados.Find(x => x.UserIdRecomendadoPor == insc.UserId) == null)
                         {
                             noRecomendados.Add(await ctx.Client.GetUserAsync((ulong)insc.UserId));
                         }
                     }
 
-                    if(noRecomendados.Count > 0)
+                    if (noRecomendados.Count > 0)
                     {
                         string usuarios = string.Empty;
-                        foreach(var usr in noRecomendados)
+                        foreach (var usr in noRecomendados)
                         {
                             usuarios += $"{usr.Mention}\n";
                         }
@@ -770,12 +771,13 @@ namespace AnilistESP
                         var listt = await GetRecomendados(ctx.Guild.Id, tipo);
                         listt.Shuffle();
 
-                        foreach(var regg in listt)
+                        foreach (var regg in listt)
                         {
                             descrip += $"- [{regg.AnimeRecomendadoName}]({regg.AnimeRecomendadoURL})\n";
                         }
 
-                        await ctx.Channel.SendMessageAsync(new DiscordEmbedBuilder {
+                        await ctx.Channel.SendMessageAsync(new DiscordEmbedBuilder
+                        {
                             Title = $"Lista de {tipo.ToLower()}s",
                             Description = descrip,
                             Color = DiscordColor.CornflowerBlue
@@ -974,7 +976,7 @@ namespace AnilistESP
                         IntercambiosRecomendacionFirebase registro1 = snapNuevo.ConvertTo<IntercambiosRecomendacionFirebase>();
                         int reclamadaNew = registro1.VecesReclamada + 1;
 
-                        if(reclamadaNew <= 2)
+                        if (reclamadaNew <= 2)
                         {
                             Dictionary<string, object> dataN = new()
                             {

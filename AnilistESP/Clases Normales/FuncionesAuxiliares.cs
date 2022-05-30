@@ -1,34 +1,34 @@
-﻿using DSharpPlus.CommandsNext;
+﻿using DSharpPlus;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
-using System;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Globalization;
-using DSharpPlus.Interactivity.Extensions;
-using DSharpPlus;
-using System.Configuration;
-using Google.Cloud.Firestore;
 using DSharpPlus.Interactivity;
-using System.Collections.Generic;
+using DSharpPlus.Interactivity.Extensions;
+using DSharpPlus.SlashCommands;
+using Google.Cloud.Firestore;
+using GraphQL;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.Newtonsoft;
-using GraphQL;
-using DSharpPlus.SlashCommands;
-using static DSharpPlus.Entities.DiscordEmbedBuilder;
 using Newtonsoft.Json;
-using System.Net.Http;
-using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp;
-using System.IO;
-using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+using System;
+using System.Collections.Generic;
+using System.Configuration;
+using System.Globalization;
+using System.IO;
+using System.Net.Http;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using static DSharpPlus.Entities.DiscordEmbedBuilder;
 
 namespace AnilistESP
 {
     public static class Funciones
     {
         private static readonly UsuariosAnilist usuariosAnilist = new();
-        private static readonly Random rng = new ();
+        private static readonly Random rng = new();
         public static FirestoreDb GetFirestoreClient()
         {
             string path = AppDomain.CurrentDomain.BaseDirectory + @"firebase.json";
@@ -41,13 +41,13 @@ namespace AnilistESP
             IDebuggingService mode = new DebuggingService();
             bool debug = mode.RunningInDebugMode();
             if (debug)
-            { 
+            {
                 guild = await client.GetGuildAsync(853766076122005565); // Nai Pruebitas
                 return guild.GetChannel(854476365834485770);
             }
             else
             {
-                if(guild.Id == 862408834693070898) // Añilist
+                if (guild.Id == 862408834693070898) // Añilist
                 {
                     return guild.GetChannel(862934726553501736);
                 }
@@ -110,10 +110,10 @@ namespace AnilistESP
             {
                 string aux = s.Remove(2048);
                 int index = aux.LastIndexOf('[');
-                if(index != -1)
+                if (index != -1)
                     return aux.Remove(aux.LastIndexOf('[')) + "...";
                 else
-                    return aux.Remove(aux.Length-4) + " ...";
+                    return aux.Remove(aux.Length - 4) + " ...";
             }
             return s;
         }
@@ -131,7 +131,7 @@ namespace AnilistESP
 
         public static EmbedFooter GetFooter(CommandContext ctx)
         {
-            return  new EmbedFooter()
+            return new EmbedFooter()
             {
                 Text = $"Invocado por {ctx.Member.DisplayName} ({ctx.Member.Username}#{ctx.Member.Discriminator}) | {ctx.Prefix}{ctx.Command.Name}",
                 IconUrl = ctx.Member.AvatarUrl
@@ -167,7 +167,7 @@ namespace AnilistESP
 
         public static string QuitarCaracteresEspeciales(string str)
         {
-            if(str != null)
+            if (str != null)
                 return Regex.Replace(str, @"[^a-zA-Z0-9]+", " ").Trim();
             return null;
         }
@@ -179,7 +179,7 @@ namespace AnilistESP
 
         public async static Task BorrarMensaje(CommandContext ctx, ulong msgId)
         {
-            if(ChequearPermisoYumiko(ctx, Permissions.ManageMessages))
+            if (ChequearPermisoYumiko(ctx, Permissions.ManageMessages))
             {
                 try
                 {
@@ -189,7 +189,7 @@ namespace AnilistESP
                         await mensaje.DeleteAsync("Auto borrado de Yumiko");
                     }
                 }
-                catch (Exception){ }
+                catch (Exception) { }
             }
         }
 
@@ -260,7 +260,7 @@ namespace AnilistESP
                                     bool result = DateTime.TryParse($"{dia}/{mes}/{anio}", CultureInfo.CreateSpecificCulture("es-ES"), DateTimeStyles.None, out DateTime fecha);
                                     if (result)
                                     {
-                                        if(fecha < DateTime.Today)
+                                        if (fecha < DateTime.Today)
                                         {
                                             await BorrarMensaje(ctx, msgDia.Id);
                                             await BorrarMensaje(ctx, msgDiaInter.Result.Id);
@@ -365,9 +365,9 @@ namespace AnilistESP
                     Color = GetColor()
                 });
             }
-            if(msgDia != null)
+            if (msgDia != null)
                 await BorrarMensaje(ctx, msgDia.Id);
-            if(msgDiaInter.Result != null)
+            if (msgDiaInter.Result != null)
                 await BorrarMensaje(ctx, msgDiaInter.Result.Id);
             if (error != null)
             {
@@ -380,17 +380,18 @@ namespace AnilistESP
         public async static Task GrabarLogError(Context ctx, string descripcion)
         {
             var Guild = await ctx.Client.GetGuildAsync(713809173573271613);
-            if(Guild != null)
+            if (Guild != null)
             {
                 var ChannelErrores = Guild.GetChannel(840440877565739008);
-                if(ChannelErrores != null)
+                if (ChannelErrores != null)
                 {
-                    await ChannelErrores.SendMessageAsync(new DiscordEmbedBuilder { 
+                    await ChannelErrores.SendMessageAsync(new DiscordEmbedBuilder
+                    {
                         Title = "Error no controlado",
                         Description = descripcion,
                         Color = DiscordColor.Red,
                         Footer = GetFooter(ctx),
-                        Author= new EmbedAuthor
+                        Author = new EmbedAuthor
                         {
                             IconUrl = ctx.Guild.IconUrl,
                             Name = ctx.Guild.Name
@@ -523,7 +524,7 @@ namespace AnilistESP
             DiscordEmbedBuilder builder = new();
             builder.WithColor(GetColor());
 
-            if(await GetSiNoInteractivity(ctx, interactivity, "Ingresar titulo", "Opcional"))
+            if (await GetSiNoInteractivity(ctx, interactivity, "Ingresar titulo", "Opcional"))
             {
                 string titulo = await GetStringInteractivity(ctx, "Ingrese el titulo del embed", "No puede ser vacío", "Tiempo agotado esperando el titulo", true);
                 if (!string.IsNullOrEmpty(titulo))
@@ -536,7 +537,7 @@ namespace AnilistESP
                 if (!string.IsNullOrEmpty(desc))
                     builder.WithDescription(desc);
             }
-                
+
             if (await GetSiNoInteractivity(ctx, interactivity, "Ingresar URL de la imagen", "Opcional"))
             {
                 string imageUrl = await GetStringInteractivity(ctx, "Ingrese la url de la imagen del embed", "No puede ser vacío", "Tiempo agotado esperando la url", true);
@@ -824,7 +825,7 @@ namespace AnilistESP
             using (var memoryStream = new MemoryStream())
             using (Image<Rgba32> img1 = Image.Load<Rgba32>(bytes1)) // load up source images
             using (Image<Rgba32> img2 = Image.Load<Rgba32>(bytes2))
-                
+
             using (var outputImage = new Image<Rgba32>(500, 375)) // create output image of the correct dimensions
             {
                 // reduce source images to correct dimensions

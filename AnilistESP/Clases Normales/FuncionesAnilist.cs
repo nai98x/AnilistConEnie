@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using DSharpPlus.Entities;
+﻿using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using GraphQL;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.Newtonsoft;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace AnilistESP
 {
@@ -78,7 +78,7 @@ namespace AnilistESP
                 var data = await _graphQlClient.SendQueryAsync<dynamic>(request);
                 if (data.Data != null)
                 {
-                    if(data.Data.Page.media != null && data.Data.Page.media.Count > 0)
+                    if (data.Data.Page.media != null && data.Data.Page.media.Count > 0)
                     {
                         int cont = 0;
                         List<string> opc = new();
@@ -214,7 +214,7 @@ namespace AnilistESP
 
         public Media DecodeMedia(dynamic datos)
         {
-            if(datos != null)
+            if (datos != null)
             {
                 string idStr = datos.id;
                 string isadult = datos.isAdult;

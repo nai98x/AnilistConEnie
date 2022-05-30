@@ -1,5 +1,4 @@
-﻿using DSharpPlus.CommandsNext;
-using DSharpPlus.SlashCommands;
+﻿using DSharpPlus.SlashCommands;
 using Google.Cloud.Firestore;
 using System;
 using System.Collections.Generic;
@@ -31,7 +30,7 @@ namespace AnilistESP
 
         public async Task<List<UserCumple>> GetBirthdaysHoy(long guildId)
         {
-            List<UserCumple> lista = new ();
+            List<UserCumple> lista = new();
             var listaFirebase = await GetListaUsuarios(guildId);
             listaFirebase.ForEach(x =>
             {
@@ -52,7 +51,7 @@ namespace AnilistESP
 
         public async Task<List<UserCumple>> GetBirthdays(long guildId, bool month)
         {
-            List<UserCumple> lista = new ();
+            List<UserCumple> lista = new();
             var listaFirebase = await GetListaUsuarios(guildId);
             listaFirebase.ForEach(x =>
             {
@@ -101,21 +100,21 @@ namespace AnilistESP
                 registro = snap.ConvertTo<UsuarioDiscordFirebase>();
                 registro.Birthday = timeutc;
                 registro.MostrarYear = mostrarEdad;
-                Dictionary<string, object> data = new ()
+                Dictionary<string, object> data = new()
                 {
-                    {"user_id", registro.user_id},
-                    {"Birthday", registro.Birthday},
-                    {"MostrarYear", registro.MostrarYear},
+                    { "user_id", registro.user_id },
+                    { "Birthday", registro.Birthday },
+                    { "MostrarYear", registro.MostrarYear },
                 };
                 await doc.UpdateAsync(data);
             }
             else
             {
-                Dictionary<string, object> data = new ()
+                Dictionary<string, object> data = new()
                 {
-                    {"user_id", userId},
-                    {"Birthday", timeutc},
-                    {"MostrarYear", mostrarEdad},
+                    { "user_id", userId },
+                    { "Birthday", timeutc },
+                    { "MostrarYear", mostrarEdad },
                 };
                 await doc.SetAsync(data);
             }

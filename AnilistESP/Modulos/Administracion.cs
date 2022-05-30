@@ -2,10 +2,7 @@
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
-using System;
 using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace AnilistESP
@@ -22,7 +19,7 @@ namespace AnilistESP
             if (usarEmbed)
             {
                 DiscordEmbedBuilder embed = await Funciones.CrearEmbed(ctx, interactivty);
-                if(embed != null)
+                if (embed != null)
                 {
                     await ctx.Channel.SendMessageAsync(embed);
                 }
@@ -88,13 +85,13 @@ namespace AnilistESP
             }
 
             List<DiscordSelectComponentOption> opciones = new();
-            foreach(var rol in roles)
+            foreach (var rol in roles)
             {
                 opciones.Add(new(label: $"{rol.Name}", value: $"{rol.Id}"));
             }
 
             DiscordEmbedBuilder embed = await Funciones.CrearEmbed(ctx, interactivty);
-            if(embed != null)
+            if (embed != null)
             {
                 await canal.SendMessageAsync(new DiscordMessageBuilder()
                 .AddComponents(new DiscordSelectComponent(customId, placeholder, opciones, false, opcionesMinimas, opcionesMaximas))
@@ -104,7 +101,7 @@ namespace AnilistESP
             {
                 error = "No se ha podido crear el embed correctamente";
             }
-                
+
             if (!string.IsNullOrEmpty(error))
             {
                 var msg = await canal.SendMessageAsync(embed: new DiscordEmbedBuilder

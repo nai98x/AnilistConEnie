@@ -1,7 +1,5 @@
-﻿using DSharpPlus.CommandsNext;
-using DSharpPlus.Entities;
+﻿using DSharpPlus.Entities;
 using Google.Cloud.Firestore;
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -95,9 +93,9 @@ namespace AnilistESP
                 registro.UserId = (long)miembro.Id;
                 Dictionary<string, object> data = new()
                 {
-                    {"AnilistURL", registro.AnilistURL},
-                    {"MessageId", registro.MessageId},
-                    {"UserId", registro.UserId},
+                    { "AnilistURL", registro.AnilistURL },
+                    { "MessageId", registro.MessageId },
+                    { "UserId", registro.UserId },
                 };
                 await doc.UpdateAsync(data);
             }
@@ -106,9 +104,9 @@ namespace AnilistESP
                 DiscordMessage mensaje = await channel.SendMessageAsync($"**Perfil de {miembro.Mention}**\n\n{anilistUrl}");
                 Dictionary<string, object> data = new()
                 {
-                    {"AnilistURL", anilistUrl},
-                    {"MessageId", mensaje.Id},
-                    {"UserId", miembro.Id},
+                    { "AnilistURL", anilistUrl },
+                    { "MessageId", mensaje.Id },
+                    { "UserId", miembro.Id },
                 };
                 await doc.SetAsync(data);
             }

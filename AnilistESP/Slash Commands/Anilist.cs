@@ -5,7 +5,6 @@ using GraphQL;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.Newtonsoft;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace AnilistESP
@@ -75,7 +74,8 @@ namespace AnilistESP
                 }
                 else
                 {
-                    await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder {
+                    await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+                    {
                         Color = DiscordColor.Red,
                         Title = "Error",
                         Description = "Debes ingresar la URL de tu perfil de Anilist"

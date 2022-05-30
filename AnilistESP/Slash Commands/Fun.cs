@@ -46,7 +46,7 @@ namespace AnilistESP
             Random rnd = new();
             DiscordMember elegido;
 
-            if(ctx.Guild.Id == 862408834693070898)
+            if (ctx.Guild.Id == 862408834693070898)
             {
                 DiscordRole casual = ctx.Guild.GetRole(863525487602958336);
                 DiscordRole kouhai = ctx.Guild.GetRole(865300278491217970);
@@ -54,7 +54,7 @@ namespace AnilistESP
                 DiscordRole hikikomori = ctx.Guild.GetRole(863525128403025961);
                 DiscordRole sensei = ctx.Guild.GetRole(863524938954571816);
 
-                var miembros = ctx.Guild.Members.Where(x => x.Value.IsBot == false && x.Value.Id != usuario.Id && 
+                var miembros = ctx.Guild.Members.Where(x => x.Value.IsBot == false && x.Value.Id != usuario.Id &&
                 (x.Value.Roles.Contains(casual) || x.Value.Roles.Contains(kouhai) || x.Value.Roles.Contains(senpai) || x.Value.Roles.Contains(hikikomori) || x.Value.Roles.Contains(sensei)
                 ));
                 elegido = miembros.ElementAt(rnd.Next(miembros.Count() - 1)).Value;
@@ -64,7 +64,7 @@ namespace AnilistESP
                 var miembros = ctx.Guild.Members.Where(x => x.Value.IsBot == false && x.Value.Id != usuario.Id);
                 elegido = miembros.ElementAt(rnd.Next(miembros.Count() - 1)).Value;
             }
-            
+
             string shipeoUsr;
             DiscordMember ctxMiembro = await ctx.Guild.GetMemberAsync(usuario.Id);
             shipeoUsr = ctxMiembro.DisplayName;
@@ -90,7 +90,7 @@ namespace AnilistESP
             DiscordMember elegido2;
 
             IEnumerable<KeyValuePair<ulong, DiscordMember>> miembros;
-            if(ctx.Guild.Id == 862408834693070898)
+            if (ctx.Guild.Id == 862408834693070898)
             {
                 DiscordRole casual = ctx.Guild.GetRole(863525487602958336);
                 DiscordRole kouhai = ctx.Guild.GetRole(865300278491217970);
@@ -106,7 +106,7 @@ namespace AnilistESP
             {
                 miembros = ctx.Guild.Members.Where(x => x.Value.IsBot == false);
             }
-            
+
             elegido1 = miembros.ElementAt(rnd.Next(miembros.Count() - 1)).Value;
             do
             {

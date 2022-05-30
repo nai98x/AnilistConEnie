@@ -1,9 +1,5 @@
 ﻿using DSharpPlus.Entities;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AnilistESP
 {
@@ -15,7 +11,7 @@ namespace AnilistESP
         private DiscordEmoji _emoji;
         private List<UsuarioAnilistFirebase> usuarios;
 
-        private static object syncLock = new ();
+        private static object syncLock = new();
 
         private ServiciosSingleton()
         {

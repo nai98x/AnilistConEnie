@@ -92,6 +92,7 @@
                 ApplicationCommands.RegisterCommands<IntercambiosAdmin>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Administrativo>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Help>(pruebasBacklog);
+                ApplicationCommands.RegisterCommands<Owner>(pruebasBacklog);
             }
             else
             {
@@ -103,9 +104,8 @@
                 ApplicationCommands.RegisterCommands<IntercambiosAdmin>(guildProd);
                 ApplicationCommands.RegisterCommands<Administrativo>(guildProd);
                 ApplicationCommands.RegisterCommands<Help>(guildProd);
+                ApplicationCommands.RegisterCommands<Owner>(guildProd);
             }
-
-            ApplicationCommands.RegisterCommands<Owner>(pruebasBacklog);
 
             var commandsConfig = new CommandsNextConfiguration
             {

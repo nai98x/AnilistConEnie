@@ -10,6 +10,7 @@ namespace AnilistESP
         public string UrlAnilist { get; set; }
         public string Descripcion { get; set; }
         public string CoverImage { get; set; }
+        public string BannerImage { get; set; }
         public string Estado { get; set; }
         public string Episodios { get; set; }
         public string Chapters { get; set; }

@@ -1,19 +1,22 @@
-﻿using DSharpPlus.Entities;
+﻿using DSharpPlus;
+using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using GraphQL;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.Newtonsoft;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace AnilistESP
 {
-    public class FuncionesAnilist
+    public static class FuncionesAnilist
     {
-        private readonly GraphQLHttpClient _graphQlClient = new("https://graphql.anilist.co", new NewtonsoftJsonSerializer());
+        private static readonly GraphQLHttpClient _graphQlClient = new("https://graphql.anilist.co", new NewtonsoftJsonSerializer());
 
-        public async Task<Media> GetAniListMedia(InteractionContext ctx, string busqueda, string tipo)
+        public async static Task<Media> GetAniListMedia(InteractionContext ctx, string busqueda, string tipo)
         {
             string query = "query($busqueda : String){" +
             "   Page(perPage:5){" +
@@ -25,6 +28,7 @@ namespace AnilistESP
             "           coverImage{" +
             "               large" +
             "           }," +
+            "           bannerImage," +
             "           siteUrl," +
             "           description," +
             "           format," +
@@ -122,7 +126,7 @@ namespace AnilistESP
             }
         }
 
-        public async Task<Media> GetAniListCharacter(InteractionContext ctx, string busqueda, string tipo)
+        public async static Task<Media> GetAniListCharacter(InteractionContext ctx, string busqueda, string tipo)
         {
             var request = new GraphQLRequest
             {
@@ -212,7 +216,157 @@ namespace AnilistESP
             }
         }
 
-        public Media DecodeMedia(dynamic datos)
+        public static async Task<string> GetScoreMediaUsuarios(InteractionContext ctx, int mediaId)
+        {
+            var context = Funciones.GetContext(ctx);
+            ServiciosSingleton servicio = ServiciosSingleton.GetServiciosSingleton();
+            List<string> scoresList = new();
+
+            var usuarios = servicio.Usuarios;
+            var usuariosServidor = new List<UsuarioAnilistYumFirebase>();
+            var members = await ctx.Guild.GetAllMembersAsync();
+
+            foreach (var item in usuarios)
+            {
+                if (members.Any(x => x.Id == (ulong)item.UserId))
+                {
+                    var miembro = members.First(x => x.Id == (ulong)item.UserId);
+
+                    DiscordRole casual = ctx.Guild.GetRole(863525487602958336);
+                    DiscordRole kouhai = ctx.Guild.GetRole(865300278491217970);
+                    DiscordRole senpai = ctx.Guild.GetRole(863525246404263976);
+                    DiscordRole hikikomori = ctx.Guild.GetRole(863525128403025961);
+                    DiscordRole sensei = ctx.Guild.GetRole(863524938954571816);
+                    DiscordRole ousama = ctx.Guild.GetRole(966815478507012106);
+                    DiscordRole teiou = ctx.Guild.GetRole(966815813078224907);
+
+                    if (miembro.Roles.Contains(casual) || miembro.Roles.Contains(kouhai) || miembro.Roles.Contains(senpai) || miembro.Roles.Contains(hikikomori) || miembro.Roles.Contains(sensei) || miembro.Roles.Contains(ousama) || miembro.Roles.Contains(teiou))
+                    {
+                        usuariosServidor.Add(item);
+                    }
+                }
+            }
+
+            var values = new List<long>();
+            foreach (var user in usuariosServidor)
+            {
+                values.Add(user.AnilistId);
+            }
+
+            var requestPers = new GraphQLRequest
+            {
+                Query =
+                    @"query ($codigoMedia: Int, $ids: [Int]) {
+                        Media(id: $codigoMedia) {
+                            title {
+                                romaji,
+                                english
+                            },
+                            siteUrl,
+                            coverImage {
+                                large
+                            },
+                            bannerImage,
+                            episodes,
+                            chapters,
+                            isAdult
+                        },
+                        Page {
+                            mediaList(mediaId: $codigoMedia, userId_in: $ids) {
+                                user {
+                                    name,
+                                    siteUrl,
+                                    mediaListOptions {
+                                        scoreFormat
+                                    }
+                                },
+                                score,
+                                status,
+                                progress
+                            }
+                        }
+                    }",
+                Variables = new
+                {
+                    codigoMedia = mediaId,
+                    ids = values,
+                },
+            };
+            try
+            {
+                var data = await _graphQlClient.SendQueryAsync<dynamic>(requestPers);
+                if (data.Data != null)
+                {
+                    string scores = string.Empty;
+                    dynamic datosMedia = data.Data.Media;
+                    string titleRomaji = datosMedia.title.romaji;
+                    string titleEnglish = datosMedia.title.english;
+                    string siteUrl = datosMedia.siteUrl;
+                    string coverImage = datosMedia.coverImage.large;
+                    string bannerImage = datosMedia.bannerImage;
+                    string isAdult = datosMedia.isAdult;
+                    string episodes = datosMedia.episodes;
+                    string chapters = datosMedia.chapters;
+                    string eps = string.IsNullOrEmpty(episodes) ? chapters : episodes;
+
+                    dynamic datosMediaList = data.Data.Page.mediaList;
+                    int registros = 0;
+                    decimal sumaScores = 0;
+                    decimal promedio = 0;
+
+                    foreach (var entry in datosMediaList)
+                    {
+                        string name = entry.user.name;
+                        string score = entry.score;
+                        string url = entry.user.siteUrl;
+                        string status = entry.status;
+                        string progress = entry.progress;
+                        string scoreFormat = entry.user.mediaListOptions.scoreFormat;
+                        string scoreF = FormatearScoreUJser(scoreFormat, score);
+                        decimal score100 = FormatearScoreUJser100(scoreFormat, score);
+
+                        string pro = string.IsNullOrEmpty(eps) ? progress : progress + $"/{eps}";
+
+                        if (!string.IsNullOrEmpty(score) && score != "0")
+                        {
+                            if (status == "COMPLETED")
+                            {
+                                scoresList.Add($"{Formatter.MaskedUrl(name, new Uri(url))} - {scoreF}\n");
+                            }
+                            else
+                            {
+                                scoresList.Add($"{Formatter.MaskedUrl(name, new Uri(url))} - {scoreF} {Formatter.InlineCode($"{Funciones.UppercaseFirst(status)} - Progress: {pro}")}\n");
+                            }
+
+                            registros++;
+                            sumaScores += score100;
+                        }
+                    }
+
+                    if (registros > 0)
+                    {
+                        promedio = sumaScores / registros;
+                        scores = $"{Formatter.Bold($"Promedio:")} {decimal.Round(promedio, 2)}/100\n\n";
+                    }
+
+                    scoresList.Sort();
+                    scores += string.Join(string.Empty, values: scoresList);
+
+                    return scores;
+                }
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message != "The HTTP request failed with status code NotFound")
+                {
+                    await Funciones.GrabarLogError(context, $"Error en GetScoreMediaUsuarios /anime: {ex.Message}\n```{ex.StackTrace}```");
+                }
+            }
+
+            return string.Empty;
+        }
+
+        public static Media DecodeMedia(dynamic datos)
         {
             if (datos != null)
             {
@@ -295,6 +449,7 @@ namespace AnilistESP
                 media.TituloRomaji = datos.title.romaji;
                 media.UrlAnilist = datos.siteUrl;
                 media.CoverImage = datos.coverImage.large;
+                media.BannerImage = datos.bannerImage;
 
                 return media;
             }
@@ -304,7 +459,7 @@ namespace AnilistESP
             }
         }
 
-        public Character DecodeCharacter(dynamic datos)
+        public static Character DecodeCharacter(dynamic datos)
         {
             if (datos != null)
             {
@@ -345,7 +500,7 @@ namespace AnilistESP
             }
         }
 
-        public async Task<DiscordEmbedBuilder> GetInfoMediaUser(InteractionContext ctx, int anilistId, int mediaId)
+        public async static Task<DiscordEmbedBuilder> GetInfoMediaUser(InteractionContext ctx, int anilistId, int mediaId)
         {
             var context = Funciones.GetContext(ctx);
             var requestPers = new GraphQLRequest
@@ -504,6 +659,60 @@ namespace AnilistESP
                 }
             }
             return null;
+        }
+
+        private static string FormatearScoreUJser(string scoreFormat, string scorePers)
+        {
+            string scoreF = string.Empty;
+            switch (scoreFormat)
+            {
+                case "POINT_10":
+                case "POINT_10_DECIMAL":
+                    scoreF = $"{scorePers}/10";
+                    break;
+                case "POINT_100":
+                    scoreF = $"{scorePers}/100";
+                    break;
+                case "POINT_5":
+                    int scoreS = int.Parse(scorePers);
+                    for (int i = 0; i < scoreS; i++)
+                    {
+                        scoreF += "★";
+                    }
+
+                    break;
+                case "POINT_3":
+                    int score3 = int.Parse(scorePers);
+                    switch (score3)
+                    {
+                        case 1:
+                            scoreF = "🙁";
+                            break;
+                        case 2:
+                            scoreF = "😐";
+                            break;
+                        case 3:
+                            scoreF = "🙂";
+                            break;
+                    }
+
+                    break;
+            }
+
+            return scoreF;
+        }
+
+        private static decimal FormatearScoreUJser100(string scoreFormat, string scorePers)
+        {
+            decimal scoreIni = decimal.Parse(scorePers, new NumberFormatInfo() { NumberDecimalSeparator = "." });
+            return scoreFormat switch
+            {
+                "POINT_10" or "POINT_10_DECIMAL" => scoreIni * 10,
+                "POINT_100" => scoreIni,
+                "POINT_5" => scoreIni * 20,
+                "POINT_3" => scoreIni * 33,
+                _ => throw new ArgumentException("No existe case del switch de FormatearScoreUJser100"),
+            };
         }
     }
 }

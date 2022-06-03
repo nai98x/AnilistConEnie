@@ -1,10 +1,14 @@
 ﻿using DSharpPlus;
 using DSharpPlus.Entities;
+using DSharpPlus.Interactivity.Enums;
+using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using GraphQL;
+using GraphQL.Client.Abstractions.Utilities;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.Newtonsoft;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AnilistESP
@@ -139,6 +143,94 @@ namespace AnilistESP
                     Title = "Error",
                     Description = $"{error}"
                 }));
+            }
+        }
+
+        [SlashCommand("statsserver", "Estadisticas de los usuarios del servidor de un anime o manga en AniList")]
+        public async Task StatsServerAnime(
+            InteractionContext ctx,
+            [Option("Nombre", "Nombre del anime o manga a buscar")] string mediaNombre,
+            [Choice("Anime", "anime")]
+            [Choice("Manga", "manga")]
+            [Option("Tipo", "Elige si buscas anime o manga")] string tipo)
+        {
+            await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+            var context = Funciones.GetContext(ctx);
+
+            var media = await FuncionesAnilist.GetAniListMedia(ctx, mediaNombre, tipo);
+            if (media.Ok == true)
+            {
+                var id = media.Id;
+
+                if ((!media.IsAdult) || (media.IsAdult && ctx.Channel.IsNSFW))
+                {
+                    await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+                    {
+                        Title = $"Buscando scores de {media.TituloRomaji}..",
+                        Description = "Esto puede demorar unos minutos",
+                        Color = Funciones.GetColor(),
+                    }));
+
+                    var embedStats = await FuncionesAnilist.GetScoreMediaUsuarios(ctx, id);
+
+                    string coverImage = media.CoverImage;
+                    string bannerImage = media.BannerImage;
+                    string titleRomaji = media.TituloRomaji;
+                    string url = media.UrlAnilist;
+
+                    var builder = new DiscordEmbedBuilder
+                    {
+                        Title = $"Scores de {titleRomaji} en {ctx.Guild.Name}",
+                        Color = Funciones.GetColor(),
+                        ImageUrl = bannerImage,
+                        Url = url,
+                    }.WithThumbnail(coverImage);
+
+                    if (media.Formato != null && media.Formato.Length > 0)
+                    {
+                        builder.AddField($"{DiscordEmoji.FromName(ctx.Client, ":dividers:")} Formato", Funciones.NormalizarField(media.Formato), true);
+                    }
+
+                    if (media.Estado != null && media.Estado.Length > 0)
+                    {
+                        builder.AddField($"{DiscordEmoji.FromName(ctx.Client, ":hourglass_flowing_sand:")} Estado", Funciones.NormalizarField(media.Estado.ToLower().ToUpperFirst()), true);
+                    }
+
+                    if (media.Fechas != null && media.Fechas.Length > 0)
+                    {
+                        builder.AddField($"{DiscordEmoji.FromName(ctx.Client, ":calendar_spiral:")} Fecha ", Funciones.NormalizarField(media.Fechas), false);
+                    }
+
+                    if (!string.IsNullOrEmpty(embedStats))
+                    {
+                        var interactivity = ctx.Client.GetInteractivity();
+                        var pages = interactivity.GeneratePagesInEmbed(embedStats, SplitType.Line, builder);
+
+                        await ctx.DeleteResponseAsync();
+                        await interactivity.SendPaginatedMessageAsync(ctx.Channel, ctx.User, pages, PaginationBehaviour.Ignore, ButtonPaginationBehavior.Disable, token: new CancellationTokenSource(TimeSpan.FromSeconds(60)).Token);
+                    }
+                    else
+                    {
+                        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+                        {
+                            Title = $"No se encontraron scores para {media.TituloRomaji}",
+                            Color = DiscordColor.Red,
+                        }));
+                    }
+                }
+                else
+                {
+                    var msg = await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                    {
+                        Title = "Requiere NSFW",
+                        Description = "Este comando debe ser invocado en un canal NSFW.",
+                        Color = new DiscordColor(0xFF0000),
+                    }));
+                }
+            }
+            else
+            {
+                var msg = await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent(media.MsgError));
             }
         }
     }

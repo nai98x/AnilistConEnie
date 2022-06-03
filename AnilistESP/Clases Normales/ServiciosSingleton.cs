@@ -9,7 +9,7 @@ namespace AnilistESP
         private static ServiciosSingleton _instance;
         private bool _yepMode;
         private DiscordEmoji _emoji;
-        private List<UsuarioAnilistFirebase> usuarios;
+        private List<UsuarioAnilistYumFirebase> usuarios;
 
         private static object syncLock = new();
 
@@ -72,7 +72,7 @@ namespace AnilistESP
             }
         }
 
-        public List<UsuarioAnilistFirebase> Usuarios
+        public List<UsuarioAnilistYumFirebase> Usuarios
         {
             get
             {
@@ -80,7 +80,7 @@ namespace AnilistESP
             }
         }
 
-        public void SetUsuarios(List<UsuarioAnilistFirebase> newUsers)
+        public void SetUsuarios(List<UsuarioAnilistYumFirebase> newUsers)
         {
             usuarios = newUsers;
         }

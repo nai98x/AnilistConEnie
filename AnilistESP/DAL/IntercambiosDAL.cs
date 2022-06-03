@@ -606,8 +606,7 @@ namespace AnilistESP
                     var snapUser = await docUser.GetSnapshotAsync();
                     if (snapUser.Exists)
                     {
-                        FuncionesAnilist _funcionesAnilist = new();
-                        var result = await _funcionesAnilist.GetAniListMedia(ctx, media, tipo.ToLower());
+                        var result = await FuncionesAnilist.GetAniListMedia(ctx, media, tipo.ToLower());
                         if (result.Ok == true)
                         {
                             IntercambiosFirebase elegido = await GetUserRecomendarA(ctx.Guild.Id, ctx.User.Id, tipo);

@@ -105,6 +105,8 @@
                 ApplicationCommands.RegisterCommands<Help>(guildProd);
             }
 
+            ApplicationCommands.RegisterCommands<Owner>(pruebasBacklog);
+
             var commandsConfig = new CommandsNextConfiguration
             {
                 StringPrefixes = new string[] { Debug ? ConfigurationManager.AppSettings["PrefixTest"] : ConfigurationManager.AppSettings["PrefixProd"] },

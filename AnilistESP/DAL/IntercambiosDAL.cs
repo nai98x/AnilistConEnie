@@ -11,8 +11,8 @@ namespace AnilistESP
 {
     public class IntercambiosDAL
     {
-        private static readonly FirestoreDb db = Funciones.GetFirestoreClient();
-
+        private static readonly FirestoreDb db = Funciones.GetFirestoreClient(Databases.AnilistConEnie);
+        
         public async Task<List<IntercambiosFirebase>> GetInscriptos(ulong guildId, string tipo)
         {
             List<IntercambiosFirebase> ret = new();
@@ -295,7 +295,7 @@ namespace AnilistESP
                                 $"Entra al canal del intercambio en el servidor e invoca el comando `/intercambio recomendar`\n\n";
 
                             var servicio = new UsuariosAnilist();
-                            var user = await servicio.GetPerfil(ctx.Guild.Id, (ulong)elegido.UserId);
+                            var user = await servicio.GetPerfil((ulong)elegido.UserId);
                             if (user != null)
                             {
                                 desc += $"**Anilist:** {user.AnilistURL}\n\n";
@@ -544,7 +544,7 @@ namespace AnilistESP
                                                 $"**Ban:** {elegido.Ban ?? "(No asignado)"}\n";
 
                                 var servicio = new UsuariosAnilist();
-                                var user = await servicio.GetPerfil(ctx.Guild.Id, (ulong)elegido.UserId);
+                                var user = await servicio.GetPerfil((ulong)elegido.UserId);
                                 if (user != null)
                                 {
                                     desc += $"\n**Anilist:** {user.AnilistURL}";

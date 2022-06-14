@@ -7,32 +7,12 @@ namespace AnilistESP
 {
     public class UsuariosAnilist
     {
-        public async Task<List<UsuarioAnilistYumFirebase>> GetPerfilesServidor(ulong guildId)
-        {
-            List<UsuarioAnilistYumFirebase> ret = new();
-            FirestoreDb db = Funciones.GetFirestoreClient();
-            CollectionReference collection = db.Collection("AnilistUsers");
-            IAsyncEnumerable<DocumentReference> subcollections = collection.ListDocumentsAsync();
-            IAsyncEnumerator<DocumentReference> subcollectionsEnumerator = subcollections.GetAsyncEnumerator(default);
-            while (await subcollectionsEnumerator.MoveNextAsync())
-            {
-                DocumentReference subcollectionRef = subcollectionsEnumerator.Current;
-                DocumentSnapshot subcollectionSnapshot = await subcollectionRef.GetSnapshotAsync();
-                if (subcollectionSnapshot.Exists)
-                {
-                    ret.Add(subcollectionSnapshot.ConvertTo<UsuarioAnilistYumFirebase>());
-                }
-            }
-
-            return ret;
-        }
-
-        public async Task<List<UsuarioAnilistFirebase>> GetListaUsuarios(long guildId)
+        public async Task<List<UsuarioAnilistFirebase>> GetListaUsuarios()
         {
             var ret = new List<UsuarioAnilistFirebase>();
-            FirestoreDb db = Funciones.GetFirestoreClient();
+            FirestoreDb db = Funciones.GetFirestoreClient(Databases.AnilistConEnie);
 
-            CollectionReference col = db.Collection("Anilist").Document($"{guildId}").Collection("Usuarios");
+            CollectionReference col = db.Collection("Anilist");
             var snap = await col.GetSnapshotAsync();
 
             if (snap.Count > 0)
@@ -46,15 +26,10 @@ namespace AnilistESP
             return ret;
         }
 
-        public async Task<List<UsuarioAnilistFirebase>> GetPerfiles(long guildId)
+        public async Task<UsuarioAnilistFirebase> GetPerfil(ulong userId)
         {
-            return await GetListaUsuarios(guildId);
-        }
-
-        public async Task<UsuarioAnilistFirebase> GetPerfil(ulong guildId, ulong userId)
-        {
-            FirestoreDb db = Funciones.GetFirestoreClient();
-            DocumentReference doc = db.Collection("Anilist").Document($"{guildId}").Collection("Usuarios").Document($"{userId}");
+            FirestoreDb db = Funciones.GetFirestoreClient(Databases.AnilistConEnie);
+            DocumentReference doc = db.Collection("Anilist").Document($"{userId}");
             var snap = await doc.GetSnapshotAsync();
             if (snap.Exists)
             {
@@ -68,8 +43,8 @@ namespace AnilistESP
 
         public async Task SetAnilist(Context ctx, string anilistUrl, DiscordMember miembro)
         {
-            FirestoreDb db = Funciones.GetFirestoreClient();
-            DocumentReference doc = db.Collection("Anilist").Document($"{ctx.Guild.Id}").Collection("Usuarios").Document($"{miembro.Id}");
+            FirestoreDb db = Funciones.GetFirestoreClient(Databases.AnilistConEnie);
+            DocumentReference doc = db.Collection("Anilist").Document($"{miembro.Id}");
             var snap = await doc.GetSnapshotAsync();
             UsuarioAnilistFirebase registro;
             DiscordChannel channel = await Funciones.GetCanalUsuariosAnilist(ctx.Client, ctx.Guild);
@@ -112,10 +87,10 @@ namespace AnilistESP
             }
         }
 
-        public async Task DeleteAnilist(ulong guildId, ulong userId)
+        public async Task DeleteAnilist(ulong userId)
         {
-            FirestoreDb db = Funciones.GetFirestoreClient();
-            DocumentReference doc = db.Collection("Anilist").Document($"{guildId}").Collection("Usuarios").Document($"{userId}");
+            FirestoreDb db = Funciones.GetFirestoreClient(Databases.AnilistConEnie);
+            DocumentReference doc = db.Collection("Anilist").Document($"{userId}");
             var snap = await doc.GetSnapshotAsync();
             if (snap.Exists)
             {
@@ -127,7 +102,7 @@ namespace AnilistESP
 
         public async Task SetAnilistYumiko(int anilistId, ulong userId)
         {
-            FirestoreDb db = Funciones.GetFirestoreClient();
+            FirestoreDb db = Funciones.GetFirestoreClient(Databases.Yumiko);
             DocumentReference doc = db.Collection("AnilistUsers").Document($"{userId}");
             var snap = await doc.GetSnapshotAsync();
             UsuarioAnilistYumFirebase registro;

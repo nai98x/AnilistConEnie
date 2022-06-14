@@ -223,7 +223,7 @@ namespace AnilistESP
             List<string> scoresList = new();
 
             var usuarios = servicio.Usuarios;
-            var usuariosServidor = new List<UsuarioAnilistYumFirebase>();
+            var usuariosServidor = new List<UsuarioAnilistFirebase>();
             var members = await ctx.Guild.GetAllMembersAsync();
 
             foreach (var item in usuarios)
@@ -250,7 +250,7 @@ namespace AnilistESP
             var values = new List<long>();
             foreach (var user in usuariosServidor)
             {
-                values.Add(user.AnilistId);
+                values.Add(long.Parse(user.AnilistURL[(user.AnilistURL.LastIndexOf("/") + 1)..]));
             }
 
             var requestPers = new GraphQLRequest

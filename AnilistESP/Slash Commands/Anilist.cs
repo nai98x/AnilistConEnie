@@ -29,11 +29,11 @@ namespace AnilistESP
         [SlashCommand("desvincularanilist", "Desvincula tu Anilist registrado en el servidor")]
         public async Task GetAnilist(InteractionContext ctx)
         {
-            var userAnilist = await usuariosAnilist.GetPerfil(ctx.Guild.Id, ctx.Member.Id);
+            var userAnilist = await usuariosAnilist.GetPerfil(ctx.Member.Id);
             if (userAnilist != null)
             {
                 await Funciones.BorrarMensajeUsuarioAnilist(ctx.Client, ctx.Guild, userAnilist.MessageId);
-                await usuariosAnilist.DeleteAnilist(ctx.Guild.Id, ctx.Member.Id);
+                await usuariosAnilist.DeleteAnilist(ctx.Member.Id);
                 await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
                 {
                     Color = DiscordColor.Green,

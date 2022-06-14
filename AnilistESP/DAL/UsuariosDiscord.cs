@@ -8,7 +8,7 @@ namespace AnilistESP
 {
     public class UsuariosDiscord
     {
-        private static readonly FirestoreDb db = Funciones.GetFirestoreClient();
+        private static readonly FirestoreDb db = Funciones.GetFirestoreClient(Databases.AnilistConEnie);
 
         public async Task<List<UsuarioDiscordFirebase>> GetListaUsuarios(long guildId)
         {

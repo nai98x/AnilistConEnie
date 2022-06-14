@@ -62,10 +62,10 @@
             Client.Ready += OnClientReady;
             Client.ClientErrored += Client_ClientError;
             Client.Resumed += Client_Resumed;
-            Client.GuildMemberRemoved += Client_GuildMemberRemoved;
+            //Client.GuildMemberRemoved += Client_GuildMemberRemoved;
             Client.ComponentInteractionCreated += Client_ComponentInteractionCreated;
             Client.MessageCreated += Client_MessageCreated;
-            Client.MessageReactionAdded += Client_MessageReactionAdded;
+            //Client.MessageReactionAdded += Client_MessageReactionAdded;
             //Client.GuildMemberUpdated += Client_GuildMemberUpdated;
             Client.GuildDownloadCompleted += Client_GuildDownloadCompleted;
 
@@ -147,7 +147,7 @@
             {
                 var service = new UsuariosAnilist();
                 ServiciosSingleton servicio = ServiciosSingleton.GetServiciosSingleton();
-                var usuarios = await service.GetPerfilesServidor(862408834693070898);
+                var usuarios = await service.GetListaUsuarios();
                 servicio.SetUsuarios(usuarios);
             });
 
@@ -210,11 +210,11 @@
             _ = Task.Run(async () =>
             {
                 UsuariosAnilist helper = new();
-                var usuario = await helper.GetPerfil(e.Guild.Id, e.Member.Id);
+                var usuario = await helper.GetPerfil(e.Member.Id);
                 if (usuario != null)
                 {
                     await Funciones.BorrarMensajeUsuarioAnilist(sender, e.Guild, usuario.MessageId);
-                    await helper.DeleteAnilist(e.Guild.Id, e.Member.Id);
+                    await helper.DeleteAnilist(e.Member.Id);
                     await Funciones.GrabarLogUsuarioOutAnilist(Client, e.Member, e.Guild);
                 }
             });

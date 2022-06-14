@@ -14,12 +14,17 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="firebase-anilistconenie.json" />
+    <None Remove="firebase-yumiko.json" />
     <None Remove="firebase.json" />
     <None Remove="firebase_ejemplo.json" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="firebase.json">
+    <Content Include="firebase-anilistconenie.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="firebase-yumiko.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="firebase_ejemplo.json">

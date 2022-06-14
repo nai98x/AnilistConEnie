@@ -29,11 +29,20 @@ namespace AnilistESP
     {
         private static readonly UsuariosAnilist usuariosAnilist = new();
         private static readonly Random rng = new();
-        public static FirestoreDb GetFirestoreClient()
+        public static FirestoreDb GetFirestoreClient(Databases database)
         {
-            string path = AppDomain.CurrentDomain.BaseDirectory + @"firebase.json";
-            Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", path);
-            return FirestoreDb.Create(ConfigurationManager.AppSettings["NombreDbFirebase"]);
+            switch (database)
+            {
+                case Databases.AnilistConEnie:
+                    Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", AppDomain.CurrentDomain.BaseDirectory + @"firebase-anilistconenie.json");
+                    return FirestoreDb.Create("anilistconenie-e09cb");
+                case Databases.Yumiko:
+                    string path = AppDomain.CurrentDomain.BaseDirectory + @"firebase-yumiko.json";
+                    Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", path);
+                    return FirestoreDb.Create(ConfigurationManager.AppSettings["NombreDbFirebase"]);
+                default:
+                    throw new ArgumentException("Invalid database type");
+            }
         }
 
         public static async Task<DiscordChannel> GetCanalUsuariosAnilist(DiscordClient client, DiscordGuild guild)

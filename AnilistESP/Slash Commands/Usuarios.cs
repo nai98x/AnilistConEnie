@@ -88,7 +88,7 @@ namespace AnilistESP
         {
             await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
             DateTime fecha = new(day: (int)day, month: (int)month, year: (int)year);
-            await usuariosService.SetBirthday(ctx.Guild.Id, ctx.User.Id, fecha, mostrarEdad);
+            await usuariosService.SetBirthday(ctx.User.Id, fecha, mostrarEdad);
             await ctx.EditResponseAsync(builder: new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
             {
                 Title = "Cumpleaños registrado con éxito",

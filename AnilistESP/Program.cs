@@ -62,12 +62,12 @@
             Client.Ready += OnClientReady;
             Client.ClientErrored += Client_ClientError;
             Client.Resumed += Client_Resumed;
-            //Client.GuildMemberRemoved += Client_GuildMemberRemoved;
+            Client.GuildMemberRemoved += Client_GuildMemberRemoved;
             Client.ComponentInteractionCreated += Client_ComponentInteractionCreated;
-            //Client.MessageCreated += Client_MessageCreated;
-            //Client.MessageReactionAdded += Client_MessageReactionAdded;
+            Client.MessageCreated += Client_MessageCreated;
+            Client.MessageReactionAdded += Client_MessageReactionAdded;
             //Client.GuildMemberUpdated += Client_GuildMemberUpdated;
-            //Client.GuildDownloadCompleted += Client_GuildDownloadCompleted;
+            Client.GuildDownloadCompleted += Client_GuildDownloadCompleted;
 
             Client.UseInteractivity(new InteractivityConfiguration());
 

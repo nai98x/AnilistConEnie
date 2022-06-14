@@ -8,10 +8,9 @@ namespace AnilistESP
 {
     public class UsuariosDiscord
     {
-        private static readonly FirestoreDb db = Funciones.GetFirestoreClient(Databases.AnilistConEnie);
-
         public async Task<List<UsuarioDiscordFirebase>> GetListaUsuarios(long guildId)
         {
+            FirestoreDb db = await Funciones.GetFirestoreClientAnilistConEnie();
             var ret = new List<UsuarioDiscordFirebase>();
 
             CollectionReference col = db.Collection("Cumpleaños").Document($"{guildId}").Collection("Usuarios");
@@ -91,6 +90,7 @@ namespace AnilistESP
 
         public async Task SetBirthday(ulong guildId, ulong userId, DateTime fecha, bool mostrarEdad)
         {
+            FirestoreDb db = await Funciones.GetFirestoreClientAnilistConEnie();
             DocumentReference doc = db.Collection("Cumpleaños").Document($"{guildId}").Collection("Usuarios").Document($"{userId}");
             var snap = await doc.GetSnapshotAsync();
             UsuarioDiscordFirebase registro;
@@ -122,6 +122,7 @@ namespace AnilistESP
 
         public async Task DeleteBirthday(InteractionContext ctx)
         {
+            FirestoreDb db = await Funciones.GetFirestoreClientAnilistConEnie();
             DocumentReference doc = db.Collection("Cumpleaños").Document($"{ctx.Guild.Id}").Collection("Usuarios").Document($"{ctx.User.Id}");
             var snap = await doc.GetSnapshotAsync();
             if (snap.Exists)

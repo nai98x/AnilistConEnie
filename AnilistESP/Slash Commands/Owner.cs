@@ -17,45 +17,6 @@
         public async Task Test(InteractionContext ctx)
         {
             await ctx.DeferAsync();
-            var usuariosAnilist = await GetListaUsuariosAnilist();
-            int i = 0;
-        }
-
-        public async Task<List<UsuarioAnilistFirebase>> GetListaUsuariosAnilist()
-        {
-            var ret = new List<UsuarioAnilistFirebase>();
-            FirestoreDb db = Funciones.GetFirestoreClient(Databases.Yumiko);
-
-            CollectionReference col = db.Collection("Anilist").Document($"{862408834693070898}").Collection("Usuarios");
-            var snap = await col.GetSnapshotAsync();
-
-            if (snap.Count > 0)
-            {
-                foreach (var document in snap.Documents)
-                {
-                    ret.Add(document.ConvertTo<UsuarioAnilistFirebase>());
-                }
-            }
-
-            return ret;
-        }
-
-        public async Task<List<UsuarioDiscordFirebase>> GetListaCumples()
-        {
-            var ret = new List<UsuarioDiscordFirebase>();
-            FirestoreDb db = Funciones.GetFirestoreClient(Databases.Yumiko);
-            CollectionReference col = db.Collection("Cumpleaños").Document($"{862408834693070898}").Collection("Usuarios");
-            var snap = await col.GetSnapshotAsync();
-
-            if (snap.Count > 0)
-            {
-                foreach (var document in snap.Documents)
-                {
-                    ret.Add(document.ConvertTo<UsuarioDiscordFirebase>());
-                }
-            }
-
-            return ret;
         }
 
         [SlashCommand("eliminarguild", "Elimina a Yumiko de un servidor")]

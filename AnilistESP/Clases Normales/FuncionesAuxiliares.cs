@@ -5,6 +5,7 @@ using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using Google.Cloud.Firestore;
+using Google.Cloud.Firestore.V1;
 using GraphQL;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.Newtonsoft;
@@ -29,20 +30,21 @@ namespace AnilistESP
     {
         private static readonly UsuariosAnilist usuariosAnilist = new();
         private static readonly Random rng = new();
-        public static FirestoreDb GetFirestoreClient(Databases database)
+        
+        public static FirestoreDb GetFirestoreClientYumiko()
         {
-            switch (database)
-            {
-                case Databases.AnilistConEnie:
-                    Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", AppDomain.CurrentDomain.BaseDirectory + @"firebase-anilistconenie.json");
-                    return FirestoreDb.Create("anilistconenie-e09cb");
-                case Databases.Yumiko:
-                    string path = AppDomain.CurrentDomain.BaseDirectory + @"firebase-yumiko.json";
-                    Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", path);
-                    return FirestoreDb.Create(ConfigurationManager.AppSettings["NombreDbFirebase"]);
-                default:
-                    throw new ArgumentException("Invalid database type");
-            }
+            string path = AppDomain.CurrentDomain.BaseDirectory + @"firebase-yumiko.json";
+            var jsonString = File.ReadAllText(path);
+            var builder = new FirestoreClientBuilder { JsonCredentials = jsonString };
+            return FirestoreDb.Create("yumiko-1590195019393", builder.Build());
+        }
+
+        public static async Task<FirestoreDb> GetFirestoreClientAnilistConEnie()
+        {
+            string path = AppDomain.CurrentDomain.BaseDirectory + @"firebase-anilistconenie.json";
+            var jsonString = File.ReadAllText(path);
+            var builder = new FirestoreClientBuilder { JsonCredentials = jsonString };
+            return await FirestoreDb.CreateAsync("anilistconenie-e09cb", builder.Build());
         }
 
         public static async Task<DiscordChannel> GetCanalUsuariosAnilist(DiscordClient client, DiscordGuild guild)

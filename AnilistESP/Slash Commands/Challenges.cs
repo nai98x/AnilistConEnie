@@ -4,6 +4,7 @@ using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace AnilistConEnie.Commands
@@ -43,11 +44,31 @@ namespace AnilistConEnie.Commands
             }
             else
             {
-                challenges.ForEach(x =>
+                foreach (var ch in challenges.GroupBy(x => x.Disponible))
                 {
-                    string dispStr = x.Disponible ? "Disponible" : "No disponible";
-                    desc += $"- [{x.Nombre}]({x.Link}) ({dispStr})\n";
-                });
+                    if(ch.Key == true)
+                    {
+                        desc += Formatter.Bold("Disponibles:\n");
+                    }
+                    else
+                    {
+                        desc += Formatter.Bold("Expirados:\n");
+                    }
+
+                    if(ch.Any())
+                    {
+                        foreach (var x in ch)
+                        {
+                            desc += $"[{x.Nombre}]({x.Link})\n";
+                        }
+                    }
+                    else
+                    {
+                        desc += "(Sin registros)\n";
+                    }
+                    
+                    desc += "\n";
+                }
             }
 
             await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
@@ -72,7 +93,7 @@ namespace AnilistConEnie.Commands
             }
             else
             {
-                challenges.ForEach(async x =>
+                challenges.ForEach(x =>
                 {
                     desc += $"- <@{x.UserId}> - **XP:** {x.Xp} uma points\n";
                 });
@@ -80,7 +101,7 @@ namespace AnilistConEnie.Commands
 
             await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
             {
-                Title = $"Usuarios que completaron el {challenge} challenge",
+                Title = $"Usuarios que completaron el {challenge}",
                 Description = desc,
                 Color = Funciones.GetColor()
             }));

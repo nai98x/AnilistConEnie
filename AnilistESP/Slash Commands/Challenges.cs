@@ -93,9 +93,10 @@ namespace AnilistConEnie.Commands
             }
             else
             {
+                var emote = DiscordEmoji.FromGuildEmote(ctx.Client, 862461175950606376);
                 challenges.ForEach(x =>
                 {
-                    desc += $"- <@{x.UserId}> - **XP:** {x.Xp} uma points\n";
+                    desc += $"- <@{x.UserId}> - **XP:** {x.Xp} {emote}\n";
                 });
             }
 
@@ -103,6 +104,37 @@ namespace AnilistConEnie.Commands
             {
                 Title = $"Usuarios que completaron el {challenge}",
                 Description = desc,
+                Color = Funciones.GetColor()
+            }));
+        }
+
+        [SlashCommand("usuario", "Challenges completados por un usuario")]
+        public async Task Usuario(InteractionContext ctx, [Option("Usuario", "Usuario a consultar")] DiscordUser? usuario = null)
+        {
+            await ctx.DeferAsync();
+            var challengesUser = await service.GetChallengesUsuario(usuario?.Id ?? ctx.User.Id);
+            string description = string.Empty;
+            if(challengesUser.Count > 0)
+            {
+                var emote = DiscordEmoji.FromGuildEmote(ctx.Client, 862461175950606376);
+                int xpTotal = 0;
+                challengesUser.ForEach(x =>
+                {
+                    description += $"[{x.Challenge.Nombre}]({x.Challenge.Link}) - {x.Xp}\n";
+                    xpTotal += x.Xp;
+                });
+
+                description += $"\nTotal de XP obtenida: **{xpTotal}** {emote}";
+            }
+            else
+            {
+                description = "(Ningún challenge completado)";
+            }
+
+            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+            {
+                Title = $"Challenges completados por {usuario?.Username ?? ctx.User.Username}",
+                Description = description,
                 Color = Funciones.GetColor()
             }));
         }

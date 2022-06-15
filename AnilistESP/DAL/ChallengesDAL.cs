@@ -99,5 +99,38 @@ namespace AnilistESP
 
             return ret;
         }
+
+        public async Task<List<UsuarioChallenge>> GetChallengesUsuario(ulong userId)
+        {
+            FirestoreDb db = await Funciones.GetFirestoreClientAnilistConEnie();
+            var ret = new List<UsuarioChallenge>();
+
+            CollectionReference colChallenges = db.Collection("Challenges");
+            IAsyncEnumerable<DocumentReference> subcollectionsChallenges = colChallenges.ListDocumentsAsync();
+            IAsyncEnumerator<DocumentReference> subcollectionsEnumerator = subcollectionsChallenges.GetAsyncEnumerator(default);
+            while (await subcollectionsEnumerator.MoveNextAsync())
+            {
+                DocumentReference subcollectionRef = subcollectionsEnumerator.Current;
+                DocumentSnapshot challengeSnap = await subcollectionRef.GetSnapshotAsync();
+                if (challengeSnap.Exists)
+                {
+                    ChallengeFirebase challenge = challengeSnap.ConvertTo<ChallengeFirebase>();
+                    DocumentReference doc = db.Collection("Challenges").Document(subcollectionRef.Id).Collection("Usuarios").Document($"{userId}");
+                    DocumentSnapshot snap = await doc.GetSnapshotAsync();
+                    if (snap.Exists)
+                    {
+                        var registro = snap.ConvertTo<ChallengeCompletadoFirebase>();
+                        ret.Add(new()
+                        {
+                            UserId = registro.UserId,
+                            Xp = registro.Xp,
+                            Challenge = challenge
+                        });
+                    }
+                }
+            }
+
+            return ret;
+        }
     }
 }

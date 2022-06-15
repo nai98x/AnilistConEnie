@@ -1,9 +1,10 @@
-﻿using DSharpPlus;
+﻿using AnilistESP;
+using DSharpPlus;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
 using System.Threading.Tasks;
 
-namespace AnilistESP
+namespace AnilistConEnie.Commands
 {
     [SlashCommandGroup("organizador", "Comandos para organizador de intercambios")]
     public class IntercambiosAdmin : ApplicationCommandModule

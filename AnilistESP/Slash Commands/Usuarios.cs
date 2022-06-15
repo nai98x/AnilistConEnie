@@ -1,4 +1,5 @@
-﻿using DSharpPlus;
+﻿using AnilistESP;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
@@ -9,7 +10,7 @@ using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace AnilistESP
+namespace AnilistConEnie.Commands
 {
     public class Usuarios : ApplicationCommandModule
     {

@@ -1,5 +1,6 @@
 ﻿namespace AnilistESP
 {
+    using AnilistConEnie.Commands;
     using DSharpPlus;
     using DSharpPlus.CommandsNext;
     using DSharpPlus.Entities;
@@ -87,7 +88,7 @@
                 ApplicationCommands.RegisterCommands<Anilist>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Usuarios>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Fun>(pruebasBacklog);
-                ApplicationCommands.RegisterCommands<Roles>(pruebasBacklog);
+                ApplicationCommands.RegisterCommands<Challenges>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Intercambios>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<IntercambiosAdmin>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Administrativo>(pruebasBacklog);
@@ -99,7 +100,7 @@
                 ApplicationCommands.RegisterCommands<Anilist>(guildProd);
                 ApplicationCommands.RegisterCommands<Usuarios>(guildProd);
                 ApplicationCommands.RegisterCommands<Fun>(guildProd);
-                ApplicationCommands.RegisterCommands<Roles>(guildProd);
+                ApplicationCommands.RegisterCommands<Challenges>(guildProd);
                 ApplicationCommands.RegisterCommands<Intercambios>(guildProd);
                 ApplicationCommands.RegisterCommands<IntercambiosAdmin>(guildProd);
                 ApplicationCommands.RegisterCommands<Administrativo>(guildProd);

@@ -1,4 +1,4 @@
-﻿namespace AnilistESP
+﻿namespace AnilistConEnie.Commands
 {
     using System;
     using System.Collections.Generic;
@@ -17,30 +17,6 @@
         public async Task Test(InteractionContext ctx)
         {
             await ctx.DeferAsync();
-        }
-
-        [SlashCommand("eliminarguild", "Elimina a Yumiko de un servidor")]
-        public async Task EliminarServer(InteractionContext ctx, [Option("Id", "Id del servidor a salirse")] string idStr)
-        {
-            try
-            {
-                long id = long.Parse(idStr);
-                var guild = await ctx.Client.GetGuildAsync((ulong)id);
-                if (guild != null)
-                {
-                    string nombre = guild.Name;
-                    await guild.LeaveAsync();
-                    await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent($"He salido del servidor `{nombre} ({id})`"));
-                }
-                else
-                {
-                    await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent($"No se encontró el servidor con la Id `{id}`"));
-                }
-            }
-            catch
-            {
-                await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent($"Hubo un error obteniendo el servidor con la Id `{idStr}`"));
-            }
         }
 
         [SlashCommand("apagar", "Apaga el bot")]

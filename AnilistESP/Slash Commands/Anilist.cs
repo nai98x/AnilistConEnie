@@ -1,4 +1,5 @@
-﻿using DSharpPlus;
+﻿using AnilistESP;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
@@ -11,7 +12,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace AnilistESP
+namespace AnilistConEnie.Commands
 {
     public class Anilist : ApplicationCommandModule
     {

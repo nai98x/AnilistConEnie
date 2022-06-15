@@ -1,4 +1,5 @@
-﻿using DSharpPlus;
+﻿using AnilistESP;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
@@ -7,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace AnilistESP
+namespace AnilistConEnie.Commands
 {
     public class Fun : ApplicationCommandModule
     {

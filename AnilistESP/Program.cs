@@ -200,7 +200,10 @@
         {
             _ = Task.Run(async () =>
             {
-                await e.Interaction.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
+                if (!e.Id.StartsWith("modal-"))
+                {
+                    await e.Interaction.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
+                }
             });
             return Task.CompletedTask;
         }

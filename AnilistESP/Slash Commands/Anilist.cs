@@ -8,7 +8,9 @@ using GraphQL;
 using GraphQL.Client.Abstractions.Utilities;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.Newtonsoft;
+using Newtonsoft.Json.Linq;
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -19,12 +21,164 @@ namespace AnilistConEnie.Commands
         private readonly UsuariosAnilist usuariosAnilist = new();
 
         [SlashCommand("vincularanilist", "Registra tu AniList en el servidor")]
-        public async Task SetAnilist(InteractionContext ctx, [Option("Perfil", "URL o nickname de tu perfil de AniList")] string perfil)
+        public async Task SetAnilist(InteractionContext ctx)
         {
-            await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
-            await ctx.DeleteResponseAsync();
-            var context = Funciones.GetContext(ctx);
-            await Funciones.SetPerfilAnilist(context, perfil);
+            await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder()
+                .AsEphemeral(true)
+                .AddEmbed(new DiscordEmbedBuilder
+                {
+                    Title = "Configura tu perfil de AniList",
+                    Description =
+                        $"**Instrucciones**:\n\n" +
+                        $"1- Haz click en el botón llamado **Autorizar**\n" +
+                        $"2- Una vez se abra la página web, haz click en el botón verde **Authorize** y luego copia el texto que te aparecerá para copiar\n" +
+                        $"3- Cierra la página web y haz click en el botón llamado **Pegar código aquí**\n" +
+                        $"4- Pega el código en el formulario y envíalo",
+                    Color = Funciones.GetColor()
+                })
+                .AddComponents(
+                    new DiscordLinkButtonComponent(@"https://anilist.co/api/v2/oauth/authorize?client_id=8655&response_type=token", "Autorizar"),
+                    new DiscordButtonComponent(ButtonStyle.Primary, $"modal-anilistprofileset-{ctx.User.Id}", "Pegar código aquí")
+                )
+            );
+
+            DiscordMessage message = await ctx.GetOriginalResponseAsync();
+            var interactivity = ctx.Client.GetInteractivity();
+            var interactivityBtnResult = await interactivity.WaitForButtonAsync(message, TimeSpan.FromMinutes(5));
+
+            if (!interactivityBtnResult.TimedOut)
+            {
+                var btnInteraction = interactivityBtnResult.Result.Interaction;
+                string modalId = $"modal-{btnInteraction.Id}";
+
+                var modal = new DiscordInteractionResponseBuilder()
+                    .WithCustomId(modalId)
+                    .WithTitle("Vincular AniList")
+                    .AddComponents(new TextInputComponent(label: "Código", placeholder: "Pegar código aquí", customId: "AniListToken"));
+
+                await btnInteraction.CreateResponseAsync(InteractionResponseType.Modal, modal);
+
+                var interactivityModalResult = await interactivity.WaitForModalAsync(modalId, TimeSpan.FromMinutes(5));
+
+                if (!interactivityModalResult.TimedOut)
+                {
+                    var modalInteraction = interactivityModalResult.Result.Interaction;
+                    string ALToken = interactivityModalResult.Result.Values.First().Value;
+
+                    await modalInteraction.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+
+                    GraphQLHttpClient graphQlCli = new("https://graphql.anilist.co", new NewtonsoftJsonSerializer());
+                    graphQlCli.HttpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {ALToken}");
+
+                    var request = new GraphQLRequest
+                    {
+                        Query =
+                            "query {" +
+                            "   Viewer {" +
+                            "       id," +
+                            "       name," +
+                            "       siteUrl," +
+                            "       avatar {" +
+                            "           medium" +
+                            "       }," +
+                            "       bannerImage" +
+                            "   }" +
+                            "}"
+                    };
+                    try
+                    {
+                        var data = await graphQlCli.SendQueryAsync<dynamic>(request);
+                        if (data != null)
+                        {
+                            if (data.Data != null)
+                            {
+                                int id = data.Data.Viewer.id;
+                                string name = data.Data.Viewer.name;
+                                string siteUrl = data.Data.Viewer.siteUrl;
+                                string avatar = data.Data.Viewer.avatar.medium;
+                                string banner = data.Data.Viewer.bannerImage;
+
+                                var newProfileEmbed = new DiscordEmbedBuilder
+                                {
+                                    Color = DiscordColor.Green,
+                                    Title = "Nuevo perfil guardado exitosamente",
+                                    Description = string.Format("{0}, has guardado tu perfil de Anilist correctamente", ctx.User.Mention),
+                                    Thumbnail = new()
+                                    {
+                                        Url = avatar
+                                    },
+                                    Author = new()
+                                    {
+                                        Url = siteUrl,
+                                        Name = name,
+                                        IconUrl = ctx.User.AvatarUrl
+                                    }
+                                };
+
+                                if (!string.IsNullOrEmpty(banner))
+                                {
+                                    newProfileEmbed.WithImageUrl(banner);
+                                }
+
+                                await usuariosAnilist.SetAnilist(Funciones.GetContext(ctx), siteUrl, ctx.Member);
+                                await usuariosAnilist.SetAnilistYumiko(id, ctx.Member.Id);
+                                await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(false).AddEmbed(embed: newProfileEmbed));
+                                return;
+                            }
+                        }
+
+                        await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
+                        {
+                            Title = "Error",
+                            Description = "Error desconocido",
+                            Color = DiscordColor.Red
+                        }));
+                    }
+                    catch (GraphQLHttpRequestException ex)
+                    {
+                        if (ex.Content != null)
+                        {
+                            dynamic data = JObject.Parse(ex.Content);
+                            if (data.errors != null)
+                            {
+                                foreach (var error in data.errors)
+                                {
+                                    await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
+                                    {
+                                        Title = "Error",
+                                        Description = error.message,
+                                        Color = DiscordColor.Red
+                                    }));
+                                }
+                                return;
+                            }
+                        }
+
+                        await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
+                        {
+                            Title = "Error",
+                            Description = "Error desconocido",
+                            Color = DiscordColor.Red
+                        }));
+                    }
+                }
+                else
+                {
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                    {
+                        Title = "Tiempo agotado esperando la respuesta",
+                        Color = DiscordColor.Red
+                    }));
+                }
+            }
+            else
+            {
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                {
+                    Title = "Tiempo agotado esperando la respuesta",
+                    Color = DiscordColor.Red
+                }));
+            }
         }
 
         [SlashCommand("desvincularanilist", "Desvincula tu Anilist registrado en el servidor")]

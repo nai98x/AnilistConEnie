@@ -5,6 +5,7 @@ using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -73,12 +74,15 @@ namespace AnilistConEnie.Commands
             string avatar1 = usuario.GetAvatarUrl(ImageFormat.Png, 128);
             string avatar2 = elegido.GetAvatarUrl(ImageFormat.Png, 128);
 
+            byte[] img = await Funciones.MergeImage(avatar1, avatar2, 1024, 512);
+            byte[] imagen = Funciones.OverlapImage(img, File.ReadAllBytes(Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Images", "frame-love.png")), 1024, 512);
+
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
             {
                 Title = "Shippeo",
                 Description = $"Shippeo a {ctxMiembro.Mention} con **{elegido.Mention}** 💘",
                 ImageUrl = "attachment://imagen.png"
-            }).AddFile("imagen.png", await Funciones.MergeImage(avatar1, avatar2)));
+            }).AddFile("imagen.png", Funciones.ToMemoryStream(imagen)));
         }
 
         [SlashCommand("shiprandom", "Elijo una ship del servidor")]
@@ -117,12 +121,15 @@ namespace AnilistConEnie.Commands
             string avatar1 = elegido1.GetAvatarUrl(ImageFormat.Png, 128);
             string avatar2 = elegido2.GetAvatarUrl(ImageFormat.Png, 128);
 
+            byte[] img = await Funciones.MergeImage(avatar1, avatar2, 1024, 512);
+            byte[] imagen = Funciones.OverlapImage(img, File.ReadAllBytes(Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Images", "frame-love.png")), 1024, 512);
+
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
             {
                 Title = "Shippeo Random",
                 Description = $"Shippeo a {elegido1.Mention} con **{elegido2.Mention}** 💘",
                 ImageUrl = "attachment://imagen.png"
-            }).AddFile("imagen.png", await Funciones.MergeImage(avatar1, avatar2)));
+            }).AddFile("imagen.png", Funciones.ToMemoryStream(imagen)));
         }
 
         [SlashCommand("ooc", "Out of Context")]

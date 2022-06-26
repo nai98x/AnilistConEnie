@@ -412,45 +412,57 @@ namespace AnilistESP
             return builder;
         }
 
-        public async static Task<MemoryStream> MergeImage(string link1, string link2)
+        public static async Task<byte[]> MergeImage(string link1, string link2, int x, int y)
         {
             var client = new HttpClient();
             var bytes1 = await client.GetByteArrayAsync(link1);
             var bytes2 = await client.GetByteArrayAsync(link2);
 
-            using (var memoryStream = new MemoryStream())
-            using (Image<Rgba32> img1 = Image.Load<Rgba32>(bytes1)) // load up source images
-            using (Image<Rgba32> img2 = Image.Load<Rgba32>(bytes2))
+            using var memoryStream = new MemoryStream();
+            using Image<Rgba32> img1 = Image.Load<Rgba32>(bytes1); // load up source images
+            using Image<Rgba32> img2 = Image.Load<Rgba32>(bytes2);
 
-            using (var outputImage = new Image<Rgba32>(500, 375)) // create output image of the correct dimensions
+            using var outputImage = new Image<Rgba32>(x, y); // create output image of the correct dimensions
+
+            img1.Mutate(o => o.Resize(new Size(x / 2, y)));
+            img2.Mutate(o => o.Resize(new Size(x / 2, y)));
+
+            // take the 2 source images and draw them onto the image
+            outputImage.Mutate(o => o
+                .DrawImage(img1, new Point(0, 0), 1f) // draw the first one top left
+                .DrawImage(img2, new Point(x / 2, 0), 1f)); // draw the second next to it
+
+            // This saves to the memoryStream with encoder
+            outputImage.Save(memoryStream, new PngEncoder());
+            memoryStream.Position = 0; // The position needs to be reset.
+
+            // return byte[]
+            return memoryStream.ToArray();
+        }
+
+        public static byte[] OverlapImage(byte[] image1, byte[] image2, int x, int y)
+        {
+            using var memoryStream = new MemoryStream();
+            using var outputImage = new Image<Rgba32>(x, y);
+            using Image<Rgba32> img1 = Image.Load<Rgba32>(image1);
+            using Image<Rgba32> img2 = Image.Load<Rgba32>(image2);
+
+            outputImage.Mutate(o => o
+                .DrawImage(img1, new Point(0, 0), 1f)
+                .DrawImage(img2, new Point(0, 0), 1f));
+
+            outputImage.Save(memoryStream, new PngEncoder());
+            memoryStream.Position = 0;
+
+            return memoryStream.ToArray();
+        }
+
+        public static MemoryStream ToMemoryStream(byte[] byteArray)
+        {
+            return new MemoryStream(byteArray)
             {
-                // reduce source images to correct dimensions
-                // skip if already correct size
-                // if you need to use source images else where use Clone and take the result instead
-                img1.Mutate(o => o.Resize(new Size(250, 375)));
-                img2.Mutate(o => o.Resize(new Size(250, 375)));
-
-                // take the 2 source images and draw them onto the image
-                outputImage.Mutate(o => o
-                    .DrawImage(img1, new Point(0, 0), 1f) // draw the first one top left
-                    .DrawImage(img2, new Point(250, 0), 1f)); // draw the second next to it
-
-                // Encode here for quality
-                var encoder = new PngEncoder();
-
-                // This saves to the memoryStream with encoder
-                outputImage.Save(memoryStream, encoder);
-                memoryStream.Position = 0; // The position needs to be reset.
-
-                // prepare result to byte[]
-                var myByteArray = memoryStream.ToArray();
-
-                // return new stream
-                return new MemoryStream(myByteArray)
-                {
-                    Position = 0,
-                };
-            }
+                Position = 0,
+            };
         }
 
         public static string LimpiarTexto(string texto)

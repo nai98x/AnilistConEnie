@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace AnilistESP
+﻿namespace AnilistESP
 {
     public class UsuarioChallenge
     {

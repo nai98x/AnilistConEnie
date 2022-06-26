@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace AnilistESP
 {
     public class IntercambiosDAL
-    { 
+    {
         public async Task<List<IntercambiosFirebase>> GetInscriptos(ulong guildId, string tipo)
         {
             FirestoreDb db = await Funciones.GetFirestoreClientAnilistConEnie();

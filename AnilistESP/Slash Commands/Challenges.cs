@@ -3,7 +3,6 @@ using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
-using System;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -13,7 +12,7 @@ namespace AnilistConEnie.Commands
     public class Challenges : ApplicationCommandModule
     {
         private ChallengesDAL service = new();
-        
+
         [SlashRequireUserPermissions(Permissions.ManageGuild)]
         [SlashCommand("set", "Agrega o modifica un challenge (Staff)")]
         public async Task Set(InteractionContext ctx,
@@ -38,7 +37,7 @@ namespace AnilistConEnie.Commands
             await ctx.DeferAsync();
             var challenges = await service.GetLista();
             string desc = string.Empty;
-            if(challenges.Count == 0)
+            if (challenges.Count == 0)
             {
                 desc = "(Sin challenges disponibles)";
             }
@@ -46,7 +45,7 @@ namespace AnilistConEnie.Commands
             {
                 foreach (var ch in challenges.GroupBy(x => x.Disponible))
                 {
-                    if(ch.Key == true)
+                    if (ch.Key == true)
                     {
                         desc += Formatter.Bold("Disponibles:\n");
                     }
@@ -55,7 +54,7 @@ namespace AnilistConEnie.Commands
                         desc += Formatter.Bold("Expirados:\n");
                     }
 
-                    if(ch.Any())
+                    if (ch.Any())
                     {
                         foreach (var x in ch)
                         {
@@ -66,7 +65,7 @@ namespace AnilistConEnie.Commands
                     {
                         desc += "(Sin registros)\n";
                     }
-                    
+
                     desc += "\n";
                 }
             }
@@ -81,7 +80,7 @@ namespace AnilistConEnie.Commands
 
         [SlashCommand("ver", "Permite ver los usuarios que han completado un challenge")]
         public async Task Ver(
-            InteractionContext ctx, 
+            InteractionContext ctx,
             [Option("Challenge", "Challenge a elegir", true)][Autocomplete(typeof(ChallengesAutocompleteProvider))] string challenge)
         {
             await ctx.DeferAsync();
@@ -114,7 +113,7 @@ namespace AnilistConEnie.Commands
             await ctx.DeferAsync();
             var challengesUser = await service.GetChallengesUsuario(usuario?.Id ?? ctx.User.Id);
             string description = string.Empty;
-            if(challengesUser.Count > 0)
+            if (challengesUser.Count > 0)
             {
                 var emote = DiscordEmoji.FromGuildEmote(ctx.Client, 862461175950606376);
                 int xpTotal = 0;

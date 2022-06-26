@@ -1,16 +1,15 @@
 ﻿namespace AnilistConEnie.Commands
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
     using DSharpPlus;
     using DSharpPlus.Entities;
     using DSharpPlus.SlashCommands;
     using DSharpPlus.SlashCommands.Attributes;
-    using Google.Cloud.Firestore;
+    using System;
+    using System.Threading.Tasks;
 
     [SlashCommandGroup("owner", "Comandos solo disponibles para el owner de Yumiko")]
     [SlashRequireOwner]
+    [SlashCommandPermissions(Permissions.Administrator)]
     public class Owner : ApplicationCommandModule
     {
         [SlashCommand("test", "Testeos del bot")]

@@ -25,7 +25,7 @@ namespace AnilistESP
 
             return ret;
         }
-        
+
         public async Task<UsuarioAnilistFirebase> GetPerfil(ulong userId)
         {
             FirestoreDb db = await Funciones.GetFirestoreClientAnilistConEnie();
@@ -40,7 +40,7 @@ namespace AnilistESP
                 return null;
             }
         }
-        
+
         public async Task SetAnilist(Context ctx, string anilistUrl, DiscordMember miembro)
         {
             FirestoreDb db = await Funciones.GetFirestoreClientAnilistConEnie();

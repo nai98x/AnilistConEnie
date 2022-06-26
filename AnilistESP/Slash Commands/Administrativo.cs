@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace AnilistConEnie.Commands
 {
-    [SlashRequireUserPermissions(Permissions.ManageGuild)]
+    [SlashCommandPermissions(Permissions.ManageGuild)]
     public class Administrativo : ApplicationCommandModule
     {
         [SlashCommand("yepmodetoggle", "Activa el Yep mode (Staff)")]
@@ -112,7 +112,7 @@ namespace AnilistConEnie.Commands
         }
 
         [SlashCommand("birthdayroleadd", "Le agrega a un usuario el rol de cumpleañero (Staff)")]
-        [SlashRequireUserPermissions(Permissions.ManageRoles)]
+        [SlashCommandPermissions(Permissions.ManageRoles)]
         [SlashRequireBotPermissions(Permissions.ManageRoles)]
         public async Task SetRolBirthday(InteractionContext ctx, [Option("Usuario", "Usuario del servidor al que quieres darle el rol")] DiscordUser user)
         {
@@ -164,7 +164,7 @@ namespace AnilistConEnie.Commands
         }
 
         [SlashCommand("birthdayroleremove", "Le quita a un usuario el rol de cumpleañero (Staff)")]
-        [SlashRequireUserPermissions(Permissions.ManageRoles)]
+        [SlashCommandPermissions(Permissions.ManageRoles)]
         [SlashRequireBotPermissions(Permissions.ManageRoles)]
         public async Task RemoveRolBirthday(InteractionContext ctx, [Option("Usuario", "Usuario del servidor al que quieres quitarle el rol")] DiscordUser user)
         {

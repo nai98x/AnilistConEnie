@@ -6,9 +6,6 @@ using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using Google.Cloud.Firestore;
 using Google.Cloud.Firestore.V1;
-using GraphQL;
-using GraphQL.Client.Http;
-using GraphQL.Client.Serializer.Newtonsoft;
 using Newtonsoft.Json;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
@@ -30,7 +27,7 @@ namespace AnilistESP
     {
         private static readonly UsuariosAnilist usuariosAnilist = new();
         private static readonly Random rng = new();
-        
+
         public static FirestoreDb GetFirestoreClientYumiko()
         {
             string path = AppDomain.CurrentDomain.BaseDirectory + @"firebase-yumiko.json";

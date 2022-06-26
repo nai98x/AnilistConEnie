@@ -1,5 +1,4 @@
 ﻿using DSharpPlus;
-using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
@@ -137,15 +136,6 @@ namespace AnilistESP
             return new string(a);
         }
 
-        public static EmbedFooter GetFooter(CommandContext ctx)
-        {
-            return new EmbedFooter()
-            {
-                Text = $"Invocado por {ctx.Member.DisplayName} ({ctx.Member.Username}#{ctx.Member.Discriminator}) | {ctx.Prefix}{ctx.Command.Name}",
-                IconUrl = ctx.Member.AvatarUrl
-            };
-        }
-
         public static EmbedFooter GetFooter(InteractionContext ctx) => new()
         {
             Text = $"Invocado por {ctx.Member.DisplayName} ({ctx.Member.Username}#{ctx.Member.Discriminator})",
@@ -180,27 +170,6 @@ namespace AnilistESP
             return null;
         }
 
-        public static bool ChequearPermisoYumiko(CommandContext ctx, DSharpPlus.Permissions permiso)
-        {
-            return DSharpPlus.PermissionMethods.HasPermission(ctx.Channel.PermissionsFor(ctx.Guild.CurrentMember), permiso);
-        }
-
-        public async static Task BorrarMensaje(CommandContext ctx, ulong msgId)
-        {
-            if (ChequearPermisoYumiko(ctx, Permissions.ManageMessages))
-            {
-                try
-                {
-                    var mensaje = await ctx.Channel.GetMessageAsync(msgId);
-                    if (mensaje != null)
-                    {
-                        await mensaje.DeleteAsync("Auto borrado de Yumiko");
-                    }
-                }
-                catch (Exception) { }
-            }
-        }
-
         public async static Task BorrarMensaje(Context ctx, ulong msgId)
         {
             if (ChequearPermisoBot(ctx, Permissions.ManageMessages))
@@ -225,164 +194,6 @@ namespace AnilistESP
         public static bool ChequearPermisoMember(Context ctx, DiscordMember member, Permissions permiso)
         {
             return PermissionMethods.HasPermission(ctx.Channel.PermissionsFor(member), permiso);
-        }
-
-        public async static Task<DateTime?> CrearDate(CommandContext ctx)
-        {
-            DiscordMessage msgDia, msgMes, msgAnio, error;
-            DSharpPlus.Interactivity.InteractivityResult<DiscordMessage> msgDiaInter, msgMesInter, msgAnioInter;
-            var interactivity = ctx.Client.GetInteractivity();
-            msgDia = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
-            {
-                Title = "Escribe el dia tu fecha de nacimiento",
-                Description = "Ejemplo: 30"
-            });
-            msgDiaInter = await interactivity.WaitForMessageAsync(xm => xm.Channel == ctx.Channel && xm.Author == ctx.User, TimeSpan.FromSeconds(60));
-            if (!msgDiaInter.TimedOut)
-            {
-                bool resultDia = int.TryParse(msgDiaInter.Result.Content, out int dia);
-                if (resultDia)
-                {
-                    msgMes = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
-                    {
-                        Title = "Escribe el mes tu fecha de nacimiento",
-                        Description = "Ejemplo: 1"
-                    });
-                    msgMesInter = await interactivity.WaitForMessageAsync(xm => xm.Channel == ctx.Channel && xm.Author == ctx.User, TimeSpan.FromSeconds(60));
-                    if (!msgMesInter.TimedOut)
-                    {
-                        bool resultMes = int.TryParse(msgMesInter.Result.Content, out int mes);
-                        if (resultMes)
-                        {
-                            msgAnio = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
-                            {
-                                Title = "Escribe el año tu fecha de nacimiento",
-                                Description = "Ejemplo: 2000"
-                            });
-                            msgAnioInter = await interactivity.WaitForMessageAsync(xm => xm.Channel == ctx.Channel && xm.Author == ctx.User, TimeSpan.FromSeconds(60));
-                            if (!msgAnioInter.TimedOut)
-                            {
-                                bool resultAnio = int.TryParse(msgAnioInter.Result.Content, out int anio);
-                                if (resultAnio)
-                                {
-                                    bool result = DateTime.TryParse($"{dia}/{mes}/{anio}", CultureInfo.CreateSpecificCulture("es-ES"), DateTimeStyles.None, out DateTime fecha);
-                                    if (result)
-                                    {
-                                        if (fecha < DateTime.Today)
-                                        {
-                                            await BorrarMensaje(ctx, msgDia.Id);
-                                            await BorrarMensaje(ctx, msgDiaInter.Result.Id);
-                                            await BorrarMensaje(ctx, msgMes.Id);
-                                            await BorrarMensaje(ctx, msgMesInter.Result.Id);
-                                            await BorrarMensaje(ctx, msgAnio.Id);
-                                            await BorrarMensaje(ctx, msgAnioInter.Result.Id);
-                                            return fecha;
-                                        }
-                                        else
-                                        {
-                                            error = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
-                                            {
-                                                Title = "Error",
-                                                Description = "La fecha de cumpleaños no puede ser posterior a la actual",
-                                                Footer = GetFooter(ctx),
-                                                Color = GetColor()
-                                            });
-                                        }
-                                    }
-                                    else
-                                    {
-                                        error = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
-                                        {
-                                            Title = "Error",
-                                            Description = $"La fecha `{dia}/{mes}/{anio}` no es real",
-                                            Footer = GetFooter(ctx),
-                                            Color = GetColor()
-                                        });
-                                    }
-                                }
-                                else
-                                {
-                                    error = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
-                                    {
-                                        Title = "Error",
-                                        Description = "El año debe ser un numero",
-                                        Footer = GetFooter(ctx),
-                                        Color = GetColor()
-                                    });
-                                }
-                            }
-                            else
-                            {
-                                error = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
-                                {
-                                    Title = "Error",
-                                    Description = "Tiempo agotado esperando el año",
-                                    Footer = GetFooter(ctx),
-                                    Color = GetColor()
-                                });
-                            }
-                            if (msgAnio != null)
-                                await BorrarMensaje(ctx, msgAnio.Id);
-                            if (msgAnioInter.Result != null)
-                                await BorrarMensaje(ctx, msgAnioInter.Result.Id);
-                        }
-                        else
-                        {
-                            error = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
-                            {
-                                Title = "Error",
-                                Description = "El mes debe ser un numero",
-                                Footer = GetFooter(ctx),
-                                Color = GetColor()
-                            });
-                        }
-                    }
-                    else
-                    {
-                        error = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
-                        {
-                            Title = "Error",
-                            Description = "Tiempo agotado esperando el mes",
-                            Footer = GetFooter(ctx),
-                            Color = GetColor()
-                        });
-                    }
-                    if (msgMes != null)
-                        await BorrarMensaje(ctx, msgMes.Id);
-                    if (msgMesInter.Result != null)
-                        await BorrarMensaje(ctx, msgMesInter.Result.Id);
-                }
-                else
-                {
-                    error = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
-                    {
-                        Title = "Error",
-                        Description = "El dia debe ser un numero",
-                        Footer = GetFooter(ctx),
-                        Color = GetColor()
-                    });
-                }
-            }
-            else
-            {
-                error = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
-                {
-                    Title = "Error",
-                    Description = "Tiempo agotado esperando el dia",
-                    Footer = GetFooter(ctx),
-                    Color = GetColor()
-                });
-            }
-            if (msgDia != null)
-                await BorrarMensaje(ctx, msgDia.Id);
-            if (msgDiaInter.Result != null)
-                await BorrarMensaje(ctx, msgDiaInter.Result.Id);
-            if (error != null)
-            {
-                await Task.Delay(5000);
-                await BorrarMensaje(ctx, error.Id);
-            }
-            return null;
         }
 
         public async static Task GrabarLogError(Context ctx, string descripcion)
@@ -429,75 +240,6 @@ namespace AnilistESP
             });
         }
 
-        public async static Task<string> GetStringInteractivity(CommandContext ctx, string tituloBusqueda, string descBusqueda, string descError, bool permitirVacio)
-        {
-            var interactivity = ctx.Client.GetInteractivity();
-            var msgUsuario = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
-            {
-                Title = tituloBusqueda,
-                Description = descBusqueda,
-                Footer = GetFooter(ctx),
-                Color = GetColor(),
-            });
-            var msgUserInter = await interactivity.WaitForMessageAsync(xm => xm.Channel == ctx.Channel && xm.Author == ctx.User, TimeSpan.FromSeconds(Convert.ToDouble(ConfigurationManager.AppSettings["TimeoutGeneral"])));
-            if (!msgUserInter.TimedOut)
-            {
-                if (msgUsuario != null)
-                    await BorrarMensaje(ctx, msgUsuario.Id);
-                if (msgUserInter.Result != null)
-                    await BorrarMensaje(ctx, msgUserInter.Result.Id);
-                return msgUserInter.Result.Content;
-            }
-            else
-            {
-                if (!permitirVacio)
-                {
-                    var msgError = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
-                    {
-                        Title = "Error",
-                        Description = descError,
-                        Footer = GetFooter(ctx),
-                        Color = DiscordColor.Red,
-                    });
-                    await Task.Delay(3000);
-                    if (msgError != null)
-                        await BorrarMensaje(ctx, msgError.Id);
-                    if (msgUsuario != null)
-                        await BorrarMensaje(ctx, msgUsuario.Id);
-                }
-                return string.Empty;
-            }
-        }
-
-        public async static Task<bool> GetSiNoInteractivity(CommandContext ctx, InteractivityExtension interactivity, string titulo, string descripcion)
-        {
-            DiscordButtonComponent buttonSi = new(ButtonStyle.Success, "true", "Si");
-            DiscordButtonComponent buttonNo = new(ButtonStyle.Danger, "false", "No");
-
-            DiscordMessageBuilder mensajeRondas = new()
-            {
-                Embed = new DiscordEmbedBuilder
-                {
-                    Title = titulo,
-                    Description = descripcion
-                }
-            };
-
-            mensajeRondas.AddComponents(buttonSi, buttonNo);
-
-            DiscordMessage msgElegir = await mensajeRondas.SendAsync(ctx.Channel);
-            var msgElegirInter = await interactivity.WaitForButtonAsync(msgElegir, ctx.User, TimeSpan.FromSeconds(Convert.ToDouble(ConfigurationManager.AppSettings["TimeoutGeneral"])));
-            await BorrarMensaje(ctx, msgElegir.Id);
-            if (!msgElegirInter.TimedOut)
-            {
-                return bool.Parse(msgElegirInter.Result.Id);
-            }
-            else
-            {
-                return false;
-            }
-        }
-
         public async static Task<bool> GetSiNoInteractivity(Context ctx, InteractivityExtension interactivity, string titulo, string descripcion)
         {
             DiscordButtonComponent buttonSi = new(ButtonStyle.Success, "true", "Si");
@@ -525,54 +267,6 @@ namespace AnilistESP
             {
                 return false;
             }
-        }
-
-        public async static Task<DiscordEmbedBuilder> CrearEmbed(CommandContext ctx, InteractivityExtension interactivity)
-        {
-            DiscordEmbedBuilder builder = new();
-            builder.WithColor(GetColor());
-
-            if (await GetSiNoInteractivity(ctx, interactivity, "Ingresar titulo", "Opcional"))
-            {
-                string titulo = await GetStringInteractivity(ctx, "Ingrese el titulo del embed", "No puede ser vacío", "Tiempo agotado esperando el titulo", true);
-                if (!string.IsNullOrEmpty(titulo))
-                    builder.WithTitle(titulo);
-            }
-
-            if (await GetSiNoInteractivity(ctx, interactivity, "Ingresar descripción", "Opcional"))
-            {
-                string desc = await GetStringInteractivity(ctx, "Ingrese la descripción del embed", "No puede ser vacía", "Tiempo agotado esperando la descripción", true);
-                if (!string.IsNullOrEmpty(desc))
-                    builder.WithDescription(desc);
-            }
-
-            if (await GetSiNoInteractivity(ctx, interactivity, "Ingresar URL de la imagen", "Opcional"))
-            {
-                string imageUrl = await GetStringInteractivity(ctx, "Ingrese la url de la imagen del embed", "No puede ser vacío", "Tiempo agotado esperando la url", true);
-                if (!string.IsNullOrEmpty(imageUrl))
-                    builder.WithImageUrl(imageUrl);
-            }
-
-            if (await GetSiNoInteractivity(ctx, interactivity, "Ingresar footer", "Opcional"))
-            {
-                string textoFooter = string.Empty;
-                string iconUrlFooter = string.Empty;
-
-
-                if (await GetSiNoInteractivity(ctx, interactivity, "Ingresar URL del icono del footer", "Opcional"))
-                {
-                    iconUrlFooter = await GetStringInteractivity(ctx, "Ingrese la url del icono del footer", "No puede ser vacío", "Tiempo agotado esperando la url", true);
-                }
-
-                if (await GetSiNoInteractivity(ctx, interactivity, "Ingresar el texto del footer", "Opcional"))
-                {
-                    textoFooter = await GetStringInteractivity(ctx, "Ingrese el texto del footer", "No puede ser vacío", "Tiempo agotado esperando el texto", true);
-                }
-
-                builder.WithFooter(textoFooter, iconUrlFooter);
-            }
-
-            return builder;
         }
 
         public static List<ulong> IDRolesColoresAnilistEsp2()
@@ -664,21 +358,6 @@ namespace AnilistESP
                 Member = itx.Member,
                 User = itx.User,
                 Interaction = itx.Interaction
-            };
-        }
-
-        public static Context GetContext(CommandContext ctx)
-        {
-            return new()
-            {
-                Client = ctx.Client,
-                Command = ctx.Command,
-                Channel = ctx.Channel,
-                Guild = ctx.Guild,
-                Member = ctx.Member,
-                Message = ctx.Message,
-                Prefix = ctx.Prefix,
-                User = ctx.User
             };
         }
 

@@ -2,7 +2,6 @@
 {
     using AnilistConEnie.Commands;
     using DSharpPlus;
-    using DSharpPlus.CommandsNext;
     using DSharpPlus.Entities;
     using DSharpPlus.EventArgs;
     using DSharpPlus.Exceptions;
@@ -23,7 +22,6 @@
     class Program
     {
         public static DiscordClient Client { get; private set; }
-        public static CommandsNextExtension Commands { get; private set; }
         public static SlashCommandsExtension ApplicationCommands { get; private set; }
 
         private static DiscordChannel LogChannel;
@@ -107,23 +105,6 @@
                 ApplicationCommands.RegisterCommands<Help>(guildProd);
                 ApplicationCommands.RegisterCommands<Owner>(guildProd);
             }
-
-            var commandsConfig = new CommandsNextConfiguration
-            {
-                StringPrefixes = new string[] { Debug ? ConfigurationManager.AppSettings["PrefixTest"] : ConfigurationManager.AppSettings["PrefixProd"] },
-                EnableMentionPrefix = true,
-                EnableDms = false,
-                DmHelp = false,
-                EnableDefaultHelp = false,
-                CaseSensitive = false,
-                IgnoreExtraArguments = true
-            };
-
-            Commands = Client.UseCommandsNext(commandsConfig);
-
-            Commands.RegisterCommands<Administracion>();
-
-            Commands.RegisterConverter(new MemberConverter());
 
             await Client.ConnectAsync(new DiscordActivity { ActivityType = ActivityType.Playing, Name = "/help" }, UserStatus.Online);
 

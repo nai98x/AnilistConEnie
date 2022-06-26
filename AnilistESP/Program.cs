@@ -233,7 +233,7 @@
 
         private static Task Client_Resumed(DiscordClient c, ReadyEventArgs e)
         {
-            c.Logger.LogInformation("El cliente vuelve a estar listo para procesar eventos", DateTime.Now);
+            c.Logger.LogInformation("El cliente vuelve a estar listo para procesar eventos.", DateTime.Now);
             return Task.CompletedTask;
         }
 

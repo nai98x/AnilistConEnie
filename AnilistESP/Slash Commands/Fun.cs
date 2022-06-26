@@ -71,8 +71,8 @@ namespace AnilistConEnie.Commands
             DiscordMember ctxMiembro = await ctx.Guild.GetMemberAsync(usuario.Id);
             shipeoUsr = ctxMiembro.DisplayName;
 
-            string avatar1 = usuario.GetAvatarUrl(ImageFormat.Png, 128);
-            string avatar2 = elegido.GetAvatarUrl(ImageFormat.Png, 128);
+            string avatar1 = usuario.GetAvatarUrl(ImageFormat.Png, 512);
+            string avatar2 = elegido.GetAvatarUrl(ImageFormat.Png, 512);
 
             byte[] img = await Funciones.MergeImage(avatar1, avatar2, 1024, 512);
             byte[] imagen = Funciones.OverlapImage(img, File.ReadAllBytes(Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Images", "frame-love.png")), 1024, 512);
@@ -118,8 +118,8 @@ namespace AnilistConEnie.Commands
                 elegido2 = miembros.ElementAt(rnd.Next(miembros.Count() - 1)).Value;
             } while (elegido1.Id == elegido2.Id);
 
-            string avatar1 = elegido1.GetAvatarUrl(ImageFormat.Png, 128);
-            string avatar2 = elegido2.GetAvatarUrl(ImageFormat.Png, 128);
+            string avatar1 = elegido1.GetAvatarUrl(ImageFormat.Png, 512);
+            string avatar2 = elegido2.GetAvatarUrl(ImageFormat.Png, 512);
 
             byte[] img = await Funciones.MergeImage(avatar1, avatar2, 1024, 512);
             byte[] imagen = Funciones.OverlapImage(img, File.ReadAllBytes(Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Images", "frame-love.png")), 1024, 512);

@@ -1,30 +1,19 @@
-name: CI
+name: CI/CD
 
-# Controls when the action will run. 
 on:
   push:
     branches: [main]
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
 
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-18.04
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    if: "!contains(format('{0} {1}', github.event.head_commit.message, github.event.pull_request.title), '[ci-skip]')"
     steps:
       - name: Run SSH command
-      # You may pin to the exact commit or the version.
-        uses: garygrossgarten/github-action-ssh@v0.6.3
+        uses: garygrossgarten/github-action-ssh@release
         with:
-            # Command to execute on the remote server.
-            command: cd /bots/anilistconenie/AnilistConEnie && git reset --hard && git pull && chmod +x deploy && (./deploy >& deploy-log.txt &disown);
-            # Hostname or IP address of the server.
+            command: cd ~/bots/AnilistConEnie && git reset --hard && git pull && chmod +x deploy && (./deploy >& bot-log.txt &disown);
             host: ${{ secrets.HOST }}
-            # Username for authentication.
             username: ${{ secrets.USERNAME }}
-            # Port number of the server.
-            port: ${{ secrets.PORT }}
-            # Password for password-based user authentication.
-            password: ${{ secrets.PASSWORD }}
+            privateKey: ${{ secrets.PRIVATE_KEY}}

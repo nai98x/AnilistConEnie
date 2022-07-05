@@ -10,12 +10,14 @@ namespace AnilistESP
         private bool _yepMode;
         private DiscordEmoji _emoji;
         private List<UsuarioAnilistFirebase> usuarios;
+        private List<ulong> TempVoiceChannels; 
 
         private static object syncLock = new();
 
         private ServiciosSingleton()
         {
             _yepMode = false;
+            TempVoiceChannels = new();
         }
 
         public static ServiciosSingleton GetServiciosSingleton()
@@ -83,6 +85,21 @@ namespace AnilistESP
         public void SetUsuarios(List<UsuarioAnilistFirebase> newUsers)
         {
             usuarios = newUsers;
+        }
+
+        public bool EsCanalTemporal(ulong id)
+        {
+            return TempVoiceChannels.Contains(id);
+        }
+
+        public void AgregarCanalTemporal(ulong id)
+        {
+            if (!EsCanalTemporal(id)) TempVoiceChannels.Add(id);
+        }
+
+        public void EliminarCanalTemporal(ulong id)
+        {
+            if (!EsCanalTemporal(id)) TempVoiceChannels.Remove(id);
         }
     }
 }

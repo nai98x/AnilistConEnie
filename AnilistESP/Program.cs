@@ -15,6 +15,7 @@
     using System;
     using System.Configuration;
     using System.IO;
+    using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
     using static DSharpPlus.Entities.DiscordEmbedBuilder;
@@ -67,6 +68,7 @@
             Client.MessageReactionAdded += Client_MessageReactionAdded;
             //Client.GuildMemberUpdated += Client_GuildMemberUpdated;
             Client.GuildDownloadCompleted += Client_GuildDownloadCompleted;
+            Client.VoiceStateUpdated += Client_VoiceStateUpdated;
 
             Client.UseInteractivity(new InteractivityConfiguration());
 
@@ -174,6 +176,52 @@
                     }
                 }
             });
+            return Task.CompletedTask;
+        }
+
+        private static Task Client_VoiceStateUpdated(DiscordClient sender, VoiceStateUpdateEventArgs e)
+        {
+            var singleton = ServiciosSingleton.GetServiciosSingleton();
+            ulong prodGuildId = 862408834693070898;
+            ulong testGuildId = 853766076122005565;
+
+            if (e.Guild.Id == prodGuildId || e.Guild.Id == testGuildId)
+            {
+                if (e.Before?.Channel?.Id != null)
+                {
+                    if (singleton.EsCanalTemporal(e.Before.Channel.Id) && e.Before.Channel.Users.Count == 0) // Borro el canal anterior si era temporal
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            singleton.EliminarCanalTemporal(e.Before.Channel.Id);
+                            await e.Guild.GetChannel(e.Before.Channel.Id).DeleteAsync();
+                        });
+                    }
+                }
+
+                if (e.After?.Channel?.Id != null)
+                {
+                    ulong parentChannelId = (e.Guild.Id == prodGuildId) ? 862408834693070900 : (ulong)853766076122005567;
+                    if (e.After.Channel.ParentId == parentChannelId)
+                    {
+                        ulong channelCreatorId = (e.Guild.Id == prodGuildId) ? 866057800093007903 : (ulong)891842909622644757;
+                        if (e.After.Channel.Id == channelCreatorId) // Crear nuevo canal temporal
+                        {
+                            _ = Task.Run(async () =>
+                            {
+                                var member = (DiscordMember)e.User;
+
+                                DiscordOverwrite everyoneOverwrite = e.After.Channel.PermissionOverwrites.FirstOrDefault(p => p.Id == 123);
+                                var channel = await e.Guild.CreateChannelAsync(name: $"Canal de {member.DisplayName}", type: ChannelType.Voice, parent: e.After.Channel.Parent);
+                                await channel.AddOverwriteAsync(member, allow: Permissions.ManageChannels | Permissions.MuteMembers | Permissions.PrioritySpeaker | Permissions.ManageRoles);
+                                singleton.AgregarCanalTemporal(channel.Id);
+                                await member.ModifyAsync(x => x.VoiceChannel = channel);
+                            });
+                        }
+                    }
+                }
+            }
+            
             return Task.CompletedTask;
         }
 

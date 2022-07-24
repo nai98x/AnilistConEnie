@@ -2,6 +2,9 @@
 {
     using AnilistConEnie.Commands;
     using DSharpPlus;
+    using DSharpPlus.CommandsNext;
+    using DSharpPlus.CommandsNext.Attributes;
+    using DSharpPlus.CommandsNext.Exceptions;
     using DSharpPlus.Entities;
     using DSharpPlus.EventArgs;
     using DSharpPlus.Exceptions;
@@ -13,7 +16,6 @@
     using Microsoft.Extensions.Logging;
     using Newtonsoft.Json;
     using System;
-    using System.Configuration;
     using System.IO;
     using System.Linq;
     using System.Text;
@@ -24,6 +26,7 @@
     {
         public static DiscordClient Client { get; private set; }
         public static SlashCommandsExtension ApplicationCommands { get; private set; }
+        public static CommandsNextExtension TextCommands { get; private set; }
 
         private static DiscordChannel LogChannel;
 
@@ -107,6 +110,19 @@
                 ApplicationCommands.RegisterCommands<Help>(guildProd);
                 ApplicationCommands.RegisterCommands<Owner>(guildProd);
             }
+
+            TextCommands = Client.UseCommandsNext(new CommandsNextConfiguration()
+            {
+                EnableDefaultHelp = false,
+                IgnoreExtraArguments = true,
+                EnableDms = false,
+                StringPrefixes = new[] { "a!" },
+                EnableMentionPrefix = true
+            });
+
+            TextCommands.CommandErrored += TextCommands_CommandErrored;
+
+            TextCommands.RegisterCommands<Emojis>();
 
             await Client.ConnectAsync(new DiscordActivity { ActivityType = ActivityType.Playing, Name = "/help" }, UserStatus.Online);
 
@@ -390,6 +406,57 @@
             {
                 await LogChannel.SendMessageAsync(Funciones.LogInteractionCommand(e, "Error no controlado (Context Menus)", false, true));
             });
+            return Task.CompletedTask;
+        }
+
+        private static Task TextCommands_CommandErrored(CommandsNextExtension sender, CommandErrorEventArgs e)
+        {
+            _ = Task.Run(async () =>
+            {
+                if (e.Exception is ChecksFailedException ex)
+                {
+                    foreach (CheckBaseAttribute check in ex.FailedChecks)
+                    {
+                        string titulo, descripcion;
+                        switch (check)
+                        {
+                            case CooldownAttribute:
+                                titulo = "Cooldown";
+                                descripcion = "Debes esperar para volver a ejecutar este comando.";
+                                break;
+                            case RequirePermissionsAttribute:
+                                titulo = "Acceso denegado";
+                                descripcion = "No tienes los suficientes permisos para ejecutar este comando.";
+                                break;
+                            case RequireOwnerAttribute:
+                                titulo = "Acceso denegado";
+                                descripcion = "Solo el dueño del bot puede ejecutar este comando.";
+                                break;
+                            case RequireNsfwAttribute:
+                                titulo = "Requiere NSFW";
+                                descripcion = "Este comando debe ser invocado en un canal NSFW.";
+                                break;
+                            default:
+                                titulo = "Error inesperado";
+                                descripcion = "Ha ocurrido un error que no puedo manejar.";
+                                break;
+                        }
+                        var miembro = e.Context.Member;
+                        DiscordMessage msg = await e.Context.RespondAsync("", embed: new DiscordEmbedBuilder
+                        {
+                            Title = titulo,
+                            Description = descripcion,
+                            Color = DiscordColor.Red,
+                            Footer = new()
+                            {
+                                Text = "Invocado por " + miembro.DisplayName + " (" + miembro.Username + "#" + miembro.Discriminator + ")",
+                                IconUrl = miembro.AvatarUrl
+                            }
+                        });
+                    }
+                }
+            });
+
             return Task.CompletedTask;
         }
     }

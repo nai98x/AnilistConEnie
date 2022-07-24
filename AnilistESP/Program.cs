@@ -58,7 +58,8 @@
                 AutoReconnect = true,
                 ReconnectIndefinitely = true,
                 MinimumLogLevel = LogLevel.Information,
-                Intents = DiscordIntents.All
+                Intents = DiscordIntents.All,
+                LogUnknownEvents = false
             };
             Client = new DiscordClient(Config);
 

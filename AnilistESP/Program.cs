@@ -16,6 +16,7 @@
     using Microsoft.Extensions.Logging;
     using Newtonsoft.Json;
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using System.Text;
@@ -95,6 +96,7 @@
                 ApplicationCommands.RegisterCommands<Challenges>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Intercambios>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<IntercambiosAdmin>(pruebasBacklog);
+                ApplicationCommands.RegisterCommands<Highlights>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Administrativo>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Help>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Owner>(pruebasBacklog);
@@ -107,6 +109,7 @@
                 ApplicationCommands.RegisterCommands<Challenges>(guildProd);
                 ApplicationCommands.RegisterCommands<Intercambios>(guildProd);
                 ApplicationCommands.RegisterCommands<IntercambiosAdmin>(guildProd);
+                ApplicationCommands.RegisterCommands<Highlights>(guildProd);
                 ApplicationCommands.RegisterCommands<Administrativo>(guildProd);
                 ApplicationCommands.RegisterCommands<Help>(guildProd);
                 ApplicationCommands.RegisterCommands<Owner>(guildProd);
@@ -146,10 +149,16 @@
         {
             _ = Task.Run(async () =>
             {
-                var service = new UsuariosAnilist();
+                
                 ServiciosSingleton servicio = ServiciosSingleton.GetServiciosSingleton();
-                var usuarios = await service.GetListaUsuarios();
+
+                var userService = new UsuariosAnilist();
+                var usuarios = await userService.GetListaUsuarios();
                 servicio.SetUsuarios(usuarios);
+
+                var highlightService = new HighlightsDAL();
+                var highlights = await highlightService.GetListaHighlights();
+                servicio.SetHighlightedWords(highlights);
             });
 
             return Task.CompletedTask;
@@ -181,9 +190,9 @@
 
             _ = Task.Run(async () =>
             {
-                if (e.Guild.Id == 862408834693070898 && e.Channel.Id == 862408834693070901)
+                if (e.Guild != null && e.Guild.Id == 862408834693070898)
                 {
-                    if (yepmode)
+                    if (yepmode && e.Channel.Id == 862408834693070901)
                     {
                         DiscordEmoji emoji = service.Emote;
                         if (emoji != null)
@@ -192,6 +201,46 @@
                         }
                     }
                 }
+
+                #region Highlights
+                var words = service.GetHighlightedWords();
+                if (words != null && words.Count > 0)
+                {
+                    var textSplit = e.Message.Content.Split(" ").ToList();
+                    var intersect = textSplit.Where(x => words.Values.Any(d => d.Contains(x))).ToList();
+                    if (intersect.Any())
+                    {
+                        foreach (var word in intersect)
+                        {
+                            var targets = words.Where(x => x.Value.Contains(word)).Select(y => y.Key).Where(u => u != e.Message.Author.Id).ToList();
+
+                            foreach (var target in targets)
+                            {
+                                try
+                                {
+                                    var member = e.Guild.Members[target];
+                                    if (member != null)
+                                    {
+                                        var dmChannel = await member.CreateDmChannelAsync();
+
+                                        string mentionedMessage = $"Fuiste mencionado en {e.Channel.Mention} con la palabra: {Formatter.Bold(intersect.First())}";
+                                        string message = $"[{Formatter.Timestamp(e.Message.CreationTimestamp, TimestampFormat.LongTime)}] {e.Author.Username}#{e.Author.Discriminator}: {e.Message.Content}";
+
+                                        await dmChannel.SendMessageAsync(mentionedMessage, new DiscordEmbedBuilder
+                                        {
+                                            Title = intersect.First(),
+                                            Description = Funciones.NormalizarDescription(message),
+                                            ImageUrl = "https://images-ext-1.discordapp.net/external/uCEpGlkbms8IptErmq3l0lANEWFhtcfEXylXxlMm3VA/https/cdn.discordapp.com/emojis/867893834921803826.gif",
+                                            Color = DiscordColor.Cyan
+                                        }.AddField("Mensaje", Formatter.MaskedUrl("Ir", e.Message.JumpLink)));
+                                    }
+                                }
+                                catch (Exception) { }
+                            }
+                        }
+                    }
+                }
+                #endregion
             });
             return Task.CompletedTask;
         }

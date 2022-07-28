@@ -10,7 +10,8 @@ namespace AnilistESP
         private bool _yepMode;
         private DiscordEmoji _emoji;
         private List<UsuarioAnilistFirebase> usuarios;
-        private List<ulong> TempVoiceChannels; 
+        private List<ulong> TempVoiceChannels;
+        private Dictionary<ulong, List<string>> highlightedWords;
 
         private static object syncLock = new();
 
@@ -18,6 +19,7 @@ namespace AnilistESP
         {
             _yepMode = false;
             TempVoiceChannels = new();
+            highlightedWords = new Dictionary<ulong, List<string>>();
         }
 
         public static ServiciosSingleton GetServiciosSingleton()
@@ -100,6 +102,43 @@ namespace AnilistESP
         public void EliminarCanalTemporal(ulong id)
         {
             if (!EsCanalTemporal(id)) TempVoiceChannels.Remove(id);
+        }
+
+        public void SetHighlightedWords(Dictionary<ulong, List<string>> highlights)
+        {
+            highlightedWords = highlights;
+        }
+
+        public Dictionary<ulong, List<string>> GetHighlightedWords()
+        {
+            return highlightedWords;
+        }
+
+        public void AddHighlightedWord(ulong userId, string word)
+        {
+            bool encontro = highlightedWords.TryGetValue(userId, out var words);
+            if (encontro)
+            {
+                words.Add(word);
+                highlightedWords.Add(userId, words);
+            }
+            else
+            {
+                List<string> wordList = new()
+                {
+                    word
+                };
+                highlightedWords.Add(userId, wordList);
+            }
+        }
+
+        public void RemoveHighlightedWord(ulong userId, string word)
+        {
+            bool encontro = highlightedWords.TryGetValue(userId, out var words);
+            if (encontro)
+            {
+                words.Remove(word);
+            }
         }
     }
 }

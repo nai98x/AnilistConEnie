@@ -68,6 +68,11 @@ namespace AnilistConEnie.Commands
                     await modalInteraction.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
 
                     GraphQLHttpClient graphQlCli = new("https://graphql.anilist.co", new NewtonsoftJsonSerializer());
+                    if (graphQlCli.HttpClient.DefaultRequestHeaders.Contains("Authorization"))
+                    {
+                        graphQlCli.HttpClient.DefaultRequestHeaders.Remove("Authorization");
+                    }
+
                     graphQlCli.HttpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {ALToken}");
 
                     var request = new GraphQLRequest

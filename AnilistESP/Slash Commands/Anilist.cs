@@ -127,6 +127,17 @@ namespace AnilistConEnie.Commands
 
                                 await usuariosAnilist.SetAnilist(Funciones.GetContext(ctx), siteUrl, ctx.Member);
                                 await usuariosAnilist.SetAnilistYumiko(id, ctx.Member.Id);
+
+                                var servicios = ServiciosSingleton.GetServiciosSingleton();
+                                var users = servicios.Usuarios;
+                                if (!users.Where(u => (ulong)u.UserId == ctx.User.Id).Any())
+                                {
+                                    var newList = await usuariosAnilist.GetListaUsuarios();
+                                    var newUser = newList.Find(u => (ulong)u.UserId == ctx.User.Id);
+                                    users.Add(newUser);
+                                    servicios.SetUsuarios(users);
+                                }
+
                                 await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(false).AddEmbed(embed: newProfileEmbed));
                                 return;
                             }

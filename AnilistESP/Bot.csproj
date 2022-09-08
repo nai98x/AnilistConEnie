@@ -33,10 +33,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DSharpPlus" Version="4.3.0-nightly-01159" />
-    <PackageReference Include="DSharpPlus.CommandsNext" Version="4.3.0-nightly-01159" />
-    <PackageReference Include="DSharpPlus.Interactivity" Version="4.3.0-nightly-01159" />
-    <PackageReference Include="DSharpPlus.SlashCommands" Version="4.3.0-nightly-01159" />
+    <PackageReference Include="DSharpPlus" Version="4.3.0-nightly-01169" />
+    <PackageReference Include="DSharpPlus.CommandsNext" Version="4.3.0-nightly-01169" />
+    <PackageReference Include="DSharpPlus.Interactivity" Version="4.3.0-nightly-01169" />
+    <PackageReference Include="DSharpPlus.SlashCommands" Version="4.3.0-nightly-01169" />
     <PackageReference Include="Google.Cloud.Firestore" Version="3.0.0" />
     <PackageReference Include="GraphQL" Version="5.3.3" />
     <PackageReference Include="GraphQL-Parser" Version="8.0.0" />

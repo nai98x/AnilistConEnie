@@ -155,10 +155,12 @@
                 var userService = new UsuariosAnilist();
                 var usuarios = await userService.GetListaUsuarios();
                 servicio.SetUsuarios(usuarios);
+                sender.Logger.LogInformation("Usuarios de AniList cargados");
 
                 var highlightService = new HighlightsDAL();
                 var highlights = await highlightService.GetListaHighlights();
                 servicio.SetHighlightedWords(highlights);
+                sender.Logger.LogInformation("Highlights cargadas");
             });
 
             return Task.CompletedTask;

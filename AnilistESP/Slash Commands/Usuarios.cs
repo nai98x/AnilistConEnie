@@ -110,55 +110,5 @@ namespace AnilistConEnie.Commands
                 Color = DiscordColor.Green
             }));
         }
-
-        [SlashCommand("silvia", "Actualiza la cuenta regresiva de Silvia")]
-        [SlashRequireBotPermissions(Permissions.ManageNicknames)]
-        public async Task Silvia(InteractionContext ctx)
-        {
-            if (ctx.Guild.Id == 862408834693070898)
-            {
-                await ctx.DeferAsync();
-
-                var cumple = new DateTimeOffset(day: 17, month: 9, year: 2022, hour: 0, minute: 0, second: 0, offset: TimeSpan.FromHours(1));
-                if (DateTime.Now < new DateTime(day: 17, month: 9, year: 2022))
-                {
-                    var worrytap = await ctx.Guild.GetEmojiAsync(863085425282121818);
-                    var cantidad = (DateTimeOffset.Now - cumple).TotalDays;
-                    cantidad = Math.Abs(Math.Round(cantidad) - 1);
-                    var silvia = await ctx.Guild.GetMemberAsync(392434346314825728);
-                    await silvia.ModifyAsync(x => x.Nickname = $"{cantidad} dias");
-
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(
-                    new DiscordEmbedBuilder
-                    {
-                        Title = "Dias actualizados",
-                        Description = $"Solo faltan {cantidad} dias",
-                        ImageUrl = worrytap.Url,
-                        Color = DiscordColor.Green,
-                    }));
-                }
-                else
-                {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(
-                    new DiscordEmbedBuilder
-                    {
-                        Title = "Demasiado tarde",
-                        Description = "Ya pasaron los dias",
-                        Color = DiscordColor.Red,
-                    }));
-                }
-            }
-            else
-            {
-                await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder()
-                {
-                    IsEphemeral = true,
-                }.AddEmbed(new DiscordEmbedBuilder
-                {
-                    Title = "Error",
-                    Description = "Comando no habilitado para este servidor",
-                }));
-            }
-        }
     }
 }

@@ -25,6 +25,46 @@ namespace AnilistESP
             return ret;
         }
 
+        public async Task<List<ChallengeCompletadoFirebase>> GetRankingUsuarios()
+        {
+            FirestoreDb db = await Funciones.GetFirestoreClientAnilistConEnie();
+            var ret = new List<ChallengeCompletadoFirebase>();
+
+            CollectionReference col = db.Collection("Challenges");
+            var snap = await col.GetSnapshotAsync();
+
+            if (snap.Count > 0)
+            {
+                foreach (var document in snap.Documents)
+                {
+                    var challenge = document.ConvertTo<ChallengeFirebase>();
+                    CollectionReference col2 = db.Collection("Challenges").Document(challenge.Nombre).Collection("Usuarios");
+                    var snap2 = await col2.GetSnapshotAsync();
+
+                    if (snap2.Count > 0)
+                    {
+                        foreach (var document2 in snap2.Documents)
+                        {
+                            var registro = document2.ConvertTo<ChallengeCompletadoFirebase>();
+
+                            var registroExistente = ret.Find(x => x.UserId == registro.UserId);
+                            if (registroExistente != null)
+                            {
+                                registroExistente.Xp += registro.Xp;
+                            }
+                            else
+                            {
+                                ret.Add(registro);
+                            }
+                        }  
+                    }
+                }
+            }
+
+            ret.Sort((x, y) => y.Xp.CompareTo(x.Xp));
+            return ret;
+        }
+
         public async Task Set(string nombre, string link, bool disponible)
         {
             FirestoreDb db = await Funciones.GetFirestoreClientAnilistConEnie();

@@ -1,6 +1,8 @@
 ﻿using AnilistESP;
 using DSharpPlus;
 using DSharpPlus.Entities;
+using DSharpPlus.Interactivity.Enums;
+using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
 using System.Linq;
@@ -18,14 +20,14 @@ namespace AnilistConEnie.Commands
         public async Task Set(InteractionContext ctx,
             [Option("Nombre", "Nombre del challenge")] string nombre,
             [Option("Link", "Link del challenge")] string link,
-            [Option("Disponible", "SI el challenge se puede realizar")] bool disponible)
+            [Option("Disponible", "Si el challenge se puede realizar")] bool disponible)
         {
             await ctx.DeferAsync();
             string dispStr = disponible ? "Disponible" : "No disponible";
             await service.Set(nombre, link, disponible);
             await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
             {
-                Title = "Nuevo challenge!",
+                Title = "Nuevo challenge creado",
                 Description = $"[{nombre}]({link}) ({dispStr})",
                 Color = DiscordColor.Green
             }));
@@ -51,7 +53,7 @@ namespace AnilistConEnie.Commands
                     }
                     else
                     {
-                        desc += Formatter.Bold("Expirados:\n");
+                        desc += Formatter.Bold("Antiguos:\n");
                     }
 
                     if (ch.Any())
@@ -72,7 +74,7 @@ namespace AnilistConEnie.Commands
 
             await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
             {
-                Title = "Challenges disponibles!",
+                Title = "Challenges disponibles",
                 Description = desc,
                 Color = Funciones.GetColor()
             }));
@@ -138,10 +140,64 @@ namespace AnilistConEnie.Commands
             }));
         }
 
-        //[SlashCommand("ranking", "Ranking de usuarios por cantidad de challenges completados")]
+        [SlashCommand("ranking", "Ranking de usuarios por cantidad de challenges completados")]
         public async Task Ranking(InteractionContext ctx)
         {
             await ctx.DeferAsync();
+            var ranking = await service.GetRankingUsuarios();
+
+            string description = string.Empty;
+            if (ranking.Count > 0)
+            {
+                var emote = DiscordEmoji.FromGuildEmote(ctx.Client, 862461175950606376);
+                int pos = 0;
+                int lastScore = 0;
+
+                ranking.ForEach(x =>
+                {
+                    if (lastScore != x.Xp)
+                    {
+                        pos++;
+                    }
+
+                    switch (pos)
+                    {
+                        case 1:
+                            DiscordEmoji emoji1 = DiscordEmoji.FromName(ctx.Client, ":first_place:");
+                            description += $"{emoji1} - <@{x.UserId}>: {x.Xp} {emote}\n";
+                            break;
+                        case 2:
+                            DiscordEmoji emoji2 = DiscordEmoji.FromName(ctx.Client, ":second_place:");
+                            description += $"{emoji2} - <@{x.UserId}>: {x.Xp} {emote}\n";
+                            break;
+                        case 3:
+                            DiscordEmoji emoji3 = DiscordEmoji.FromName(ctx.Client, ":third_place:");
+                            description += $"{emoji3} - <@{x.UserId}>: {x.Xp} {emote}\n";
+                            break;
+                        default:
+                            description += $"{Formatter.Bold($"#{pos}")} - <@{x.UserId}>: {x.Xp} {emote}\n";
+                            break;
+                    }
+
+                    lastScore = x.Xp;
+                });
+
+                description = description.Remove(description.Length - 1, 1);
+            }
+            else
+            {
+                description = "(Ningún usuario ha completado ningún challenge)";
+            }
+
+            var interactivity = ctx.Client.GetInteractivity();
+
+            var builder = new DiscordEmbedBuilder
+            {
+                Title = "Ranking de challenges de usuarios",
+                Color = Funciones.GetColor(),
+            };
+            var pages = interactivity.GeneratePagesInEmbed(description, SplitType.Line, builder);
+            await interactivity.SendPaginatedResponseAsync(ctx.Interaction, false, ctx.User, pages, asEditResponse: true);
         }
 
         [SlashRequireUserPermissions(Permissions.ManageGuild)]

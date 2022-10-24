@@ -55,9 +55,11 @@ namespace AnilistConEnie.Commands
                 DiscordRole senpai = ctx.Guild.GetRole(863525246404263976);
                 DiscordRole hikikomori = ctx.Guild.GetRole(863525128403025961);
                 DiscordRole sensei = ctx.Guild.GetRole(863524938954571816);
+                DiscordRole ousama = ctx.Guild.GetRole(966815478507012106);
+                DiscordRole teiou = ctx.Guild.GetRole(966815813078224907);
 
                 var miembros = ctx.Guild.Members.Where(x => x.Value.IsBot == false && x.Value.Id != usuario.Id &&
-                (x.Value.Roles.Contains(casual) || x.Value.Roles.Contains(kouhai) || x.Value.Roles.Contains(senpai) || x.Value.Roles.Contains(hikikomori) || x.Value.Roles.Contains(sensei)
+                (x.Value.Roles.Contains(casual) || x.Value.Roles.Contains(kouhai) || x.Value.Roles.Contains(senpai) || x.Value.Roles.Contains(hikikomori) || x.Value.Roles.Contains(sensei) || x.Value.Roles.Contains(ousama) || x.Value.Roles.Contains(teiou)
                 ));
                 elegido = miembros.ElementAt(rnd.Next(miembros.Count() - 1)).Value;
             }
@@ -102,9 +104,11 @@ namespace AnilistConEnie.Commands
                 DiscordRole senpai = ctx.Guild.GetRole(863525246404263976);
                 DiscordRole hikikomori = ctx.Guild.GetRole(863525128403025961);
                 DiscordRole sensei = ctx.Guild.GetRole(863524938954571816);
+                DiscordRole ousama = ctx.Guild.GetRole(966815478507012106);
+                DiscordRole teiou = ctx.Guild.GetRole(966815813078224907);
 
                 miembros = ctx.Guild.Members.Where(x => x.Value.IsBot == false &&
-                (x.Value.Roles.Contains(casual) || x.Value.Roles.Contains(kouhai) || x.Value.Roles.Contains(senpai) || x.Value.Roles.Contains(hikikomori) || x.Value.Roles.Contains(sensei)
+                (x.Value.Roles.Contains(casual) || x.Value.Roles.Contains(kouhai) || x.Value.Roles.Contains(senpai) || x.Value.Roles.Contains(hikikomori) || x.Value.Roles.Contains(sensei) || x.Value.Roles.Contains(ousama) || x.Value.Roles.Contains(teiou)
                 ));
             }
             else

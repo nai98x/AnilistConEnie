@@ -149,7 +149,7 @@
         {
             _ = Task.Run(async () =>
             {
-                
+
                 ServiciosSingleton servicio = ServiciosSingleton.GetServiciosSingleton();
 
                 var userService = new UsuariosAnilist();
@@ -161,6 +161,30 @@
                 var highlights = await highlightService.GetListaHighlights();
                 servicio.SetHighlightedWords(highlights);
                 sender.Logger.LogInformation("Highlights cargadas");
+
+                try
+                {
+                    var guild = sender.Guilds[862408834693070898];
+                    ulong senpai = 863525246404263976;
+                    ulong hikikomori = 863525128403025961;
+                    ulong sensei = 863524938954571816;
+                    ulong ousama = 966815478507012106;
+                    ulong teiou = 966815813078224907;
+                    DiscordRole coloresExtra = guild.Roles[1034191638714650736];
+
+                    guild.Members.ToList().ForEach(async member =>
+                    {
+                        if (member.Value.Roles.Any(x => x.Id == senpai) || member.Value.Roles.Any(x => x.Id == hikikomori) || member.Value.Roles.Any(x => x.Id == sensei) || 
+                            member.Value.Roles.Any(x => x.Id == ousama) || member.Value.Roles.Any(x => x.Id == teiou))
+                        {
+                            if (!member.Value.Roles.Any(x => x.Id == coloresExtra.Id)) // Colores extra
+                            {
+                                await member.Value.GrantRoleAsync(coloresExtra);
+                            }
+                        }
+                    });
+
+                } catch (Exception) { } /* Nothing to do */
             });
 
             return Task.CompletedTask;

@@ -20,7 +20,6 @@ namespace AnilistConEnie.Commands
         public async Task Birthdays(InteractionContext ctx, [Option("Mes", "Si quieres ver los cumpleaños del mes o todos los registrados")] bool month)
         {
             await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
-            await ctx.DeleteResponseAsync();
             List<UserCumple> lista = await usuariosService.GetBirthdays((long)ctx.Guild.Id, month);
             string desc = string.Empty;
             var usuarios = await usuariosService.GetBirthdaysHoy((long)ctx.Guild.Id);
@@ -81,7 +80,7 @@ namespace AnilistConEnie.Commands
 
             var interactivity = ctx.Client.GetInteractivity();
             var pages = interactivity.GeneratePagesInEmbed(desc, DSharpPlus.Interactivity.Enums.SplitType.Line, embed);
-            _ = interactivity.SendPaginatedMessageAsync(ctx.Channel, ctx.User, pages, token: new CancellationTokenSource(TimeSpan.FromSeconds(300)).Token).ConfigureAwait(false);
+            await interactivity.SendPaginatedResponseAsync(ctx.Interaction, false, ctx.User, pages, asEditResponse: true);
         }
 
         [SlashCommand("setbirthday", "Agrega o modifica tu cumpleaños")]

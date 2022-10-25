@@ -377,8 +377,7 @@ namespace AnilistConEnie.Commands
                         var interactivity = ctx.Client.GetInteractivity();
                         var pages = interactivity.GeneratePagesInEmbed(embedStats, SplitType.Line, builder);
 
-                        await ctx.DeleteResponseAsync();
-                        await interactivity.SendPaginatedMessageAsync(ctx.Channel, ctx.User, pages, PaginationBehaviour.Ignore, ButtonPaginationBehavior.Disable, token: new CancellationTokenSource(TimeSpan.FromSeconds(60)).Token);
+                        await interactivity.SendPaginatedResponseAsync(ctx.Interaction, false, ctx.User, pages, asEditResponse: true, deletion: ButtonPaginationBehavior.Disable);
                     }
                     else
                     {

@@ -71,6 +71,7 @@
             Client.ComponentInteractionCreated += Client_ComponentInteractionCreated;
             Client.MessageCreated += Client_MessageCreated;
             Client.MessageReactionAdded += Client_MessageReactionAdded;
+            Client.GuildMemberUpdated += Client_GuildMemberUpdated;
             //Client.GuildMemberUpdated += Client_GuildMemberUpdated;
             Client.GuildDownloadCompleted += Client_GuildDownloadCompleted;
             Client.VoiceStateUpdated += Client_VoiceStateUpdated;
@@ -143,6 +144,32 @@
             }
 
             await Task.Delay(-1);
+        }
+
+        private static Task Client_GuildMemberUpdated(DiscordClient sender, GuildMemberUpdateEventArgs e)
+        {
+            _ = Task.Run(async () => { 
+                if (e.Guild.Id == 862408834693070898)
+                {
+                    if (e.RolesAfter != null && e.RolesBefore != null)
+                    {
+                        var distinctRoles = e.RolesAfter.Intersect(e.RolesBefore);
+                        if (distinctRoles.Count() == 1 && distinctRoles.First().Id == 863525246404263976)
+                        {
+                            try
+                            {
+                                DiscordRole coloresExtra = e.Guild.Roles[1034191638714650736];
+                                if (!e.Member.Roles.Any(x => x.Id == coloresExtra.Id))
+                                {
+                                    await e.Member.GrantRoleAsync(coloresExtra);
+                                }
+                            } catch(Exception) { };
+                        }
+                    }
+                }
+            });
+
+            return Task.CompletedTask;
         }
 
         private static Task Client_GuildDownloadCompleted(DiscordClient sender, GuildDownloadCompletedEventArgs e)

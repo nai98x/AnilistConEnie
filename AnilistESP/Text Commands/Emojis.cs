@@ -65,7 +65,7 @@
 			downloadedEmoji.CopyTo(memory);
 			downloadedEmoji.Dispose();
 			var newEmoji = await ctx.Guild.CreateEmojiAsync(name, memory);
-			await ctx.RespondAsync($"✅ Yoink! This emoji has been added to your server: {newEmoji.ToString()}");
+			await ctx.RespondAsync($"Subió el dólar y empezaron los saqueos. Tu emote {newEmoji} es mío");
 		}
 	}
 }

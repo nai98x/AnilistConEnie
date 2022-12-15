@@ -4,6 +4,7 @@ using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace AnilistConEnie.Commands
@@ -212,6 +213,26 @@ namespace AnilistConEnie.Commands
                     Title = "Error",
                     Description = "Comando no habilitado para este servidor"
                 }));
+            }
+        }
+
+        [SlashCommand("desvinculados", "Muestra los perfiles que no tienen cuenta de AniList vinculada")]
+        public async Task Desvinculados(InteractionContext ctx, [Option("Usuario", "Usuario del servidor al que quieres quitarle el rol")] DiscordUser user)
+        {
+            await ctx.DeferAsync();
+
+            if (ctx.Guild.Id == 862408834693070898)
+            {
+                UsuariosAnilist usuariosAnilist = new();
+
+                var vinculados = await usuariosAnilist.GetListaUsuarios();
+                var noVinculados = ctx.Guild.Members.Where(x => vinculados.All(y => y.UserId == (long) x.Key)).ToList();
+
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
+                    .WithTitle("Usuarios sin cuenta vinculada de AniList")
+                    .WithDescription("**Usuarios sin AniList vinculado:**\n" + string.Join("\n", noVinculados.Select(member => $"<@{member.Key}>")))
+                    .WithColor(DiscordColor.Red)
+                    ));
             }
         }
     }

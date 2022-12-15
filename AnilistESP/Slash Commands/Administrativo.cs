@@ -258,18 +258,19 @@ namespace AnilistConEnie.Commands
                 await interactivity.SendPaginatedResponseAsync(ctx.Interaction, false, ctx.User, pages, asEditResponse: true);
 
                 var rolesQuitados = new List<DiscordUser>();
-                noVinculadosMiembro.ForEach(async miembro =>
+
+                foreach(var miembro in noVinculadosMiembro)
                 {
                     try
                     {
                         await miembro.RevokeRoleAsync(miembroRole);
                         rolesQuitados.Add(miembro);
                     }
-                    catch(Exception)
+                    catch (Exception)
                     {
                         await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Error quitando rol `Miembro` a <@{miembro.Id}>"));
                     }
-                });
+                }
 
                 var descQuitados = "**Roles quitados a:**\n" + string.Join("\n", rolesQuitados.Select(member => $"{member.Username}#{member.Discriminator} (<@{member.Id}>)")) + $"\n\nTotal: {rolesQuitados.Count}";
                 var embedQuitados = new DiscordEmbedBuilder

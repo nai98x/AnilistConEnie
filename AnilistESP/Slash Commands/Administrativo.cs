@@ -1,9 +1,11 @@
 ﻿using AnilistESP;
 using DSharpPlus;
 using DSharpPlus.Entities;
+using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -217,7 +219,7 @@ namespace AnilistConEnie.Commands
         }
 
         [SlashCommand("desvinculados", "Muestra los perfiles que no tienen cuenta de AniList vinculada")]
-        public async Task Desvinculados(InteractionContext ctx, [Option("Usuario", "Usuario del servidor al que quieres quitarle el rol")] DiscordUser user)
+        public async Task Desvinculados(InteractionContext ctx)
         {
             await ctx.DeferAsync();
 
@@ -225,14 +227,33 @@ namespace AnilistConEnie.Commands
             {
                 UsuariosAnilist usuariosAnilist = new();
 
-                var vinculados = await usuariosAnilist.GetListaUsuarios();
-                var noVinculados = ctx.Guild.Members.Where(x => vinculados.All(y => y.UserId == (long) x.Key)).ToList();
+                var vinculadosFirebase = await usuariosAnilist.GetListaUsuarios();
 
-                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
-                    .WithTitle("Usuarios sin cuenta vinculada de AniList")
-                    .WithDescription("**Usuarios sin AniList vinculado:**\n" + string.Join("\n", noVinculados.Select(member => $"<@{member.Key}>")))
-                    .WithColor(DiscordColor.Red)
-                    ));
+                var vinculados = new List<DiscordMember>();
+                ctx.Guild.Members.ToList().ForEach(member =>
+                {
+                    if (vinculadosFirebase.Any(x => (ulong) x.UserId == member.Key))
+                    {
+                        vinculados.Add(member.Value);
+                    }
+                });
+
+                var usuarios = ctx.Guild.Members.Values.ToList();
+                var noVinculados = usuarios.Except(vinculados).ToList();
+                var botRole = ctx.Guild.Roles[862411811226910730];
+
+                var noVinculadosNoBot = noVinculados.Where(x => !x.Roles.Contains(botRole)).ToList();
+
+                var desc = "**Usuarios sin AniList vinculado:**\n" + string.Join("\n", noVinculadosNoBot.Select(member => $"{member.Username}#{member.Discriminator} (<@{member.Id}>)")) + $"\nTotal: {noVinculadosNoBot.Count}";
+                var embed = new DiscordEmbedBuilder
+                {
+                    Footer = Funciones.GetFooter(ctx),
+                    Color = DiscordColor.Red,
+                    Title = "Usuarios sin cuenta vinculada de AniList"
+                };
+                var interactivity = ctx.Client.GetInteractivity();
+                var pages = interactivity.GeneratePagesInEmbed(desc, DSharpPlus.Interactivity.Enums.SplitType.Line, embed);
+                await interactivity.SendPaginatedResponseAsync(ctx.Interaction, false, ctx.User, pages, asEditResponse: true);
             }
         }
     }

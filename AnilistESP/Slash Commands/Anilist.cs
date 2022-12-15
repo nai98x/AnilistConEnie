@@ -139,6 +139,22 @@ namespace AnilistConEnie.Commands
                                 }
 
                                 await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(false).AddEmbed(embed: newProfileEmbed));
+
+                                try
+                                {
+                                    var miembroRole = ctx.Guild.Roles[862452184029069332];
+                                    await ctx.Member.GrantRoleAsync(miembroRole);
+                                }
+                                catch (Exception)
+                                {
+                                    await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
+                                    {
+                                        Title = "Error",
+                                        Description = "Error desconocido agregando el rol miembro. Notificar al staff por favor.",
+                                        Color = DiscordColor.Red
+                                    }));
+                                }
+
                                 return;
                             }
                         }

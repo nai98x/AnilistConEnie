@@ -146,7 +146,7 @@ namespace AnilistConEnie.Commands
                         var usr = usuarios.FirstOrDefault(usuarios => usuarios.Id == (long)miembro.Id);
                         if (usr != null)
                         {
-                            desc += $" que cumple Cumple **{DateTime.Now.Year - usr.Birthday.Year} años";
+                            desc += $" que cumple {DateTime.Now.Year - usr.Birthday.Year} años";
                         }
 
                         await general.SendMessageAsync(

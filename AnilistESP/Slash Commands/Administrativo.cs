@@ -132,12 +132,31 @@ namespace AnilistConEnie.Commands
                         await miembro.GrantRoleAsync(rol);
                         await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder()
                         {
-                            IsEphemeral = false,
+                            IsEphemeral = true,
                         }.AddEmbed(new DiscordEmbedBuilder
                         {
                             Title = "Rol otorgado",
                             Description = $"Se le ha asignado el rol {rol.Mention} a {user.Mention}"
                         }));
+
+                        string desc = $"Todos mandenle saluditos a {miembro.Mention}";
+                        DiscordChannel general = ctx.Guild.Channels[862408834693070901];
+                        UsuariosDiscord usuariosService = new();
+                        var usuarios = await usuariosService.GetBirthdaysHoy((long)ctx.Guild.Id);
+                        var usr = usuarios.FirstOrDefault(usuarios => usuarios.Id == (long)miembro.Id);
+                        if (usr != null)
+                        {
+                            desc += $" que cumple Cumple **{DateTime.Now.Year - usr.Birthday.Year} años";
+                        }
+
+                        await general.SendMessageAsync(
+                            new DiscordEmbedBuilder()
+                                .WithTitle($"¡Feliz cumpleaños {miembro.DisplayName}!")
+                                .WithDescription(desc)
+                                .WithImageUrl(@"https://media.discordapp.net/attachments/867856756901937202/1055623590235607070/3434c4b692a5176c13079980e94dd6df.gif")
+                                .WithColor(DiscordColor.Blurple)
+                                .WithThumbnail(miembro.AvatarUrl)
+                        );
                     }
                     catch (Exception ex)
                     {
@@ -244,9 +263,8 @@ namespace AnilistConEnie.Commands
                 var miembroRole = ctx.Guild.Roles[862452184029069332];
 
                 var noVinculadosNoBot = noVinculados.Where(x => !x.Roles.Contains(botRole)).ToList();
-                var noVinculadosMiembro = noVinculadosNoBot.Where(x => x.Roles.Contains(miembroRole)).ToList();
 
-                var desc = "**Usuarios sin AniList vinculado:**\n" + string.Join("\n", noVinculadosMiembro.Select(member => $"{member.Username}#{member.Discriminator} (<@{member.Id}>)")) + $"\n\nTotal: {noVinculadosMiembro.Count}";
+                var desc = "**Usuarios sin AniList vinculado:**\n" + string.Join("\n", noVinculadosNoBot.Select(member => $"{member.Username}#{member.Discriminator} (<@{member.Id}>)")) + $"\n\nTotal: {noVinculadosNoBot.Count}";
                 var embed = new DiscordEmbedBuilder
                 {
                     Footer = Funciones.GetFooter(ctx),
@@ -256,31 +274,6 @@ namespace AnilistConEnie.Commands
                 var interactivity = ctx.Client.GetInteractivity();
                 var pages = interactivity.GeneratePagesInEmbed(desc, DSharpPlus.Interactivity.Enums.SplitType.Line, embed);
                 await interactivity.SendPaginatedResponseAsync(ctx.Interaction, false, ctx.User, pages, asEditResponse: true);
-
-                var rolesQuitados = new List<DiscordUser>();
-
-                foreach(var miembro in noVinculadosMiembro)
-                {
-                    try
-                    {
-                        await miembro.RevokeRoleAsync(miembroRole);
-                        rolesQuitados.Add(miembro);
-                    }
-                    catch (Exception)
-                    {
-                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Error quitando rol `Miembro` a <@{miembro.Id}>"));
-                    }
-                }
-
-                var descQuitados = "**Roles quitados a:**\n" + string.Join("\n", rolesQuitados.Select(member => $"{member.Username}#{member.Discriminator} (<@{member.Id}>)")) + $"\n\nTotal: {rolesQuitados.Count}";
-                var embedQuitados = new DiscordEmbedBuilder
-                {
-                    Footer = Funciones.GetFooter(ctx),
-                    Color = DiscordColor.Green,
-                    Title = "Usuarios que se les quito el rol Miembro por no tener cuenta de AniList vinculada"
-                };
-                var pagesQuitados = interactivity.GeneratePagesInEmbed(descQuitados, DSharpPlus.Interactivity.Enums.SplitType.Line, embedQuitados);
-                await interactivity.SendPaginatedResponseAsync(ctx.Interaction, false, ctx.User, pages, asEditResponse: false);
             }
         }
     }

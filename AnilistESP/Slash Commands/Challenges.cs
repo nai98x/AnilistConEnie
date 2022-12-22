@@ -233,5 +233,4 @@ namespace AnilistConEnie.Commands
             }));
         }
     }
-    }
 }

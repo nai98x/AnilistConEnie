@@ -5,6 +5,7 @@ using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -217,5 +218,20 @@ namespace AnilistConEnie.Commands
                 Color = DiscordColor.Green
             }));
         }
+
+        [SlashCommand("numero", "Saca un numero aleatorio entre el 1 y el 10")]
+        public async Task Numero(InteractionContext ctx)
+        {
+            await ctx.DeferAsync();
+            Random rnd = new((int)ctx.User.Id);
+
+            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+            {
+                Title = "Numero aleatorio",
+                Description = $"Tu numero es `{rnd.Next(1, 10)}`",
+                Color = DiscordColor.Blurple
+            }));
+        }
+    }
     }
 }

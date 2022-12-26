@@ -50,6 +50,7 @@ namespace AnilistConEnie.Commands
 
             if (ctx.Guild.Id == 862408834693070898)
             {
+                DiscordRole tama = ctx.Guild.GetRole(1052997018622099548);
                 DiscordRole casual = ctx.Guild.GetRole(863525487602958336);
                 DiscordRole kouhai = ctx.Guild.GetRole(865300278491217970);
                 DiscordRole senpai = ctx.Guild.GetRole(863525246404263976);
@@ -59,7 +60,7 @@ namespace AnilistConEnie.Commands
                 DiscordRole teiou = ctx.Guild.GetRole(966815813078224907);
 
                 var miembros = ctx.Guild.Members.Where(x => x.Value.IsBot == false && x.Value.Id != usuario.Id &&
-                (x.Value.Roles.Contains(casual) || x.Value.Roles.Contains(kouhai) || x.Value.Roles.Contains(senpai) || x.Value.Roles.Contains(hikikomori) || x.Value.Roles.Contains(sensei) || x.Value.Roles.Contains(ousama) || x.Value.Roles.Contains(teiou)
+                (x.Value.Roles.Contains(tama) || x.Value.Roles.Contains(casual) || x.Value.Roles.Contains(kouhai) || x.Value.Roles.Contains(senpai) || x.Value.Roles.Contains(hikikomori) || x.Value.Roles.Contains(sensei) || x.Value.Roles.Contains(ousama) || x.Value.Roles.Contains(teiou)
                 ));
                 elegido = miembros.ElementAt(rnd.Next(miembros.Count() - 1)).Value;
             }
@@ -99,6 +100,7 @@ namespace AnilistConEnie.Commands
             IEnumerable<KeyValuePair<ulong, DiscordMember>> miembros;
             if (ctx.Guild.Id == 862408834693070898)
             {
+                DiscordRole tama = ctx.Guild.GetRole(1052997018622099548);
                 DiscordRole casual = ctx.Guild.GetRole(863525487602958336);
                 DiscordRole kouhai = ctx.Guild.GetRole(865300278491217970);
                 DiscordRole senpai = ctx.Guild.GetRole(863525246404263976);
@@ -108,7 +110,7 @@ namespace AnilistConEnie.Commands
                 DiscordRole teiou = ctx.Guild.GetRole(966815813078224907);
 
                 miembros = ctx.Guild.Members.Where(x => x.Value.IsBot == false &&
-                (x.Value.Roles.Contains(casual) || x.Value.Roles.Contains(kouhai) || x.Value.Roles.Contains(senpai) || x.Value.Roles.Contains(hikikomori) || x.Value.Roles.Contains(sensei) || x.Value.Roles.Contains(ousama) || x.Value.Roles.Contains(teiou)
+                (x.Value.Roles.Contains(tama) || x.Value.Roles.Contains(casual) || x.Value.Roles.Contains(kouhai) || x.Value.Roles.Contains(senpai) || x.Value.Roles.Contains(hikikomori) || x.Value.Roles.Contains(sensei) || x.Value.Roles.Contains(ousama) || x.Value.Roles.Contains(teiou)
                 ));
             }
             else

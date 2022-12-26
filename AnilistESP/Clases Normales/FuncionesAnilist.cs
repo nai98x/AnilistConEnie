@@ -234,6 +234,7 @@ namespace AnilistESP
                 {
                     var miembro = members.First(x => x.Id == (ulong)item.UserId);
 
+                    DiscordRole tama = ctx.Guild.GetRole(1052997018622099548);
                     DiscordRole casual = ctx.Guild.GetRole(863525487602958336);
                     DiscordRole kouhai = ctx.Guild.GetRole(865300278491217970);
                     DiscordRole senpai = ctx.Guild.GetRole(863525246404263976);
@@ -242,7 +243,9 @@ namespace AnilistESP
                     DiscordRole ousama = ctx.Guild.GetRole(966815478507012106);
                     DiscordRole teiou = ctx.Guild.GetRole(966815813078224907);
 
-                    if (miembro.Roles.Contains(casual) || miembro.Roles.Contains(kouhai) || miembro.Roles.Contains(senpai) || miembro.Roles.Contains(hikikomori) || miembro.Roles.Contains(sensei) || miembro.Roles.Contains(ousama) || miembro.Roles.Contains(teiou))
+                    if (miembro.Roles.Contains(tama) || miembro.Roles.Contains(casual) || miembro.Roles.Contains(kouhai) ||
+                        miembro.Roles.Contains(senpai) || miembro.Roles.Contains(hikikomori) || miembro.Roles.Contains(sensei) ||
+                        miembro.Roles.Contains(ousama) || miembro.Roles.Contains(teiou))
                     {
                         usuariosServidor.Add(item);
                     }

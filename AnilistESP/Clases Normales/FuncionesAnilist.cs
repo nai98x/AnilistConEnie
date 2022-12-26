@@ -4,11 +4,13 @@ using DSharpPlus.SlashCommands;
 using GraphQL;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.Newtonsoft;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace AnilistESP
 {
@@ -253,9 +255,18 @@ namespace AnilistESP
                 values.Add(long.Parse(user.AnilistURL[(user.AnilistURL.LastIndexOf("/") + 1)..]));
             }
 
-            var requestPers = new GraphQLRequest
+            var lists = values.Chunk(10).ToList();
+
+            string scores = string.Empty;
+            decimal promedio = 0;
+            int registros = 0;
+            decimal sumaScores = 0;
+
+            lists.ForEach(async userList =>
             {
-                Query =
+                var requestPers = new GraphQLRequest
+                {
+                    Query =
                     @"query ($codigoMedia: Int, $ids: [Int]) {
                         Media(id: $codigoMedia) {
                             title {
@@ -286,84 +297,78 @@ namespace AnilistESP
                             }
                         }
                     }",
-                Variables = new
-                {
-                    codigoMedia = mediaId,
-                    ids = values,
-                },
-            };
-            try
-            {
-                var data = await _graphQlClient.SendQueryAsync<dynamic>(requestPers);
-                if (data.Data != null)
-                {
-                    string scores = string.Empty;
-                    dynamic datosMedia = data.Data.Media;
-                    string titleRomaji = datosMedia.title.romaji;
-                    string titleEnglish = datosMedia.title.english;
-                    string siteUrl = datosMedia.siteUrl;
-                    string coverImage = datosMedia.coverImage.large;
-                    string bannerImage = datosMedia.bannerImage;
-                    string isAdult = datosMedia.isAdult;
-                    string episodes = datosMedia.episodes;
-                    string chapters = datosMedia.chapters;
-                    string eps = string.IsNullOrEmpty(episodes) ? chapters : episodes;
-
-                    dynamic datosMediaList = data.Data.Page.mediaList;
-                    int registros = 0;
-                    decimal sumaScores = 0;
-                    decimal promedio = 0;
-
-                    foreach (var entry in datosMediaList)
+                    Variables = new
                     {
-                        string name = entry.user.name;
-                        string score = entry.score;
-                        string url = entry.user.siteUrl;
-                        string status = entry.status;
-                        string progress = entry.progress;
-                        string scoreFormat = entry.user.mediaListOptions.scoreFormat;
-                        string scoreF = FormatearScoreUJser(scoreFormat, score);
-                        decimal score100 = FormatearScoreUJser100(scoreFormat, score);
+                        codigoMedia = mediaId,
+                        ids = values,
+                    },
+                };
+                try
+                {
+                    var data = await _graphQlClient.SendQueryAsync<dynamic>(requestPers);
+                    if (data.Data != null)
+                    {
+                        dynamic datosMedia = data.Data.Media;
+                        string titleRomaji = datosMedia.title.romaji;
+                        string titleEnglish = datosMedia.title.english;
+                        string siteUrl = datosMedia.siteUrl;
+                        string coverImage = datosMedia.coverImage.large;
+                        string bannerImage = datosMedia.bannerImage;
+                        string isAdult = datosMedia.isAdult;
+                        string episodes = datosMedia.episodes;
+                        string chapters = datosMedia.chapters;
+                        string eps = string.IsNullOrEmpty(episodes) ? chapters : episodes;
 
-                        string pro = string.IsNullOrEmpty(eps) ? progress : progress + $"/{eps}";
+                        dynamic datosMediaList = data.Data.Page.mediaList;
 
-                        if (!string.IsNullOrEmpty(score) && score != "0")
+                        foreach (var entry in datosMediaList)
                         {
-                            if (status == "COMPLETED")
-                            {
-                                scoresList.Add($"{Formatter.MaskedUrl(name, new Uri(url))} - {scoreF}\n");
-                            }
-                            else
-                            {
-                                scoresList.Add($"{Formatter.MaskedUrl(name, new Uri(url))} - {scoreF} {Formatter.InlineCode($"{Funciones.UppercaseFirst(status)} - Progress: {pro}")}\n");
-                            }
+                            string name = entry.user.name;
+                            string score = entry.score;
+                            string url = entry.user.siteUrl;
+                            string status = entry.status;
+                            string progress = entry.progress;
+                            string scoreFormat = entry.user.mediaListOptions.scoreFormat;
+                            string scoreF = FormatearScoreUJser(scoreFormat, score);
+                            decimal score100 = FormatearScoreUJser100(scoreFormat, score);
 
-                            registros++;
-                            sumaScores += score100;
+                            string pro = string.IsNullOrEmpty(eps) ? progress : progress + $"/{eps}";
+
+                            if (!string.IsNullOrEmpty(score) && score != "0")
+                            {
+                                if (status == "COMPLETED")
+                                {
+                                    scoresList.Add($"{Formatter.MaskedUrl(name, new Uri(url))} - {scoreF}\n");
+                                }
+                                else
+                                {
+                                    scoresList.Add($"{Formatter.MaskedUrl(name, new Uri(url))} - {scoreF} {Formatter.InlineCode($"{Funciones.UppercaseFirst(status)} - Progress: {pro}")}\n");
+                                }
+
+                                registros++;
+                                sumaScores += score100;
+                            }
                         }
                     }
-
-                    if (registros > 0)
-                    {
-                        promedio = sumaScores / registros;
-                        scores = $"{Formatter.Bold($"Promedio:")} {decimal.Round(promedio, 2)}/100\n\n";
-                    }
-
-                    scoresList.Sort();
-                    scores += string.Join(string.Empty, values: scoresList);
-
-                    return scores;
                 }
-            }
-            catch (Exception ex)
-            {
-                if (ex.Message != "The HTTP request failed with status code NotFound")
+                catch (Exception ex)
                 {
-                    await Funciones.GrabarLogError(context, $"Error en GetScoreMediaUsuarios /anime: {ex.Message}\n```{ex.StackTrace}```");
+                    if (ex.Message != "The HTTP request failed with status code NotFound")
+                    {
+                        await Funciones.GrabarLogError(context, $"Error en GetScoreMediaUsuarios /anime: {ex.Message}\n```{ex.StackTrace}```");
+                    }
                 }
+            });
+
+            if (registros > 0)
+            {
+                promedio = sumaScores / registros;
+                scores = $"{Formatter.Bold($"Promedio:")} {decimal.Round(promedio, 2)}/100\n\n";
+                scoresList.Sort();
+                scores += string.Join(string.Empty, values: scoresList);
             }
 
-            return string.Empty;
+            return scores;
         }
 
         public static Media DecodeMedia(dynamic datos)

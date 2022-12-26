@@ -1,6 +1,7 @@
 ﻿using AnilistESP;
 using DSharpPlus;
 using DSharpPlus.Entities;
+using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
@@ -10,6 +11,7 @@ using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.Newtonsoft;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -390,10 +392,17 @@ namespace AnilistConEnie.Commands
 
                     if (!string.IsNullOrEmpty(embedStats))
                     {
-                        var interactivity = ctx.Client.GetInteractivity();
-                        var pages = interactivity.GeneratePagesInEmbed(embedStats, SplitType.Line, builder);
+                        if (embedStats.Length < 4096)
+                        {
+                            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(builder.WithDescription(embedStats)));
+                        }
+                        else
+                        {
+                            var interactivity = ctx.Client.GetInteractivity();
+                            var pages = interactivity.GeneratePagesInEmbed(embedStats, SplitType.Line, builder);
 
-                        await interactivity.SendPaginatedResponseAsync(ctx.Interaction, false, ctx.User, pages, asEditResponse: true, deletion: ButtonPaginationBehavior.Disable);
+                            await interactivity.SendPaginatedResponseAsync(ctx.Interaction, false, ctx.User, pages, asEditResponse: true, deletion: ButtonPaginationBehavior.Disable);
+                        }
                     }
                     else
                     {

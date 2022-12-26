@@ -19,5 +19,15 @@ namespace AnilistESP
                 list[n] = value;
             }
         }
+
+        public static string NormalizeDescriptionNewLine(this string s)
+        {
+            if (s.Length > 4096)
+            {
+                string aux = s.Remove(4096);
+                return aux.Remove(aux.LastIndexOf("\n"));
+            }
+            return s;
+        }
     }
 }

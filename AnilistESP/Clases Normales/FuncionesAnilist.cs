@@ -255,14 +255,14 @@ namespace AnilistESP
                 values.Add(long.Parse(user.AnilistURL[(user.AnilistURL.LastIndexOf("/") + 1)..]));
             }
 
-            var lists = values.Chunk(10).ToList();
+            var lists = values.Chunk(15).ToList();
 
             string scores = string.Empty;
             decimal promedio = 0;
             int registros = 0;
             decimal sumaScores = 0;
 
-            lists.ForEach(async userList =>
+            foreach (var userList in lists)
             {
                 var requestPers = new GraphQLRequest
                 {
@@ -300,7 +300,7 @@ namespace AnilistESP
                     Variables = new
                     {
                         codigoMedia = mediaId,
-                        ids = values,
+                        ids = userList,
                     },
                 };
                 try
@@ -358,7 +358,7 @@ namespace AnilistESP
                         await Funciones.GrabarLogError(context, $"Error en GetScoreMediaUsuarios /anime: {ex.Message}\n```{ex.StackTrace}```");
                     }
                 }
-            });
+            }
 
             if (registros > 0)
             {

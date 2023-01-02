@@ -135,7 +135,7 @@ namespace AnilistConEnie.Commands
 
             await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
             {
-                Title = $"Challenges completados por {usuario?.Username ?? ctx.User.Username}",
+                Title = $"Challenges completados por {ctx.User.Username}",
                 Description = description,
                 Color = Funciones.GetColor()
             }));

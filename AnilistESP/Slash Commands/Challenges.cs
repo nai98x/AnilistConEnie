@@ -114,7 +114,7 @@ namespace AnilistConEnie.Commands
         public async Task Usuario(ContextMenuContext ctx)
         {
             await ctx.DeferAsync();
-            var challengesUser = await service.GetChallengesUsuario(ctx.User.Id);
+            var challengesUser = await service.GetChallengesUsuario(ctx.TargetMember.Id);
             string description = string.Empty;
             if (challengesUser.Count > 0)
             {
@@ -135,7 +135,7 @@ namespace AnilistConEnie.Commands
 
             await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
             {
-                Title = $"Challenges completados por {ctx.User.Username}",
+                Title = $"Challenges completados por {ctx.TargetMember.DisplayName}",
                 Description = description,
                 Color = Funciones.GetColor()
             }));

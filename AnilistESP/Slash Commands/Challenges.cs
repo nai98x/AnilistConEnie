@@ -111,7 +111,7 @@ namespace AnilistConEnie.Commands
         }
 
         [ContextMenu(ApplicationCommandType.UserContextMenu, "Challenges")]
-        public async Task Usuario(InteractionContext ctx)
+        public async Task Usuario(ContextMenuContext ctx)
         {
             await ctx.DeferAsync();
             var challengesUser = await service.GetChallengesUsuario(ctx.User.Id);

@@ -54,7 +54,7 @@ namespace AnilistConEnie.Commands
                     }
                     else
                     {
-                        desc += Formatter.Bold("Antiguos:\n");
+                        desc += Formatter.Bold("No disponibles:\n");
                     }
 
                     if (ch.Any())
@@ -75,7 +75,7 @@ namespace AnilistConEnie.Commands
 
             await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
             {
-                Title = "Challenges disponibles",
+                Title = "Challenges del servidor",
                 Description = desc,
                 Color = Funciones.GetColor()
             }));
@@ -110,11 +110,11 @@ namespace AnilistConEnie.Commands
             }));
         }
 
-        [SlashCommand("usuario", "Challenges completados por un usuario")]
-        public async Task Usuario(InteractionContext ctx, [Option("Usuario", "Usuario a consultar")] DiscordUser? usuario = null)
+        [ContextMenu(ApplicationCommandType.UserContextMenu, "Challenges")]
+        public async Task Usuario(InteractionContext ctx)
         {
             await ctx.DeferAsync();
-            var challengesUser = await service.GetChallengesUsuario(usuario?.Id ?? ctx.User.Id);
+            var challengesUser = await service.GetChallengesUsuario(ctx.User.Id);
             string description = string.Empty;
             if (challengesUser.Count > 0)
             {

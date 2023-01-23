@@ -1,7 +1,8 @@
 {
   "token_prod": "TOKEN_DISCORD_BOT_PROD",
   "token_test": "TOKEN_DISCORD_BOT_TEST",
-  "topgg_token": "TOKEN_TOPGG_PROD"
+  "topgg_token": "TOKEN_TOPGG_PROD",
+  "tatsu_token": "TOKEN_TATSU_PROD"
 }
 
 //                             IMPORTANTE

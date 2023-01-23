@@ -5,9 +5,14 @@ using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
+using Newtonsoft.Json;
+using RestSharp;
 using System;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
+using Tomat.TatsuSharp;
 
 namespace AnilistConEnie.Commands
 {
@@ -210,11 +215,43 @@ namespace AnilistConEnie.Commands
             [Option("Xp", "XP recibida por completarlo")] double xp)
         {
             await ctx.DeferAsync();
+
+            string token = await ObtenerTokenTatsu();
+            bool updatedTatsuPoints = false;
+            var client = new RestClient("https://api.tatsu.gg/v1");
+            var request = new RestRequest($"/guilds/{ctx.Guild.Id}/members/{ctx.Member.Id}/score", Method.Patch);
+            request.AddHeader("Authorization", token);
+            request.AddHeader("Content-Type", "application/json");
+
+            request.RequestFormat = DataFormat.Json;
+            request.AddJsonBody(new { action = 0, amount = (int)xp });
+
+            try
+            {
+                var response = await client.ExecuteAsync(request);
+
+                if(response.IsSuccessStatusCode)
+                {
+                    updatedTatsuPoints= true;
+                }
+                else
+                {
+                    await Funciones.GrabarLogError(Funciones.GetContext(ctx), $"Error agregando puntos de tatsu\n{response.ErrorMessage}");
+                }
+            }
+            catch (Exception ex)
+            {
+                await Funciones.GrabarLogError(Funciones.GetContext(ctx), $"Error agregando puntos de tatsu\n{ex.Message}\n{Formatter.BlockCode(ex.StackTrace)}");
+            }
+
+            string description = $"Felicitaciones {usuario.Mention}! Completaste el `{challenge}`";
+            if (updatedTatsuPoints) description += $"y ganaste {xp} de experiencia";
+
             await service.SetUsuarioChallenge(challenge, (long)usuario.Id, (int)xp);
             await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
             {
                 Title = "Challenges completado!",
-                Description = $"Felicitaciones {usuario.Mention}! Completaste el `{challenge}`",
+                Description = description,
                 Color = DiscordColor.Green
             }));
         }
@@ -231,6 +268,20 @@ namespace AnilistConEnie.Commands
                 Description = $"Tu numero es `{rnd.Next(1, 10)}`",
                 Color = DiscordColor.Blurple
             }));
+        }
+
+        private async Task<string> ObtenerTokenTatsu()
+        {
+            var json = string.Empty;
+            using (var fs = File.OpenRead("config.json"))
+            {
+                using var sr = new StreamReader(fs, new UTF8Encoding(false));
+                json = await sr.ReadToEndAsync().ConfigureAwait(false);
+            }
+
+            var configJson = JsonConvert.DeserializeObject<ConfigJson>(json);
+
+            return configJson.Tatsu_token;
         }
     }
 }

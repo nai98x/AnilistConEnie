@@ -12,5 +12,8 @@ namespace AnilistESP
 
         [JsonProperty("topgg_token")]
         public string TopGG_token { get; private set; }
+
+        [JsonProperty("tatsu_token")]
+        public string Tatsu_token { get; private set; }
     }
 }

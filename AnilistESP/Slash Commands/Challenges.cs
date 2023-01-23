@@ -212,7 +212,11 @@ namespace AnilistConEnie.Commands
             InteractionContext ctx,
             [Option("Challenge", "Challenge a elegir", true)][Autocomplete(typeof(ChallengesAutocompleteProvider))] string challenge,
             [Option("Usuario", "Usuario que completo el challenge")] DiscordUser usuario,
-            [Option("Xp", "XP recibida por completarlo")] double xp)
+            [Option("Xp", "XP recibida por completarlo")] double xp,
+            [Option("Imagen", "URL de la imagen de la placa del challenge")] string imagen1,
+            [Option("Imagen2", "URL de la imagen de la placa del challenge")] string imagen2 = null,
+            [Option("Imagen3", "URL de la imagen de la placa del challenge")] string imagen3 = null
+            )
         {
             await ctx.DeferAsync();
 
@@ -236,24 +240,58 @@ namespace AnilistConEnie.Commands
                 }
                 else
                 {
-                    await Funciones.GrabarLogError(Funciones.GetContext(ctx), $"Error agregando puntos de tatsu\n{response.ErrorMessage}");
+                    await Funciones.GrabarLogError(Funciones.GetContext(ctx), $"Error agregando puntos de Tatsu\n{response.ErrorMessage}");
                 }
             }
             catch (Exception ex)
             {
-                await Funciones.GrabarLogError(Funciones.GetContext(ctx), $"Error agregando puntos de tatsu\n{ex.Message}\n{Formatter.BlockCode(ex.StackTrace)}");
+                await Funciones.GrabarLogError(Funciones.GetContext(ctx), $"Error agregando puntos de Tatsu\n{ex.Message}\n{Formatter.BlockCode(ex.StackTrace)}");
             }
 
+            DiscordEmoji umaPoints = DiscordEmoji.FromGuildEmote(ctx.Client, 862461175950606376);
             string description = $"Felicitaciones {usuario.Mention}! Completaste el `{challenge}`";
-            if (updatedTatsuPoints) description += $"y ganaste {xp} de experiencia";
+            if (updatedTatsuPoints) description += $"y ganaste **{xp} {umaPoints}** de xp";
 
-            await service.SetUsuarioChallenge(challenge, (long)usuario.Id, (int)xp);
-            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+            //await service.SetUsuarioChallenge(challenge, (long)usuario.Id, (int)xp);
+
+            var builder = new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
             {
                 Title = "Challenges completado!",
                 Description = description,
                 Color = DiscordColor.Green
-            }));
+            });
+
+            builder.AddEmbed(new DiscordEmbedBuilder
+            {
+                Title = "Plaquita",
+                Description = $"Para agregar esta placa en tu perfil pega el siguiente código:\n`imgX({imagen1})` donde X es el tamaño que le quieres dar a tu imágen, reemplazalo por un número como por ejemplo `300`",
+                Color = DiscordColor.Blurple,
+                ImageUrl = imagen1
+            });
+
+            if (imagen2 != null)
+            {
+                builder.AddEmbed(new DiscordEmbedBuilder
+                {
+                    Title = "Plaquita 2",
+                    Description = $"Para agregar esta placa en tu perfil pega el siguiente código:\n`imgX({imagen2})` donde X es el tamaño que le quieres dar a tu imágen, reemplazalo por un número como por ejemplo `300`",
+                    Color = DiscordColor.Blurple,
+                    ImageUrl = imagen2
+                });
+            }
+
+            if (imagen3 != null)
+            {
+                builder.AddEmbed(new DiscordEmbedBuilder
+                {
+                    Title = "Plaquita 3",
+                    Description = $"Para agregar esta placa en tu perfil pega el siguiente código:\n`imgX({imagen3})` donde X es el tamaño que le quieres dar a tu imágen, reemplazalo por un número como por ejemplo `300`",
+                    Color = DiscordColor.Blurple,
+                    ImageUrl = imagen3
+                });
+            }
+
+            await ctx.FollowUpAsync(builder);
         }
 
         [SlashCommand("numero", "Saca un numero aleatorio entre el 1 y el 10")]

@@ -86,7 +86,7 @@
             ApplicationCommands.ContextMenuExecuted += SlashCommands_ContextMenuExecuted;
             ApplicationCommands.ContextMenuErrored += SlashCommands_ContextMenuErrored;
 
-            ulong pruebasBacklog = 853766076122005565;
+            ulong pruebasBacklog = 862408834693070898;
             ulong guildProd = 862408834693070898;
 
             if (Debug)
@@ -98,6 +98,7 @@
                 ApplicationCommands.RegisterCommands<Intercambios>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<IntercambiosAdmin>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Highlights>(pruebasBacklog);
+                ApplicationCommands.RegisterCommands<Tatsu>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Administrativo>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Help>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Owner>(pruebasBacklog);
@@ -111,6 +112,7 @@
                 ApplicationCommands.RegisterCommands<Intercambios>(guildProd);
                 ApplicationCommands.RegisterCommands<IntercambiosAdmin>(guildProd);
                 ApplicationCommands.RegisterCommands<Highlights>(guildProd);
+                ApplicationCommands.RegisterCommands<Tatsu>(guildProd);
                 ApplicationCommands.RegisterCommands<Administrativo>(guildProd);
                 ApplicationCommands.RegisterCommands<Help>(guildProd);
                 ApplicationCommands.RegisterCommands<Owner>(guildProd);
@@ -139,8 +141,8 @@
             }
             else
             {
-                LogGuild = await Client.GetGuildAsync(853766076122005565);
-                LogChannel = LogGuild.GetChannel(891840653162582087);
+                LogGuild = await Client.GetGuildAsync(862408834693070898);
+                LogChannel = LogGuild.GetChannel(862410338577547324);
             }
 
             await Task.Delay(-1);

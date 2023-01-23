@@ -16,6 +16,7 @@ using System.Configuration;
 using System.Globalization;
 using System.IO;
 using System.Net.Http;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static DSharpPlus.Entities.DiscordEmbedBuilder;
@@ -540,6 +541,20 @@ namespace AnilistESP
                 return s.Remove(76) + " ...";
             }
             return s;
+        }
+
+        public static async Task<string> ObtenerTokenTatsu()
+        {
+            var json = string.Empty;
+            using (var fs = File.OpenRead("config.json"))
+            {
+                using var sr = new StreamReader(fs, new UTF8Encoding(false));
+                json = await sr.ReadToEndAsync().ConfigureAwait(false);
+            }
+
+            var configJson = JsonConvert.DeserializeObject<ConfigJson>(json);
+
+            return configJson.Tatsu_token;
         }
     }
 }

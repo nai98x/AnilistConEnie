@@ -220,7 +220,7 @@ namespace AnilistConEnie.Commands
         {
             await ctx.DeferAsync();
 
-            string token = await ObtenerTokenTatsu();
+            string token = await Funciones.ObtenerTokenTatsu();
             bool updatedTatsuPoints = false;
             var client = new RestClient("https://api.tatsu.gg/v1");
             var request = new RestRequest($"/guilds/{ctx.Guild.Id}/members/{ctx.Member.Id}/score", Method.Patch);
@@ -304,20 +304,6 @@ namespace AnilistConEnie.Commands
                 Description = $"Tu numero es `{rnd.Next(1, 10)}`",
                 Color = DiscordColor.Blurple
             }));
-        }
-
-        private async Task<string> ObtenerTokenTatsu()
-        {
-            var json = string.Empty;
-            using (var fs = File.OpenRead("config.json"))
-            {
-                using var sr = new StreamReader(fs, new UTF8Encoding(false));
-                json = await sr.ReadToEndAsync().ConfigureAwait(false);
-            }
-
-            var configJson = JsonConvert.DeserializeObject<ConfigJson>(json);
-
-            return configJson.Tatsu_token;
         }
     }
 }

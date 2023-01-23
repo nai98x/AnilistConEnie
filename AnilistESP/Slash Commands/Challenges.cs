@@ -249,16 +249,20 @@ namespace AnilistConEnie.Commands
             }
 
             DiscordEmoji umaPoints = DiscordEmoji.FromGuildEmote(ctx.Client, 862461175950606376);
-            string description = $"Felicitaciones {usuario.Mention}! Completaste el `{challenge}`";
-            if (updatedTatsuPoints) description += $"y ganaste **{xp} {umaPoints}** de xp";
+            string description = $"¡Felicitaciones {usuario.Mention}! Completaste el `{challenge}`";
+            if (updatedTatsuPoints) description += $"y ganaste **{xp} {umaPoints} de xp**.";
 
             await service.SetUsuarioChallenge(challenge, (long)usuario.Id, (int)xp);
 
             var builder = new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
             {
-                Title = "Challenges completado!",
+                Title = "Challenges completado",
                 Description = description,
-                Color = DiscordColor.Green
+                Color = DiscordColor.Green,
+                Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail
+                {
+                    Url = "https://media.discordapp.net/attachments/862568630365323264/990747470508204032/unknown.png"
+                }
             });
 
             builder.AddEmbed(new DiscordEmbedBuilder

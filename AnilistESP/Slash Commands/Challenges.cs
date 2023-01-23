@@ -263,8 +263,6 @@ namespace AnilistConEnie.Commands
 
             builder.AddEmbed(new DiscordEmbedBuilder
             {
-                Title = "Plaquita",
-                Description = $"Para agregar esta placa en tu perfil pega el siguiente código:\n`imgX({imagen1})` donde X es el tamaño que le quieres dar a tu imágen, reemplazalo por un número como por ejemplo `300`",
                 Color = DiscordColor.Blurple,
                 ImageUrl = imagen1
             });
@@ -273,8 +271,6 @@ namespace AnilistConEnie.Commands
             {
                 builder.AddEmbed(new DiscordEmbedBuilder
                 {
-                    Title = "Plaquita 2",
-                    Description = $"Para agregar esta placa en tu perfil pega el siguiente código:\n`imgX({imagen2})` donde X es el tamaño que le quieres dar a tu imágen, reemplazalo por un número como por ejemplo `300`",
                     Color = DiscordColor.Blurple,
                     ImageUrl = imagen2
                 });
@@ -284,8 +280,6 @@ namespace AnilistConEnie.Commands
             {
                 builder.AddEmbed(new DiscordEmbedBuilder
                 {
-                    Title = "Plaquita 3",
-                    Description = $"Para agregar esta placa en tu perfil pega el siguiente código:\n`imgX({imagen3})` donde X es el tamaño que le quieres dar a tu imágen, reemplazalo por un número como por ejemplo `300`",
                     Color = DiscordColor.Blurple,
                     ImageUrl = imagen3
                 });

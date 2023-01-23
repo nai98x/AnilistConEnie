@@ -252,7 +252,7 @@ namespace AnilistConEnie.Commands
             string description = $"Felicitaciones {usuario.Mention}! Completaste el `{challenge}`";
             if (updatedTatsuPoints) description += $"y ganaste **{xp} {umaPoints}** de xp";
 
-            //await service.SetUsuarioChallenge(challenge, (long)usuario.Id, (int)xp);
+            await service.SetUsuarioChallenge(challenge, (long)usuario.Id, (int)xp);
 
             var builder = new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
             {

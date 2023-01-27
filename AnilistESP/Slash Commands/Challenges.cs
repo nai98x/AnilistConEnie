@@ -103,7 +103,10 @@ namespace AnilistConEnie.Commands
                 var emote = DiscordEmoji.FromGuildEmote(ctx.Client, 862461175950606376);
                 challenges.ForEach(x =>
                 {
-                    desc += $"- <@{x.UserId}> - **XP:** {x.Xp} {emote}\n";
+                    if (ctx.Guild.Members.TryGetValue((ulong)x.UserId, out _))
+                    {
+                        desc += $"- <@{x.UserId}> - **XP:** {x.Xp} {emote}\n";
+                    }
                 });
             }
 
@@ -161,31 +164,34 @@ namespace AnilistConEnie.Commands
 
                 ranking.ForEach(x =>
                 {
-                    if (lastScore != x.Xp)
+                    if (ctx.Guild.Members.TryGetValue((ulong)x.UserId, out _))
                     {
-                        pos++;
-                    }
+                        if (lastScore != x.Xp)
+                        {
+                            pos++;
+                        }
 
-                    switch (pos)
-                    {
-                        case 1:
-                            DiscordEmoji emoji1 = DiscordEmoji.FromName(ctx.Client, ":first_place:");
-                            description += $"{emoji1} - <@{x.UserId}>: {x.Xp} {emote}\n";
-                            break;
-                        case 2:
-                            DiscordEmoji emoji2 = DiscordEmoji.FromName(ctx.Client, ":second_place:");
-                            description += $"{emoji2} - <@{x.UserId}>: {x.Xp} {emote}\n";
-                            break;
-                        case 3:
-                            DiscordEmoji emoji3 = DiscordEmoji.FromName(ctx.Client, ":third_place:");
-                            description += $"{emoji3} - <@{x.UserId}>: {x.Xp} {emote}\n";
-                            break;
-                        default:
-                            description += $"{Formatter.Bold($"#{pos}")} - <@{x.UserId}>: {x.Xp} {emote}\n";
-                            break;
-                    }
+                        switch (pos)
+                        {
+                            case 1:
+                                DiscordEmoji emoji1 = DiscordEmoji.FromName(ctx.Client, ":first_place:");
+                                description += $"{emoji1} - <@{x.UserId}>: {x.Xp} {emote}\n";
+                                break;
+                            case 2:
+                                DiscordEmoji emoji2 = DiscordEmoji.FromName(ctx.Client, ":second_place:");
+                                description += $"{emoji2} - <@{x.UserId}>: {x.Xp} {emote}\n";
+                                break;
+                            case 3:
+                                DiscordEmoji emoji3 = DiscordEmoji.FromName(ctx.Client, ":third_place:");
+                                description += $"{emoji3} - <@{x.UserId}>: {x.Xp} {emote}\n";
+                                break;
+                            default:
+                                description += $"{Formatter.Bold($"#{pos}")} - <@{x.UserId}>: {x.Xp} {emote}\n";
+                                break;
+                        }
 
-                    lastScore = x.Xp;
+                        lastScore = x.Xp;
+                    }
                 });
 
                 description = description.Remove(description.Length - 1, 1);

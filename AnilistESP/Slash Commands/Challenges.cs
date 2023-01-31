@@ -260,16 +260,20 @@ namespace AnilistConEnie.Commands
 
             await service.SetUsuarioChallenge(challenge, (long)usuario.Id, (int)xp);
 
-            var builder = new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Challenges completado",
-                Description = description,
-                Color = DiscordColor.Green,
-                Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail
+            var builder = new DiscordFollowupMessageBuilder()
+                .WithContent($"<@{usuario.Id}>")
+                .AddMention(new UserMention(usuario))
+                .AddEmbed(new DiscordEmbedBuilder
                 {
-                    Url = "https://media.discordapp.net/attachments/862568630365323264/990747470508204032/unknown.png"
+                    Title = "Challenges completado",
+                    Description = description,
+                    Color = DiscordColor.Green,
+                    Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail
+                    {
+                        Url = "https://media.discordapp.net/attachments/862568630365323264/990747470508204032/unknown.png"
+                    }
                 }
-            });
+            );
 
             builder.AddEmbed(new DiscordEmbedBuilder
             {

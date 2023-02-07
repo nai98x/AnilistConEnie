@@ -229,7 +229,7 @@ namespace AnilistConEnie.Commands
             string token = await Funciones.ObtenerTokenTatsu();
             bool updatedTatsuPoints = false;
             var client = new RestClient("https://api.tatsu.gg/v1");
-            var request = new RestRequest($"/guilds/{ctx.Guild.Id}/members/{ctx.Member.Id}/score", Method.Patch);
+            var request = new RestRequest($"/guilds/{ctx.Guild.Id}/members/{usuario.Id}/score", Method.Patch);
             request.AddHeader("Authorization", token);
             request.AddHeader("Content-Type", "application/json");
 

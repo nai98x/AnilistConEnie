@@ -331,10 +331,15 @@
                             _ = Task.Run(async () =>
                             {
                                 var member = (DiscordMember)e.User;
+                                var miembroRole = e.Guild.Roles[862452184029069332];
+                                var botRole = e.Guild.Roles[862411811226910730];
 
-                                DiscordOverwrite everyoneOverwrite = e.After.Channel.PermissionOverwrites.FirstOrDefault(p => p.Id == 123);
                                 var channel = await e.Guild.CreateChannelAsync(name: $"Canal de {member.DisplayName}", type: ChannelType.Voice, parent: e.After.Channel.Parent);
                                 await channel.AddOverwriteAsync(member, allow: Permissions.ManageChannels | Permissions.PrioritySpeaker | Permissions.ManageRoles);
+                                await channel.AddOverwriteAsync(e.Guild.EveryoneRole, deny: Permissions.AccessChannels);
+                                await channel.AddOverwriteAsync(miembroRole, allow: Permissions.AccessChannels);
+                                await channel.AddOverwriteAsync(botRole, allow: Permissions.AccessChannels);
+
                                 singleton.AgregarCanalTemporal(channel.Id);
                                 await member.ModifyAsync(x => x.VoiceChannel = channel);
                             });

@@ -288,7 +288,6 @@ namespace AnilistESP
                         Page {
                             mediaList(mediaId: $codigoMedia, userId_in: $ids) {
                                 user {
-                                    id,
                                     name,
                                     siteUrl,
                                     mediaListOptions {
@@ -327,7 +326,6 @@ namespace AnilistESP
 
                         foreach (var entry in datosMediaList)
                         {
-                            string id = entry.user.id;
                             string name = entry.user.name;
                             string score = entry.score;
                             string url = entry.user.siteUrl;
@@ -341,15 +339,13 @@ namespace AnilistESP
 
                             if (!string.IsNullOrEmpty(score) && score != "0")
                             {
-                                var discordUser = usuariosServidor.Find(x => x.AnilistURL.Contains(id));
-
                                 if (status == "COMPLETED")
                                 {
-                                    scoresList.Add($"<@{discordUser.UserId}> - {Formatter.MaskedUrl(scoreF, new Uri(url))}\n");
+                                    scoresList.Add($"{Formatter.MaskedUrl(name, new Uri(url))} - {scoreF}\n");
                                 }
                                 else
                                 {
-                                    scoresList.Add($"<@{discordUser.UserId}> - {Formatter.MaskedUrl(scoreF, new Uri(url))} {Formatter.InlineCode($"{Funciones.UppercaseFirst(status)} - Progress: {pro}")}\n");
+                                    scoresList.Add($"{Formatter.MaskedUrl(name, new Uri(url))} - {scoreF} {Formatter.InlineCode($"{Funciones.UppercaseFirst(status)} - Progress: {pro}")}\n");
                                 }
 
                                 registros++;

@@ -345,11 +345,11 @@ namespace AnilistESP
 
                                 if (status == "COMPLETED")
                                 {
-                                    scoresList.Add($"{Formatter.MaskedUrl(name, new Uri(url))} - {scoreF} (<@{discordUser.UserId}>)\n");
+                                    scoresList.Add($"<@{discordUser.UserId}> - {Formatter.MaskedUrl(scoreF, new Uri(url))}\n");
                                 }
                                 else
                                 {
-                                    scoresList.Add($"{Formatter.MaskedUrl(name, new Uri(url))} - {scoreF} {Formatter.InlineCode($"{Funciones.UppercaseFirst(status)} - Progress: {pro}")} (<@{discordUser.UserId}>)\n");
+                                    scoresList.Add($"<@{discordUser.UserId}> - {Formatter.MaskedUrl(scoreF, new Uri(url))} {Formatter.InlineCode($"{Funciones.UppercaseFirst(status)} - Progress: {pro}")}\n");
                                 }
 
                                 registros++;

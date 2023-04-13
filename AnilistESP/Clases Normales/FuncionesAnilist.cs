@@ -793,7 +793,7 @@ namespace AnilistESP
                                 }
 
                                 await ctx.Guild.Channels[862408834693070901].SendMessageAsync(embed: newProfileEmbed, content: ctx.User.Mention);
-                                await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent("Perfil de AniList vinculado exitosamente").AsEphemeral(true));
+                                await modalInteraction.DeleteOriginalResponseAsync();
                                 await ctx.DeleteOriginalResponseAsync();
 
                                 try

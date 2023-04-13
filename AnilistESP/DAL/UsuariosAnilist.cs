@@ -1,4 +1,5 @@
-﻿using DSharpPlus.Entities;
+﻿using DSharpPlus;
+using DSharpPlus.Entities;
 using Google.Cloud.Firestore;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -41,13 +42,13 @@ namespace AnilistESP
             }
         }
 
-        public async Task SetAnilist(Context ctx, string anilistUrl, DiscordMember miembro)
+        public async Task SetAnilist(DiscordClient client, DiscordGuild guild, string anilistUrl, DiscordMember miembro)
         {
             FirestoreDb db = await Funciones.GetFirestoreClientAnilistConEnie();
             DocumentReference doc = db.Collection("Anilist").Document($"{miembro.Id}");
             var snap = await doc.GetSnapshotAsync();
             UsuarioAnilistFirebase registro;
-            DiscordChannel channel = await Funciones.GetCanalUsuariosAnilist(ctx.Client, ctx.Guild);
+            DiscordChannel channel = await Funciones.GetCanalUsuariosAnilist(client, guild);
             if (snap.Exists)
             {
                 registro = snap.ConvertTo<UsuarioAnilistFirebase>();

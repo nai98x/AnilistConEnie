@@ -46,23 +46,13 @@ namespace AnilistESP
 
         public static async Task<DiscordChannel> GetCanalUsuariosAnilist(DiscordClient client, DiscordGuild guild)
         {
-            IDebuggingService mode = new DebuggingService();
-            bool debug = mode.RunningInDebugMode();
-            if (debug)
+            if (guild.Id == 862408834693070898) // Añilist
             {
-                guild = await client.GetGuildAsync(853766076122005565); // Nai Pruebitas
-                return guild.GetChannel(854476365834485770);
+                return guild.GetChannel(862934726553501736);
             }
             else
             {
-                if (guild.Id == 862408834693070898) // Añilist
-                {
-                    return guild.GetChannel(862934726553501736);
-                }
-                else
-                {
-                    return null;
-                }
+                return null;
             }
         }
 

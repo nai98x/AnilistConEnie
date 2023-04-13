@@ -355,9 +355,16 @@
         {
             _ = Task.Run(async () =>
             {
-                if (!e.Id.StartsWith("modal-"))
+                if (e.Id == "btn_vincularAniList")
                 {
-                    await e.Interaction.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
+                    await FuncionesAnilist.VincularAniList(e.Interaction, sender);
+                }
+                else
+                {
+                    if (!e.Id.StartsWith("modal-"))
+                    {
+                        await e.Interaction.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
+                    }
                 }
             });
             return Task.CompletedTask;

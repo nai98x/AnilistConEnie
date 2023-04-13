@@ -63,5 +63,31 @@
                 Color = Funciones.GetColor()
             }));
         }
+
+        [SlashCommand("configurarbienvenida", "Agrega el mensaje de bienvenida")]
+        public async Task ConfigurarBienvenida(InteractionContext ctx)
+        {
+            await ctx.DeferAsync(true);
+
+            DiscordGuild guild = ctx.Client.Guilds[862408834693070898];
+            DiscordChannel channel = guild.Channels[1096194551540101281];
+            DiscordChannel general = guild.Channels[862408834693070901];
+            DiscordEmoji worrylove = DiscordEmoji.FromGuildEmote(ctx.Client, 862730040504746014);
+
+            var msgBuilder = new DiscordMessageBuilder();
+
+            msgBuilder.AddEmbed(new DiscordEmbedBuilder()
+                .WithThumbnail("https://media.discordapp.net/attachments/879612956848062514/879628082921762826/imagen_2021-07-15_150953_1.png")
+                .WithTitle("Vincula tu AniList")
+                .WithDescription($"Haz click en boton para vincular tu cuenta de AniList y desbloquear el contenido del servidor.\n\nSi necesitas ayuda, no dudes en preguntar por {general.Mention} {worrylove}")
+                .WithColor(Funciones.GetColor())
+            );
+
+            msgBuilder.AddComponents(new DiscordButtonComponent(ButtonStyle.Primary, "btn_vincularAniList", "Vincular AniList"));
+
+            await channel.SendMessageAsync(msgBuilder);
+
+            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Mensaje de bienvenida creado con exito"));
+        }
     }
 }

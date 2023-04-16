@@ -95,6 +95,7 @@
                 ApplicationCommands.RegisterCommands<Usuarios>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Fun>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Challenges>(pruebasBacklog);
+                ApplicationCommands.RegisterCommands<Premios>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Intercambios>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<IntercambiosAdmin>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Highlights>(pruebasBacklog);
@@ -109,6 +110,7 @@
                 ApplicationCommands.RegisterCommands<Usuarios>(guildProd);
                 ApplicationCommands.RegisterCommands<Fun>(guildProd);
                 ApplicationCommands.RegisterCommands<Challenges>(guildProd);
+                ApplicationCommands.RegisterCommands<Premios>(guildProd);
                 ApplicationCommands.RegisterCommands<Intercambios>(guildProd);
                 ApplicationCommands.RegisterCommands<IntercambiosAdmin>(guildProd);
                 ApplicationCommands.RegisterCommands<Highlights>(guildProd);

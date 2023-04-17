@@ -44,7 +44,7 @@ namespace AnilistConEnie.Commands
                 Color = Funciones.GetColor(),
                 Footer = new DiscordEmbedBuilder.EmbedFooter()
                 {
-                    Text = "Si no pyuedes acceder a los links debes agregar la actividad \"Contenido extra\""
+                    Text = "Si no puedes acceder a los links debes agregar la actividad \"Contenido extra\""
                 }
             }));
         }

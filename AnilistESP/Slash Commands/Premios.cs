@@ -41,7 +41,11 @@ namespace AnilistConEnie.Commands
             {
                 Title = "Premios de temporada del servidor",
                 Description = desc,
-                Color = Funciones.GetColor()
+                Color = Funciones.GetColor(),
+                Footer = new DiscordEmbedBuilder.EmbedFooter()
+                {
+                    Text = "Si no pyuedes acceder a los links debes agregar la actividad \"Contenido extra\""
+                }
             }));
         }
 

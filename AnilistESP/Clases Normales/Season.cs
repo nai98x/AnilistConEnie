@@ -11,6 +11,8 @@
         [ChoiceName("Summer")]
         Summer,
         [ChoiceName("Fall")]
-        Fall
+        Fall,
+        [ChoiceName("Anual")]
+        Anual,
     }
 }

@@ -31,30 +31,23 @@ namespace AnilistESP
         public async Task SetPremio(int anio, Season season, string link)
         {
             string nombre = $"{season.GetName()} {anio}";
+
             FirestoreDb db = await Funciones.GetFirestoreClientAnilistConEnie();
             DocumentReference doc = db.Collection("Premios").Document(nombre);
             var snap = await doc.GetSnapshotAsync();
-            PremioFirebase registro;
+
+            Dictionary<string, object> data = new()
+            {
+                { "Link", link },
+                { "Nombre", nombre },
+                { "Year", anio },
+                { "Order", (int)season }
+            };
+
             if (snap.Exists)
-            {
-                registro = snap.ConvertTo<PremioFirebase>();
-                registro.Link = link;
-                Dictionary<string, object> data = new()
-                {
-                    { "Link", registro.Link },
-                    { "Nombre", registro.Nombre }
-                };
                 await doc.UpdateAsync(data);
-            }
             else
-            {
-                Dictionary<string, object> data = new()
-                {
-                    { "Link", link },
-                    { "Nombre", nombre }
-                };
                 await doc.SetAsync(data);
-            }
         }
 
         public async Task RemovePremio(int anio, Season season)

@@ -4,6 +4,7 @@ using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 namespace AnilistConEnie.Commands
 {
@@ -16,6 +17,7 @@ namespace AnilistConEnie.Commands
         public async Task Lista(InteractionContext ctx)
         {
             await ctx.DeferAsync();
+
             var premios = await service.GetListaPremios();
             string desc = string.Empty;
             if (premios.Count == 0)
@@ -24,9 +26,14 @@ namespace AnilistConEnie.Commands
             }
             else
             {
-                foreach (var premio in premios)
+                foreach (var premioPorAnio in premios.GroupBy(x => x.Year).OrderBy(y => y.Key))
                 {
-                    desc += $"- {Formatter.MaskedUrl(premio.Nombre, new Uri(premio.Link))}\n";
+                    desc += $"**{premioPorAnio.Key}:**\n";
+                    foreach(var season in premioPorAnio.OrderBy(x => x.Order)) 
+                    {
+                        desc += $"- {Formatter.MaskedUrl($"{(Season)season.Order}", new Uri(season.Link))}\n";
+                    }
+                    desc += "\n";
                 }
             }
 
@@ -43,9 +50,8 @@ namespace AnilistConEnie.Commands
         public async Task AgregarPremioDeTemporada(InteractionContext ctx, [Option("Año", "Año del premio de temporada")] double anio, [Option("Season", "Season del premio de temporada")] Season season, [Option("Link", "Link del premio de temporada")] string link)
         {
             await ctx.DeferAsync();
-            PremiosDAL premiosDb = new();
 
-            await premiosDb.SetPremio((int)anio, season, link);
+            await service.SetPremio((int)anio, season, link);
 
             await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(
                 new DiscordEmbedBuilder()

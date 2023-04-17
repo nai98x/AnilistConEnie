@@ -11,5 +11,11 @@ namespace AnilistESP
 
         [FirestoreProperty]
         public string Nombre { get; set; }
+
+        [FirestoreProperty]
+        public int Year { get; set; }
+
+        [FirestoreProperty]
+        public int Order { get; set; }
     }
 }

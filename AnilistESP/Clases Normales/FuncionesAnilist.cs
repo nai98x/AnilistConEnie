@@ -717,7 +717,7 @@ namespace AnilistESP
                     var modalInteraction = interactivityModalResult.Result.Interaction;
                     string ALToken = interactivityModalResult.Result.Values.First().Value;
 
-                    await modalInteraction.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+                    await modalInteraction.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, new DiscordInteractionResponseBuilder().AsEphemeral(true));
 
                     GraphQLHttpClient graphQlCli = new("https://graphql.anilist.co", new NewtonsoftJsonSerializer());
                     if (graphQlCli.HttpClient.DefaultRequestHeaders.Contains("Authorization"))

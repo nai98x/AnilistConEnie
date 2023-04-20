@@ -850,22 +850,6 @@ namespace AnilistESP
                         }));
                     }
                 }
-                else
-                {
-                    await ctx.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
-                    {
-                        Title = "Tiempo agotado esperando la respuesta",
-                        Color = DiscordColor.Red
-                    }));
-                }
-            }
-            else
-            {
-                await ctx.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
-                {
-                    Title = "Tiempo agotado esperando la respuesta",
-                    Color = DiscordColor.Red
-                }));
             }
         }
 

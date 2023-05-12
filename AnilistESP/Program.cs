@@ -298,6 +298,50 @@
                     }
                 }
                 #endregion
+
+                #region Intercambios Repost
+                if (e.Guild?.Id == 862408834693070898)
+                {
+                    if (e.Channel.ParentId == 1048075286626979861)
+                    {
+                        var forumChannel = e.Channel.Parent as DiscordForumChannel;
+                        var forumPost = e.Channel as DiscordThreadChannel;
+                        var autor = e.Message.Author as DiscordMember;
+                        DiscordChannel repostChannel;
+                        var embed = new DiscordEmbedBuilder()
+                            .WithTitle("¡Nueva review!")
+                            .WithDescription(e.Message.Content)
+                            .WithAuthor(autor.DisplayName, iconUrl: autor.GuildAvatarUrl ?? autor.AvatarUrl)
+                            .WithColor(DiscordColor.Green);
+
+                        if (forumPost.AppliedTags.Any(x => x.Name.ToLowerInvariant() == "anime"))
+                        {
+                            repostChannel = e.Guild.Channels[862432891186839572];
+                            await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                        }
+                        if (forumPost.AppliedTags.Any(x => x.Name.ToLowerInvariant() == "manga"))
+                        {
+                            repostChannel = e.Guild.Channels[882003534797742130];
+                            await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                        }
+                        if (forumPost.AppliedTags.Any(x => x.Name.ToLowerInvariant() == "pelis"))
+                        {
+                            repostChannel = e.Guild.Channels[865319767967793152];
+                            await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                        }
+                        if (forumPost.AppliedTags.Any(x => x.Name.ToLowerInvariant() == "series"))
+                        {
+                            repostChannel = e.Guild.Channels[865319767967793152];
+                            await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                        }
+                        if (forumPost.AppliedTags.Any(x => x.Name.ToLowerInvariant() == "música"))
+                        {
+                            repostChannel = e.Guild.Channels[862419584065732618];
+                            await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                        }
+                    }
+                }
+                #endregion
             });
             return Task.CompletedTask;
         }
@@ -374,7 +418,6 @@
 
         private static Task Client_GuildMemberRemoved(DiscordClient sender, GuildMemberRemoveEventArgs e)
         {
-            e.Handled = true;
             _ = Task.Run(async () =>
             {
                 UsuariosAnilist helper = new();
@@ -403,7 +446,6 @@
 
         private static Task Client_ClientError(DiscordClient c, ClientErrorEventArgs e)
         {
-            e.Handled = true;
             _ = Task.Run(async () =>
             {
                 if (e.Exception.Message != "An event handler caused the invocation of an asynchronous event to time out." &&
@@ -428,7 +470,6 @@
 
         private static Task SlashCommands_SlashCommandExecuted(SlashCommandsExtension sender, SlashCommandExecutedEventArgs e)
         {
-            e.Handled = true;
             _ = Task.Run(async () =>
             {
                 await LogChannel.SendMessageAsync(Funciones.LogInteractionCommand(e, "Slash Command ejecutado", true, false));
@@ -438,7 +479,6 @@
 
         private static Task SlashCommands_SlashCommandErrored(SlashCommandsExtension sender, SlashCommandErrorEventArgs e)
         {
-            e.Handled = true;
             _ = Task.Run(async () =>
             {
                 if (e.Exception is SlashExecutionChecksFailedException ex)

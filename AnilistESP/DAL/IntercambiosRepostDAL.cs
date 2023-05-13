@@ -42,5 +42,18 @@ namespace AnilistESP
             else
                 await doc.SetAsync(data);
         }
+
+        public async Task DeleteMensaje(ulong idMensajeHiloForo)
+        {
+            FirestoreDb db = await Funciones.GetFirestoreClientAnilistConEnie();
+
+            DocumentReference doc = db.Collection("IntercambiosRepost").Document($"{idMensajeHiloForo}");
+            var snap = await doc.GetSnapshotAsync();
+
+            if (snap.Exists)
+            {
+                await doc.DeleteAsync();
+            }
+        }
     }
 }

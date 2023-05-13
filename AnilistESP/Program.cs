@@ -73,6 +73,7 @@
             Client.ComponentInteractionCreated += Client_ComponentInteractionCreated;
             Client.MessageCreated += Client_MessageCreated;
             Client.MessageUpdated += Client_MessageUpdated;
+            Client.MessageDeleted += Client_MessageDeleted;
             Client.MessageReactionAdded += Client_MessageReactionAdded;
             Client.GuildMemberUpdated += Client_GuildMemberUpdated;
             //Client.GuildMemberUpdated += Client_GuildMemberUpdated;
@@ -383,6 +384,42 @@
                                     newEmbed.Description = e.Message.Content;
 
                                     await repostMessage.ModifyAsync(embed: newEmbed.Build());
+                                }
+                                catch (Exception) { /* Ignored */}
+                            }
+                        }
+                    }
+                }
+                #endregion
+            });
+            return Task.CompletedTask;
+        }
+
+        private static Task Client_MessageDeleted(DiscordClient sender, MessageDeleteEventArgs e)
+        {
+            _ = Task.Run(async () =>
+            {
+                #region Intercambios Repost
+                if (e.Guild?.Id == 862408834693070898)
+                {
+                    if (e.Channel.ParentId == 1048075286626979861)
+                    {
+                        IntercambiosRepostDAL service = new();
+                        MensajeIntercambioRepostFirebase? mensaje = await service.GetMensaje(e.Message.Id);
+
+                        if (mensaje != null)
+                        {
+                            var forumChannel = e.Channel.Parent as DiscordForumChannel;
+                            var forumPost = e.Channel as DiscordThreadChannel;
+                            var autor = e.Message.Author as DiscordMember;
+                            DiscordChannel? repostChannel = e.Guild.Channels[mensaje.IdCanalMensajeRepost];
+                            if (repostChannel != null)
+                            {
+                                try
+                                {
+                                    DiscordMessage repostMessage = await repostChannel.GetMessageAsync(mensaje.IdMensajeRepost, true);
+                                    await repostChannel.DeleteMessageAsync(repostMessage);
+                                    await service.DeleteMensaje(e.Message.Id);
                                 }
                                 catch (Exception) { /* Ignored */}
                             }

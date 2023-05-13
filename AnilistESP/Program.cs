@@ -13,6 +13,8 @@
     using DSharpPlus.SlashCommands;
     using DSharpPlus.SlashCommands.Attributes;
     using DSharpPlus.SlashCommands.EventArgs;
+    using Google.Api;
+    using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
     using Newtonsoft.Json;
     using System;
@@ -70,6 +72,7 @@
             Client.GuildMemberRemoved += Client_GuildMemberRemoved;
             Client.ComponentInteractionCreated += Client_ComponentInteractionCreated;
             Client.MessageCreated += Client_MessageCreated;
+            Client.MessageUpdated += Client_MessageUpdated;
             Client.MessageReactionAdded += Client_MessageReactionAdded;
             Client.GuildMemberUpdated += Client_GuildMemberUpdated;
             //Client.GuildMemberUpdated += Client_GuildMemberUpdated;
@@ -304,12 +307,12 @@
                 {
                     if (e.Channel.ParentId == 1048075286626979861)
                     {
+                        IntercambiosRepostDAL service = new();
                         var forumChannel = e.Channel.Parent as DiscordForumChannel;
                         var forumPost = e.Channel as DiscordThreadChannel;
                         var autor = e.Message.Author as DiscordMember;
                         DiscordChannel repostChannel;
                         var embed = new DiscordEmbedBuilder()
-                            .WithTitle("¡Nueva review!")
                             .WithDescription(e.Message.Content)
                             .WithAuthor(autor.DisplayName, iconUrl: autor.GuildAvatarUrl ?? autor.AvatarUrl)
                             .WithColor(DiscordColor.Green);
@@ -317,27 +320,72 @@
                         if (forumPost.AppliedTags.Any(x => x.Name.ToLowerInvariant() == "anime"))
                         {
                             repostChannel = e.Guild.Channels[862432891186839572];
-                            await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                            var msgRepost = await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                            await service.SetMensaje(e.Message.ChannelId, e.Message.Id, msgRepost.ChannelId, msgRepost.Id);
                         }
                         if (forumPost.AppliedTags.Any(x => x.Name.ToLowerInvariant() == "manga"))
                         {
                             repostChannel = e.Guild.Channels[882003534797742130];
-                            await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                            var msgRepost = await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                            await service.SetMensaje(e.Message.ChannelId, e.Message.Id, msgRepost.ChannelId, msgRepost.Id);
                         }
                         if (forumPost.AppliedTags.Any(x => x.Name.ToLowerInvariant() == "pelis"))
                         {
                             repostChannel = e.Guild.Channels[865319767967793152];
-                            await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                            var msgRepost = await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                            await service.SetMensaje(e.Message.ChannelId, e.Message.Id, msgRepost.ChannelId, msgRepost.Id);
                         }
                         if (forumPost.AppliedTags.Any(x => x.Name.ToLowerInvariant() == "series"))
                         {
                             repostChannel = e.Guild.Channels[865319767967793152];
-                            await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                            var msgRepost = await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                            await service.SetMensaje(e.Message.ChannelId, e.Message.Id, msgRepost.ChannelId, msgRepost.Id);
                         }
                         if (forumPost.AppliedTags.Any(x => x.Name.ToLowerInvariant() == "música"))
                         {
                             repostChannel = e.Guild.Channels[862419584065732618];
-                            await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                            var msgRepost = await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                            await service.SetMensaje(e.Message.ChannelId, e.Message.Id, msgRepost.ChannelId, msgRepost.Id);
+                        }
+                    }
+                }
+                #endregion
+            });
+            return Task.CompletedTask;
+        }
+
+        private static Task Client_MessageUpdated(DiscordClient sender, MessageUpdateEventArgs e)
+        {
+            _ = Task.Run(async () =>
+            {
+                #region Intercambios Repost
+                if (e.Guild?.Id == 862408834693070898)
+                {
+                    if (e.Channel.ParentId == 1048075286626979861)
+                    {
+                        IntercambiosRepostDAL service = new();
+                        MensajeIntercambioRepostFirebase? mensaje = await service.GetMensaje(e.Message.Id);
+
+                        if (mensaje != null)
+                        {
+                            var forumChannel = e.Channel.Parent as DiscordForumChannel;
+                            var forumPost = e.Channel as DiscordThreadChannel;
+                            var autor = e.Message.Author as DiscordMember;
+                            DiscordChannel? repostChannel = e.Guild.Channels[mensaje.IdCanalMensajeRepost];
+                            if (repostChannel != null )
+                            {
+                                try
+                                {
+                                    DiscordMessage repostMessage = await repostChannel.GetMessageAsync(mensaje.IdMensajeRepost, true);
+                                    DiscordEmbed embed = repostMessage.Embeds.First();
+
+                                    var newEmbed = new DiscordEmbedBuilder(embed);
+                                    newEmbed.Description = e.Message.Content;
+
+                                    await repostMessage.ModifyAsync(embed: newEmbed.Build());
+                                }
+                                catch (Exception) { /* Ignored */}
+                            }
                         }
                     }
                 }

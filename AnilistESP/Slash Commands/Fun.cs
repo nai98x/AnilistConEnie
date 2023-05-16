@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Intrinsics.X86;
 using System.Threading.Tasks;
 
 namespace AnilistConEnie.Commands
@@ -50,14 +51,14 @@ namespace AnilistConEnie.Commands
 
             if (ctx.Guild.Id == 862408834693070898)
             {
-                DiscordRole tama = ctx.Guild.GetRole(1052997018622099548);
-                DiscordRole casual = ctx.Guild.GetRole(863525487602958336);
-                DiscordRole kouhai = ctx.Guild.GetRole(865300278491217970);
-                DiscordRole senpai = ctx.Guild.GetRole(863525246404263976);
-                DiscordRole hikikomori = ctx.Guild.GetRole(863525128403025961);
-                DiscordRole sensei = ctx.Guild.GetRole(863524938954571816);
-                DiscordRole ousama = ctx.Guild.GetRole(966815478507012106);
-                DiscordRole teiou = ctx.Guild.GetRole(966815813078224907);
+                DiscordRole tama = ctx.Guild.Roles[1052997018622099548];
+                DiscordRole casual = ctx.Guild.Roles[863525487602958336];
+                DiscordRole kouhai = ctx.Guild.Roles[865300278491217970];
+                DiscordRole senpai = ctx.Guild.Roles[863525246404263976];
+                DiscordRole hikikomori = ctx.Guild.Roles[863525128403025961];
+                DiscordRole sensei = ctx.Guild.Roles[863524938954571816];
+                DiscordRole ousama = ctx.Guild.Roles[966815478507012106];
+                DiscordRole teiou = ctx.Guild.Roles[966815813078224907];
 
                 var miembros = ctx.Guild.Members.Where(x => x.Value.IsBot == false && x.Value.Id != usuario.Id &&
                 (x.Value.Roles.Contains(tama) || x.Value.Roles.Contains(casual) || x.Value.Roles.Contains(kouhai) || x.Value.Roles.Contains(senpai) || x.Value.Roles.Contains(hikikomori) || x.Value.Roles.Contains(sensei) || x.Value.Roles.Contains(ousama) || x.Value.Roles.Contains(teiou)
@@ -100,14 +101,14 @@ namespace AnilistConEnie.Commands
             IEnumerable<KeyValuePair<ulong, DiscordMember>> miembros;
             if (ctx.Guild.Id == 862408834693070898)
             {
-                DiscordRole tama = ctx.Guild.GetRole(1052997018622099548);
-                DiscordRole casual = ctx.Guild.GetRole(863525487602958336);
-                DiscordRole kouhai = ctx.Guild.GetRole(865300278491217970);
-                DiscordRole senpai = ctx.Guild.GetRole(863525246404263976);
-                DiscordRole hikikomori = ctx.Guild.GetRole(863525128403025961);
-                DiscordRole sensei = ctx.Guild.GetRole(863524938954571816);
-                DiscordRole ousama = ctx.Guild.GetRole(966815478507012106);
-                DiscordRole teiou = ctx.Guild.GetRole(966815813078224907);
+                DiscordRole tama = ctx.Guild.Roles[1052997018622099548];
+                DiscordRole casual = ctx.Guild.Roles[863525487602958336];
+                DiscordRole kouhai = ctx.Guild.Roles[865300278491217970];
+                DiscordRole senpai = ctx.Guild.Roles[863525246404263976];
+                DiscordRole hikikomori = ctx.Guild.Roles[863525128403025961];
+                DiscordRole sensei = ctx.Guild.Roles[863524938954571816];
+                DiscordRole ousama = ctx.Guild.Roles[966815478507012106];
+                DiscordRole teiou = ctx.Guild.Roles[966815813078224907];
 
                 miembros = ctx.Guild.Members.Where(x => x.Value.IsBot == false &&
                 (x.Value.Roles.Contains(tama) || x.Value.Roles.Contains(casual) || x.Value.Roles.Contains(kouhai) || x.Value.Roles.Contains(senpai) || x.Value.Roles.Contains(hikikomori) || x.Value.Roles.Contains(sensei) || x.Value.Roles.Contains(ousama) || x.Value.Roles.Contains(teiou)
@@ -135,6 +136,55 @@ namespace AnilistConEnie.Commands
                 Title = "Shippeo Random",
                 Description = $"Shippeo a {elegido1.Mention} con **{elegido2.Mention}** 💘",
                 ImageUrl = "attachment://imagen.png"
+            }).AddFile("imagen.png", Funciones.ToMemoryStream(imagen)));
+        }
+
+        [SlashCommand("truelove", "Elige el amor veredadero de un usuario")]
+        public async Task Truelove(InteractionContext ctx, [Option("Usuario", "El usuario del que quieres ver su ship")] DiscordUser usuario)
+        {
+            await ctx.DeferAsync();
+
+            int maxPorcentaje = 0;
+            DiscordMember match = ctx.Member;
+
+            DiscordRole tama = ctx.Guild.Roles[1052997018622099548];
+            DiscordRole casual = ctx.Guild.Roles[863525487602958336];
+            DiscordRole kouhai = ctx.Guild.Roles[865300278491217970];
+            DiscordRole senpai = ctx.Guild.Roles[863525246404263976];
+            DiscordRole hikikomori = ctx.Guild.Roles[863525128403025961];
+            DiscordRole sensei = ctx.Guild.Roles[863524938954571816];
+            DiscordRole ousama = ctx.Guild.Roles[966815478507012106];
+            DiscordRole teiou = ctx.Guild.Roles[966815813078224907];
+
+            var miembros = ctx.Guild.Members;
+            foreach(var member in miembros)
+            {
+                bool tieneRolNecesario = member.Value.Roles.Contains(tama) || member.Value.Roles.Contains(casual) || member.Value.Roles.Contains(kouhai) || member.Value.Roles.Contains(senpai) || member.Value.Roles.Contains(hikikomori) || member.Value.Roles.Contains(sensei) || member.Value.Roles.Contains(ousama) || member.Value.Roles.Contains(teiou);
+                if (!member.Value.IsBot && tieneRolNecesario)
+                {
+                    Random rnd = new((int)(usuario.Id + member.Key));
+                    int porcentajeAmor = rnd.Next(0, 100);
+
+                    if (porcentajeAmor > maxPorcentaje)
+                    {
+                        maxPorcentaje = porcentajeAmor;
+                        match = member.Value;
+                    }
+                }
+            }
+
+            string avatar1 = usuario.GetAvatarUrl(ImageFormat.Png, 512);
+            string avatar2 = match.GetAvatarUrl(ImageFormat.Png, 512);
+
+            byte[] img = await Funciones.MergeImage(avatar1, avatar2, 1024, 512);
+            byte[] imagen = Funciones.OverlapImage(img, File.ReadAllBytes(Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Images", "frame-love.png")), 1024, 512);
+
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+            {
+                Title = "True love",
+                Description = $"El amor verdadero de {usuario.Mention} es **{match.Mention}** con un **{maxPorcentaje}%** 💘",
+                ImageUrl = "attachment://imagen.png",
+                Color = DiscordColor.HotPink
             }).AddFile("imagen.png", Funciones.ToMemoryStream(imagen)));
         }
     }

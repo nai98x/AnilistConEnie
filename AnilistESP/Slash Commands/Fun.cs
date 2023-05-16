@@ -179,12 +179,12 @@ namespace AnilistConEnie.Commands
             var amores = amorios;
             amores.Sort((x, y) => y.Item2.CompareTo(x.Item2));
             amores = amores.Take(5).ToList();
-            string amoriosStr = $"**Top 5 pretendientes:**\n{string.Join("\n", amores.Select(x => $"- {x.Item1.Mention} con un **{x.Item2}%**"))}";
+            string amoriosStr = $"**Top 5 pretendientes:**\n{string.Join("\n", amores.Select(x => $"- **{x.Item1.DisplayName}** con un **{x.Item2}%**"))}";
 
             var odiados = amorios;
             odiados.Sort((x, y) => x.Item2.CompareTo(y.Item2));
             odiados = odiados.Take(5).ToList();
-            string odiadosStr = $"**Top 5 odiados:**\n{string.Join("\n", odiados.Select(x => $"- {x.Item1.Mention} con un **{x.Item2}%**"))}";
+            string odiadosStr = $"**Top 5 odiados:**\n{string.Join("\n", odiados.Select(x => $"- **{x.Item1.DisplayName}** con un **{x.Item2}%**"))}";
 
             string avatar1 = usuario.GetAvatarUrl(ImageFormat.Png, 512);
             string avatar2 = match.GetAvatarUrl(ImageFormat.Png, 512);
@@ -195,7 +195,7 @@ namespace AnilistConEnie.Commands
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
             {
                 Title = "True love",
-                Description = $"El amor verdadero de {usuario.Mention} es **{match.Mention}** con un **{maxPorcentaje}%** 💘\n\n{amoriosStr}\n\n{odiadosStr}",
+                Description = $"El amor verdadero de {ctx.Guild.Members[usuario.Id].DisplayName} es **{match.DisplayName}** con un **{maxPorcentaje}%** 💘\n\n{amoriosStr}\n\n{odiadosStr}",
                 ImageUrl = "attachment://imagen.png",
                 Color = DiscordColor.HotPink
             }).AddFile("imagen.png", Funciones.ToMemoryStream(imagen)));

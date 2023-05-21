@@ -44,7 +44,7 @@ namespace AnilistESP
             return await FirestoreDb.CreateAsync("anilistconenie-e09cb", builder.Build());
         }
 
-        public static async Task<DiscordChannel> GetCanalUsuariosAnilist(DiscordClient client, DiscordGuild guild)
+        public static DiscordChannel GetCanalUsuariosAnilist(DiscordClient client, DiscordGuild guild)
         {
             if (guild.Id == 862408834693070898) // Añilist
             {
@@ -58,7 +58,7 @@ namespace AnilistESP
 
         public static async Task BorrarMensajeUsuarioAnilist(DiscordClient client, DiscordGuild guild, long oldMessageId)
         {
-            DiscordChannel canal = await GetCanalUsuariosAnilist(client, guild);
+            DiscordChannel canal = GetCanalUsuariosAnilist(client, guild);
             DiscordMessage mensaje = await canal.GetMessageAsync((ulong)oldMessageId);
             if (mensaje != null)
             {

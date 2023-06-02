@@ -312,40 +312,64 @@
                         var forumChannel = e.Channel.Parent as DiscordForumChannel;
                         var forumPost = e.Channel as DiscordThreadChannel;
                         var autor = e.Message.Author as DiscordMember;
+                        var images = e.Message.Attachments.Where(x => x.MediaType.StartsWith("image/")).Take(5).ToList();
+                        var messageBuilder = new DiscordMessageBuilder().WithContent($"{e.Message.JumpLink}");
                         DiscordChannel repostChannel;
                         var embed = new DiscordEmbedBuilder()
                             .WithDescription(e.Message.Content)
                             .WithAuthor(autor.DisplayName, iconUrl: autor.GuildAvatarUrl ?? autor.AvatarUrl)
                             .WithColor(DiscordColor.Green);
 
+                        if (images.Count > 0)
+                        {
+                            bool first = true;
+                            foreach (var image in images)
+                            {
+                                if (first)
+                                {
+                                    embed.ImageUrl = image.Url;
+                                    messageBuilder.AddEmbed(embed);
+                                    first = false;
+                                }
+                                else
+                                {
+                                    messageBuilder.AddEmbed(new DiscordEmbedBuilder().WithImageUrl(image.Url));
+                                }
+                            }
+                        }
+                        else
+                        {
+                            messageBuilder.AddEmbed(embed);
+                        }
+
                         if (forumPost.AppliedTags.Any(x => x.Name.ToLowerInvariant() == "anime"))
                         {
                             repostChannel = e.Guild.Channels[862432891186839572];
-                            var msgRepost = await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                            var msgRepost = await repostChannel.SendMessageAsync(messageBuilder);
                             await service.SetMensaje(e.Message.ChannelId, e.Message.Id, msgRepost.ChannelId, msgRepost.Id);
                         }
                         if (forumPost.AppliedTags.Any(x => x.Name.ToLowerInvariant() == "manga"))
                         {
                             repostChannel = e.Guild.Channels[882003534797742130];
-                            var msgRepost = await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                            var msgRepost = await repostChannel.SendMessageAsync(messageBuilder);
                             await service.SetMensaje(e.Message.ChannelId, e.Message.Id, msgRepost.ChannelId, msgRepost.Id);
                         }
                         if (forumPost.AppliedTags.Any(x => x.Name.ToLowerInvariant() == "pelis"))
                         {
                             repostChannel = e.Guild.Channels[865319767967793152];
-                            var msgRepost = await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                            var msgRepost = await repostChannel.SendMessageAsync(messageBuilder);
                             await service.SetMensaje(e.Message.ChannelId, e.Message.Id, msgRepost.ChannelId, msgRepost.Id);
                         }
                         if (forumPost.AppliedTags.Any(x => x.Name.ToLowerInvariant() == "series"))
                         {
                             repostChannel = e.Guild.Channels[865319767967793152];
-                            var msgRepost = await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                            var msgRepost = await repostChannel.SendMessageAsync(messageBuilder);
                             await service.SetMensaje(e.Message.ChannelId, e.Message.Id, msgRepost.ChannelId, msgRepost.Id);
                         }
                         if (forumPost.AppliedTags.Any(x => x.Name.ToLowerInvariant() == "música"))
                         {
                             repostChannel = e.Guild.Channels[862419584065732618];
-                            var msgRepost = await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                            var msgRepost = await repostChannel.SendMessageAsync(messageBuilder);
                             await service.SetMensaje(e.Message.ChannelId, e.Message.Id, msgRepost.ChannelId, msgRepost.Id);
                         }
                     }

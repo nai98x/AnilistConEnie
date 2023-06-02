@@ -546,5 +546,28 @@ namespace AnilistESP
 
             return configJson.Tatsu_token;
         }
+
+        public static Stream CrearArchivo(AnimeLinks links)
+        {
+            string path = $@"c:\temp\descargaLinks.txt";
+            using (FileStream fs = File.Create(path))
+            {
+                string linksList = $"Links de descarga para {links.Name}\n\n";
+                var hosts = links.Hosts;
+                foreach (var host in hosts)
+                {
+                    linksList += $"Servidor: {host.Name}\n";
+                    var linkList = host.Links;
+                    foreach (var l in linkList)
+                    {
+                        linksList += $"{l.Number} - {l.Href}\n";
+                    }
+                    linksList += "\n";
+                }
+                byte[] info = new UTF8Encoding(true).GetBytes(linksList);
+                fs.Write(info, 0, info.Length);
+            }
+            return File.OpenRead(path);
+        }
     }
 }

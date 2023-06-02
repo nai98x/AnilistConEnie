@@ -12,6 +12,8 @@ using GraphQL.Client.Serializer.Newtonsoft;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -239,6 +241,92 @@ namespace AnilistConEnie.Commands
             else
             {
                 var msg = await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent(media.MsgError));
+            }
+        }
+
+        //[SlashCommand("descargar", "Descarga los capitulos de un anime")]
+        public async Task DescargarAnime(InteractionContext ctx, [Option("Nombre", "Nombre del anime o manga a buscar")] string buscar)
+        {
+            await ctx.DeferAsync();
+            var context = Funciones.GetContext(ctx);
+            MonoschinosDownloader animeflv = new();
+            var interactivity = ctx.Client.GetInteractivity();
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+            {
+                Title = "Buscando animes...",
+                Color = Funciones.GetColor()
+            }));
+            var resBusqueda = await animeflv.Search(buscar);
+            if (resBusqueda.Count > 0)
+            {
+                string resultados = string.Empty;
+                int cont = 1;
+                foreach (var res in resBusqueda)
+                {
+                    resultados += $"{cont} - **{res.Name}** ({res.Type})\n";
+                    cont++;
+                }
+                var elegirRes = await ctx.Channel.SendMessageAsync(embed: new DiscordEmbedBuilder
+                {
+                    Title = "Elije con un número el anime deseado",
+                    Description = resultados,
+                    Color = Funciones.GetColor()
+                });
+                var msgElegirInter = await interactivity.WaitForMessageAsync(xm => xm.Channel == ctx.Channel && xm.Author == ctx.User, TimeSpan.FromSeconds(Convert.ToDouble(ConfigurationManager.AppSettings["TimeoutGeneral"])));
+                if (!msgElegirInter.TimedOut)
+                {
+                    bool result = int.TryParse(msgElegirInter.Result.Content, out int numElegir);
+                    if (result)
+                    {
+                        if (numElegir > 0 && (numElegir <= resBusqueda.Count))
+                        {
+                            await Funciones.BorrarMensaje(context, elegirRes.Id);
+                            await Funciones.BorrarMensaje(context, msgElegirInter.Result.Id);
+                            var elegido = resBusqueda[numElegir - 1];
+
+                            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+                            {
+                                Title = "Descargar anime",
+                                Description = $"Procesando links para **{elegido.Name}**",
+                                Color = Funciones.GetColor()
+                            }));
+
+                            var links = await animeflv.GetLinks(elegido.Href, elegido.Name);
+                            Dictionary<string, Stream> dic = new()
+                                {
+                                {"descargaLinks.txt",  (FileStream)Funciones.CrearArchivo(links)}
+                            };
+                            await ctx.Channel.SendMessageAsync(new DiscordMessageBuilder
+                            {
+                                Content = $"{ctx.User.Mention}, aquí tienes los links para descargar **{elegido.Name}**",
+                            }.AddFiles(dic));
+                        }
+                        else
+                        {
+                            var msg = await ctx.Channel.SendMessageAsync($"El número indicado debe ser valido");
+                            await Task.Delay(5000);
+                            await Funciones.BorrarMensaje(context, msg.Id);
+                            await Funciones.BorrarMensaje(context, elegirRes.Id);
+                            await Funciones.BorrarMensaje(context, msgElegirInter.Result.Id);
+                        }
+                    }
+                    else
+                    {
+                        var msg = await ctx.Channel.SendMessageAsync($"La eleccion debe ser indicada con un numero");
+                        await Task.Delay(5000);
+                        await Funciones.BorrarMensaje(context, msg.Id);
+                        await Funciones.BorrarMensaje(context, elegirRes.Id);
+                        await Funciones.BorrarMensaje(context, msgElegirInter.Result.Id);
+                    }
+                }
+                else
+                {
+                    var msg = await ctx.Channel.SendMessageAsync($"Tiempo agotado esperando eleccion de anime");
+                    await Task.Delay(5000);
+                    await Funciones.BorrarMensaje(context, msg.Id);
+                    await Funciones.BorrarMensaje(context, elegirRes.Id);
+                    await Funciones.BorrarMensaje(context, msgElegirInter.Result.Id);
+                }
             }
         }
     }

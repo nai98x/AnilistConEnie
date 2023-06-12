@@ -799,7 +799,9 @@ namespace AnilistESP
                                 try
                                 {
                                     var miembroRole = ctx.Guild.Roles[862452184029069332];
+                                    var desvinculadoRole = ctx.Guild.Roles[1117855269943250944];
                                     await member.GrantRoleAsync(miembroRole);
+                                    await member.RevokeRoleAsync(desvinculadoRole);
                                 }
                                 catch (Exception)
                                 {

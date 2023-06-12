@@ -200,15 +200,25 @@
                 try
                 {
                     var guild = sender.Guilds[862408834693070898];
+                    ulong miembro = 862452184029069332;
+                    ulong noVinculado = 1117855269943250944;
+
                     ulong senpai = 863525246404263976;
                     ulong hikikomori = 863525128403025961;
                     ulong sensei = 863524938954571816;
                     ulong ousama = 966815478507012106;
                     ulong teiou = 966815813078224907;
+
                     DiscordRole coloresExtra = guild.Roles[1034191638714650736];
+                    DiscordRole noVinculadoRole = guild.Roles[noVinculado];
 
                     guild.Members.ToList().ForEach(async member =>
                     {
+                        if (!member.Value.Roles.Any(x => x.Id == miembro) && !member.Value.Roles.Any(x => x.Id == noVinculado))
+                        {
+                            await member.Value.GrantRoleAsync(noVinculadoRole);
+                        }
+
                         if (member.Value.Roles.Any(x => x.Id == senpai) || member.Value.Roles.Any(x => x.Id == hikikomori) || member.Value.Roles.Any(x => x.Id == sensei) || 
                             member.Value.Roles.Any(x => x.Id == ousama) || member.Value.Roles.Any(x => x.Id == teiou))
                         {

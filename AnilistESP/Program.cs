@@ -214,7 +214,7 @@
 
                     guild.Members.ToList().ForEach(async member =>
                     {
-                        if (!member.Value.Roles.Any(x => x.Id == miembro) && !member.Value.Roles.Any(x => x.Id == noVinculado))
+                        if (!member.Value.Roles.Any(x => x.Id == miembro) && !member.Value.Roles.Any(x => x.Id == noVinculado) && !member.Value.IsBot)
                         {
                             await member.Value.GrantRoleAsync(noVinculadoRole);
                         }

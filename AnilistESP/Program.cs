@@ -14,6 +14,7 @@
     using DSharpPlus.SlashCommands.Attributes;
     using DSharpPlus.SlashCommands.EventArgs;
     using Google.Api;
+    using Google.Protobuf.WellKnownTypes;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
     using Newtonsoft.Json;
@@ -200,15 +201,25 @@
                 try
                 {
                     var guild = sender.Guilds[862408834693070898];
+                    ulong miembro = 862452184029069332;
+                    ulong noVinculado = 1117855269943250944;
+
                     ulong senpai = 863525246404263976;
                     ulong hikikomori = 863525128403025961;
                     ulong sensei = 863524938954571816;
                     ulong ousama = 966815478507012106;
                     ulong teiou = 966815813078224907;
+
                     DiscordRole coloresExtra = guild.Roles[1034191638714650736];
+                    DiscordRole noVinculadoRole = guild.Roles[noVinculado];
 
                     guild.Members.ToList().ForEach(async member =>
                     {
+                        if (!member.Value.Roles.Any(x => x.Id == miembro) && !member.Value.Roles.Any(x => x.Id == noVinculado) && !member.Value.IsBot)
+                        {
+                            await member.Value.GrantRoleAsync(noVinculadoRole);
+                        }
+
                         if (member.Value.Roles.Any(x => x.Id == senpai) || member.Value.Roles.Any(x => x.Id == hikikomori) || member.Value.Roles.Any(x => x.Id == sensei) || 
                             member.Value.Roles.Any(x => x.Id == ousama) || member.Value.Roles.Any(x => x.Id == teiou))
                         {
@@ -312,40 +323,64 @@
                         var forumChannel = e.Channel.Parent as DiscordForumChannel;
                         var forumPost = e.Channel as DiscordThreadChannel;
                         var autor = e.Message.Author as DiscordMember;
+                        var images = e.Message.Attachments.Where(x => x.MediaType.StartsWith("image/")).Take(5).ToList();
+                        var messageBuilder = new DiscordMessageBuilder().WithContent($"{e.Message.JumpLink}");
                         DiscordChannel repostChannel;
                         var embed = new DiscordEmbedBuilder()
                             .WithDescription(e.Message.Content)
                             .WithAuthor(autor.DisplayName, iconUrl: autor.GuildAvatarUrl ?? autor.AvatarUrl)
                             .WithColor(DiscordColor.Green);
 
+                        if (images.Count > 0)
+                        {
+                            bool first = true;
+                            foreach (var image in images)
+                            {
+                                if (first)
+                                {
+                                    embed.ImageUrl = image.Url;
+                                    messageBuilder.AddEmbed(embed);
+                                    first = false;
+                                }
+                                else
+                                {
+                                    messageBuilder.AddEmbed(new DiscordEmbedBuilder().WithImageUrl(image.Url));
+                                }
+                            }
+                        }
+                        else
+                        {
+                            messageBuilder.AddEmbed(embed);
+                        }
+
                         if (forumPost.AppliedTags.Any(x => x.Name.ToLowerInvariant() == "anime"))
                         {
                             repostChannel = e.Guild.Channels[862432891186839572];
-                            var msgRepost = await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                            var msgRepost = await repostChannel.SendMessageAsync(messageBuilder);
                             await service.SetMensaje(e.Message.ChannelId, e.Message.Id, msgRepost.ChannelId, msgRepost.Id);
                         }
                         if (forumPost.AppliedTags.Any(x => x.Name.ToLowerInvariant() == "manga"))
                         {
                             repostChannel = e.Guild.Channels[882003534797742130];
-                            var msgRepost = await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                            var msgRepost = await repostChannel.SendMessageAsync(messageBuilder);
                             await service.SetMensaje(e.Message.ChannelId, e.Message.Id, msgRepost.ChannelId, msgRepost.Id);
                         }
                         if (forumPost.AppliedTags.Any(x => x.Name.ToLowerInvariant() == "pelis"))
                         {
                             repostChannel = e.Guild.Channels[865319767967793152];
-                            var msgRepost = await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                            var msgRepost = await repostChannel.SendMessageAsync(messageBuilder);
                             await service.SetMensaje(e.Message.ChannelId, e.Message.Id, msgRepost.ChannelId, msgRepost.Id);
                         }
                         if (forumPost.AppliedTags.Any(x => x.Name.ToLowerInvariant() == "series"))
                         {
                             repostChannel = e.Guild.Channels[865319767967793152];
-                            var msgRepost = await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                            var msgRepost = await repostChannel.SendMessageAsync(messageBuilder);
                             await service.SetMensaje(e.Message.ChannelId, e.Message.Id, msgRepost.ChannelId, msgRepost.Id);
                         }
                         if (forumPost.AppliedTags.Any(x => x.Name.ToLowerInvariant() == "música"))
                         {
                             repostChannel = e.Guild.Channels[862419584065732618];
-                            var msgRepost = await repostChannel.SendMessageAsync($"{e.Message.JumpLink}", embed: embed);
+                            var msgRepost = await repostChannel.SendMessageAsync(messageBuilder);
                             await service.SetMensaje(e.Message.ChannelId, e.Message.Id, msgRepost.ChannelId, msgRepost.Id);
                         }
                     }
@@ -505,6 +540,31 @@
         {
             _ = Task.Run(async () =>
             {
+                #region Mensaje de despedida
+                ulong miembroRole = 862452184029069332;
+                ulong noVerificadoRole = 1117855269943250944;
+
+                DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
+                embedBuilder.WithTitle($"{e.Member.DisplayName} se ha ido del servidor");
+                embedBuilder.WithColor(DiscordColor.Red);
+
+                if (e.Member.Roles.Any(x => x.Id == miembroRole) || e.Member.Roles.Any(x => x.Id == noVerificadoRole))
+                {
+                    var emote = DiscordEmoji.FromGuildEmote(sender, 862730038860316672);
+                    embedBuilder.WithDescription($"RIP {e.Member.Mention} {emote}");
+                    embedBuilder.WithImageUrl("https://media.discordapp.net/attachments/816379048477065217/1119301024453234768/press-f-mg.gif");
+                }
+                else
+                {
+                    embedBuilder.WithDescription($"{e.Member.Mention} se chocó con la puerta antes de pasarla y murió");
+                }
+
+                DiscordGuild guild = sender.Guilds[862408834693070898];
+                DiscordChannel channel = guild.Channels[862408834693070901];
+
+                await channel.SendMessageAsync(embedBuilder.Build());
+                #endregion
+
                 UsuariosAnilist helper = new();
                 var usuario = await helper.GetPerfil(e.Member.Id);
                 if (usuario != null)

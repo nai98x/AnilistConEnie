@@ -44,7 +44,7 @@ namespace AnilistESP
             return await FirestoreDb.CreateAsync("anilistconenie-e09cb", builder.Build());
         }
 
-        public static async Task<DiscordChannel> GetCanalUsuariosAnilist(DiscordClient client, DiscordGuild guild)
+        public static DiscordChannel GetCanalUsuariosAnilist(DiscordClient client, DiscordGuild guild)
         {
             if (guild.Id == 862408834693070898) // Añilist
             {
@@ -58,7 +58,7 @@ namespace AnilistESP
 
         public static async Task BorrarMensajeUsuarioAnilist(DiscordClient client, DiscordGuild guild, long oldMessageId)
         {
-            DiscordChannel canal = await GetCanalUsuariosAnilist(client, guild);
+            DiscordChannel canal = GetCanalUsuariosAnilist(client, guild);
             DiscordMessage mensaje = await canal.GetMessageAsync((ulong)oldMessageId);
             if (mensaje != null)
             {
@@ -545,6 +545,29 @@ namespace AnilistESP
             var configJson = JsonConvert.DeserializeObject<ConfigJson>(json);
 
             return configJson.Tatsu_token;
+        }
+
+        public static Stream CrearArchivo(AnimeLinks links)
+        {
+            string path = $@"c:\temp\descargaLinks.txt";
+            using (FileStream fs = File.Create(path))
+            {
+                string linksList = $"Links de descarga para {links.Name}\n\n";
+                var hosts = links.Hosts;
+                foreach (var host in hosts)
+                {
+                    linksList += $"Servidor: {host.Name}\n";
+                    var linkList = host.Links;
+                    foreach (var l in linkList)
+                    {
+                        linksList += $"{l.Number} - {l.Href}\n";
+                    }
+                    linksList += "\n";
+                }
+                byte[] info = new UTF8Encoding(true).GetBytes(linksList);
+                fs.Write(info, 0, info.Length);
+            }
+            return File.OpenRead(path);
         }
     }
 }

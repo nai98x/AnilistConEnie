@@ -294,7 +294,7 @@ namespace AnilistESP
                         DiscordMember choosen = await ctx.Guild.GetMemberAsync((ulong)elegido.UserId);
                         try
                         {
-                            string desc = $"Debes recomendarle un {tipo.ToLower()} a `{choosen.Username}#{choosen.Discriminator}`.\n\n" +
+                            string desc = $"Debes recomendarle un {tipo.ToLower()} a `{choosen.Username}`.\n\n" +
                                 $"Entra al canal del intercambio en el servidor e invoca el comando `/intercambio recomendar`\n\n";
 
                             var servicio = new UsuariosAnilist();
@@ -1006,7 +1006,7 @@ namespace AnilistESP
                                 await channel.SendMessageAsync(new DiscordEmbedBuilder
                                 {
                                     Color = DiscordColor.Red,
-                                    Title = $"Reclamación de {usuario.Username}#{usuario.Discriminator}",
+                                    Title = $"Reclamación de {usuario.Username}",
                                     Description = $"Este usuario ha reclamado que no está satisfecho con el {tipo.ToLower()} que le has recomendado.\n\n" +
                                     $"**Motivo:**{Formatter.BlockCode(motivo)}\n" +
                                     $"Le recomendaste [{reg.AnimeRecomendadoName}]({reg.AnimeRecomendadoURL})\n\n" +
@@ -1047,10 +1047,10 @@ namespace AnilistESP
                                     await channel.SendMessageAsync(new DiscordEmbedBuilder
                                     {
                                         Color = DiscordColor.Yellow,
-                                        Title = $"Reclamación de {usuario.Username}#{usuario.Discriminator}",
+                                        Title = $"Reclamación de {usuario.Username}",
                                         Description = $"Este usuario ha reclamado que no está satisfecho con el {tipo.ToLower()} que le han recomendado.\n" +
                                         $"Motivo:{Formatter.BlockCode(motivo)}\n" +
-                                        $"El usuario que ha recomendado es {usuarioRec.Username}#{usuarioRec.Discriminator} y este usuario recomendó [{reg.AnimeRecomendadoName}]({reg.AnimeRecomendadoURL})",
+                                        $"El usuario que ha recomendado es {usuarioRec.Username} y este usuario recomendó [{reg.AnimeRecomendadoName}]({reg.AnimeRecomendadoURL})",
                                         Footer = new DiscordEmbedBuilder.EmbedFooter
                                         {
                                             IconUrl = ctx.Guild.IconUrl,

@@ -129,13 +129,13 @@ namespace AnilistESP
 
         public static EmbedFooter GetFooter(InteractionContext ctx) => new()
         {
-            Text = $"Invocado por {ctx.Member.DisplayName} ({ctx.Member.Username}#{ctx.Member.Discriminator})",
+            Text = $"Invocado por {ctx.Member.DisplayName} ({ctx.Member.Username})",
             IconUrl = ctx.Member.AvatarUrl
         };
 
         public static EmbedFooter GetFooter(Context ctx) => new()
         {
-            Text = $"Invocado por {ctx.Member.DisplayName} ({ctx.Member.Username}#{ctx.Member.Discriminator})",
+            Text = $"Invocado por {ctx.Member.DisplayName} ({ctx.Member.Username})",
             IconUrl = ctx.Member.AvatarUrl
         };
 
@@ -221,7 +221,7 @@ namespace AnilistESP
             await ChannelErrores.SendMessageAsync(new DiscordEmbedBuilder
             {
                 Title = "Perfil eliminado",
-                Description = $"{user.Username}#{user.Discriminator} ya no está en el servidor y se ha borrado su perfil de Anilist",
+                Description = $"{user.Username} ya no está en el servidor y se ha borrado su perfil de Anilist",
                 Color = GetColor(),
                 Author = new EmbedAuthor
                 {
@@ -359,7 +359,7 @@ namespace AnilistESP
                 Title = titulo,
                 Footer = new EmbedFooter()
                 {
-                    Text = $"{e.Context.User.Username}#{e.Context.User.Discriminator}",
+                    Text = $"{e.Context.User.Username}",
                     IconUrl = e.Context.User.AvatarUrl
                 },
                 Author = new EmbedAuthor()

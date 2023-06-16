@@ -296,7 +296,7 @@
                                         var dmChannel = await member.CreateDmChannelAsync();
 
                                         string mentionedMessage = $"Fuiste mencionado en {e.Channel.Mention} con la palabra: {Formatter.Bold(intersect.First())}";
-                                        string message = $"[{Formatter.Timestamp(e.Message.CreationTimestamp, TimestampFormat.LongTime)}] {e.Author.Username}#{e.Author.Discriminator}: {e.Message.Content}";
+                                        string message = $"[{Formatter.Timestamp(e.Message.CreationTimestamp, TimestampFormat.LongTime)}] {e.Author.Username}: {e.Message.Content}";
 
                                         await dmChannel.SendMessageAsync(mentionedMessage, new DiscordEmbedBuilder
                                         {
@@ -753,7 +753,7 @@
                             Color = DiscordColor.Red,
                             Footer = new()
                             {
-                                Text = "Invocado por " + miembro.DisplayName + " (" + miembro.Username + "#" + miembro.Discriminator + ")",
+                                Text = "Invocado por " + miembro.DisplayName + " (" + miembro.Username + ")",
                                 IconUrl = miembro.AvatarUrl
                             }
                         });

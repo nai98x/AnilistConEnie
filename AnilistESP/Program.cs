@@ -14,6 +14,7 @@
     using DSharpPlus.SlashCommands.Attributes;
     using DSharpPlus.SlashCommands.EventArgs;
     using Google.Api;
+    using Google.Protobuf.WellKnownTypes;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
     using Newtonsoft.Json;
@@ -539,6 +540,31 @@
         {
             _ = Task.Run(async () =>
             {
+                #region Mensaje de despedida
+                ulong miembroRole = 862452184029069332;
+                ulong noVerificadoRole = 1117855269943250944;
+
+                DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
+                embedBuilder.WithTitle($"{e.Member.DisplayName} se ha ido del servidor");
+                embedBuilder.WithColor(DiscordColor.Red);
+
+                if (e.Member.Roles.Any(x => x.Id == miembroRole) || e.Member.Roles.Any(x => x.Id == noVerificadoRole))
+                {
+                    var emote = DiscordEmoji.FromGuildEmote(sender, 862730038860316672);
+                    embedBuilder.WithDescription($"RIP {e.Member.Mention} {emote}");
+                    embedBuilder.WithImageUrl("https://media.discordapp.net/attachments/816379048477065217/1119301024453234768/press-f-mg.gif");
+                }
+                else
+                {
+                    embedBuilder.WithDescription($"{e.Member.Mention} se chocó con la puerta antes de pasarla y murió");
+                }
+
+                DiscordGuild guild = sender.Guilds[862408834693070898];
+                DiscordChannel channel = guild.Channels[862408834693070901];
+
+                await channel.SendMessageAsync(embedBuilder.Build());
+                #endregion
+
                 UsuariosAnilist helper = new();
                 var usuario = await helper.GetPerfil(e.Member.Id);
                 if (usuario != null)

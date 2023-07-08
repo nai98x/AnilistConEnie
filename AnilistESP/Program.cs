@@ -521,9 +521,9 @@
         {
             _ = Task.Run(async () =>
             {
-                if (e.Id == "btn_vincularAniList")
+                if (e.Id.StartsWith("modal-anilistprofileset"))
                 {
-                    await FuncionesAnilist.VincularAniList(e.Interaction, sender);
+                    await FuncionesAnilist.VincularAniList(e.Interaction, sender, e);
                 }
                 else
                 {

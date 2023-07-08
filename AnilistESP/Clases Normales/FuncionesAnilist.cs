@@ -1,5 +1,6 @@
 ﻿using DSharpPlus;
 using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using GraphQL;
@@ -290,6 +291,7 @@ namespace AnilistESP
                         Page {
                             mediaList(mediaId: $codigoMedia, userId_in: $ids) {
                                 user {
+                                    id,
                                     name,
                                     siteUrl,
                                     mediaListOptions {
@@ -328,6 +330,7 @@ namespace AnilistESP
 
                         foreach (var entry in datosMediaList)
                         {
+                            string id = entry.user.id;
                             string name = entry.user.name;
                             string score = entry.score;
                             string url = entry.user.siteUrl;
@@ -336,6 +339,11 @@ namespace AnilistESP
                             string scoreFormat = entry.user.mediaListOptions.scoreFormat;
                             string scoreF = FormatearScoreUJser(scoreFormat, score);
                             decimal score100 = FormatearScoreUJser100(scoreFormat, score);
+
+                            //var userFirebase = usuariosServidor.Find(user => new string(user.AnilistURL.Where(char.IsDigit).ToArray()) == id);
+                            //var discordMember = ctx.Guild.Members[(ulong)userFirebase.UserId];
+                            //var mbm = await ctx.Client.GetUserAsync(discordMember.Id);
+                            //var dsc = await ctx.Guild.GetMemberAsync(discordMember.Id);
 
                             string pro = string.IsNullOrEmpty(eps) ? progress : progress + $"/{eps}";
 
@@ -671,186 +679,159 @@ namespace AnilistESP
             return null;
         }
 
-        public static async Task VincularAniList(DiscordInteraction ctx, DiscordClient client)
+        public static async Task VincularAniList(DiscordInteraction ctx, DiscordClient client, ComponentInteractionCreateEventArgs e)
         {
             UsuariosAnilist usuariosAnilist = new();
-
-            await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder()
-                .AsEphemeral(true)
-                .AddEmbed(new DiscordEmbedBuilder
-                {
-                    Title = "Configura tu perfil de AniList",
-                    Description =
-                        $"**Instrucciones**:\n\n" +
-                        $"1- Haz click en el botón llamado **Autorizar**\n" +
-                        $"2- Una vez se abra la página web, haz click en el botón verde **Authorize** y luego copia el texto que te aparecerá para copiar\n" +
-                        $"3- Cierra la página web y haz click en el botón llamado **Pegar código aquí**\n" +
-                        $"4- Pega el código en el formulario y envíalo",
-                    Color = Funciones.GetColor()
-                })
-                .AddComponents(
-                    new DiscordLinkButtonComponent(@"https://anilist.co/api/v2/oauth/authorize?client_id=8655&response_type=token", "Autorizar"),
-                    new DiscordButtonComponent(ButtonStyle.Primary, $"modal-anilistprofileset-{ctx.User.Id}", "Pegar código aquí")
-                )
-            );
-
-            DiscordMessage message = await ctx.GetOriginalResponseAsync();
             var interactivity = client.GetInteractivity();
-            var interactivityBtnResult = await interactivity.WaitForButtonAsync(message, TimeSpan.FromMinutes(5));
+            var btnInteraction = e.Interaction;
+            string modalId = $"modal-{btnInteraction.Id}";
 
-            if (!interactivityBtnResult.TimedOut)
-            {
-                var btnInteraction = interactivityBtnResult.Result.Interaction;
-                string modalId = $"modal-{btnInteraction.Id}";
-
-                var modal = new DiscordInteractionResponseBuilder()
+            var modal = new DiscordInteractionResponseBuilder()
                     .WithCustomId(modalId)
                     .WithTitle("Vincular AniList")
                     .AddComponents(new TextInputComponent(label: "Código", placeholder: "Pegar código aquí", customId: "AniListToken"));
 
-                await btnInteraction.CreateResponseAsync(InteractionResponseType.Modal, modal);
+            await btnInteraction.CreateResponseAsync(InteractionResponseType.Modal, modal);
 
-                var interactivityModalResult = await interactivity.WaitForModalAsync(modalId, TimeSpan.FromMinutes(5));
+            var interactivityModalResult = await interactivity.WaitForModalAsync(modalId, TimeSpan.FromMinutes(5));
 
-                if (!interactivityModalResult.TimedOut)
+            if (!interactivityModalResult.TimedOut)
+            {
+                var modalInteraction = interactivityModalResult.Result.Interaction;
+                string ALToken = interactivityModalResult.Result.Values.First().Value;
+
+                await modalInteraction.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, new DiscordInteractionResponseBuilder().AsEphemeral(true));
+
+                GraphQLHttpClient graphQlCli = new("https://graphql.anilist.co", new NewtonsoftJsonSerializer());
+                if (graphQlCli.HttpClient.DefaultRequestHeaders.Contains("Authorization"))
                 {
-                    var modalInteraction = interactivityModalResult.Result.Interaction;
-                    string ALToken = interactivityModalResult.Result.Values.First().Value;
+                    graphQlCli.HttpClient.DefaultRequestHeaders.Remove("Authorization");
+                }
 
-                    await modalInteraction.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, new DiscordInteractionResponseBuilder().AsEphemeral(true));
+                graphQlCli.HttpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {ALToken}");
 
-                    GraphQLHttpClient graphQlCli = new("https://graphql.anilist.co", new NewtonsoftJsonSerializer());
-                    if (graphQlCli.HttpClient.DefaultRequestHeaders.Contains("Authorization"))
+                var request = new GraphQLRequest
+                {
+                    Query =
+                        "query {" +
+                        "   Viewer {" +
+                        "       id," +
+                        "       name," +
+                        "       siteUrl," +
+                        "       avatar {" +
+                        "           medium" +
+                        "       }," +
+                        "       bannerImage" +
+                        "   }" +
+                        "}"
+                };
+                try
+                {
+                    var data = await graphQlCli.SendQueryAsync<dynamic>(request);
+                    if (data != null)
                     {
-                        graphQlCli.HttpClient.DefaultRequestHeaders.Remove("Authorization");
-                    }
-
-                    graphQlCli.HttpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {ALToken}");
-
-                    var request = new GraphQLRequest
-                    {
-                        Query =
-                            "query {" +
-                            "   Viewer {" +
-                            "       id," +
-                            "       name," +
-                            "       siteUrl," +
-                            "       avatar {" +
-                            "           medium" +
-                            "       }," +
-                            "       bannerImage" +
-                            "   }" +
-                            "}"
-                    };
-                    try
-                    {
-                        var data = await graphQlCli.SendQueryAsync<dynamic>(request);
-                        if (data != null)
+                        if (data.Data != null)
                         {
-                            if (data.Data != null)
+                            int id = data.Data.Viewer.id;
+                            string name = data.Data.Viewer.name;
+                            string siteUrl = data.Data.Viewer.siteUrl;
+                            string avatar = data.Data.Viewer.avatar.medium;
+                            string banner = data.Data.Viewer.bannerImage;
+
+                            var newProfileEmbed = new DiscordEmbedBuilder
                             {
-                                int id = data.Data.Viewer.id;
-                                string name = data.Data.Viewer.name;
-                                string siteUrl = data.Data.Viewer.siteUrl;
-                                string avatar = data.Data.Viewer.avatar.medium;
-                                string banner = data.Data.Viewer.bannerImage;
-
-                                var newProfileEmbed = new DiscordEmbedBuilder
+                                Color = DiscordColor.Green,
+                                Title = "Nuevo perfil guardado exitosamente",
+                                Description = string.Format("{0}, has guardado tu perfil de Anilist correctamente", ctx.User.Mention),
+                                Thumbnail = new()
                                 {
-                                    Color = DiscordColor.Green,
-                                    Title = "Nuevo perfil guardado exitosamente",
-                                    Description = string.Format("{0}, has guardado tu perfil de Anilist correctamente", ctx.User.Mention),
-                                    Thumbnail = new()
-                                    {
-                                        Url = avatar
-                                    },
-                                    Author = new()
-                                    {
-                                        Url = siteUrl,
-                                        Name = name,
-                                        IconUrl = ctx.User.AvatarUrl
-                                    }
-                                };
-
-                                if (!string.IsNullOrEmpty(banner))
+                                    Url = avatar
+                                },
+                                Author = new()
                                 {
-                                    newProfileEmbed.WithImageUrl(banner);
+                                    Url = siteUrl,
+                                    Name = name,
+                                    IconUrl = ctx.User.AvatarUrl
                                 }
+                            };
 
-                                var member = ctx.Guild.Members[ctx.User.Id];
-
-                                await usuariosAnilist.SetAnilist(client, ctx.Guild, siteUrl, member);
-                                await usuariosAnilist.SetAnilistYumiko(id, member.Id);
-
-                                var servicios = ServiciosSingleton.GetServiciosSingleton();
-                                var users = servicios.Usuarios;
-                                if (!users.Where(u => (ulong)u.UserId == ctx.User.Id).Any())
-                                {
-                                    var newList = await usuariosAnilist.GetListaUsuarios();
-                                    var newUser = newList.Find(u => (ulong)u.UserId == ctx.User.Id);
-                                    users.Add(newUser);
-                                    servicios.SetUsuarios(users);
-                                }
-
-                                await ctx.Guild.Channels[862408834693070901].SendMessageAsync(embed: newProfileEmbed, content: ctx.User.Mention);
-                                await modalInteraction.DeleteOriginalResponseAsync();
-                                await ctx.DeleteOriginalResponseAsync();
-
-                                try
-                                {
-                                    var miembroRole = ctx.Guild.Roles[862452184029069332];
-                                    var desvinculadoRole = ctx.Guild.Roles[1117855269943250944];
-                                    await member.GrantRoleAsync(miembroRole);
-                                    await member.RevokeRoleAsync(desvinculadoRole);
-                                }
-                                catch (Exception)
-                                {
-                                    await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
-                                    {
-                                        Title = "Error",
-                                        Description = "Error desconocido agregando el rol miembro. Notificar al staff por favor.",
-                                        Color = DiscordColor.Red
-                                    }));
-                                }
-
-                                return;
-                            }
-                        }
-
-                        await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
-                        {
-                            Title = "Error",
-                            Description = "Error desconocido",
-                            Color = DiscordColor.Red
-                        }));
-                    }
-                    catch (GraphQLHttpRequestException ex)
-                    {
-                        if (ex.Content != null)
-                        {
-                            dynamic data = JObject.Parse(ex.Content);
-                            if (data.errors != null)
+                            if (!string.IsNullOrEmpty(banner))
                             {
-                                foreach (var error in data.errors)
-                                {
-                                    await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
-                                    {
-                                        Title = "Error",
-                                        Description = error.message,
-                                        Color = DiscordColor.Red
-                                    }));
-                                }
-                                return;
+                                newProfileEmbed.WithImageUrl(banner);
                             }
-                        }
 
-                        await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
-                        {
-                            Title = "Error",
-                            Description = "Error desconocido",
-                            Color = DiscordColor.Red
-                        }));
+                            var member = ctx.Guild.Members[ctx.User.Id];
+
+                            await usuariosAnilist.SetAnilist(client, ctx.Guild, siteUrl, member);
+                            await usuariosAnilist.SetAnilistYumiko(id, member.Id);
+
+                            var servicios = ServiciosSingleton.GetServiciosSingleton();
+                            var users = servicios.Usuarios;
+                            if (!users.Where(u => (ulong)u.UserId == ctx.User.Id).Any())
+                            {
+                                var newList = await usuariosAnilist.GetListaUsuarios();
+                                var newUser = newList.Find(u => (ulong)u.UserId == ctx.User.Id);
+                                users.Add(newUser);
+                                servicios.SetUsuarios(users);
+                            }
+
+                            await ctx.Guild.Channels[862408834693070901].SendMessageAsync(embed: newProfileEmbed, content: ctx.User.Mention);
+                            await modalInteraction.DeleteOriginalResponseAsync();
+
+                            try
+                            {
+                                var miembroRole = ctx.Guild.Roles[862452184029069332];
+                                var desvinculadoRole = ctx.Guild.Roles[1117855269943250944];
+                                await member.GrantRoleAsync(miembroRole);
+                                await member.RevokeRoleAsync(desvinculadoRole);
+                            }
+                            catch (Exception)
+                            {
+                                await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
+                                {
+                                    Title = "Error",
+                                    Description = "Error desconocido agregando el rol miembro. Notificar al staff por favor.",
+                                    Color = DiscordColor.Red
+                                }));
+                            }
+
+                            return;
+                        }
                     }
+
+                    await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
+                    {
+                        Title = "Error",
+                        Description = "Error desconocido",
+                        Color = DiscordColor.Red
+                    }));
+                }
+                catch (GraphQLHttpRequestException ex)
+                {
+                    if (ex.Content != null)
+                    {
+                        dynamic data = JObject.Parse(ex.Content);
+                        if (data.errors != null)
+                        {
+                            foreach (var error in data.errors)
+                            {
+                                await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
+                                {
+                                    Title = "Error",
+                                    Description = error.message,
+                                    Color = DiscordColor.Red
+                                }));
+                            }
+                            return;
+                        }
+                    }
+
+                    await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
+                    {
+                        Title = "Error",
+                        Description = "Error desconocido",
+                        Color = DiscordColor.Red
+                    }));
                 }
             }
         }

@@ -24,12 +24,6 @@ namespace AnilistConEnie.Commands
     {
         private readonly UsuariosAnilist usuariosAnilist = new();
 
-        [SlashCommand("vincularanilist", "Registra tu AniList en el servidor")]
-        public async Task SetAnilist(InteractionContext ctx)
-        {
-            await FuncionesAnilist.VincularAniList(ctx.Interaction, ctx.Client);
-        }
-
         [SlashCommand("desvincularanilist", "Desvincula tu Anilist registrado en el servidor")]
         public async Task GetAnilist(InteractionContext ctx)
         {

@@ -71,19 +71,25 @@
 
             DiscordGuild guild = ctx.Client.Guilds[862408834693070898];
             DiscordChannel channel = guild.Channels[1096194551540101281];
-            DiscordChannel general = guild.Channels[862408834693070901];
-            DiscordEmoji worrylove = DiscordEmoji.FromGuildEmote(ctx.Client, 862730040504746014);
 
             var msgBuilder = new DiscordMessageBuilder();
 
             msgBuilder.AddEmbed(new DiscordEmbedBuilder()
                 .WithThumbnail("https://media.discordapp.net/attachments/879612956848062514/879628082921762826/imagen_2021-07-15_150953_1.png")
                 .WithTitle("Vincula tu AniList")
-                .WithDescription($"Haz click en boton para vincular tu cuenta de AniList y desbloquear el contenido del servidor.\n\nSi necesitas ayuda, no dudes en preguntar por {general.Mention} {worrylove}")
+                .WithDescription(
+                    $"# **Instrucciones**:\n\n" +
+                    $"- Haz click en el botón llamado **Autorizar**\n" +
+                    $"- Una vez se abra la página web, haz click en el botón verde **Authorize** y luego copia el texto que te aparecerá para copiar\n" +
+                    $"- Cierra la página web y haz click en el botón llamado **Pegar código aquí**\n" +
+                    $"- Pega el código en el formulario y envíalo")
                 .WithColor(Funciones.GetColor())
             );
 
-            msgBuilder.AddComponents(new DiscordButtonComponent(ButtonStyle.Primary, "btn_vincularAniList", "Vincular AniList"));
+            msgBuilder.AddComponents(
+                new DiscordLinkButtonComponent(@"https://anilist.co/api/v2/oauth/authorize?client_id=8655&response_type=token", "Autorizar"),
+                new DiscordButtonComponent(ButtonStyle.Primary, $"modal-anilistprofileset-{ctx.User.Id}", "Pegar código aquí")
+            );
 
             await channel.SendMessageAsync(msgBuilder);
 

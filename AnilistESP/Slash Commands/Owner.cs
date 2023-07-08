@@ -83,7 +83,16 @@
                     $"- Una vez se abra la página web, haz click en el botón verde **Authorize** y luego copia el texto que te aparecerá para copiar\n" +
                     $"- Cierra la página web y haz click en el botón llamado **Pegar código aquí**\n" +
                     $"- Pega el código en el formulario y envíalo")
+                .WithFooter("Apenas tengas tu cuenta de AniList vinculada, se te desbloquearán todos los canales del servidor.")
                 .WithColor(Funciones.GetColor())
+            );
+
+            msgBuilder.AddEmbed(new DiscordEmbedBuilder()
+                .WithTitle("Advertencia")
+                .WithDescription("No compartas este código con **NADIE**. Si alguien malintencionado lo obtiene, tendrá acceso total a tu cuenta de AniList.\n\n" +
+                "Si necesitas mayor seguridad, una vez vinculada la cuenta, dentro de la página de Anilist puedes revocar el código yendo a **Settings** y luego en el submenú **Apps**\n" +
+                "Link: https://anilist.co/settings/apps")
+                .WithColor(DiscordColor.Red)
             );
 
             msgBuilder.AddComponents(

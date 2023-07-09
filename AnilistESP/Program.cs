@@ -373,7 +373,7 @@
                         }
                         if (forumPost.AppliedTags.Any(x => x.Name.ToLowerInvariant() == "series"))
                         {
-                            repostChannel = e.Guild.Channels[865319767967793152];
+                            repostChannel = e.Guild.Channels[1125578754790543380];
                             var msgRepost = await repostChannel.SendMessageAsync(messageBuilder);
                             await service.SetMensaje(e.Message.ChannelId, e.Message.Id, msgRepost.ChannelId, msgRepost.Id);
                         }

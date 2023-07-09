@@ -340,10 +340,8 @@ namespace AnilistESP
                             string scoreF = FormatearScoreUJser(scoreFormat, score);
                             decimal score100 = FormatearScoreUJser100(scoreFormat, score);
 
-                            //var userFirebase = usuariosServidor.Find(user => new string(user.AnilistURL.Where(char.IsDigit).ToArray()) == id);
-                            //var discordMember = ctx.Guild.Members[(ulong)userFirebase.UserId];
-                            //var mbm = await ctx.Client.GetUserAsync(discordMember.Id);
-                            //var dsc = await ctx.Guild.GetMemberAsync(discordMember.Id);
+                            var userFirebase = usuariosServidor.Find(user => new string(user.AnilistURL.Where(char.IsDigit).ToArray()) == id);
+                            var discordMember = ctx.Guild.Members[(ulong)userFirebase.UserId];
 
                             string pro = string.IsNullOrEmpty(eps) ? progress : progress + $"/{eps}";
 
@@ -351,11 +349,11 @@ namespace AnilistESP
                             {
                                 if (status == "COMPLETED")
                                 {
-                                    scoresList.Add($"{Formatter.MaskedUrl(name, new Uri(url))} - {scoreF}\n");
+                                    scoresList.Add($"{Formatter.MaskedUrl(discordMember.DisplayName, new Uri(url))} - {scoreF}\n");
                                 }
                                 else
                                 {
-                                    scoresList.Add($"{Formatter.MaskedUrl(name, new Uri(url))} - {scoreF} {Formatter.InlineCode($"{Funciones.UppercaseFirst(status)} - Progress: {pro}")}\n");
+                                    scoresList.Add($"{Formatter.MaskedUrl(discordMember.DisplayName, new Uri(url))} - {scoreF} {Formatter.InlineCode($"{Funciones.UppercaseFirst(status)} - Progress: {pro}")}\n");
                                 }
 
                                 registros++;

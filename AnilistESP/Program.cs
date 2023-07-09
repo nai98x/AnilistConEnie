@@ -67,9 +67,9 @@
             };
             Client = new DiscordClient(Config);
 
-            Client.Ready += OnClientReady;
+            Client.SessionCreated += Client_SessionCreated;
             Client.ClientErrored += Client_ClientError;
-            Client.Resumed += Client_Resumed;
+            Client.SessionResumed += Client_SessionResumed;
             Client.GuildMemberRemoved += Client_GuildMemberRemoved;
             Client.ComponentInteractionCreated += Client_ComponentInteractionCreated;
             Client.MessageCreated += Client_MessageCreated;
@@ -580,13 +580,13 @@
             return Task.CompletedTask;
         }
 
-        private static Task OnClientReady(DiscordClient c, ReadyEventArgs e)
+        private static Task Client_SessionCreated(DiscordClient c, SessionReadyEventArgs e)
         {
             c.Logger.LogInformation("El cliente esta listo para procesar eventos.", DateTime.Now);
             return Task.CompletedTask;
         }
 
-        private static Task Client_Resumed(DiscordClient c, ReadyEventArgs e)
+        private static Task Client_SessionResumed(DiscordClient c, SessionReadyEventArgs e)
         {
             c.Logger.LogInformation("El cliente vuelve a estar listo para procesar eventos.", DateTime.Now);
             return Task.CompletedTask;

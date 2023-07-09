@@ -1,4 +1,5 @@
 ﻿using Google.Cloud.Firestore;
+using Google.Type;
 
 namespace AnilistESP
 {
@@ -13,5 +14,8 @@ namespace AnilistESP
 
         [FirestoreProperty]
         public bool Disponible { get; set; }
+
+        [FirestoreProperty]
+        public System.DateTime? Vencimiento { get; set; }
     }
 }

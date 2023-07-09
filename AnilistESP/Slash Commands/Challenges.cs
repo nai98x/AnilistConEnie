@@ -8,6 +8,7 @@ using DSharpPlus.SlashCommands.Attributes;
 using Newtonsoft.Json;
 using RestSharp;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -26,11 +27,36 @@ namespace AnilistConEnie.Commands
         public async Task Set(InteractionContext ctx,
             [Option("Nombre", "Nombre del challenge")] string nombre,
             [Option("Link", "Link del challenge")] string link,
-            [Option("Disponible", "Si el challenge se puede realizar")] bool disponible)
+            [Option("Disponible", "Si el challenge se puede realizar")] bool disponible,
+            [Option("Vencimiento", "Vencimiento del challenge")] string? vencimiento
+            )
         {
             await ctx.DeferAsync();
             string dispStr = disponible ? "Disponible" : "No disponible";
-            await service.Set(nombre, link, disponible);
+            
+            if (!string.IsNullOrEmpty(vencimiento))
+            {
+                bool validDate = DateTime.TryParseExact(vencimiento, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out DateTime fchVnc);
+
+                if (!validDate)
+                {
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
+                    {
+                        Title = "Error",
+                        Description = $"Fecha `{vencimiento}` invalida (debe ser dd/MM/yyyy",
+                        Color = DiscordColor.Red
+                    }));
+                    return;
+                }
+
+                await service.Set(nombre, link, disponible, fchVnc);
+            }
+                
+            else
+            {
+                await service.Set(nombre, link, disponible, null);
+            }
+
             await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
             {
                 Title = "Nuevo challenge creado",
@@ -51,22 +77,50 @@ namespace AnilistConEnie.Commands
             }
             else
             {
-                foreach (var ch in challenges.GroupBy(x => x.Disponible))
+                var challengesToPrint = new Dictionary<string, List<ChallengeFirebase>>();
+
+                var challengesByDisponible = challenges.GroupBy(x => x.Disponible);
+                challengesByDisponible = challengesByDisponible.OrderByDescending(x => x.Key);
+
+                foreach (var ch in challengesByDisponible)
                 {
                     if (ch.Key == true)
                     {
-                        desc += Formatter.Bold("Disponibles:\n");
+                        var challengesByVencimiento = ch.GroupBy(x => x.Vencimiento != null);
+                        foreach (var chh in challengesByVencimiento)
+                        {
+                            if (chh.Key == true)
+                            {
+                                challengesToPrint.Add("Por tiempo limitado", chh.ToList());
+                            }
+                            else
+                            {
+                                challengesToPrint.Add("Disponibles", chh.ToList());
+                            }
+                        }
                     }
                     else
                     {
-                        desc += Formatter.Bold("No disponibles:\n");
+                        challengesToPrint.Add("No disponibles", ch.ToList());
                     }
+                }
 
+                foreach (var challenge in challengesToPrint)
+                {
+                    desc += Formatter.Bold(challenge.Key) + ":\n";
+
+                    var ch = challenge.Value;
                     if (ch.Any())
                     {
                         foreach (var x in ch)
                         {
-                            desc += $"[{x.Nombre}]({x.Link})\n";
+                            desc += $"[{x.Nombre}]({x.Link})";
+                            if (x.Vencimiento.HasValue && x.Disponible)
+                            {
+                                var dt = x.Vencimiento.Value;
+                                desc += $" (hasta **{dt.Day}/{dt.Month}/{dt.Year}**)";
+                            }
+                            desc += "\n";
                         }
                     }
                     else

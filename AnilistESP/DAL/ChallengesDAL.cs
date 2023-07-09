@@ -1,4 +1,5 @@
 ﻿using Google.Cloud.Firestore;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -65,7 +66,7 @@ namespace AnilistESP
             return ret;
         }
 
-        public async Task Set(string nombre, string link, bool disponible)
+        public async Task Set(string nombre, string link, bool disponible, DateTime? vencimiento)
         {
             FirestoreDb db = await Funciones.GetFirestoreClientAnilistConEnie();
             DocumentReference doc = db.Collection("Challenges").Document($"{nombre}");
@@ -76,7 +77,8 @@ namespace AnilistESP
                 {
                     { "Nombre", nombre },
                     { "Link", link },
-                    { "Disponible", disponible }
+                    { "Disponible", disponible },
+                    { "Vencimiento", vencimiento }
                 };
                 await doc.SetAsync(data);
             }
@@ -88,7 +90,8 @@ namespace AnilistESP
                 {
                     { "Nombre", registro.Nombre },
                     { "Link", registro.Link },
-                    { "Disponible", disponible }
+                    { "Disponible", disponible },
+                    { "Vencimiento", vencimiento }
                 };
                 await doc.UpdateAsync(data);
             }

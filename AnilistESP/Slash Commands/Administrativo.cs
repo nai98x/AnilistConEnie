@@ -264,7 +264,7 @@ namespace AnilistConEnie.Commands
 
                 var noVinculadosNoBot = noVinculados.Where(x => !x.Roles.Contains(botRole)).ToList();
 
-                var desc = "**Usuarios sin AniList vinculado:**\n" + string.Join("\n", noVinculadosNoBot.Select(member => $"{member.Username} (<@{member.Id}>)")) + $"\n\nTotal: {noVinculadosNoBot.Count}";
+                var desc = "**Usuarios sin AniList vinculado:**\n" + string.Join("\n", noVinculadosNoBot.Select(member => $"{member.DisplayName} (<@{member.Id}>)")) + $"\n\nTotal: {noVinculadosNoBot.Count}";
                 var embed = new DiscordEmbedBuilder
                 {
                     Footer = Funciones.GetFooter(ctx),

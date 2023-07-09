@@ -221,7 +221,7 @@ namespace AnilistESP
             await ChannelErrores.SendMessageAsync(new DiscordEmbedBuilder
             {
                 Title = "Perfil eliminado",
-                Description = $"{user.Username} ya no está en el servidor y se ha borrado su perfil de Anilist",
+                Description = $"{user.DisplayName} ya no está en el servidor y se ha borrado su perfil de Anilist",
                 Color = GetColor(),
                 Author = new EmbedAuthor
                 {
@@ -359,7 +359,7 @@ namespace AnilistESP
                 Title = titulo,
                 Footer = new EmbedFooter()
                 {
-                    Text = $"{e.Context.User.Username}",
+                    Text = $"{e.Context.User.DisplayName}",
                     IconUrl = e.Context.User.AvatarUrl
                 },
                 Author = new EmbedAuthor()

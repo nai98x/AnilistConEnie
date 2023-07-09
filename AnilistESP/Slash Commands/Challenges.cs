@@ -28,7 +28,7 @@ namespace AnilistConEnie.Commands
             [Option("Nombre", "Nombre del challenge")] string nombre,
             [Option("Link", "Link del challenge")] string link,
             [Option("Disponible", "Si el challenge se puede realizar")] bool disponible,
-            [Option("Vencimiento", "Vencimiento del challenge")] string? vencimiento
+            [Option("Vencimiento", "Vencimiento del challenge")] string? vencimiento = null
             )
         {
             await ctx.DeferAsync();

@@ -87,14 +87,6 @@
                 .WithColor(Funciones.GetColor())
             );
 
-            msgBuilder.AddEmbed(new DiscordEmbedBuilder()
-                .WithTitle("Advertencia")
-                .WithDescription("No compartas este código con **NADIE**. Si alguien malintencionado lo obtiene, tendrá acceso total a tu cuenta de AniList.\n\n" +
-                "Si necesitas mayor seguridad, una vez vinculada la cuenta, dentro de la página de Anilist puedes revocar el código yendo a **Settings** y luego en el submenú **Apps**\n" +
-                "Link: https://anilist.co/settings/apps")
-                .WithColor(DiscordColor.Red)
-            );
-
             msgBuilder.AddComponents(
                 new DiscordLinkButtonComponent(@"https://anilist.co/api/v2/oauth/authorize?client_id=8655&response_type=token", "Autorizar"),
                 new DiscordButtonComponent(ButtonStyle.Primary, $"modal-anilistprofileset-{ctx.User.Id}", "Pegar código aquí")

@@ -546,25 +546,35 @@
                     ulong miembroRole = 862452184029069332;
                     ulong noVerificadoRole = 1117855269943250944;
 
-                    DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
-                    embedBuilder.WithTitle($"{e.Member.DisplayName} se ha ido del servidor");
-                    embedBuilder.WithColor(DiscordColor.Red);
-
                     if (e.Member.Roles.Any(x => x.Id == miembroRole) || e.Member.Roles.Any(x => x.Id == noVerificadoRole))
                     {
-                        var emote = DiscordEmoji.FromGuildEmote(sender, 862730038860316672);
-                        embedBuilder.WithDescription($"RIP {e.Member.Mention} {emote}");
-                        embedBuilder.WithImageUrl("https://media.discordapp.net/attachments/816379048477065217/1119301024453234768/press-f-mg.gif");
-                    }
-                    else
-                    {
-                        embedBuilder.WithDescription($"{e.Member.Mention} se chocó con la puerta antes de pasarla y murió");
-                    }
+                        DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
+                        embedBuilder.WithTitle($"{e.Member.DisplayName} se ha ido del servidor");
+                        embedBuilder.WithColor(DiscordColor.Red);
 
-                    DiscordGuild guild = sender.Guilds[862408834693070898];
-                    DiscordChannel channel = guild.Channels[862408834693070901];
+                        if (e.Member.Roles.Any(x => x.Id == miembroRole))
+                        {
+                            var images = new List<string>()
+                            {
+                                "https://media.discordapp.net/attachments/867856756901937202/1128343142685495357/cowboy-bebop-bang.gif",
+                                "https://images-ext-1.discordapp.net/external/JNe44k_TxRaSDaTrk4yKXF4bNScwz1H2QyVcfq4Q7lI/https/media.tenor.com/8lKrNgbJ7PoAAAPo/adi%25C3%25B3s-vaquero-adios.mp4",
+                                "https://images-ext-1.discordapp.net/external/PUyQvhBLtt9qZ2FVc2-f-1PxFZXtmPayOk2t5KelNCY/https/media.tenor.com/p5DlOqiAhMsAAAPo/adios-vaquero.mp4"
+                            };
 
-                    await channel.SendMessageAsync(embedBuilder.Build());
+                            var worrysad = DiscordEmoji.FromGuildEmote(sender, 862730038860316672);
+                            embedBuilder.WithDescription($"RIP {e.Member.Mention} {worrysad}");
+                            embedBuilder.WithImageUrl(images[Funciones.GetNumeroRandom(0, images.Count)]);
+                        }
+                        else
+                        {
+                            embedBuilder.WithImageUrl("https://media.discordapp.net/attachments/816379048477065217/1129080799585648670/Sin_titulo-1s.png");
+                        }
+
+                        DiscordGuild guild = sender.Guilds[862408834693070898];
+                        DiscordChannel channel = guild.Channels[862408834693070901];
+
+                        await channel.SendMessageAsync(embedBuilder.Build());
+                    }
                 }
                 #endregion
 

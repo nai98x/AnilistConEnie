@@ -9,6 +9,7 @@
     using GraphQL.Client.Http;
     using GraphQL.Client.Serializer.Newtonsoft;
     using System;
+    using System.ComponentModel;
     using System.Linq;
     using System.Threading.Tasks;
 
@@ -95,6 +96,26 @@
             await channel.SendMessageAsync(msgBuilder);
 
             await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Mensaje de bienvenida creado con exito"));
+        }
+
+        [SlashCommand("kickearnoverificados", "Expulsa del servidor a los miembros no verificados")]
+        public async Task KickNoVerificados(InteractionContext ctx)
+        {
+            await ctx.DeferAsync(true);
+
+            DiscordGuild guild = ctx.Client.Guilds[862408834693070898];
+            DiscordRole noVerificadoRole = guild.Roles[1117855269943250944];
+            int kickeados = 0;
+
+            var miembrosNoVerificados = guild.Members.Where(x => x.Value.Roles.Contains(noVerificadoRole)).ToList();
+
+            foreach (var memberToKick in miembrosNoVerificados)
+            {
+                await memberToKick.Value.RemoveAsync("AUTO KICK POR NO VINCULAR ANILIST");
+                kickeados++;
+            }
+
+            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Miembros expulsados por no verificarse: {kickeados}"));
         }
     }
 }

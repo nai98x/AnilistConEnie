@@ -110,7 +110,7 @@ namespace AnilistConEnie.Commands
                 DiscordRole ousama = ctx.Guild.Roles[966815478507012106];
                 DiscordRole teiou = ctx.Guild.Roles[966815813078224907];
 
-                miembros = ctx.Guild.Members.Where(x => x.Value.IsBot == false &&
+                miembros = ctx.Guild.Members.Where(x => x.Value.IsBot == false && x.Value.Id != ctx.Member.Id &&
                 (x.Value.Roles.Contains(tama) || x.Value.Roles.Contains(casual) || x.Value.Roles.Contains(kouhai) || x.Value.Roles.Contains(senpai) || x.Value.Roles.Contains(hikikomori) || x.Value.Roles.Contains(sensei) || x.Value.Roles.Contains(ousama) || x.Value.Roles.Contains(teiou)
                 ));
             }

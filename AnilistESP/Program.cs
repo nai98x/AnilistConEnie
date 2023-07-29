@@ -541,7 +541,7 @@
             _ = Task.Run(async () =>
             {
                 #region Mensaje de despedida
-                if (!e.Member.IsBot) 
+                if (!e.Member.IsBot)
                 {
                     ulong miembroRole = 862452184029069332;
                     ulong noVerificadoRole = 1117855269943250944;

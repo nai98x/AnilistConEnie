@@ -148,9 +148,6 @@ namespace AnilistConEnie.Commands
             DiscordMember match = ctx.Member;
             List<(DiscordMember, int)> amorios = new();
 
-            DiscordRole tama = ctx.Guild.Roles[1052997018622099548];
-            DiscordRole casual = ctx.Guild.Roles[863525487602958336];
-            DiscordRole kouhai = ctx.Guild.Roles[865300278491217970];
             DiscordRole senpai = ctx.Guild.Roles[863525246404263976];
             DiscordRole hikikomori = ctx.Guild.Roles[863525128403025961];
             DiscordRole sensei = ctx.Guild.Roles[863524938954571816];
@@ -160,11 +157,11 @@ namespace AnilistConEnie.Commands
             var miembros = ctx.Guild.Members;
             foreach(var member in miembros)
             {
-                bool tieneRolNecesario = member.Value.Roles.Contains(tama) || member.Value.Roles.Contains(casual) || member.Value.Roles.Contains(kouhai) || member.Value.Roles.Contains(senpai) || member.Value.Roles.Contains(hikikomori) || member.Value.Roles.Contains(sensei) || member.Value.Roles.Contains(ousama) || member.Value.Roles.Contains(teiou);
+                bool tieneRolNecesario = member.Value.Roles.Contains(senpai) || member.Value.Roles.Contains(hikikomori) || member.Value.Roles.Contains(sensei) || member.Value.Roles.Contains(ousama) || member.Value.Roles.Contains(teiou);
                 if (!member.Value.IsBot && tieneRolNecesario)
                 {
                     Random rnd = new((int)(usuario.Id + member.Key));
-                    int porcentajeAmor = rnd.Next(0, 100);
+                    int porcentajeAmor = rnd.Next(0, 101);
 
                     amorios.Add((member.Value, porcentajeAmor));
 

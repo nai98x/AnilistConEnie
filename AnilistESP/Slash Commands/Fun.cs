@@ -158,7 +158,7 @@ namespace AnilistConEnie.Commands
             foreach(var member in miembros)
             {
                 bool tieneRolNecesario = member.Value.Roles.Contains(senpai) || member.Value.Roles.Contains(hikikomori) || member.Value.Roles.Contains(sensei) || member.Value.Roles.Contains(ousama) || member.Value.Roles.Contains(teiou);
-                if (!member.Value.IsBot && tieneRolNecesario)
+                if (!member.Value.IsBot && tieneRolNecesario && member.Value.Id != ctx.User.Id)
                 {
                     Random rnd = new((int)(usuario.Id + member.Key));
                     int porcentajeAmor = rnd.Next(0, 101);

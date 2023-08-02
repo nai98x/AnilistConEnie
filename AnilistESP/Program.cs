@@ -13,10 +13,9 @@
     using DSharpPlus.SlashCommands;
     using DSharpPlus.SlashCommands.Attributes;
     using DSharpPlus.SlashCommands.EventArgs;
-    using Google.Api;
-    using Google.Protobuf.WellKnownTypes;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
+    using NCrontab;
     using Newtonsoft.Json;
     using System;
     using System.Collections.Generic;
@@ -35,6 +34,9 @@
         private static DiscordChannel LogChannel;
 
         private static bool Debug;
+
+        private static CrontabSchedule _schedule;
+        private static DateTime _nextRun;
 
         public static void Main()
         {
@@ -152,7 +154,27 @@
                 LogChannel = LogGuild.GetChannel(862410338577547324);
             }
 
-            await Task.Delay(-1);
+            _schedule = CrontabSchedule.Parse("0 0 * * *");
+            _nextRun = _schedule.GetNextOccurrence(DateTime.Now);
+
+            await ScheduledTasks();
+        }
+
+        private static async Task ScheduledTasks()
+        {
+            while (true)
+            {
+                var now = DateTime.Now;
+                _schedule.GetNextOccurrence(now);
+
+                if (now > _nextRun)
+                {
+                    await Funciones.ManageBirthdayRole(Client);
+                    _nextRun = _schedule.GetNextOccurrence(DateTime.Now);
+                }
+
+                await Task.Delay(5000);
+            }
         }
 
         private static Task Client_GuildMemberUpdated(DiscordClient sender, GuildMemberUpdateEventArgs e)

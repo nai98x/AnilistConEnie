@@ -31,7 +31,7 @@ namespace AnilistConEnie.Commands
                     try
                     {
                         var miembro = await ctx.Guild.GetMemberAsync((ulong)user.Id);
-                        if (user.MostrarYear ?? false)
+                        if (user.MostrarYear)
                             desc += $"- **{miembro.Mention}** - Cumple **{DateTime.Now.Year - user.Birthday.Year} años**\n";
                         else
                             desc += $"- **{miembro.Mention}**\n";
@@ -59,7 +59,7 @@ namespace AnilistConEnie.Commands
                         anios += 1;
                     string dia = user.BirthdayActual.ToString("dddd", CultureInfo.CreateSpecificCulture("es"));
                     string mes = user.BirthdayActual.ToString("MMMM", CultureInfo.CreateSpecificCulture("es"));
-                    if (user.MostrarYear ?? false)
+                    if (user.MostrarYear)
                         desc += $"- **{miembro.Mention}** - Cumple **{anios} años** el {dia} {user.BirthdayActual.Day} de {mes} del {user.BirthdayActual.Year}\n";
                     else
                         desc += $"- **{miembro.Mention}** - Cumple el {dia} {user.BirthdayActual.Day} de {mes} del {user.BirthdayActual.Year}\n";

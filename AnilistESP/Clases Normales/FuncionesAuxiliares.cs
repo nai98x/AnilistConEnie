@@ -5,6 +5,8 @@ using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using Google.Cloud.Firestore;
 using Google.Cloud.Firestore.V1;
+using Google.Type;
+using GraphQLParser;
 using Newtonsoft.Json;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
@@ -15,6 +17,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -568,6 +571,55 @@ namespace AnilistESP
                 fs.Write(info, 0, info.Length);
             }
             return File.OpenRead(path);
+        }
+
+        public static async Task ManageBirthdayRole(DiscordClient client)
+        {
+            var guild = client.Guilds[862408834693070898];
+            var canal = guild.Channels[862408834693070901];
+            var role = guild.Roles[869257331484004363];
+
+            UsuariosDiscord usuariosService = new();
+            var birthdays = await usuariosService.GetBirthdaysHoy((long)guild.Id);
+            var now = System.DateTime.Now;
+
+            foreach (var birthday in birthdays)
+            {
+                try
+                {
+                    var userBday = guild.Members[(ulong)birthday.Id];
+                    if (userBday != null && !userBday.Roles.Any(x => x.Id == role.Id))
+                    {
+                        await userBday.GrantRoleAsync(role);
+
+                        string desc = $"Todos mandenle saluditos a {userBday.Mention}";
+                        if (userBday != null && birthday.MostrarYear)
+                        {
+                            desc += $" que cumple {System.DateTime.Now.Year - birthday.Birthday.Year} años";
+                        }
+
+                        await canal.SendMessageAsync(
+                            new DiscordEmbedBuilder()
+                                .WithTitle($"¡Feliz cumpleaños {userBday.DisplayName}!")
+                                .WithDescription(desc)
+                                .WithImageUrl(@"https://media.discordapp.net/attachments/867856756901937202/1055623590235607070/3434c4b692a5176c13079980e94dd6df.gif")
+                                .WithColor(DiscordColor.Blurple)
+                                .WithThumbnail(userBday.AvatarUrl)
+                        );
+                    }
+                }
+                catch (Exception) { /* Ignored */}
+            }
+
+            var usersWithBirthdayRole = guild.Members.Where(x => x.Value.Roles.Any(y => y.Id == role.Id));
+            foreach (var userPair in usersWithBirthdayRole)
+            {
+                var user = userPair.Value;
+                if (!birthdays.Any(x => (ulong)x.Id == user.Id))
+                {
+                    await user.RevokeRoleAsync(role);
+                }
+            }
         }
     }
 }

@@ -739,8 +739,8 @@ namespace AnilistESP
                             var newProfileEmbed = new DiscordEmbedBuilder
                             {
                                 Color = DiscordColor.Green,
-                                Title = "Nuevo perfil guardado exitosamente",
-                                Description = string.Format("{0}, has guardado tu perfil de Anilist correctamente", ctx.User.Mention),
+                                Title = "Nuevo perfil vinculado",
+                                Description = string.Format("AniList de {0}", ctx.User.Mention),
                                 Thumbnail = new()
                                 {
                                     Url = avatar
@@ -758,6 +758,10 @@ namespace AnilistESP
                                 newProfileEmbed.WithImageUrl(banner);
                             }
 
+                            DiscordLinkButtonComponent profile = new($"{siteUrl}", "Perfil", false, new DiscordComponentEmoji("👤"));
+                            DiscordLinkButtonComponent animeList = new($"{siteUrl}/animelist", "Lista de anime", false, new DiscordComponentEmoji("📺"));
+                            DiscordLinkButtonComponent mangaList = new($"{siteUrl}/mangalist", "Lista de manga", false, new DiscordComponentEmoji("📖"));
+
                             var member = ctx.Guild.Members[ctx.User.Id];
 
                             await usuariosAnilist.SetAnilist(client, ctx.Guild, siteUrl, member);
@@ -773,7 +777,12 @@ namespace AnilistESP
                                 servicios.SetUsuarios(users);
                             }
 
-                            await ctx.Guild.Channels[862408834693070901].SendMessageAsync(embed: newProfileEmbed, content: ctx.User.Mention);
+                            var msgBuilder = new DiscordMessageBuilder()
+                                .WithContent(ctx.User.Mention)
+                                .WithEmbed(newProfileEmbed)
+                                .AddComponents(profile, animeList, mangaList);
+
+                            await ctx.Guild.Channels[862408834693070901].SendMessageAsync(msgBuilder);
                             await modalInteraction.DeleteOriginalResponseAsync();
 
                             try

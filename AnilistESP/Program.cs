@@ -297,7 +297,7 @@
                 }
 
                 #region Highlights
-                var words = service.GetHighlightedWords();
+                /*var words = service.GetHighlightedWords();
                 if (words != null && words.Count > 0)
                 {
                     var textSplit = e.Message.Content.Split(" ").ToList();
@@ -333,7 +333,7 @@
                             }
                         }
                     }
-                }
+                }*/
                 #endregion
 
                 #region Intercambios Repost

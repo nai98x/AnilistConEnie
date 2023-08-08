@@ -6,6 +6,7 @@ using DSharpPlus.SlashCommands;
 using GraphQL;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.Newtonsoft;
+using Grpc.Core;
 using Microsoft.Win32;
 using Newtonsoft.Json.Linq;
 using System;
@@ -780,7 +781,8 @@ namespace AnilistESP
                             var msgBuilder = new DiscordMessageBuilder()
                                 .WithContent(ctx.User.Mention)
                                 .WithEmbed(newProfileEmbed)
-                                .AddComponents(profile, animeList, mangaList);
+                                .AddComponents(profile, animeList, mangaList)
+                                .WithAllowedMention(new UserMention(ctx.User.Id));
 
                             await ctx.Guild.Channels[862408834693070901].SendMessageAsync(msgBuilder);
                             await modalInteraction.DeleteOriginalResponseAsync();

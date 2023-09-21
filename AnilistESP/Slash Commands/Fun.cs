@@ -32,7 +32,7 @@ namespace AnilistConEnie.Commands
 
             DiscordWebhookBuilder wBuilder = new DiscordWebhookBuilder()
                 .WithContent(mensaje)
-                .WithAvatarUrl(member.AvatarUrl)
+                .WithAvatarUrl(member.GuildAvatarUrl ?? member.AvatarUrl)
                 .WithUsername(member.DisplayName)
                 .AddMentions(Mentions.None.Union(new List<IMention> { new UserMention(), }));
             await webhook.ExecuteAsync(wBuilder);

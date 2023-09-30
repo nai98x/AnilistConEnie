@@ -215,32 +215,35 @@ namespace AnilistConEnie.Commands
                 var emote = DiscordEmoji.FromGuildEmote(ctx.Client, 862461175950606376);
                 int pos = 0;
                 int lastScore = 0;
+                int? myPos = null;
 
                 ranking.ForEach(x =>
                 {
-                    if (ctx.Guild.Members.TryGetValue((ulong)x.UserId, out _))
+                    if (ctx.Guild.Members.TryGetValue((ulong)x.UserId, out var member))
                     {
                         if (lastScore != x.Xp)
                         {
                             pos++;
                         }
 
+                        if ((ulong)x.UserId == ctx.User.Id) myPos = pos;
+
                         switch (pos)
                         {
                             case 1:
                                 DiscordEmoji emoji1 = DiscordEmoji.FromName(ctx.Client, ":first_place:");
-                                description += $"{emoji1} - <@{x.UserId}>: {x.Xp} {emote}\n";
+                                description += $"{emoji1} - **{member.DisplayName}**: {x.Xp} {emote}\n";
                                 break;
                             case 2:
                                 DiscordEmoji emoji2 = DiscordEmoji.FromName(ctx.Client, ":second_place:");
-                                description += $"{emoji2} - <@{x.UserId}>: {x.Xp} {emote}\n";
+                                description += $"{emoji2} - **{member.DisplayName}**: {x.Xp} {emote}\n";
                                 break;
                             case 3:
                                 DiscordEmoji emoji3 = DiscordEmoji.FromName(ctx.Client, ":third_place:");
-                                description += $"{emoji3} - <@{x.UserId}>: {x.Xp} {emote}\n";
+                                description += $"{emoji3} - **{member.DisplayName}**: {x.Xp} {emote}\n";
                                 break;
                             default:
-                                description += $"{Formatter.Bold($"#{pos}")} - <@{x.UserId}>: {x.Xp} {emote}\n";
+                                description += $"{Formatter.Bold($"#{pos}")} - **{member.DisplayName}**: {x.Xp} {emote}\n";
                                 break;
                         }
 
@@ -249,6 +252,11 @@ namespace AnilistConEnie.Commands
                 });
 
                 description = description.Remove(description.Length - 1, 1);
+
+                if (myPos != null)
+                {
+                    description = $"**Tu posición es #{myPos}\n\n" + description;
+                }
             }
             else
             {

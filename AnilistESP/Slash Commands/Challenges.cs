@@ -255,7 +255,7 @@ namespace AnilistConEnie.Commands
 
                 if (myPos != null)
                 {
-                    description = $"**Tu posición es #{myPos}**\n\n" + description;
+                    description = $"Tu posición es **#{myPos}**\n\n" + description;
                 }
             }
             else

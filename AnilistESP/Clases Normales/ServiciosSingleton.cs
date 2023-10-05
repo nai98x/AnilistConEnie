@@ -12,6 +12,7 @@ namespace AnilistESP
         private List<UsuarioAnilistFirebase> usuarios;
         private List<ulong> TempVoiceChannels;
         private Dictionary<ulong, List<string>> highlightedWords;
+        private Dictionary<string, TriggerFirebase> _triggers = new();
 
         private static object syncLock = new();
 
@@ -138,6 +139,32 @@ namespace AnilistESP
             if (encontro)
             {
                 words.Remove(word);
+            }
+        }
+
+        public Dictionary<string, TriggerFirebase> GetActiveTriggers()
+        {
+            return _triggers;
+        }
+
+        public  void SetTrigger(TriggerFirebase trigger)
+        {
+            if (_triggers.TryGetValue(trigger.Nombre, out _))
+            {
+                _triggers.Remove(trigger.Nombre);
+                _triggers.Add(trigger.Nombre, trigger);
+            }
+            else
+            {
+                _triggers.Add(trigger.Nombre, trigger);
+            }
+        }
+
+        public void RemoveTriggerFromActiveList(string triggerName)
+        {
+            if (_triggers.TryGetValue(triggerName, out _))
+            {
+                _triggers.Remove(triggerName);
             }
         }
     }

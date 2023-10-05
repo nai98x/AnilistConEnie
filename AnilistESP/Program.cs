@@ -105,6 +105,7 @@
                 ApplicationCommands.RegisterCommands<Premios>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Intercambios>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<IntercambiosAdmin>(pruebasBacklog);
+                ApplicationCommands.RegisterCommands<Triggers>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Highlights>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Tatsu>(pruebasBacklog);
                 ApplicationCommands.RegisterCommands<Administrativo>(pruebasBacklog);
@@ -120,6 +121,7 @@
                 ApplicationCommands.RegisterCommands<Premios>(guildProd);
                 ApplicationCommands.RegisterCommands<Intercambios>(guildProd);
                 ApplicationCommands.RegisterCommands<IntercambiosAdmin>(guildProd);
+                ApplicationCommands.RegisterCommands<Triggers>(guildProd);
                 ApplicationCommands.RegisterCommands<Highlights>(guildProd);
                 ApplicationCommands.RegisterCommands<Tatsu>(guildProd);
                 ApplicationCommands.RegisterCommands<Administrativo>(guildProd);
@@ -215,10 +217,21 @@
                 servicio.SetUsuarios(usuarios);
                 sender.Logger.LogInformation("Usuarios de AniList cargados");
 
-                var highlightService = new HighlightsDAL();
-                var highlights = await highlightService.GetListaHighlights();
-                servicio.SetHighlightedWords(highlights);
-                sender.Logger.LogInformation("Highlights cargadas");
+                //var highlightService = new HighlightsDAL();
+                //var highlights = await highlightService.GetListaHighlights();
+                //servicio.SetHighlightedWords(highlights);
+                //sender.Logger.LogInformation("Highlights cargadas");
+
+                var triggerService = new TriggersDAL();
+                var triggers = await triggerService.GetTriggers(true);
+                if (triggers != null)
+                {
+                    foreach (var trigger in triggers)
+                    {
+                        servicio.SetTrigger(trigger);
+                    }
+                }
+                sender.Logger.LogInformation("Triggers cargados");
 
                 try
                 {
@@ -334,6 +347,32 @@
                         }
                     }
                 }*/
+                #endregion
+
+                #region Triggers
+                var triggers = service.GetActiveTriggers();
+
+                if (!e.Author.IsBot && !string.IsNullOrEmpty(e.Message.Content) && triggers.TryGetValue(e.Message.Content.ToLower().Trim(), out var trigger))
+                {
+                    var messageBuilder = new DiscordMessageBuilder();
+
+                    if (!string.IsNullOrEmpty(trigger.Texto))
+                    {
+                        messageBuilder.WithContent(trigger.Texto);
+                    }
+
+                    if (!string.IsNullOrEmpty(trigger.ImageUrl))
+                    {
+                        messageBuilder.AddEmbed(
+                            new DiscordEmbedBuilder()
+                                .WithImageUrl(trigger.ImageUrl)
+                                .WithColor(Funciones.GetColor())
+                            .Build()
+                        );
+                    }
+
+                    await e.Message.RespondAsync(messageBuilder);
+                }
                 #endregion
 
                 #region Intercambios Repost

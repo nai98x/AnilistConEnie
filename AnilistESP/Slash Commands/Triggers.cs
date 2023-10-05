@@ -126,10 +126,21 @@ namespace AnilistConEnie.Commands
             var activeTriggers = services.GetActiveTriggers();
             if (activeTriggers.Any())
             {
+                string desc = string.Empty;
+                var tipos = activeTriggers.GroupBy(x => x.Value.Tipo);
+
+                foreach(var tipo in tipos)
+                {
+                    var tipoTrigger = (TipoTrigger)tipo.Key;
+                    desc += $"{tipoTrigger.GetName()}:\n" +
+                        $"- {string.Join(", ", activeTriggers.Where(y => y.Value.Tipo == tipo.Key).Select(x => $"`{x.Key}`"))}";
+                    desc += "\n";
+                }
+
                 await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder
                 {
                     Title = "Triggers del server",
-                    Description = Funciones.NormalizarDescription(string.Join("\n", activeTriggers.Select(x => $"- {x.Key}"))),
+                    Description = Funciones.NormalizarDescription(desc),
                     Color = DiscordColor.Green
                 }));
             }

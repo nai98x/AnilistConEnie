@@ -14,7 +14,7 @@ namespace AnilistESP
             var ret = new List<TriggerFirebase>();
             FirestoreDb db = await Funciones.GetFirestoreClientAnilistConEnie();
 
-            var query = db.Collection("Triggers").WhereEqualTo("Activo", enabled).OrderBy("Nombre");
+            var query = db.Collection("Triggers").WhereEqualTo("Activo", enabled);
             var snap = await query.GetSnapshotAsync();
 
             if (snap.Count > 0)
@@ -24,6 +24,8 @@ namespace AnilistESP
                     ret.Add(document.ConvertTo<TriggerFirebase>());
                 }
             }
+
+            ret.Sort((x, y) => x.Nombre.CompareTo(y.Nombre));
 
             return ret;
         }

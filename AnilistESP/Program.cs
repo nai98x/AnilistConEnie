@@ -355,14 +355,6 @@
                 if (!e.Author.IsBot && !string.IsNullOrEmpty(e.Message.Content) && triggers.TryGetValue(e.Message.Content.ToLower().Trim(), out var trigger))
                 {
                     var messageBuilder = new DiscordMessageBuilder();
-                    var autor = e.Guild.Members[e.Author.Id];
-
-                    messageBuilder.AddEmbed(
-                        new DiscordEmbedBuilder()
-                            .WithAuthor(autor.DisplayName, null, autor.GuildAvatarUrl ?? autor.AvatarUrl)
-                            .WithDescription(e.Message.Content)
-                        .Build()
-                    );
 
                     if (!string.IsNullOrEmpty(trigger.Texto))
                     {
@@ -379,12 +371,7 @@
                         );
                     }
 
-                    try
-                    {
-                        await e.Channel.SendMessageAsync(messageBuilder);
-                        await e.Message.DeleteAsync();
-                    }
-                    catch { /* Ignored */}
+                    await e.Message.RespondAsync(messageBuilder);
                 }
                 #endregion
 

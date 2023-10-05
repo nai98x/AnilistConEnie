@@ -132,9 +132,9 @@ namespace AnilistConEnie.Commands
                 foreach(var tipo in tipos)
                 {
                     var tipoTrigger = (TipoTrigger)tipo.Key;
-                    desc += $"{tipoTrigger.GetName()}:\n" +
+                    desc += $"**{tipoTrigger.GetName()}**:\n" +
                         $"- {string.Join(", ", activeTriggers.Where(y => y.Value.Tipo == tipo.Key).Select(x => $"`{x.Key}`"))}";
-                    desc += "\n";
+                    desc += "\n\n";
                 }
 
                 await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder

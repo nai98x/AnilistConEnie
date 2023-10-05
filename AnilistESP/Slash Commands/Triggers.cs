@@ -24,7 +24,7 @@ namespace AnilistConEnie.Commands
 
                 var trigger = new TriggerFirebase
                 {
-                    Nombre = nombre,
+                    Nombre = nombre.ToLower(),
                     Texto = texto,
                     ImageUrl = imagen,
                     Activo = true,

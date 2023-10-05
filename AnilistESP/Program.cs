@@ -352,7 +352,7 @@
                 #region Triggers
                 if (!e.Author.IsBot && !string.IsNullOrEmpty(e.Message.Content))
                 {
-                    var mensajeOriginal = e.Message.Content;
+                    var mensajeOriginal = e.Message.Content.ToLower();
                     var triggers = service.GetActiveTriggers();
                     var matches = triggers.Where(x => mensajeOriginal.Contains(x.Key)).ToList();
 

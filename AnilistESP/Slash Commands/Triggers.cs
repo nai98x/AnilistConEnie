@@ -127,9 +127,10 @@ namespace AnilistConEnie.Commands
             if (activeTriggers.Any())
             {
                 string desc = string.Empty;
-                var tipos = activeTriggers.GroupBy(x => x.Value.Tipo);
+                var tipos = activeTriggers.GroupBy(x => x.Value.Tipo).ToList();
+                tipos.Sort((x, y) => x.Key.CompareTo(y.Key));
 
-                foreach(var tipo in tipos)
+                foreach (var tipo in tipos)
                 {
                     var tipoTrigger = (TipoTrigger)tipo.Key;
                     desc += $"**{tipoTrigger.GetName()}**:\n" +

@@ -350,7 +350,7 @@
                 #endregion
 
                 #region Triggers
-                if (!e.Author.IsBot && !string.IsNullOrEmpty(e.Message.Content) && e.Author.Id == 198212314892075009)
+                if (!e.Author.IsBot && !string.IsNullOrEmpty(e.Message.Content))
                 {
                     var mensajeOriginal = e.Message.Content;
                     var triggers = service.GetActiveTriggers();

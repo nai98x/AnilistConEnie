@@ -350,11 +350,11 @@
                 #endregion
 
                 #region Triggers
-                if (!e.Author.IsBot && !string.IsNullOrEmpty(e.Message.Content))
+                if (!e.Author.IsBot && !string.IsNullOrEmpty(e.Message.Content) && e.Author.Id == 198212314892075009)
                 {
                     var mensajeOriginal = e.Message.Content;
                     var triggers = service.GetActiveTriggers();
-                    var matches = triggers.Where(x => mensajeOriginal.Contains(x.Value.Texto)).ToList();
+                    var matches = triggers.Where(x => mensajeOriginal.Contains(x.Key)).ToList();
 
                     foreach(var trigger in matches)
                     {
@@ -363,13 +363,13 @@
                         switch ((TipoTrigger)trigger.Value.Tipo)
                         {
                             case TipoTrigger.TEXTO_EXACTO:
-                                if (mensajeOriginal == trigger.Value.Texto) validWithType = true;
+                                if (mensajeOriginal == trigger.Key) validWithType = true;
                                 break;
                             case TipoTrigger.TERMINA_EN:
-                                if (mensajeOriginal.EndsWith(trigger.Value.Texto)) validWithType = true;
+                                if (mensajeOriginal.EndsWith(trigger.Key)) validWithType = true;
                                 break;
                             case TipoTrigger.EMPIEZA_CON:
-                                if (mensajeOriginal.StartsWith(trigger.Value.Texto)) validWithType = true;
+                                if (mensajeOriginal.StartsWith(trigger.Key)) validWithType = true;
                                 break;
                             case TipoTrigger.LIBRE:
                                 validWithType = true;

@@ -14,8 +14,8 @@ namespace AnilistESP
             var ret = new List<TriggerFirebase>();
             FirestoreDb db = await Funciones.GetFirestoreClientAnilistConEnie();
 
-            var col = db.Collection("Triggers").WhereEqualTo("Activo", enabled);
-            var snap = await col.GetSnapshotAsync();
+            var query = db.Collection("Triggers").WhereEqualTo("Activo", enabled).OrderBy("Nombre");
+            var snap = await query.GetSnapshotAsync();
 
             if (snap.Count > 0)
             {
@@ -51,7 +51,7 @@ namespace AnilistESP
             {
                 Dictionary<string, object> data = new()
                 {
-                    { "Nombre", trigger.Nombre },
+                    { "Nombre", trigger.Nombre.ToLower() },
                     { "Texto", trigger.Texto },
                     { "ImageUrl", trigger.ImageUrl },
                     { "Activo", true },

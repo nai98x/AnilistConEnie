@@ -350,28 +350,54 @@
                 #endregion
 
                 #region Triggers
-                var triggers = service.GetActiveTriggers();
-
-                if (!e.Author.IsBot && !string.IsNullOrEmpty(e.Message.Content) && triggers.TryGetValue(e.Message.Content.ToLower().Trim(), out var trigger))
+                if (!e.Author.IsBot && !string.IsNullOrEmpty(e.Message.Content))
                 {
-                    var messageBuilder = new DiscordMessageBuilder();
+                    var mensajeOriginal = e.Message.Content;
+                    var triggers = service.GetActiveTriggers();
+                    var matches = triggers.Where(x => mensajeOriginal.Contains(x.Value.Texto)).ToList();
 
-                    if (!string.IsNullOrEmpty(trigger.Texto))
+                    foreach(var trigger in matches)
                     {
-                        messageBuilder.WithContent(trigger.Texto);
-                    }
+                        bool validWithType = false;
 
-                    if (!string.IsNullOrEmpty(trigger.ImageUrl))
-                    {
-                        messageBuilder.AddEmbed(
-                            new DiscordEmbedBuilder()
-                                .WithImageUrl(trigger.ImageUrl)
-                                .WithColor(Funciones.GetColor())
-                            .Build()
-                        );
-                    }
+                        switch ((TipoTrigger)trigger.Value.Tipo)
+                        {
+                            case TipoTrigger.TEXTO_EXACTO:
+                                if (mensajeOriginal == trigger.Value.Texto) validWithType = true;
+                                break;
+                            case TipoTrigger.TERMINA_EN:
+                                if (mensajeOriginal.EndsWith(trigger.Value.Texto)) validWithType = true;
+                                break;
+                            case TipoTrigger.EMPIEZA_CON:
+                                if (mensajeOriginal.StartsWith(trigger.Value.Texto)) validWithType = true;
+                                break;
+                            case TipoTrigger.LIBRE:
+                                validWithType = true;
+                                break;
+                        }
 
-                    await e.Message.RespondAsync(messageBuilder);
+                        if (validWithType)
+                        {
+                            var messageBuilder = new DiscordMessageBuilder();
+
+                            if (!string.IsNullOrEmpty(trigger.Value.Texto))
+                            {
+                                messageBuilder.WithContent(trigger.Value.Texto);
+                            }
+
+                            if (!string.IsNullOrEmpty(trigger.Value.ImageUrl))
+                            {
+                                messageBuilder.AddEmbed(
+                                    new DiscordEmbedBuilder()
+                                        .WithImageUrl(trigger.Value.ImageUrl)
+                                        .WithColor(Funciones.GetColor())
+                                    .Build()
+                                );
+                            }
+
+                            await e.Message.RespondAsync(messageBuilder);
+                        }
+                    }
                 }
                 #endregion
 

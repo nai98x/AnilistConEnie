@@ -14,7 +14,7 @@ namespace AnilistConEnie.Commands
 
         [SlashCommand("Set", "Agrega o modifica un trigger")]
         [SlashCommandPermissions(Permissions.ManageMessages)]
-        public async Task Set(InteractionContext ctx, [Option("Nombre", "Nombre para identificar al trigger")] string nombre, [Option("Texto", "Texto a mostrar")] string? texto = null, [Option("Imagen", "Url de la imagen a mostrar")] string? imagen = null)
+        public async Task Set(InteractionContext ctx, [Option("Nombre", "Nombre para identificar al trigger")] string nombre, [Option("Tipo", "Tipo de trigger")] TipoTrigger tipo, [Option("Texto", "Texto a mostrar")] string? texto = null, [Option("Imagen", "Url de la imagen a mostrar")] string? imagen = null)
         {
             await ctx.DeferAsync();
 
@@ -27,7 +27,8 @@ namespace AnilistConEnie.Commands
                     Nombre = nombre,
                     Texto = texto,
                     ImageUrl = imagen,
-                    Activo = true
+                    Activo = true,
+                    Tipo = (int)tipo
                 };
 
                 await triggerService.SetTrigger(trigger);

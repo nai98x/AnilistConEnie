@@ -46,6 +46,7 @@ namespace AnilistESP
                     { "Texto",  trigger.Texto },
                     { "ImageUrl", trigger.ImageUrl },
                     { "Activo", registro.Activo },
+                    { "Tipo", trigger.Tipo },
                 };
                 await doc.UpdateAsync(data);
             }
@@ -57,6 +58,7 @@ namespace AnilistESP
                     { "Texto", trigger.Texto },
                     { "ImageUrl", trigger.ImageUrl },
                     { "Activo", true },
+                    { "Tipo", trigger.Tipo },
                 };
                 await doc.SetAsync(data);
             }
@@ -80,6 +82,7 @@ namespace AnilistESP
                         { "Texto",  registro.Texto },
                         { "ImageUrl", registro.ImageUrl },
                         { "Activo", false },
+                        { "Tipo", registro.Tipo },
                     };
 
                     await doc.UpdateAsync(data);
@@ -109,6 +112,7 @@ namespace AnilistESP
                         { "Texto",  registro.Texto },
                         { "ImageUrl", registro.ImageUrl },
                         { "Activo", true },
+                        { "Tipo", registro.Tipo },
                     };
 
                     await doc.UpdateAsync(data);

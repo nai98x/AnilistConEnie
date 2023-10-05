@@ -17,5 +17,8 @@ namespace AnilistESP
 
         [FirestoreProperty]
         public bool Activo { get; set; }
+
+        [FirestoreProperty]
+        public int Tipo { get; set; }
     }
 }

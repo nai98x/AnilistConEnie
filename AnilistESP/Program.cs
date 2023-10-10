@@ -13,7 +13,6 @@
     using DSharpPlus.SlashCommands;
     using DSharpPlus.SlashCommands.Attributes;
     using DSharpPlus.SlashCommands.EventArgs;
-    using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
     using NCrontab;
     using Newtonsoft.Json;
@@ -37,6 +36,9 @@
 
         private static CrontabSchedule _schedule;
         private static DateTime _nextRun;
+
+        private static CrontabSchedule _schedule2;
+        private static DateTime _nextRun2;
 
         public static void Main()
         {
@@ -159,6 +161,9 @@
             _schedule = CrontabSchedule.Parse("0 0 * * *");
             _nextRun = _schedule.GetNextOccurrence(DateTime.Now);
 
+            _schedule2 = CrontabSchedule.Parse("*/1 * * * *");
+            _nextRun2 = _schedule2.GetNextOccurrence(DateTime.Now);
+
             await ScheduledTasks();
         }
 
@@ -172,9 +177,19 @@
                 if (now > _nextRun)
                 {
                     await Funciones.ManageBirthdayRole(Client);
-                    await Funciones.ManageUnlinkedAccounts(Client);
+
                     _nextRun = _schedule.GetNextOccurrence(DateTime.Now);
                 }
+
+                _schedule2.GetNextOccurrence(now);
+                if (now > _nextRun2)
+                {
+                    await Funciones.ManageUnlinkedAccounts(Client);
+                    await Funciones.ManagSpamAccounts(Client.Guilds[862408834693070898]);
+
+                    _nextRun2 = _schedule2.GetNextOccurrence(DateTime.Now);
+                }
+
 
                 await Task.Delay(5000);
             }
@@ -210,7 +225,7 @@
         {
             _ = Task.Run(async () =>
             {
-
+                await Funciones.ManagSpamAccounts(sender.Guilds[862408834693070898]);
                 ServiciosSingleton servicio = ServiciosSingleton.GetServiciosSingleton();
 
                 var userService = new UsuariosAnilist();

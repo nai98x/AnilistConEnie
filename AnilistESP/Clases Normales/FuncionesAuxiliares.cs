@@ -5,8 +5,6 @@ using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using Google.Cloud.Firestore;
 using Google.Cloud.Firestore.V1;
-using Google.Type;
-using GraphQLParser;
 using Newtonsoft.Json;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
@@ -15,7 +13,6 @@ using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -633,6 +630,39 @@ namespace AnilistESP
                 if (member.Value.JoinedAt.AddDays(1) < System.DateTime.Now)
                 {
                     await member.Value.RemoveAsync("Kick automatico - 24hs sin vincular");
+                }
+            }
+        }
+
+        public static async Task ManagSpamAccounts(DiscordGuild guild)
+        {
+            DiscordRole noVerificadoRole = guild.Roles[1117855269943250944];
+
+            
+            var noVerificados = guild.Members.Where(x => x.Value.Roles.Contains(noVerificadoRole)).ToList();
+
+            List<DiscordRole> rolesSospechosos = new()
+            {
+                guild.Roles[863848775785512960], // rango
+                guild.Roles[1117855269943250944], // noverificado
+                guild.Roles[863850678598238269], // infoBasica
+                guild.Roles[863562549055062046], // anyPronouns
+                guild.Roles[1072636983643480127], // sinPais
+                guild.Roles[863857666476474398], // secciones
+                guild.Roles[898703413787914311], // clobFutbol
+                guild.Roles[862511912012611624], // amarillo
+                guild.Roles[1129093722135609575] // challenges
+            };
+            rolesSospechosos.Sort((x, y) => x.Id.CompareTo(y.Id));
+
+            foreach (var member in noVerificados)
+            {
+                var roles = member.Value.Roles.ToList();
+                roles.Sort((x, y) => x.Id.CompareTo(y.Id));
+
+                if (roles.Count == 9 && roles.SequenceEqual(rolesSospechosos))
+                {
+                    await member.Value.RemoveAsync("Cuenta bot");
                 }
             }
         }

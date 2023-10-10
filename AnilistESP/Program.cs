@@ -172,6 +172,7 @@
                 if (now > _nextRun)
                 {
                     await Funciones.ManageBirthdayRole(Client);
+                    await Funciones.ManageUnlinkedAccounts(Client);
                     _nextRun = _schedule.GetNextOccurrence(DateTime.Now);
                 }
 
@@ -266,6 +267,8 @@
                     });
 
                 } catch (Exception) { } /* Nothing to do */
+
+                await Funciones.ManageUnlinkedAccounts(Client);
             });
 
             return Task.CompletedTask;

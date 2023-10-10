@@ -621,5 +621,20 @@ namespace AnilistESP
                 }
             }
         }
+
+        public static async Task ManageUnlinkedAccounts(DiscordClient client)
+        {
+            var guild = client.Guilds[862408834693070898];
+            DiscordRole noVerificadoRole = guild.Roles[1117855269943250944];
+            var miembrosNoVerificados = guild.Members.Where(x => x.Value.Roles.Contains(noVerificadoRole)).ToList();
+
+            foreach(var member in miembrosNoVerificados)
+            {
+                if (member.Value.JoinedAt.AddDays(1) < System.DateTime.Now)
+                {
+                    await member.Value.RemoveAsync("Kick automatico - 24hs sin vincular");
+                }
+            }
+        }
     }
 }

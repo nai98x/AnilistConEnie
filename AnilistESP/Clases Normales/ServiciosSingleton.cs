@@ -171,7 +171,7 @@ namespace AnilistESP
 
         public void AddSpamAccount(ulong id)
         {
-            _spamAccounts.Add(id);
+            if (!_spamAccounts.Contains(id)) _spamAccounts.Add(id);
         }
 
         public bool IsSpamAccount(ulong id)

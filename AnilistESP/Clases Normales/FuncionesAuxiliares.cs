@@ -662,7 +662,7 @@ namespace AnilistESP
 
                 if (roles.Count == 9 && roles.SequenceEqual(rolesSospechosos))
                 {
-                    if (servicio.IsSpamAccount(member.Key)) servicio.AddSpamAccount(member.Key);
+                    servicio.AddSpamAccount(member.Key);
                     await member.Value.RemoveAsync("Cuenta bot");
                 }
             }

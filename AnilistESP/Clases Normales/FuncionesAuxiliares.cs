@@ -637,8 +637,8 @@ namespace AnilistESP
         public static async Task ManagSpamAccounts(DiscordGuild guild)
         {
             DiscordRole noVerificadoRole = guild.Roles[1117855269943250944];
+            ServiciosSingleton servicio = ServiciosSingleton.GetServiciosSingleton();
 
-            
             var noVerificados = guild.Members.Where(x => x.Value.Roles.Contains(noVerificadoRole)).ToList();
 
             List<DiscordRole> rolesSospechosos = new()
@@ -662,6 +662,7 @@ namespace AnilistESP
 
                 if (roles.Count == 9 && roles.SequenceEqual(rolesSospechosos))
                 {
+                    if (servicio.IsSpamAccount(member.Key)) servicio.AddSpamAccount(member.Key);
                     await member.Value.RemoveAsync("Cuenta bot");
                 }
             }

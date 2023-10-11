@@ -648,6 +648,7 @@
                 #region Mensaje de despedida
                 if (!e.Member.IsBot)
                 {
+                    var singleton = ServiciosSingleton.GetServiciosSingleton();
                     ulong miembroRole = 862452184029069332;
                     ulong noVerificadoRole = 1117855269943250944;
 
@@ -673,6 +674,12 @@
                         else
                         {
                             embedBuilder.WithImageUrl("https://media.discordapp.net/attachments/816379048477065217/1129080799585648670/Sin_titulo-1s.png");
+                        }
+
+                        if (singleton.IsSpamAccount(e.Member.Id))
+                        {
+                            embedBuilder.WithTitle($"{e.Member.DisplayName} se fue **funado** del servidor por ser un bot");
+                            embedBuilder.WithImageUrl("https://media.discordapp.net/attachments/816379048477065217/1161716282438209647/thismfbot.png");
                         }
 
                         DiscordGuild guild = sender.Guilds[862408834693070898];

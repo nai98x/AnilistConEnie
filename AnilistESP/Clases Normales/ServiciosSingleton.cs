@@ -13,6 +13,7 @@ namespace AnilistESP
         private List<ulong> TempVoiceChannels;
         private Dictionary<ulong, List<string>> highlightedWords;
         private Dictionary<string, TriggerFirebase> _triggers = new();
+        private List<ulong> _spamAccounts = new();
 
         private static object syncLock = new();
 
@@ -166,6 +167,16 @@ namespace AnilistESP
             {
                 _triggers.Remove(triggerName);
             }
+        }
+
+        public void AddSpamAccount(ulong id)
+        {
+            _spamAccounts.Add(id);
+        }
+
+        public bool IsSpamAccount(ulong id)
+        {
+            return _spamAccounts.Contains(id);
         }
     }
 }

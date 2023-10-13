@@ -648,39 +648,24 @@
                 #region Mensaje de despedida
                 if (!e.Member.IsBot)
                 {
-                    var singleton = ServiciosSingleton.GetServiciosSingleton();
                     ulong miembroRole = 862452184029069332;
-                    ulong noVerificadoRole = 1117855269943250944;
 
-                    if (e.Member.Roles.Any(x => x.Id == miembroRole) || e.Member.Roles.Any(x => x.Id == noVerificadoRole))
+                    if (e.Member.Roles.Any(x => x.Id == miembroRole))
                     {
                         DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
                         embedBuilder.WithTitle($"{e.Member.DisplayName} se ha ido del servidor");
                         embedBuilder.WithColor(DiscordColor.Red);
 
-                        if (e.Member.Roles.Any(x => x.Id == miembroRole))
-                        {
-                            var images = new List<string>()
+                        var images = new List<string>()
                             {
                                 "https://media.discordapp.net/attachments/867856756901937202/1128343142685495357/cowboy-bebop-bang.gif",
                                 "https://images-ext-1.discordapp.net/external/JNe44k_TxRaSDaTrk4yKXF4bNScwz1H2QyVcfq4Q7lI/https/media.tenor.com/8lKrNgbJ7PoAAAPo/adi%25C3%25B3s-vaquero-adios.mp4",
                                 "https://images-ext-1.discordapp.net/external/PUyQvhBLtt9qZ2FVc2-f-1PxFZXtmPayOk2t5KelNCY/https/media.tenor.com/p5DlOqiAhMsAAAPo/adios-vaquero.mp4"
                             };
 
-                            var worrysad = DiscordEmoji.FromGuildEmote(sender, 862730038860316672);
-                            embedBuilder.WithDescription($"RIP {e.Member.Mention} {worrysad}");
-                            embedBuilder.WithImageUrl(images[Funciones.GetNumeroRandom(0, images.Count)]);
-                        }
-                        else
-                        {
-                            embedBuilder.WithImageUrl("https://media.discordapp.net/attachments/816379048477065217/1129080799585648670/Sin_titulo-1s.png");
-                        }
-
-                        if (singleton.IsSpamAccount(e.Member.Id))
-                        {
-                            embedBuilder.WithTitle($"{e.Member.DisplayName} se fue **funado** del servidor por ser un bot");
-                            embedBuilder.WithImageUrl("https://media.discordapp.net/attachments/816379048477065217/1161716282438209647/thismfbot.png");
-                        }
+                        var worrysad = DiscordEmoji.FromGuildEmote(sender, 862730038860316672);
+                        embedBuilder.WithDescription($"RIP {e.Member.Mention} {worrysad}");
+                        embedBuilder.WithImageUrl(images[Funciones.GetNumeroRandom(0, images.Count)]);
 
                         DiscordGuild guild = sender.Guilds[862408834693070898];
                         DiscordChannel channel = guild.Channels[862408834693070901];

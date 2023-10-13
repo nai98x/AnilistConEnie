@@ -737,6 +737,16 @@ namespace AnilistESP
                             string avatar = data.Data.Viewer.avatar.medium;
                             string banner = data.Data.Viewer.bannerImage;
 
+                            var member = ctx.Guild.Members[ctx.User.Id];
+
+                            var bienvenidaEmbed = new DiscordEmbedBuilder
+                            {
+                                Title = $"¡Bienvenido {member.DisplayName}!",
+                                Description = $"Hola {member.Mention}, ¡Bienvenido a **Añilist**! Eres nuestro **miembro nº {ctx.Guild.MemberCount}**",
+                                ImageUrl = "https://images-ext-2.discordapp.net/external/S1VMfYfgS0oqoMukCNxKw5HsZxZQTEvWkpG-4Q3qVyA/https/cdn-longterm.mee6.xyz/plugins/welcome/images/862408834693070898/20b91584d1b680f1905f5b2f5295a44907bd17e876c56ab10de43f1cd406d1db.gif",
+                                Color = Funciones.GetColor()
+                            };
+
                             var newProfileEmbed = new DiscordEmbedBuilder
                             {
                                 Color = DiscordColor.Green,
@@ -763,8 +773,6 @@ namespace AnilistESP
                             DiscordLinkButtonComponent animeList = new($"{siteUrl}/animelist", "Lista de anime", false, new DiscordComponentEmoji("📺"));
                             DiscordLinkButtonComponent mangaList = new($"{siteUrl}/mangalist", "Lista de manga", false, new DiscordComponentEmoji("📖"));
 
-                            var member = ctx.Guild.Members[ctx.User.Id];
-
                             await usuariosAnilist.SetAnilist(client, ctx.Guild, siteUrl, member);
                             await usuariosAnilist.SetAnilistYumiko(id, member.Id);
 
@@ -780,7 +788,8 @@ namespace AnilistESP
 
                             var msgBuilder = new DiscordMessageBuilder()
                                 .WithContent(ctx.User.Mention)
-                                .WithEmbed(newProfileEmbed)
+                                .AddEmbed(bienvenidaEmbed.Build())
+                                .AddEmbed(newProfileEmbed.Build())
                                 .AddComponents(profile, animeList, mangaList)
                                 .WithAllowedMention(new UserMention(ctx.User.Id));
 

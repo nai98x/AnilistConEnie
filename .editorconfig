@@ -1,7 +1,0 @@
-﻿[*.cs]
-
-# CS8632: La anotación para tipos de referencia que aceptan valores NULL solo debe usarse en el código dentro de un contexto de anotaciones "#nullable".
-dotnet_diagnostic.CS8632.severity = none
-
-# CA1822: Mark members as static
-dotnet_diagnostic.CA1822.severity = none

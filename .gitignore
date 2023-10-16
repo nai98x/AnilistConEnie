@@ -343,9 +343,6 @@ healthchecksdb
 /.vs
 
 # Configuracion general
-
-AnilistESP/firebase.json
-
-AnilistESP/config.json
-AnilistESP/firebase-anilistconenie.json
-AnilistESP/firebase-yumiko.json
+/src/AnilistConEnie/appsettings.json
+/src/AnilistConEnie/firebase-anilistconenie.json
+/src/AnilistConEnie/firebase-yumiko.json

@@ -10,19 +10,15 @@ public class UsuariosAnilistRepository (IConfiguration configuration)
 {
     public static async Task<List<UsuarioAnilist>> GetListaUsuarios()
     {
-        var ret = new List<UsuarioAnilist>();
+        List<UsuarioAnilist> ret = [];
         FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
 
         CollectionReference col = db.Collection("Anilist");
-        var snap = await col.GetSnapshotAsync();
+        QuerySnapshot? snap = await col.GetSnapshotAsync();
 
-        if (snap.Count > 0)
-        {
-            foreach (var document in snap.Documents)
-            {
-                ret.Add(document.ConvertTo<UsuarioAnilist>());
-            }
-        }
+        if (snap.Count <= 0) return ret;
+
+        ret.AddRange(snap.Documents.Select(document => document.ConvertTo<UsuarioAnilist>()));
 
         return ret;
     }
@@ -31,34 +27,27 @@ public class UsuariosAnilistRepository (IConfiguration configuration)
     {
         FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
         DocumentReference doc = db.Collection("Anilist").Document($"{userId}");
-        var snap = await doc.GetSnapshotAsync();
-        if (snap.Exists)
-        {
-            return snap.ConvertTo<UsuarioAnilist>();
-        }
-        else
-        {
-            return null;
-        }
+        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
+        
+        return snap.Exists ? snap.ConvertTo<UsuarioAnilist>() : null;
     }
 
     public async Task SetAnilist(DiscordGuild guild, string anilistUrl, DiscordMember miembro)
     {
         FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
         DocumentReference doc = db.Collection("Anilist").Document($"{miembro.Id}");
-        var snap = await doc.GetSnapshotAsync();
-        UsuarioAnilist registro;
+        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
         DiscordChannel channel = guild.Channels[configuration.GetValue<ulong>("Ids:Channels:Perfiles")];
         if (snap.Exists)
         {
-            registro = snap.ConvertTo<UsuarioAnilist>();
+            UsuarioAnilist registro = snap.ConvertTo<UsuarioAnilist>();
             DiscordMessage? mensaje = null;
             try
             {
                 mensaje = await channel.GetMessageAsync((ulong)registro.MessageId);
                 await mensaje.ModifyAsync($"**Perfil de {miembro.Mention}**\n\n{anilistUrl}");
             }
-            catch { }
+            catch { /* Ignored */}
             if (mensaje == null)
             {
                 mensaje = await channel.SendMessageAsync($"**Perfil de {miembro.Mention}**\n\n{anilistUrl}");
@@ -92,7 +81,7 @@ public class UsuariosAnilistRepository (IConfiguration configuration)
     {
         FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
         DocumentReference doc = db.Collection("Anilist").Document($"{userId}");
-        var snap = await doc.GetSnapshotAsync();
+        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
         if (snap.Exists)
         {
             await doc.DeleteAsync();
@@ -101,18 +90,15 @@ public class UsuariosAnilistRepository (IConfiguration configuration)
 
     public static async Task<List<UsuarioAnilistBaneado>> GetListaUsuariosBaneados()
     {
-        var ret = new List<UsuarioAnilistBaneado>();
+        List<UsuarioAnilistBaneado> ret = [];
         FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
 
         CollectionReference col = db.Collection("AnilistBaneados");
-        var snap = await col.GetSnapshotAsync();
+        QuerySnapshot? snap = await col.GetSnapshotAsync();
 
         if (snap.Count > 0)
         {
-            foreach (var document in snap.Documents)
-            {
-                ret.Add(document.ConvertTo<UsuarioAnilistBaneado>());
-            }
+            ret.AddRange(snap.Documents.Select(document => document.ConvertTo<UsuarioAnilistBaneado>()));
         }
 
         return ret;
@@ -122,7 +108,7 @@ public class UsuariosAnilistRepository (IConfiguration configuration)
     {
         FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
         DocumentReference doc = db.Collection("AnilistBaneados").Document($"{userId}");
-        var snap = await doc.GetSnapshotAsync();
+        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
         if (snap.Exists)
         {
             await doc.DeleteAsync();
@@ -133,7 +119,7 @@ public class UsuariosAnilistRepository (IConfiguration configuration)
     {
         FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
         DocumentReference doc = db.Collection("AnilistBaneados").Document($"{userId}");
-        var snap = await doc.GetSnapshotAsync();
+        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
         if (!snap.Exists)
         {
             Dictionary<string, object> data = new()
@@ -144,35 +130,36 @@ public class UsuariosAnilistRepository (IConfiguration configuration)
         }
     }
 
-    // LISTA DE YUMIKO
+    #region  Yumiko
 
     public static async Task SetAnilistYumiko(int anilistId, ulong userId)
     {
         FirestoreDb db = FirebaseHelper.GetFirestoreClientYumiko();
         DocumentReference doc = db.Collection("AnilistUsers").Document($"{userId}");
-        var snap = await doc.GetSnapshotAsync();
-        UsuarioAnilistYumiko registro;
+        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
         if (snap.Exists)
         {
-            registro = snap.ConvertTo<UsuarioAnilistYumiko>();
+            UsuarioAnilistYumiko registro = snap.ConvertTo<UsuarioAnilistYumiko>();
 
             registro.AnilistId = anilistId;
             registro.UserId = (long)userId;
             Dictionary<string, object> data = new()
-                {
-                    { "AnilistId", registro.AnilistId },
-                    { "UserId", registro.UserId },
-                };
+            {
+                { "AnilistId", registro.AnilistId },
+                { "UserId", registro.UserId },
+            };
             await doc.UpdateAsync(data);
         }
         else
         {
             Dictionary<string, object> data = new()
-                {
-                    { "AnilistId", anilistId },
-                    { "UserId", userId },
-                };
+            {
+                { "AnilistId", anilistId },
+                { "UserId", userId },
+            };
             await doc.SetAsync(data);
         }
     }
+
+    #endregion
 }

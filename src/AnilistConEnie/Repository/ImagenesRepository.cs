@@ -8,19 +8,15 @@ public class ImagenesRepository
 {
     public static async Task<List<Imagen>> GetImagenesAsync(string categoria)
     {
-        var ret = new List<Imagen>();
+        List<Imagen> ret = [];
         FirestoreDb db = FirebaseHelper.GetFirestoreClientYumiko();
 
-        var col = db.Collection("Galeria").Document("nsfw").Collection(categoria);
-        var snap = await col.GetSnapshotAsync();
+        CollectionReference? col = db.Collection("Galeria").Document("nsfw").Collection(categoria);
+        QuerySnapshot? snap = await col.GetSnapshotAsync();
 
-        if (snap.Count > 0)
-        {
-            foreach (var document in snap.Documents)
-            {
-                ret.Add(document.ConvertTo<Imagen>());
-            }
-        }
+        if (snap.Count <= 0) return ret;
+
+        ret.AddRange(snap.Documents.Select(document => document.ConvertTo<Imagen>()));
 
         return ret;
     }

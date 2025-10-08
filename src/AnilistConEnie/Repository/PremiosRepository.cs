@@ -10,18 +10,14 @@ public class PremiosRepository
     public static async Task<List<Premio>> GetListaPremios()
     {
         FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
-        var ret = new List<Premio>();
+        List<Premio> ret = [];
 
         CollectionReference col = db.Collection("Premios");
-        var snap = await col.GetSnapshotAsync();
+        QuerySnapshot? snap = await col.GetSnapshotAsync();
 
         if (snap.Count > 0)
         {
-            foreach (var document in snap.Documents)
-            {
-                var doc = document.ConvertTo<Premio>();
-                ret.Add(doc);
-            }
+            ret.AddRange(snap.Documents.Select(document => document.ConvertTo<Premio>()));
         }
 
         return ret;
@@ -33,7 +29,7 @@ public class PremiosRepository
 
         FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
         DocumentReference doc = db.Collection("Premios").Document(nombre);
-        var snap = await doc.GetSnapshotAsync();
+        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
 
         Dictionary<string, object> data = new()
             {
@@ -53,7 +49,7 @@ public class PremiosRepository
     {
         FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
         DocumentReference doc = db.Collection("Premios").Document($"{season.GetName()} {anio}");
-        var snap = await doc.GetSnapshotAsync();
+        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
         if (snap.Exists)
         {
             await doc.DeleteAsync();

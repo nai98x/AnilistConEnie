@@ -11,21 +11,16 @@ public class IntercambiosRepostRepository
         FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
 
         DocumentReference doc = db.Collection("IntercambiosRepost").Document($"{idMensajeHiloForo}");
-        var snap = await doc.GetSnapshotAsync();
+        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
 
-        if (snap.Exists)
-        {
-            return snap.ConvertTo<MensajeIntercambioRepost>();
-        }
-
-        return null;
+        return snap.Exists ? snap.ConvertTo<MensajeIntercambioRepost>() : null;
     }
 
     public static async Task SetMensaje(ulong idCanalHiloForo, ulong idMensajeHiloForo, ulong idCanalMensajeRepost, ulong idMensajeRepost)
     {
         FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
         DocumentReference doc = db.Collection("IntercambiosRepost").Document($"{idMensajeHiloForo}");
-        var snap = await doc.GetSnapshotAsync();
+        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
 
         Dictionary<string, object> data = new()
             {
@@ -46,7 +41,7 @@ public class IntercambiosRepostRepository
         FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
 
         DocumentReference doc = db.Collection("IntercambiosRepost").Document($"{idMensajeHiloForo}");
-        var snap = await doc.GetSnapshotAsync();
+        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
 
         if (snap.Exists)
         {

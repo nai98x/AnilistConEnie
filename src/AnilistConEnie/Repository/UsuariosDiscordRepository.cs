@@ -11,17 +11,14 @@ public class UsuariosDiscordRepository
     public static async Task<List<UsuarioDiscord>> GetListaUsuarios()
     {
         FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
-        var ret = new List<UsuarioDiscord>();
+        List<UsuarioDiscord> ret = [];
 
         CollectionReference col = db.Collection("Cumpleaños");
-        var snap = await col.GetSnapshotAsync();
+        QuerySnapshot? snap = await col.GetSnapshotAsync();
 
         if (snap.Count > 0)
         {
-            foreach (var document in snap.Documents)
-            {
-                ret.Add(document.ConvertTo<UsuarioDiscord>());
-            }
+            ret.AddRange(snap.Documents.Select(document => document.ConvertTo<UsuarioDiscord>()));
         }
 
         return ret;
@@ -29,11 +26,11 @@ public class UsuariosDiscordRepository
 
     public async Task<List<UserCumple>> GetBirthdaysHoy()
     {
-        List<UserCumple> lista = new();
-        var listaFirebase = await GetListaUsuarios();
+        List<UserCumple> lista = [];
+        List<UsuarioDiscord> listaFirebase = await GetListaUsuarios();
         listaFirebase.ForEach(x =>
         {
-            var fchAux = new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.UtcNow.Year);
+            DateTime fchAux = new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.UtcNow.Year);
             if (fchAux.Date == DateTime.Today.Date)
             {
                 lista.Add(new UserCumple()
@@ -51,12 +48,12 @@ public class UsuariosDiscordRepository
     public static async Task<List<UserCumple>> GetBirthdaysAhora()
     {
         List<UserCumple> lista = [];
-        var listaFirebase = await GetListaUsuarios();
+        List<UsuarioDiscord> listaFirebase = await GetListaUsuarios();
         listaFirebase.ForEach(x =>
         {
-            var cumpleHoraLocalAux = x.Birthday.AddHours(-3);
-            var cumpleHoraLocal = new DateTime(day: cumpleHoraLocalAux.Day, month: cumpleHoraLocalAux.Month, year: DateTime.UtcNow.Year, hour: cumpleHoraLocalAux.Hour, minute: 0, second: 0);
-            var fchAux = new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.UtcNow.Year);
+            DateTime cumpleHoraLocalAux = x.Birthday.AddHours(-3);
+            DateTime cumpleHoraLocal = new DateTime(day: cumpleHoraLocalAux.Day, month: cumpleHoraLocalAux.Month, year: DateTime.UtcNow.Year, hour: cumpleHoraLocalAux.Hour, minute: 0, second: 0);
+            DateTime fchAux = new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.UtcNow.Year);
             if (DateTime.Now >= cumpleHoraLocal && DateTime.Now <= cumpleHoraLocal.AddDays(1))
             {
                 lista.Add(new UserCumple()
@@ -74,17 +71,13 @@ public class UsuariosDiscordRepository
     public static async Task<List<UserCumple>> GetBirthdays(bool month)
     {
         List<UserCumple> lista = [];
-        var listaFirebase = await GetListaUsuarios();
+        List<UsuarioDiscord> listaFirebase = await GetListaUsuarios();
         listaFirebase.ForEach(x =>
         {
-            var fchAux = new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.UtcNow.Year, hour: x.Birthday.Hour, minute: 0, second: 0, kind: DateTimeKind.Utc);
-            DateTime nuevoCumple;
-            if (DateTime.UtcNow > new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.UtcNow.Year))
-                nuevoCumple = new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.UtcNow.Year + 1, hour: x.Birthday.Hour, minute: 0, second: 0, kind: DateTimeKind.Utc);
-            else
-                nuevoCumple = new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.UtcNow.Year, hour: x.Birthday.Hour, minute: 0, second: 0, kind: DateTimeKind.Utc);
+            DateTime fchAux = new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.UtcNow.Year, hour: x.Birthday.Hour, minute: 0, second: 0, kind: DateTimeKind.Utc);
+            DateTime nuevoCumple = DateTime.UtcNow > new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.UtcNow.Year) ? new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.UtcNow.Year + 1, hour: x.Birthday.Hour, minute: 0, second: 0, kind: DateTimeKind.Utc) : new DateTime(day: x.Birthday.Day, month: x.Birthday.Month, year: DateTime.UtcNow.Year, hour: x.Birthday.Hour, minute: 0, second: 0, kind: DateTimeKind.Utc);
 
-            var fchOriginal = new DateTime(year: x.AnioFechaOriginal, month: x.MesFechaOriginal, day: x.DiaFechaOriginal);
+            DateTime fchOriginal = new DateTime(year: x.AnioFechaOriginal, month: x.MesFechaOriginal, day: x.DiaFechaOriginal);
             if (month)
             {
                 if (fchAux >= DateTime.UtcNow && fchAux <= DateTime.UtcNow.AddMonths(1))
@@ -119,13 +112,12 @@ public class UsuariosDiscordRepository
     {
         FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
         DocumentReference doc = db.Collection("Cumpleaños").Document($"{userId}");
-        var snap = await doc.GetSnapshotAsync();
-        UsuarioDiscord registro;
-        var timeutc = new DateTime(day: fecha.Day, month: fecha.Month, year: fecha.Year, hour: fecha.Hour, minute: 0, second: 0, kind: DateTimeKind.Utc);
+        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
+        DateTime timeUtc = new(day: fecha.Day, month: fecha.Month, year: fecha.Year, hour: fecha.Hour, minute: 0, second: 0, kind: DateTimeKind.Utc);
         if (snap.Exists)
         {
-            registro = snap.ConvertTo<UsuarioDiscord>();
-            registro.Birthday = timeutc;
+            UsuarioDiscord registro = snap.ConvertTo<UsuarioDiscord>();
+            registro.Birthday = timeUtc;
             registro.MostrarYear = mostrarEdad;
             registro.DiaFechaOriginal = fechaOriginal.Day;
             registro.MesFechaOriginal = fechaOriginal.Month;
@@ -146,7 +138,7 @@ public class UsuariosDiscordRepository
             Dictionary<string, object> data = new()
                 {
                     { "user_id", userId },
-                    { "Birthday", timeutc },
+                    { "Birthday", timeUtc },
                     { "MostrarYear", mostrarEdad },
                     { "DiaFechaOriginal", fechaOriginal.Day },
                     { "MesFechaOriginal", fechaOriginal.Month },
@@ -160,7 +152,7 @@ public class UsuariosDiscordRepository
     {
         FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
         DocumentReference doc = db.Collection("Cumpleaños").Document($"{userId}");
-        var snap = await doc.GetSnapshotAsync();
+        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
         if (snap.Exists)
         {
             await doc.DeleteAsync();
@@ -172,14 +164,14 @@ public class UsuariosDiscordRepository
         FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
         List<UserDailyXp> ret = [];
 
-        var col = db.Collection("XpChartHistory").Document($"{userId}").Collection("History").Document("Year").Collection($"{DateTime.Now.Year}");
-        var snap = await col.GetSnapshotAsync();
+        CollectionReference? col = db.Collection("XpChartHistory").Document($"{userId}").Collection("History").Document("Year").Collection($"{DateTime.Now.Year}");
+        QuerySnapshot? snap = await col.GetSnapshotAsync();
 
         if (snap.Count > 0)
         {
-            foreach (var document in snap.Documents)
+            foreach (DocumentSnapshot? document in snap.Documents)
             {
-                var doc = document.ConvertTo<UserDailyXp>();
+                UserDailyXp? doc = document.ConvertTo<UserDailyXp>();
                 switch (range)
                 {
                     case DateRangeXp.Semanal:
@@ -197,6 +189,7 @@ public class UsuariosDiscordRepository
                     case DateRangeXp.Anual:
                         ret.Add(doc);
                         break;
+                    case DateRangeXp.Completo:
                     default:
                         // TODO: Conseguir de otros años
                         ret.Add(doc);
@@ -214,7 +207,7 @@ public class UsuariosDiscordRepository
     {
         FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
         DocumentReference doc = db.Collection("XpChartHistory").Document($"{userId}").Collection("History").Document("Year").Collection($"{date.Year}").Document($"{date.DayOfYear}");
-        var snap = await doc.GetSnapshotAsync();
+        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
         if (!snap.Exists)
         {
             Dictionary<string, object> data = new()
@@ -232,7 +225,7 @@ public class UsuariosDiscordRepository
         FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
 
         DocumentReference doc = db.Collection("XpUsers").Document($"{userId}");
-        var snap = await doc.GetSnapshotAsync();
+        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
         if (!snap.Exists)
         {
             Dictionary<string, object> data = new()
@@ -250,13 +243,14 @@ public class UsuariosDiscordRepository
         }
         else
         {
-            var registro = snap.ConvertTo<UserXp>();
+            UserXp? registro = snap.ConvertTo<UserXp>();
 
-            long total1, booster1, challenges1, eventos1, intercambios1, otros1;
+            long booster1, challenges1, eventos1, intercambios1, otros1;
 
+            long total1 = registro.Total;
             if (action == 0)
             {
-                total1 = registro.Total; total1 += total;
+                total1 += total;
                 booster1 = registro.Booster; booster1 += booster;
                 challenges1 = registro.Challenges; challenges1 += challenges;
                 eventos1 = registro.Eventos; eventos1 += eventos;
@@ -265,7 +259,7 @@ public class UsuariosDiscordRepository
             }
             else
             {
-                total1 = registro.Total; total1 -= total;
+                total1 -= total;
                 booster1 = registro.Booster; booster1 -= booster;
                 challenges1 = registro.Challenges; challenges1 -= challenges;
                 eventos1 = registro.Eventos; eventos1 -= eventos;
@@ -294,14 +288,11 @@ public class UsuariosDiscordRepository
         List<UserXp> ret = [];
 
         CollectionReference col = db.Collection("XpUsers");
-        var snap = await col.GetSnapshotAsync();
+        QuerySnapshot? snap = await col.GetSnapshotAsync();
 
         if (snap.Count > 0)
         {
-            foreach (var document in snap.Documents)
-            {
-                ret.Add(document.ConvertTo<UserXp>());
-            }
+            ret.AddRange(snap.Documents.Select(document => document.ConvertTo<UserXp>()));
         }
 
         return ret;
@@ -311,9 +302,9 @@ public class UsuariosDiscordRepository
     {
         FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
         DocumentReference doc = db.Collection("TeiouCooldown").Document($"Nickname").Collection("Usuarios").Document($"{userId}");
-        var snap = await doc.GetSnapshotAsync();
+        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
 
-        var date = new DateTime(day: DateTime.UtcNow.Day, month: DateTime.UtcNow.Month, year: DateTime.UtcNow.Year, hour: DateTime.UtcNow.Hour, minute: DateTime.UtcNow.Minute, second: DateTime.UtcNow.Second, kind: DateTimeKind.Utc);
+        DateTime date = new DateTime(day: DateTime.UtcNow.Day, month: DateTime.UtcNow.Month, year: DateTime.UtcNow.Year, hour: DateTime.UtcNow.Hour, minute: DateTime.UtcNow.Minute, second: DateTime.UtcNow.Second, kind: DateTimeKind.Utc);
         date = date.AddHours(24);
 
         Dictionary<string, object> data = new()
@@ -331,17 +322,14 @@ public class UsuariosDiscordRepository
     public async Task<List<TeiouCooldownNickname>> GetListTeiouNicknameCooldown()
     {
         FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
-        var ret = new List<TeiouCooldownNickname>();
+        List<TeiouCooldownNickname> ret = [];
 
         CollectionReference col = db.Collection("TeiouCooldown").Document($"Nickname").Collection("Usuarios");
-        var snap = await col.GetSnapshotAsync();
+        QuerySnapshot? snap = await col.GetSnapshotAsync();
 
         if (snap.Count > 0)
         {
-            foreach (var document in snap.Documents)
-            {
-                ret.Add(document.ConvertTo<TeiouCooldownNickname>());
-            }
+            ret.AddRange(snap.Documents.Select(document => document.ConvertTo<TeiouCooldownNickname>()));
         }
 
         return ret;

@@ -9,10 +9,10 @@ public class Trigger
     public string Nombre { get; set; } = string.Empty;
 
     [FirestoreProperty]
-    public string? Texto { get; set; }
+    public string Texto { get; set; } = string.Empty;
 
     [FirestoreProperty]
-    public string? ImageUrl { get; set; }
+    public string ImageUrl { get; set; } = string.Empty;
 
     [FirestoreProperty]
     public bool Activo { get; set; }

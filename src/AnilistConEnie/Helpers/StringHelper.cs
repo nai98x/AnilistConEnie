@@ -4,6 +4,6 @@ public static class StringHelper
 {
     public static string TextAfter(this string value, string search)
     {
-        return value.Substring(value.IndexOf(search) + search.Length);
+        return value[(value.IndexOf(search, StringComparison.Ordinal) + search.Length)..];
     }
 }

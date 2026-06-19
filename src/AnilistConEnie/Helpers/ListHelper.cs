@@ -2,7 +2,7 @@
 
 public static class ListHelper
 {
-    private static readonly Random rng = new();
+    private static readonly Random Rng = new();
 
     public static void Shuffle<T>(this IList<T> list)
     {
@@ -10,7 +10,7 @@ public static class ListHelper
         while (n > 1)
         {
             n--;
-            int k = rng.Next(n + 1);
+            int k = Rng.Next(n + 1);
             (list[n], list[k]) = (list[k], list[n]);
         }
     }

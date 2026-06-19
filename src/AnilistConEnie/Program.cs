@@ -1,20 +1,34 @@
-﻿using AnilistConEnie;
-using DSharpPlus;
-using Microsoft.Extensions.Configuration;
+﻿using AnilistConEnie.Extensions;
+using Microsoft.Extensions.DependencyInjection;
+using AnilistConEnie.Services;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
-IConfigurationRoot config = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-            .Build();
+namespace AnilistConEnie;
 
-string discordToken = config["discordToken"] ?? throw new Exception("Es necesario configurar el token de Discord");
+public static class Program
+{
+    private static async Task Main(string[] args)
+    {
+        Console.WriteLine("Iniciando servicio principal AnilistConEnie");
+        IHost host = CreateHostBuilder(args);
+        Console.WriteLine("Servicio principal iniciado correctamente");
+        
+        await host.RunAsync();
+    }
 
-DiscordClientBuilder builder = DiscordClientBuilder.CreateDefault(discordToken, DiscordIntents.All);
+    private static IHost CreateHostBuilder(string[] args)
+    {
+        HostApplicationBuilder host = Host.CreateApplicationBuilder(args);
 
-builder.ConfigureEventHandlers
-(
-    b => b.HandleMessageCreated(Events.MessageCreated)
-);
-
-await builder.ConnectAsync();
-await Task.Delay(-1);
+        host.Services
+            .AddConfiguredDiscordClient()
+            .AddLogging(builder => builder
+                .AddConsole())
+            .AddSingleton<MainService>()
+            .AddSingleton<Events>()
+            .AddHostedService<DiscordBotService>();
+        
+        return host.Build();
+    }
+}

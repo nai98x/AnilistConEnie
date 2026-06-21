@@ -110,6 +110,13 @@ class BotStateService(
     #region Triggers
     public IReadOnlyDictionary<string, Trigger> GetActiveTriggers() => _triggers;
 
+    public void FillTriggers(List<Trigger> triggers)
+    {
+        _triggers.Clear();
+        foreach (Trigger trigger in triggers)
+            _triggers[trigger.Nombre] = trigger;
+    }
+
     public void SetTrigger(Trigger trigger) => _triggers[trigger.Nombre] = trigger;
 
     public void RemoveTriggerFromActiveList(string triggerName) => _triggers.TryRemove(triggerName, out _);
@@ -365,9 +372,8 @@ class BotStateService(
     #endregion
 
     #region Anilist baneados
-    public async Task SetAnilistBaneados()
+    public void FillAnilistBaneados(List<UsuarioAnilistBaneado> baneados)
     {
-        var baneados = await usuariosAnilistRepository.GetListaUsuariosBaneados();
         _anilistBaneados = [..baneados.Select(x => x.AnilistUserId)];
     }
 

@@ -16,7 +16,7 @@ public static class ServiceCollectionExtensions
             IConfiguration configuration = provider.GetRequiredService<IConfiguration>();
             Events events = provider.GetRequiredService<Events>();
             
-            string token = configuration.GetValue<string>("discordToken") ?? throw new InvalidOperationException("No se encontro el token de Discord en la configuración.");
+            string token = configuration.GetValue<string>("discordToken") ?? throw new InvalidOperationException("No se encontró el token de Discord en la configuración.");
             
             DiscordClientBuilder clientBuilder = DiscordClientBuilder.CreateDefault(token, DiscordIntents.All);
 

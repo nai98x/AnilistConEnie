@@ -129,6 +129,43 @@ public class UsuariosAnilistRepository (IConfiguration configuration)
             await doc.SetAsync(data);
         }
     }
+    
+    public static async Task AgregarUsuarioApproval(UserApprovalAnilist user)
+    {
+        FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
+        DocumentReference doc = db.Collection("AnilistApproval").Document($"{user.IdDiscord}");
+        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
+        if (!snap.Exists)
+        {
+            await doc.SetAsync(user);
+        }
+    }
+
+    public static async Task EliminarUsuarioApproval(long userIdDiscord)
+    {
+        FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
+        DocumentReference doc = db.Collection("AnilistApproval").Document($"{userIdDiscord}");
+        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
+        if (snap.Exists)
+        {
+            await doc.DeleteAsync();
+        }
+    }
+
+    public static async Task<UserApprovalAnilist?> GetUsuarioApproval(long userIdDiscord)
+    {
+        FirestoreDb db = await FirebaseHelper.GetFirestoreClientAnilistConEnie();
+
+        DocumentReference doc = db.Collection("AnilistApproval").Document($"{userIdDiscord}");
+        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
+
+        if (snap.Exists)
+        {
+            return snap.ConvertTo<UserApprovalAnilist>();
+        }
+
+        return null;
+    }
 
     #region  Yumiko
 

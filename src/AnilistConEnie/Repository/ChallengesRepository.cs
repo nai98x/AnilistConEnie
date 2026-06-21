@@ -67,7 +67,7 @@ public class ChallengesRepository
         DocumentSnapshot? snap = await doc.GetSnapshotAsync();
         if (!snap.Exists)
         {
-            Dictionary<string, object> data = new()
+            Dictionary<string, object?> data = new()
                 {
                     { "Nombre", nombre },
                     { "Link", link },
@@ -80,7 +80,7 @@ public class ChallengesRepository
         {
             Challenge? registro = snap.ConvertTo<Challenge>();
             registro.Link = link;
-            Dictionary<string, object> data = new()
+            Dictionary<string, object?> data = new()
                 {
                     { "Nombre", registro.Nombre },
                     { "Link", registro.Link },

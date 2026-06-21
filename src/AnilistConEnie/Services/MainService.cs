@@ -1,6 +1,5 @@
 using DSharpPlus;
 using DSharpPlus.Entities;
-using Google.Apis.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -12,6 +11,10 @@ public class MainService(DiscordClient client, IConfiguration configuration, ILo
     public bool Initialized { get; private set; } = false;
     public DiscordChannel? LogChannelInfo { get; private set; } 
     public DiscordChannel? LogChannelErrors { get; private set; } 
+    public ulong GuildId => ulong.Parse(configuration["Ids:GuildId"] ?? throw new Exception("Es necesario configurar el Id del servidor"));
+    public ulong CanalGeneralId => ulong.Parse(configuration["Ids:Channels:General"] ?? throw new Exception("Es necesario configurar el Id del canal general"));
+    public ulong ConfigBotsId => ulong.Parse(configuration["Ids:Channels:ConfigBots"] ?? throw new Exception("Es necesario configurar el Id del canal de configuración de bots"));
+    public ulong OwnerId => ulong.Parse(configuration["Ids:OwnerId"] ?? throw new Exception("Es necesario configurar el Id del propietario"));
     
     public void SetInitialized()
     {

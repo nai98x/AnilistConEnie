@@ -20,13 +20,13 @@ public class MessageCreatedHandler(
     {
         if (args.Guild.Id != config.GuildId) return;
 
-        MainService mainService = services.GetRequiredService<MainService>();
-        SingletonService singletonService = services.GetRequiredService<SingletonService>();
+        DiscordBotService discordBotService = services.GetRequiredService<DiscordBotService>();
+        BotStateService botStateService = services.GetRequiredService<BotStateService>();
 
         #region Deteccion de usuarios activos en el servidor
-        if (!args.Author.IsBot && !mainService.Debug)
+        if (!args.Author.IsBot && !discordBotService.Debug)
         {
-            _ = singletonService.AddDailyActiveUser(args.Author.Id, client.Guilds[config.GuildId]);
+            _ = botStateService.AddDailyActiveUser(args.Author.Id, client.Guilds[config.GuildId]);
         }
         #endregion
 
@@ -44,30 +44,30 @@ public class MessageCreatedHandler(
             && ((args.Channel is DiscordThreadChannel && !canalesSinXp.Contains(args.Channel.Parent.Id))
                 || (args.Channel is not DiscordThreadChannel && !canalesSinXp.Contains(args.Channel.Id)))
             && !(args.Message.Content.StartsWith('<') && args.Message.Content.EndsWith('>') && args.Message.Content.Split(' ').Length == 1))
-            singletonService.AddMemberToObtainXp(args.Author.Id);
+            botStateService.AddMemberToObtainXp(args.Author.Id);
         #endregion
 
         #region YepMode
-        if (singletonService.YepMode && args.Channel.Id == config.Channels.General)
-            await args.Message.CreateReactionAsync(singletonService.Emote);
+        if (botStateService.YepMode && args.Channel.Id == config.Channels.General)
+            await args.Message.CreateReactionAsync(botStateService.Emote);
         #endregion
 
         #region Autoban hacked accounts
-        if (!args.Author.IsBot && (!mainService.Debug || (mainService.Debug && args.Author.Id == config.OwnerId)))
+        if (!args.Author.IsBot && (!discordBotService.Debug || (discordBotService.Debug && args.Author.Id == config.OwnerId)))
         {
-            singletonService.AddRecentUserMessage(args.Author.Id, args.Channel.Id, args.Message.Content);
+            botStateService.AddRecentUserMessage(args.Author.Id, args.Channel.Id, args.Message.Content);
 
-            if (singletonService.IsHackedAccount(args.Author.Id))
+            if (botStateService.IsHackedAccount(args.Author.Id))
                 await args.Guild.Members[args.Author.Id].BanAsync(TimeSpan.FromDays(1), "Autoban por cuenta hackeada");
         }
         #endregion
 
         #region Triggers
-        if ((!args.Author.IsBot && !string.IsNullOrEmpty(args.Message.Content) && args.Channel.Id != config.Channels.ConfigBots && !mainService.Debug)
-            || (mainService.Debug && args.Message.Author?.Id == config.OwnerId))
+        if ((!args.Author.IsBot && !string.IsNullOrEmpty(args.Message.Content) && args.Channel.Id != config.Channels.ConfigBots && !discordBotService.Debug)
+            || (discordBotService.Debug && args.Message.Author?.Id == config.OwnerId))
         {
             string mensajeOriginal = args.Message.Content.ToLower();
-            Dictionary<string, Trigger> triggers = singletonService.GetActiveTriggers();
+            var triggers = botStateService.GetActiveTriggers();
             List<KeyValuePair<string, Trigger>> matches = triggers.Where(x => mensajeOriginal.Contains(x.Key)).ToList();
 
             foreach (KeyValuePair<string, Trigger> trigger in matches)
@@ -109,7 +109,7 @@ public class MessageCreatedHandler(
         #endregion
 
         #region Intercambios Repost
-        if (!mainService.Debug && args.Channel.ParentId == config.Channels.Intercambios.Reviews)
+        if (!discordBotService.Debug && args.Channel.ParentId == config.Channels.Intercambios.Reviews)
         {
             DiscordThreadChannel? forumPost = args.Channel as DiscordThreadChannel;
             DiscordMember? autor = args.Message.Author as DiscordMember;

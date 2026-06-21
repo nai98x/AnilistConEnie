@@ -13,14 +13,14 @@ public class MessageReactionAddedHandler(IServiceProvider services, BotConfigura
     {
         if (args.Guild?.Id != config.GuildId) return;
 
-        MainService mainService = services.GetRequiredService<MainService>();
-        SingletonService singletonService = services.GetRequiredService<SingletonService>();
+        DiscordBotService discordBotService = services.GetRequiredService<DiscordBotService>();
+        BotStateService botStateService = services.GetRequiredService<BotStateService>();
 
         #region Control de reacciones para canal de sugerencias
         if (args.Channel.Id == config.Channels.Sugerencias
             && !args.Emoji.Equals(DiscordEmoji.FromUnicode(client, "✅"))
             && !args.Emoji.Equals(DiscordEmoji.FromUnicode(client, "❌"))
-            && !mainService.Debug)
+            && !discordBotService.Debug)
         {
             await args.Message.DeleteReactionAsync(args.Emoji, args.User);
         }
@@ -29,10 +29,10 @@ public class MessageReactionAddedHandler(IServiceProvider services, BotConfigura
         #region Confesiones
         DiscordEmoji emote = DiscordEmoji.FromGuildEmote(client, 1134553504166465676);
         if (args.Channel.Id == 862408834693070901
-            && singletonService.IsConfession(args.Message.Id)
+            && botStateService.IsConfession(args.Message.Id)
             && args.Emoji.Id == emote.Id)
         {
-            (bool guessed, ulong? messageId, ulong? userId) = singletonService.AddConfessionReaction(args.Message.Id, args.User.Id);
+            (bool guessed, ulong? messageId, ulong? userId) = botStateService.AddConfessionReaction(args.Message.Id, args.User.Id);
             if (guessed)
             {
                 DiscordMember confessionUser = args.Guild!.Members[userId!.Value];

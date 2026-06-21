@@ -2,18 +2,22 @@ using AnilistConEnie.Bot.Services;
 using DSharpPlus;
 using DSharpPlus.EventArgs;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class GuildDownloadCompletedHandler(IServiceProvider services)
+public class GuildDownloadCompletedHandler(IServiceProvider services, ILogger<GuildDownloadCompletedHandler> logger)
 {
     public async Task Handle(DiscordClient client, GuildDownloadCompletedEventArgs args)
     {
-        MainService mainService = services.GetRequiredService<MainService>();
-        mainService.SetChannels();
-        mainService.SetInitialized();
+        DiscordBotService discordBotService = services.GetRequiredService<DiscordBotService>();
+        BotStateService botStateService = services.GetRequiredService<BotStateService>();
 
-        /*if (!Debug)
+        discordBotService.SetChannels();
+        botStateService.SetInitialized();
+        logger.LogInformation("Bot inicializado correctamente");
+
+        /*if (!discordBotService.Debug)
         {
             await Funciones.ManageBoosters(client.Guilds[...]);
             await Funciones.ManageNewUsuarios(client.Guilds[...]);

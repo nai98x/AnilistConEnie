@@ -32,9 +32,9 @@ public static class Program
                 .AddInfrastructure()
                 .AddConfiguredDiscordClient()
                 .AddLogging(builder => builder.AddConsole())
-                .AddSingleton<MainService>()
-                .AddSingleton<SingletonService>()
-                .AddHostedService<DiscordBotService>();
+                .AddSingleton<BotStateService>()
+                .AddSingleton<DiscordBotService>()
+                .AddHostedService(sp => sp.GetRequiredService<DiscordBotService>());
         }
         catch (Exception ex)
         {

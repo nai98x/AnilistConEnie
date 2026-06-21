@@ -18,10 +18,10 @@ public class MessageUpdatedHandler(
     {
         if (args.Guild?.Id != config.GuildId) return;
 
-        MainService mainService = services.GetRequiredService<MainService>();
+        DiscordBotService discordBotService = services.GetRequiredService<DiscordBotService>();
 
         #region Intercambios Repost
-        if (!mainService.Debug && args.Channel.ParentId == config.Channels.Intercambios.Reviews)
+        if (!discordBotService.Debug && args.Channel.ParentId == config.Channels.Intercambios.Reviews)
         {
             MensajeIntercambioRepost? mensaje = await intercambiosRepostRepository.GetMensaje(args.Message.Id);
             if (mensaje != null)

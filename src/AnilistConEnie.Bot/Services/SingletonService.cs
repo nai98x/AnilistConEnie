@@ -547,25 +547,22 @@ class SingletonService(
 
     public bool IsConfession(ulong messageId) => _dailyConfessionUsers.ContainsValue(messageId);
 
-    public (bool, ulong?, ulong?) AddConfessionReaction(ulong messageId, ulong userReactedId)
+    public (bool, ulong, ulong) AddConfessionReaction(ulong messageId, ulong userReactedId)
     {
-        var confessionUser = _dailyConfessionUsers.First(x => x.Value == messageId);
-        var confessionReactions = _confessions[confessionUser.Key];
+        KeyValuePair<ulong, ulong> confessionUser = _dailyConfessionUsers.First(x => x.Value == messageId);
+        List<ulong> confessionReactions = _confessions[confessionUser.Key];
 
-        if (!confessionReactions.Contains(userReactedId) && userReactedId != confessionUser.Key)
-        {
-            confessionReactions.Add(userReactedId);
-            _confessions[confessionUser.Key] = confessionReactions;
+        if (confessionReactions.Contains(userReactedId) || userReactedId == confessionUser.Key) return (false, 0, 0);
+        
+        confessionReactions.Add(userReactedId);
+        _confessions[confessionUser.Key] = confessionReactions;
 
-            var revealPercentage = confessionReactions.Count * 5;
-            if (NumberHelper.GetNumeroRandom(0, 100) <= revealPercentage)
-            {
-                _dailyConfessedMessages.Add(confessionUser.Value, confessionUser.Key);
-                return (true, confessionUser.Value, confessionUser.Key);
-            }
-        }
+        int revealPercentage = confessionReactions.Count * 5;
+        if (NumberHelper.GetNumeroRandom(0, 100) > revealPercentage) return (false, 0, 0);
+        
+        _dailyConfessedMessages.Add(confessionUser.Value, confessionUser.Key);
+        return (true, confessionUser.Value, confessionUser.Key);
 
-        return (false, null, null);
     }
     #endregion
 

@@ -1,3 +1,4 @@
+using AnilistConEnie.Bot.Events;
 using DSharpPlus;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
@@ -8,22 +9,21 @@ namespace AnilistConEnie.Bot.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddConfiguredDiscordClient(
-        this IServiceCollection services)
+    public static IServiceCollection AddConfiguredDiscordClient(this IServiceCollection services)
     {
+        services.AddDiscordEventHandlers();
+
         services.AddSingleton<DiscordClient>(provider =>
         {
             IConfiguration configuration = provider.GetRequiredService<IConfiguration>();
-            Events events = provider.GetRequiredService<Events>();
-            
-            string token = configuration.GetValue<string>("discordToken") ?? throw new InvalidOperationException("No se encontró el token de Discord en la configuración.");
-            
+
+            string token = configuration.GetValue<string>("discordToken")
+                ?? throw new InvalidOperationException("'discordToken' es obligatorio en appsettings.json");
+
             DiscordClientBuilder clientBuilder = DiscordClientBuilder.CreateDefault(token, DiscordIntents.All);
 
-            clientBuilder.ConfigureEventHandlers(b => b
-                .HandleMessageCreated(events.MessageCreated)
-                .HandleGuildDownloadCompleted(events.GuildDownloadCompleted));
-            
+            clientBuilder.BindEventHandlers(provider);
+
             clientBuilder.UseCommands((_, extension) =>
             {
                 //extension.AddCommands([typeof(MyCommand), typeof(MyOtherCommand)]);
@@ -36,9 +36,7 @@ public static class ServiceCollectionExtensions
                 UseDefaultCommandErrorHandler = false
             });
 
-            DiscordClient client = clientBuilder.Build();
-
-            return client;
+            return clientBuilder.Build();
         });
 
         return services;

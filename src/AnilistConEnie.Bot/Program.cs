@@ -1,3 +1,4 @@
+using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Extensions;
 using AnilistConEnie.Bot.Services;
 using AnilistConEnie.Infrastructure.Extensions;
@@ -22,16 +23,17 @@ public static class Program
     {
         HostApplicationBuilder host = Host.CreateApplicationBuilder(args);
 
+        BotConfiguration botConfig = BotConfiguration.FromConfiguration(host.Configuration);
+
         try
         {
             host.Services
+                .AddSingleton(botConfig)
                 .AddInfrastructure()
                 .AddConfiguredDiscordClient()
-                .AddLogging(builder => builder
-                    .AddConsole())
+                .AddLogging(builder => builder.AddConsole())
                 .AddSingleton<MainService>()
                 .AddSingleton<SingletonService>()
-                .AddSingleton<Events>()
                 .AddHostedService<DiscordBotService>();
         }
         catch (Exception ex)

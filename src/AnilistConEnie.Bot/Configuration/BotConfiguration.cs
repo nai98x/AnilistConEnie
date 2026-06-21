@@ -7,6 +7,8 @@ public class BotConfiguration
     public required ulong GuildId { get; init; }
     public required ulong OwnerId { get; init; }
     public required ChannelConfiguration Channels { get; init; }
+    public required RolesConfiguration Roles { get; init; }
+    public required IReadOnlyList<PaisTimezoneConfiguration> PaisTimezones { get; init; }
 
     public class ChannelConfiguration
     {
@@ -16,6 +18,7 @@ public class BotConfiguration
         public required ulong LogChannelInfo { get; init; }
         public required ulong LogChannelError { get; init; }
         public required ulong Perfiles { get; init; }
+        public required ulong Playroom { get; init; }
         public required IntercambiosChannelConfiguration Intercambios { get; init; }
 
         public class IntercambiosChannelConfiguration
@@ -30,11 +33,38 @@ public class BotConfiguration
         }
     }
 
+    public class RolesConfiguration
+    {
+        public required ulong Miembro { get; init; }
+        public required ulong NoVinculado { get; init; }
+        public required ulong Inactivo { get; init; }
+        public required ulong ColoresExtra { get; init; }
+        public required RangosConfiguration Rangos { get; init; }
+        public required IReadOnlyList<ColorRangoConfiguration> ColoresRango { get; init; }
+
+        public class RangosConfiguration
+        {
+            public required ulong Tama { get; init; }
+            public required ulong Casual { get; init; }
+            public required ulong Kouhai { get; init; }
+            public required ulong Senpai { get; init; }
+            public required ulong Hikikomori { get; init; }
+            public required ulong Sensei { get; init; }
+            public required ulong Ousama { get; init; }
+            public required ulong Teiou { get; init; }
+        }
+    }
+
+    public record PaisTimezoneConfiguration(ulong RoleId, string Timezone);
+    public record ColorRangoConfiguration(ulong RoleId, string Nombre, string Rango);
+
     public static BotConfiguration FromConfiguration(IConfiguration configuration)
     {
         IConfigurationSection ids = configuration.GetSection("Ids");
         IConfigurationSection channels = ids.GetSection("Channels");
         IConfigurationSection intercambios = channels.GetSection("Intercambios");
+        IConfigurationSection roles = ids.GetSection("Roles");
+        IConfigurationSection rangos = roles.GetSection("Rangos");
 
         return new BotConfiguration
         {
@@ -48,6 +78,7 @@ public class BotConfiguration
                 LogChannelInfo = RequireUlong(channels, "LogChannelInfo"),
                 LogChannelError = RequireUlong(channels, "LogChannelError"),
                 Perfiles = RequireUlong(channels, "Perfiles"),
+                Playroom = RequireUlong(channels, "Playroom"),
                 Intercambios = new ChannelConfiguration.IntercambiosChannelConfiguration
                 {
                     Reviews = RequireUlong(intercambios, "Reviews"),
@@ -58,7 +89,27 @@ public class BotConfiguration
                     Musica = RequireUlong(intercambios, "Musica"),
                     Fanarts = RequireUlong(intercambios, "Fanarts"),
                 }
-            }
+            },
+            Roles = new RolesConfiguration
+            {
+                Miembro = RequireUlong(roles, "Miembro"),
+                NoVinculado = RequireUlong(roles, "NoVinculado"),
+                Inactivo = RequireUlong(roles, "Inactivo"),
+                ColoresExtra = RequireUlong(roles, "ColoresExtra"),
+                Rangos = new RolesConfiguration.RangosConfiguration
+                {
+                    Tama = RequireUlong(rangos, "Tama"),
+                    Casual = RequireUlong(rangos, "Casual"),
+                    Kouhai = RequireUlong(rangos, "Kouhai"),
+                    Senpai = RequireUlong(rangos, "Senpai"),
+                    Hikikomori = RequireUlong(rangos, "Hikikomori"),
+                    Sensei = RequireUlong(rangos, "Sensei"),
+                    Ousama = RequireUlong(rangos, "Ousama"),
+                    Teiou = RequireUlong(rangos, "Teiou"),
+                },
+                ColoresRango = RequireColoresRango(roles)
+            },
+            PaisTimezones = RequirePaisTimezones(ids)
         };
     }
 
@@ -69,4 +120,33 @@ public class BotConfiguration
             throw new InvalidOperationException($"Configuración faltante o inválida en appsettings.json: {section.Path}:{key}");
         return value;
     }
+
+    private static IReadOnlyList<ColorRangoConfiguration> RequireColoresRango(IConfigurationSection roles)
+    {
+        var raw = roles.GetSection("ColoresRango").Get<ColorRangoRaw[]>();
+        if (raw is null || raw.Length == 0)
+            throw new InvalidOperationException("Configuración faltante o inválida en appsettings.json: Ids:Roles:ColoresRango");
+        return raw.Select(r =>
+        {
+            if (!ulong.TryParse(r.RoleId, out ulong roleId))
+                throw new InvalidOperationException($"RoleId inválido en Ids:Roles:ColoresRango: {r.RoleId}");
+            return new ColorRangoConfiguration(roleId, r.Nombre, r.Rango);
+        }).ToList().AsReadOnly();
+    }
+
+    private static IReadOnlyList<PaisTimezoneConfiguration> RequirePaisTimezones(IConfigurationSection ids)
+    {
+        var raw = ids.GetSection("PaisTimezones").Get<PaisTimezoneRaw[]>();
+        if (raw is null || raw.Length == 0)
+            throw new InvalidOperationException("Configuración faltante o inválida en appsettings.json: Ids:PaisTimezones");
+        return raw.Select(r =>
+        {
+            if (!ulong.TryParse(r.RoleId, out ulong roleId))
+                throw new InvalidOperationException($"RoleId inválido en Ids:PaisTimezones: {r.RoleId}");
+            return new PaisTimezoneConfiguration(roleId, r.Timezone);
+        }).ToList().AsReadOnly();
+    }
+
+    private record ColorRangoRaw(string RoleId, string Nombre, string Rango);
+    private record PaisTimezoneRaw(string RoleId, string Timezone);
 }

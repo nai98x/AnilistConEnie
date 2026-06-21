@@ -1,5 +1,6 @@
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Extensions;
+using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
 using AnilistConEnie.Infrastructure.Extensions;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,6 +34,7 @@ public static class Program
                 .AddConfiguredDiscordClient()
                 .AddLogging(builder => builder.AddConsole())
                 .AddSingleton<BotStateService>()
+                .AddSingleton<DiscordHelper>()
                 .AddSingleton<DiscordBotService>()
                 .AddHostedService(sp => sp.GetRequiredService<DiscordBotService>());
         }

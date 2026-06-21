@@ -10,14 +10,21 @@ public class DiscordBotService(DiscordClient client, BotConfiguration config, IL
     : IHostedService
 {
     public bool Debug { get; } = SetDebug();
-    public DiscordChannel? LogChannelInfo { get; private set; }
-    public DiscordChannel? LogChannelErrors { get; private set; }
+
+    private DiscordChannel? _logChannelInfo;
+    private DiscordChannel? _logChannelErrors;
+    private DiscordChannel? _playroom;
+
+    public DiscordChannel LogChannelInfo  => _logChannelInfo  ?? throw new InvalidOperationException($"Canal {nameof(LogChannelInfo)} no inicializado.");
+    public DiscordChannel LogChannelErrors => _logChannelErrors ?? throw new InvalidOperationException($"Canal {nameof(LogChannelErrors)} no inicializado.");
+    public DiscordChannel Playroom        => _playroom        ?? throw new InvalidOperationException($"Canal {nameof(Playroom)} no inicializado.");
 
     public void SetChannels()
     {
         DiscordGuild guild = client.Guilds[config.GuildId];
-        LogChannelInfo = guild.Channels[config.Channels.LogChannelInfo];
-        LogChannelErrors = guild.Channels[config.Channels.LogChannelError];
+        _logChannelInfo   = guild.Channels[config.Channels.LogChannelInfo]  ?? throw new InvalidOperationException($"Canal LogChannelInfo ({config.Channels.LogChannelInfo}) no encontrado en el guild.");
+        _logChannelErrors = guild.Channels[config.Channels.LogChannelError] ?? throw new InvalidOperationException($"Canal LogChannelError ({config.Channels.LogChannelError}) no encontrado en el guild.");
+        _playroom         = guild.Channels[config.Channels.Playroom]        ?? throw new InvalidOperationException($"Canal Playroom ({config.Channels.Playroom}) no encontrado en el guild.");
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)

@@ -13,6 +13,12 @@ public static class EventHandlerRegistrar
         services.AddSingleton<MessageUpdatedHandler>();
         services.AddSingleton<MessageDeletedHandler>();
         services.AddSingleton<MessageReactionAddedHandler>();
+        services.AddSingleton<ComponentInteractionHandler>();
+        services.AddSingleton<GuildMemberAddedHandler>();
+        services.AddSingleton<GuildMemberRemovedHandler>();
+        services.AddSingleton<SessionCreatedHandler>();
+        services.AddSingleton<SessionResumedHandler>();
+        services.AddSingleton<ZombiedHandler>();
         return services;
     }
 
@@ -24,6 +30,12 @@ public static class EventHandlerRegistrar
             .HandleMessageUpdated(provider.GetRequiredService<MessageUpdatedHandler>().Handle)
             .HandleMessageDeleted(provider.GetRequiredService<MessageDeletedHandler>().Handle)
             .HandleMessageReactionAdded(provider.GetRequiredService<MessageReactionAddedHandler>().Handle)
+            .HandleComponentInteractionCreated(provider.GetRequiredService<ComponentInteractionHandler>().Handle)
+            .HandleGuildMemberAdded(provider.GetRequiredService<GuildMemberAddedHandler>().Handle)
+            .HandleGuildMemberRemoved(provider.GetRequiredService<GuildMemberRemovedHandler>().Handle)
+            .HandleSessionCreated(provider.GetRequiredService<SessionCreatedHandler>().Handle)
+            .HandleSessionResumed(provider.GetRequiredService<SessionResumedHandler>().Handle)
+            .HandleZombied(provider.GetRequiredService<ZombiedHandler>().Handle)
         );
         return builder;
     }

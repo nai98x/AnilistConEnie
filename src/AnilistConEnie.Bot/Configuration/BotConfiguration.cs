@@ -8,6 +8,7 @@ public class BotConfiguration
     public required ulong OwnerId { get; init; }
     public required ChannelConfiguration Channels { get; init; }
     public required RolesConfiguration Roles { get; init; }
+    public required EmotesConfiguration Emotes { get; init; }
     public required IReadOnlyList<PaisTimezoneConfiguration> PaisTimezones { get; init; }
 
     public class ChannelConfiguration
@@ -17,6 +18,7 @@ public class BotConfiguration
         public required ulong Sugerencias { get; init; }
         public required ulong LogChannelInfo { get; init; }
         public required ulong LogChannelError { get; init; }
+        public required ulong LogChannelPuerta { get; init; }
         public required ulong Perfiles { get; init; }
         public required ulong Playroom { get; init; }
         public required IntercambiosChannelConfiguration Intercambios { get; init; }
@@ -56,6 +58,17 @@ public class BotConfiguration
         }
     }
 
+    public class EmotesConfiguration
+    {
+        public required EmoteIds UmaPoints { get; init; }
+        public required EmoteIds Worrysad { get; init; }
+
+        public record EmoteIds(ulong Prod, ulong Test)
+        {
+            public ulong Get(bool isDebug) => isDebug ? Test : Prod;
+        }
+    }
+
     public record PaisTimezoneConfiguration(ulong RoleId, string Timezone);
     public record ColorRangoConfiguration(ulong RoleId, string Nombre, string Rango);
 
@@ -66,6 +79,7 @@ public class BotConfiguration
         IConfigurationSection intercambios = channels.GetSection("Intercambios");
         IConfigurationSection roles = ids.GetSection("Roles");
         IConfigurationSection rangos = roles.GetSection("Rangos");
+        IConfigurationSection emotes = ids.GetSection("Emotes");
 
         return new BotConfiguration
         {
@@ -80,6 +94,7 @@ public class BotConfiguration
                 LogChannelError = RequireUlong(channels, "LogChannelError"),
                 Perfiles = RequireUlong(channels, "Perfiles"),
                 Playroom = RequireUlong(channels, "Playroom"),
+                LogChannelPuerta = RequireUlong(channels, "LogChannelPuerta"),
                 Intercambios = new ChannelConfiguration.IntercambiosChannelConfiguration
                 {
                     Reviews = RequireUlong(intercambios, "Reviews"),
@@ -111,6 +126,11 @@ public class BotConfiguration
                 },
                 ColoresRango = RequireColoresRango(roles)
             },
+            Emotes = new EmotesConfiguration
+            {
+                UmaPoints = RequireEmoteIds(emotes, "UmaPoints"),
+                Worrysad = RequireEmoteIds(emotes, "Worrysad"),
+            },
             PaisTimezones = RequirePaisTimezones(ids)
         };
     }
@@ -121,6 +141,12 @@ public class BotConfiguration
         if (string.IsNullOrEmpty(raw) || !ulong.TryParse(raw, out ulong value) || value == 0)
             throw new InvalidOperationException($"Configuración faltante o inválida en appsettings.json: {section.Path}:{key}");
         return value;
+    }
+
+    private static EmotesConfiguration.EmoteIds RequireEmoteIds(IConfigurationSection emotes, string key)
+    {
+        IConfigurationSection section = emotes.GetSection(key);
+        return new EmotesConfiguration.EmoteIds(RequireUlong(section, "Prod"), RequireUlong(section, "Test"));
     }
 
     private static IReadOnlyList<ColorRangoConfiguration> RequireColoresRango(IConfigurationSection roles)

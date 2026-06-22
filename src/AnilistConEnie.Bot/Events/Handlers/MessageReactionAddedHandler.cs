@@ -26,8 +26,8 @@ public class MessageReactionAddedHandler(
         #endregion
 
         #region Confesiones
-        DiscordEmoji emote = DiscordEmoji.FromGuildEmote(client, 1134553504166465676);
-        if (args.Channel.Id == 862408834693070901
+        DiscordEmoji emote = DiscordEmoji.FromGuildEmote(client, config.Emotes.ConfessionReaction);
+        if (args.Channel.Id == config.Channels.General
             && botStateService.IsConfession(args.Message.Id)
             && args.Emoji.Id == emote.Id)
         {

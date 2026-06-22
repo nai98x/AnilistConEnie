@@ -6,6 +6,7 @@ public class BotConfiguration
 {
     public required ulong GuildId { get; init; }
     public required ulong OwnerId { get; init; }
+    public required bool ManageXpUserHistory { get; init; }
     public required ChannelConfiguration Channels { get; init; }
     public required RolesConfiguration Roles { get; init; }
     public required EmotesConfiguration Emotes { get; init; }
@@ -15,6 +16,10 @@ public class BotConfiguration
     {
         public required ulong General { get; init; }
         public required ulong ConfigBots { get; init; }
+        public required ulong Tsuma { get; init; }
+        public required ulong Mudae { get; init; }
+        public required ulong ComandosCanal { get; init; }
+        public required ulong ComandosForo { get; init; }
         public required ulong Sugerencias { get; init; }
         public required ulong LogChannelInfo { get; init; }
         public required ulong LogChannelError { get; init; }
@@ -38,6 +43,7 @@ public class BotConfiguration
     public class RolesConfiguration
     {
         public required ulong Miembro { get; init; }
+        public required ulong Fundador { get; init; }
         public required ulong NoVinculado { get; init; }
         public required ulong Inactivo { get; init; }
         public required ulong Invite { get; init; }
@@ -62,6 +68,7 @@ public class BotConfiguration
     {
         public required EmoteIds UmaPoints { get; init; }
         public required EmoteIds Worrysad { get; init; }
+        public required ulong ConfessionReaction { get; init; }
 
         public record EmoteIds(ulong Prod, ulong Test)
         {
@@ -85,10 +92,15 @@ public class BotConfiguration
         {
             GuildId = RequireUlong(ids, "GuildId"),
             OwnerId = RequireUlong(ids, "OwnerId"),
+            ManageXpUserHistory = bool.TryParse(configuration["ManageXpUserHistory"], out bool manageXpUserHistory) && manageXpUserHistory,
             Channels = new ChannelConfiguration
             {
                 General = RequireUlong(channels, "General"),
                 ConfigBots = RequireUlong(channels, "ConfigBots"),
+                Tsuma = RequireUlong(channels, "Tsuma"),
+                Mudae = RequireUlong(channels, "Mudae"),
+                ComandosCanal = RequireUlong(channels, "ComandosCanal"),
+                ComandosForo = RequireUlong(channels, "ComandosForo"),
                 Sugerencias = RequireUlong(channels, "Sugerencias"),
                 LogChannelInfo = RequireUlong(channels, "LogChannelInfo"),
                 LogChannelError = RequireUlong(channels, "LogChannelError"),
@@ -109,6 +121,7 @@ public class BotConfiguration
             Roles = new RolesConfiguration
             {
                 Miembro = RequireUlong(roles, "Miembro"),
+                Fundador = RequireUlong(roles, "Fundador"),
                 NoVinculado = RequireUlong(roles, "NoVinculado"),
                 Inactivo = RequireUlong(roles, "Inactivo"),
                 Invite = RequireUlong(roles, "Invite"),
@@ -130,6 +143,7 @@ public class BotConfiguration
             {
                 UmaPoints = RequireEmoteIds(emotes, "UmaPoints"),
                 Worrysad = RequireEmoteIds(emotes, "Worrysad"),
+                ConfessionReaction = RequireUlong(emotes, "ConfessionReaction"),
             },
             PaisTimezones = RequirePaisTimezones(ids)
         };

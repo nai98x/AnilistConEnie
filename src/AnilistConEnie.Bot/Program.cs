@@ -1,11 +1,12 @@
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Extensions;
-using AnilistConEnie.Bot.Helpers;
-using AnilistConEnie.Bot.Services;
 using AnilistConEnie.Infrastructure.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Core;
+using Serilog.Events;
+using Serilog.Sinks.SystemConsole.Themes;
 
 namespace AnilistConEnie.Bot;
 
@@ -13,11 +14,40 @@ public static class Program
 {
     private static async Task Main(string[] args)
     {
-        Console.WriteLine("Iniciando servicio principal AnilistConEnie");
-        IHost host = CreateHostBuilder(args);
-        Console.WriteLine("Servicio principal iniciado correctamente");
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+            .Enrich.WithProcessId()
+            .Enrich.FromLogContext()
+            .WriteTo.Console(
+                theme: SystemConsoleTheme.Colored,
+                outputTemplate: "[{Timestamp:HH:mm:ss}] [{ProcessId}] [{Level:u3}]: {Message:lj}{NewLine}{Exception}")
+            .WriteTo.File(
+                levelSwitch: new LoggingLevelSwitch(LogEventLevel.Information),
+                path: "logs/anilistconenie-.log",
+                outputTemplate: "[{Timestamp:dd-MM-yyyy HH:mm:ss}] [{Level:u3}]: {Message:lj}{NewLine}{Exception}",
+                fileSizeLimitBytes: 8_388_608, /* 8 megabytes */
+                rollOnFileSizeLimit: true,
+                retainedFileCountLimit: 50)
+            .CreateLogger();
 
-        await host.RunAsync();
+        try
+        {
+            Log.Information("Iniciando servicio principal AnilistConEnie");
+            IHost host = CreateHostBuilder(args);
+            Log.Information("Servicio principal iniciado correctamente");
+
+            await host.RunAsync();
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex, "El servicio principal terminó de forma inesperada");
+            throw;
+        }
+        finally
+        {
+            await Log.CloseAndFlushAsync();
+        }
     }
 
     private static IHost CreateHostBuilder(string[] args)
@@ -26,25 +56,12 @@ public static class Program
 
         BotConfiguration botConfig = BotConfiguration.FromConfiguration(host.Configuration);
 
-        try
-        {
-            host.Services
-                .AddSingleton(botConfig)
-                .AddInfrastructure()
-                .AddConfiguredDiscordClient()
-                .AddLogging(builder => builder.AddConsole())
-                .AddSingleton<BotStateService>()
-                .AddSingleton<DiscordHelper>()
-                .AddSingleton<AnilistHelper>()
-                .AddSingleton<BehaviorHelper>()
-                .AddSingleton<DiscordBotService>()
-                .AddHostedService(sp => sp.GetRequiredService<DiscordBotService>());
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex);
-            throw;
-        }
+        host.Services
+            .AddSingleton(botConfig)
+            .AddInfrastructure()
+            .AddConfiguredDiscordClient()
+            .AddSerilog()
+            .AddBotServices();
 
         return host.Build();
     }

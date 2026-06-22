@@ -1,4 +1,5 @@
 using AnilistConEnie.Application.Helpers;
+using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Enum;
 using AnilistConEnie.Model.Interfaces.Repositories;
@@ -10,7 +11,8 @@ namespace AnilistConEnie.Bot.Services;
 public class BotStateService(
     IUsuariosActivosRepository usuariosActivosRepository,
     IUsuariosDiscordRepository usuariosDiscordRepository,
-    IUsuariosAnilistRepository usuariosAnilistRepository)
+    IUsuariosAnilistRepository usuariosAnilistRepository,
+    BotConfiguration config)
 {
     private List<UsuarioAnilist> _usuarios = [];
     private List<ulong> _boosters = [];
@@ -105,7 +107,7 @@ public class BotStateService(
     {
         if (!_dailyActiveUsers.TryAdd((long)id, true)) return;
 
-        DiscordRole inactivoRole = guild.Roles[1205567006363877426];
+        DiscordRole inactivoRole = guild.Roles[config.Roles.Inactivo];
         await usuariosActivosRepository.SetUsuarioActividad((long)id);
 
         if (guild.Members.TryGetValue(id, out DiscordMember? member) && member.Roles.Any(x => x.Id == inactivoRole.Id))

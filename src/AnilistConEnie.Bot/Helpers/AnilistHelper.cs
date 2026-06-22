@@ -19,7 +19,7 @@ public class AnilistHelper(BotStateService botStateService, BotConfiguration con
             {
                 Title = $"¡Bienvenido {member.DisplayName}!",
                 Description = $"Hola {member.Mention}, ¡Bienvenido a **Añilist**! Eres nuestro **miembro nº {guild.MemberCount}**",
-                ImageUrl = "https://images-ext-2.discordapp.net/external/S1VMfYfgS0oqoMukCNxKw5HsZxZQTEvWkpG-4Q3qVyA/https/cdn-longterm.mee6.xyz/plugins/welcome/images/862408834693070898/20b91584d1b680f1905f5b2f5295a44907bd17e876c56ab10de43f1cd406d1db.gif",
+                ImageUrl = $"https://images-ext-2.discordapp.net/external/S1VMfYfgS0oqoMukCNxKw5HsZxZQTEvWkpG-4Q3qVyA/https/cdn-longterm.mee6.xyz/plugins/welcome/images/{config.GuildId}/20b91584d1b680f1905f5b2f5295a44907bd17e876c56ab10de43f1cd406d1db.gif",
                 Color = DiscordHelper.GetColor()
             };
 
@@ -87,12 +87,12 @@ public class AnilistHelper(BotStateService botStateService, BotConfiguration con
                 .AddActionRowComponent(profile, animeList, mangaList)
                 .WithAllowedMention(new UserMention(user.Id));
 
-            await guild.Channels[862408834693070901].SendMessageAsync(msgBuilder);
+            await guild.Channels[config.Channels.General].SendMessageAsync(msgBuilder);
 
             try
             {
-                DiscordRole miembroRole = guild.Roles[862452184029069332];
-                DiscordRole desvinculadoRole = guild.Roles[1117855269943250944];
+                DiscordRole miembroRole = guild.Roles[config.Roles.Miembro];
+                DiscordRole desvinculadoRole = guild.Roles[config.Roles.NoVinculado];
                 await member.GrantRoleAsync(miembroRole);
                 await member.RevokeRoleAsync(desvinculadoRole);
 

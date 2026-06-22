@@ -4,10 +4,11 @@ using AnilistConEnie.Model.Interfaces.Repositories;
 using AnilistConEnie.Model.Entities;
 using DSharpPlus;
 using DSharpPlus.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace AnilistConEnie.Bot.Helpers;
 
-public class BehaviorHelper(BotStateService botStateService, BotConfiguration config, IUsuariosActivosRepository usuariosActivosRepository, IUsuariosDiscordRepository usuariosDiscordRepository)
+public class BehaviorHelper(ILogger<BehaviorHelper> logger, BotStateService botStateService, BotConfiguration config, IUsuariosActivosRepository usuariosActivosRepository, IUsuariosDiscordRepository usuariosDiscordRepository)
 {
     public async Task ClearInvitesRoleOnStartup(DiscordGuild guild)
     {
@@ -50,7 +51,7 @@ public class BehaviorHelper(BotStateService botStateService, BotConfiguration co
     
     public async Task ManageUsuariosActivos(DiscordGuild guild)
     {
-        DiscordRole inactivoRole = guild.Roles.First(x => x.Key == 1205567006363877426).Value;
+        DiscordRole inactivoRole = guild.Roles.First(x => x.Key == config.Roles.Inactivo).Value;
 
         // 1- Obtener inactivos (+90 dias, desde bd)
         List<UsuarioActivo> usuariosActivos = await usuariosActivosRepository.GetUsuariosActivos(guild.Members.Keys.ToHashSet());
@@ -68,12 +69,19 @@ public class BehaviorHelper(BotStateService botStateService, BotConfiguration co
     
     public async Task ManageXpUserHistory(DiscordGuild guild)
     {
-        List<UserXp> rankings = botStateService.GetGuildXp(guild);
-        DateTime date = new DateTime(day: DateTime.Now.Day, month: DateTime.Now.Month, year: DateTime.Now.Year, hour: 5, minute: 0, second: 0, kind: DateTimeKind.Utc);
-        foreach (UserXp user in rankings)
+        try
         {
-            await usuariosDiscordRepository.AddDailyXp(date, (ulong)user.UserId, user.Total);
-            await botStateService.AddUserXpToChartHistory((ulong)user.UserId, user.Total, date);
+            List<UserXp> rankings = botStateService.GetGuildXp(guild);
+            DateTime date = new DateTime(day: DateTime.Now.Day, month: DateTime.Now.Month, year: DateTime.Now.Year, hour: 5, minute: 0, second: 0, kind: DateTimeKind.Utc);
+            foreach (UserXp user in rankings)
+            {
+                await usuariosDiscordRepository.AddDailyXp(date, (ulong)user.UserId, user.Total);
+                await botStateService.AddUserXpToChartHistory((ulong)user.UserId, user.Total, date);
+            }
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Error leyendo el history de experiencia");
         }
     }
     
@@ -103,8 +111,8 @@ public class BehaviorHelper(BotStateService botStateService, BotConfiguration co
         try
         {
             DateTime guildCreation = guild.CreationTimestamp.Date;
-            DiscordRole fundadorRole = guild.Roles[1169018979042476093];
-            DiscordRole noVerificadoRole = guild.Roles[1117855269943250944];
+            DiscordRole fundadorRole = guild.Roles[config.Roles.Fundador];
+            DiscordRole noVerificadoRole = guild.Roles[config.Roles.NoVinculado];
 
             List<KeyValuePair<ulong, DiscordMember>> miembrosNoFundadores = guild.Members.Where(x => x.Value.JoinedAt.Date == guildCreation && !x.Value.Roles.Contains(fundadorRole) && !x.Value.Roles.Contains(noVerificadoRole) && !x.Value.IsBot).ToList();
 

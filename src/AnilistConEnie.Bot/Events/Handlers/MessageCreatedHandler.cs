@@ -30,11 +30,11 @@ public class MessageCreatedHandler(
         #region Detección de mensajes con solo emojis para dar XP
         List<ulong> canalesSinXp =
         [
-            862473931192926228, // CONFIG BOTS
-            1207444811833933824, // TSUMA
-            862419212407668756, // MUDAE
-            862417563325038602, // COMANDOS CANAL
-            1207429768375574569 // COMANDOS FORO
+            config.Channels.ConfigBots,
+            config.Channels.Tsuma,
+            config.Channels.Mudae,
+            config.Channels.ComandosCanal,
+            config.Channels.ComandosForo
         ];
 
         if (!args.Author.IsBot

@@ -7,21 +7,18 @@ using AnilistConEnie.Model.Interfaces.Repositories;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
 public class MessageCreatedHandler(
-    IServiceProvider services,
+    DiscordBotService discordBotService,
+    BotStateService botStateService,
     BotConfiguration config,
     IIntercambiosRepostRepository intercambiosRepostRepository)
 {
     public async Task Handle(DiscordClient client, MessageCreatedEventArgs args)
     {
         if (args.Guild.Id != config.GuildId) return;
-
-        DiscordBotService discordBotService = services.GetRequiredService<DiscordBotService>();
-        BotStateService botStateService = services.GetRequiredService<BotStateService>();
 
         #region Deteccion de usuarios activos en el servidor
         if (!args.Author.IsBot && !discordBotService.Debug)

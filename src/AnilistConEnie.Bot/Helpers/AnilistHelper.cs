@@ -1,23 +1,20 @@
 using System.Runtime.InteropServices.ComTypes;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Services;
-using AnilistConEnie.Infrastructure.Repositories;
+using AnilistConEnie.Model.Interfaces.Repositories;
 using AnilistConEnie.Model.Entities;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.Exceptions;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 
 namespace AnilistConEnie.Bot.Helpers;
 
-public class AnilistHelper(IServiceProvider services, BotConfiguration config, DiscordHelper discordHelper, UsuariosAnilistRepository usuariosAnilistRepository, ILogger<AnilistHelper> logger)
+public class AnilistHelper(BotStateService botStateService, BotConfiguration config, DiscordHelper discordHelper, IUsuariosAnilistRepository usuariosAnilistRepository, ILogger<AnilistHelper> logger)
 {
     public async Task TerminarVinculacion(DiscordClient client, DiscordUser user, DiscordMember member, DiscordGuild guild, UserApprovalAnilist userApproval)
         {
-            BotStateService botStateService = services.GetRequiredService<BotStateService>();
-
             DiscordEmbedBuilder bienvenidaEmbed = new()
             {
                 Title = $"¡Bienvenido {member.DisplayName}!",

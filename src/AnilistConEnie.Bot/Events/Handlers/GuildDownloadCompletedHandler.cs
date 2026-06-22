@@ -7,17 +7,14 @@ using AnilistConEnie.Model.Interfaces.Repositories;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class GuildDownloadCompletedHandler(IServiceProvider services, ILogger<GuildDownloadCompletedHandler> logger, BotConfiguration config, BehaviorHelper behaviorHelper, IUsuariosAnilistRepository usuariosAnilistRepository, IUsuariosDiscordRepository usuariosDiscordRepository, ITriggersRepository triggersRepository)
+public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, BotStateService botStateService, ILogger<GuildDownloadCompletedHandler> logger, BotConfiguration config, BehaviorHelper behaviorHelper, IUsuariosAnilistRepository usuariosAnilistRepository, IUsuariosDiscordRepository usuariosDiscordRepository, ITriggersRepository triggersRepository)
 {
     public async Task Handle(DiscordClient client, GuildDownloadCompletedEventArgs args)
     {
-        DiscordBotService discordBotService = services.GetRequiredService<DiscordBotService>();
-        BotStateService botStateService = services.GetRequiredService<BotStateService>();
         DiscordGuild guild = client.Guilds[config.GuildId];
 
         discordBotService.SetChannels();

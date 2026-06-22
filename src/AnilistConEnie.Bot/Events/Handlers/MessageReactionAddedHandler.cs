@@ -3,18 +3,17 @@ using AnilistConEnie.Bot.Services;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class MessageReactionAddedHandler(IServiceProvider services, BotConfiguration config)
+public class MessageReactionAddedHandler(
+    DiscordBotService discordBotService,
+    BotStateService botStateService,
+    BotConfiguration config)
 {
     public async Task Handle(DiscordClient client, MessageReactionAddedEventArgs args)
     {
         if (args.Guild?.Id != config.GuildId) return;
-
-        DiscordBotService discordBotService = services.GetRequiredService<DiscordBotService>();
-        BotStateService botStateService = services.GetRequiredService<BotStateService>();
 
         #region Control de reacciones para canal de sugerencias
         if (args.Channel.Id == config.Channels.Sugerencias

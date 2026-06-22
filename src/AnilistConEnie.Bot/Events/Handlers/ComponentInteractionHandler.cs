@@ -1,23 +1,20 @@
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
-using AnilistConEnie.Infrastructure.Repositories;
+using AnilistConEnie.Model.Interfaces.Repositories;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Enum;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class ComponentInteractionHandler(IServiceProvider services, BotConfiguration config, DiscordHelper discordHelper, AnilistHelper anilistHelper, UsuariosAnilistRepository usuariosAnilistRepository)
+public class ComponentInteractionHandler(DiscordBotService discordBotService, BotConfiguration config, DiscordHelper discordHelper, AnilistHelper anilistHelper, IUsuariosAnilistRepository usuariosAnilistRepository)
 {
     public async Task Handle(DiscordClient client, ComponentInteractionCreatedEventArgs args)
     {
         if (args.Guild?.Id != config.GuildId) return;
-        
-        DiscordBotService discordBotService = services.GetRequiredService<DiscordBotService>();
 
         if (args.Interaction.Data.CustomId.StartsWith("modal-anilistprofileset") && !discordBotService.Debug)
         {

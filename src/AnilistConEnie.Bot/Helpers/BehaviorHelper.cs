@@ -1,14 +1,13 @@
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Services;
-using AnilistConEnie.Infrastructure.Repositories;
+using AnilistConEnie.Model.Interfaces.Repositories;
 using AnilistConEnie.Model.Entities;
 using DSharpPlus;
 using DSharpPlus.Entities;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace AnilistConEnie.Bot.Helpers;
 
-public class BehaviorHelper(IServiceProvider services, BotConfiguration config, UsuariosActivosRepository  usuariosActivosRepository, UsuariosDiscordRepository  usuariosDiscordRepository)
+public class BehaviorHelper(BotStateService botStateService, BotConfiguration config, IUsuariosActivosRepository usuariosActivosRepository, IUsuariosDiscordRepository usuariosDiscordRepository)
 {
     public async Task ClearInvitesRoleOnStartup(DiscordGuild guild)
     {
@@ -26,8 +25,6 @@ public class BehaviorHelper(IServiceProvider services, BotConfiguration config, 
     
     public async Task ManageBoosters(DiscordGuild guild)
     {
-        BotStateService botStateService = services.GetRequiredService<BotStateService>();
-        
         List<ulong> boostersIds = [];
         List<DiscordMember> members = await guild.GetAllMembersAsync().ToListAsync();
         foreach (DiscordMember member in members)
@@ -71,8 +68,6 @@ public class BehaviorHelper(IServiceProvider services, BotConfiguration config, 
     
     public async Task ManageXpUserHistory(DiscordGuild guild)
     {
-        BotStateService botStateService = services.GetRequiredService<BotStateService>();
-        
         List<UserXp> rankings = botStateService.GetGuildXp(guild);
         DateTime date = new DateTime(day: DateTime.Now.Day, month: DateTime.Now.Month, year: DateTime.Now.Year, hour: 5, minute: 0, second: 0, kind: DateTimeKind.Utc);
         foreach (UserXp user in rankings)

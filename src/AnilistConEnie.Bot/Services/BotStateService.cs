@@ -7,7 +7,7 @@ using System.Collections.Concurrent;
 
 namespace AnilistConEnie.Bot.Services;
 
-class BotStateService(
+public class BotStateService(
     IUsuariosActivosRepository usuariosActivosRepository,
     IUsuariosDiscordRepository usuariosDiscordRepository,
     IUsuariosAnilistRepository usuariosAnilistRepository)

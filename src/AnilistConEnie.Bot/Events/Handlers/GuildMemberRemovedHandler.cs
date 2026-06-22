@@ -1,24 +1,20 @@
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
-using AnilistConEnie.Infrastructure.Repositories;
+using AnilistConEnie.Model.Interfaces.Repositories;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Enum;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class GuildMemberRemovedHandler(IServiceProvider services, BotConfiguration config, DiscordHelper discordHelper, UsuariosAnilistRepository usuariosAnilistRepository)
+public class GuildMemberRemovedHandler(DiscordBotService discordBotService, BotStateService botStateService, BotConfiguration config, DiscordHelper discordHelper, IUsuariosAnilistRepository usuariosAnilistRepository)
 {
     public async Task Handle(DiscordClient client, GuildMemberRemovedEventArgs args)
     {
         if (args.Guild.Id != config.GuildId) return;
-
-        DiscordBotService discordBotService = services.GetRequiredService<DiscordBotService>();   
-        BotStateService botStateService = services.GetRequiredService<BotStateService>();
         
         if (!args.Member.IsBot && !discordBotService.Debug)
         {

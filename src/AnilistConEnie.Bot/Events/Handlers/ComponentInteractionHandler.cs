@@ -143,7 +143,8 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
         }
         else if (!args.Interaction.Data.CustomId.StartsWith("modal-"))
         {
-            await args.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
+            if (args.Interaction.Data.ComponentType is not DiscordComponentType.Button)
+                await args.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
         }
     }
 }

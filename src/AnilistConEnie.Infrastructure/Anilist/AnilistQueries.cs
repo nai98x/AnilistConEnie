@@ -51,6 +51,31 @@ internal static class AnilistQueries
         }
         """;
 
+    /// <summary>
+    /// Entradas de lista (score/estado/progreso) de un media para un lote de usuarios. Se pide el
+    /// <c>score</c> en el formato del usuario y, aliaseado como <c>score100</c>, el mismo normalizado a
+    /// /100 por AniList (evita conversiones manuales). Máx. 50 usuarios por página.
+    /// </summary>
+    public const string MediaUserScores =
+        """
+        query ($mediaId: Int, $ids: [Int]) {
+            Page(perPage: 50) {
+                mediaList(mediaId: $mediaId, userId_in: $ids) {
+                    score
+                    score100: score(format: POINT_100)
+                    status
+                    progress
+                    user {
+                        id
+                        name
+                        siteUrl
+                        mediaListOptions { scoreFormat }
+                    }
+                }
+            }
+        }
+        """;
+
     /// <summary>Query mínima usada solo para leer los headers de rate limit.</summary>
     public const string RateLimitProbe =
         """

@@ -1,10 +1,16 @@
 using System.Globalization;
+using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Model.Entities;
+using AnilistConEnie.Model.Entities.Anilist;
 using AnilistConEnie.Model.Enum;
 using DSharpPlus;
+using DSharpPlus.Commands;
 using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
 using DSharpPlus.Exceptions;
+using DSharpPlus.Interactivity;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace AnilistConEnie.Bot.Helpers;
@@ -134,7 +140,7 @@ public class DiscordHelper(BotConfiguration config, ILogger<DiscordHelper> logge
         }
         catch (Exception ex)
         {
-            await GrabarLogGeneralError(guild, $"Error al grabar log de usuario que se fue de AniList: {ex.Message}\n\n{Formatter.BlockCode(ex.StackTrace)}");
+            await GrabarLogGeneralError(guild, $"Error al grabar log de usuario que se fue de AniList: {ex.Message}\n\n{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
         }
     }
     
@@ -148,5 +154,44 @@ public class DiscordHelper(BotConfiguration config, ILogger<DiscordHelper> logge
             Color = DiscordColor.Red,
         });
         logger.LogError("Error no controlado: {Descripcion}", descripcion);
+    }
+    
+    public static async Task<int> GetElegidoAsync(CommandContext ctx, double timeoutGeneral, List<TitleDescription> opciones)
+    {
+        int cantidadOpciones = opciones.Count;
+        if (cantidadOpciones == 1)
+        {
+            return 1;
+        }
+        
+        InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
+        List<DiscordSelectComponentOption> options = [];
+        const string customId = "dropdownGetElegido";
+
+        int i = 0;
+        opciones.ForEach(opc =>
+        {
+            if (i >= 25 || opc.Title == null) return;
+            i++;
+            options.Add(new DiscordSelectComponentOption(StringHelper.NormalizarBoton(opc.Title), $"{i}", opc.Description ?? string.Empty));
+        });
+
+        DiscordSelectComponent dropdown = new(customId, "Selecciona una opción", options);
+
+        DiscordEmbedBuilder embed = new()
+        {
+            Color = DiscordColor.Blurple,
+            Title = "Elige una opción",
+        };
+
+        DiscordMessage elegirMsg = await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddActionRowComponent(dropdown).AddEmbed(embed));
+
+        InteractivityResult<ComponentInteractionCreatedEventArgs> msgElegirInter = await interactivity.WaitForSelectAsync(elegirMsg, ctx.User, customId, TimeSpan.FromSeconds(timeoutGeneral));
+
+        if (msgElegirInter.TimedOut) return -1;
+        
+        ComponentInteractionCreatedEventArgs resultElegir = msgElegirInter.Result;
+        return int.Parse(resultElegir.Values[0]);
+
     }
 }

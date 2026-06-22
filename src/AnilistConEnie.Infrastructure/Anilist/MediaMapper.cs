@@ -50,6 +50,18 @@ internal static class MediaMapper
         }).ToList() ?? []
     };
 
+    public static AnilistUserScore ToUserScore(MediaListEntryDto dto) => new()
+    {
+        UserId = dto.User?.Id ?? 0,
+        UserName = dto.User?.Name ?? string.Empty,
+        UserSiteUrl = dto.User?.SiteUrl ?? string.Empty,
+        ScoreFormat = dto.User?.MediaListOptions?.ScoreFormat,
+        RawScore = dto.Score,
+        Score100 = dto.Score100,
+        Status = dto.Status ?? string.Empty,
+        Progress = dto.Progress
+    };
+
     private static AnilistFuzzyDate? ToFuzzyDate(FuzzyDateDto? dto) =>
         dto is null ? null : new AnilistFuzzyDate { Year = dto.Year, Month = dto.Month, Day = dto.Day };
 }

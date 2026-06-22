@@ -5,17 +5,24 @@ using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Model.Entities.Anilist;
 using AnilistConEnie.Model.Interfaces;
 using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
+using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Enums;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace AnilistConEnie.Bot.Commands.SlashCommands;
 
 [TestCommand]
-public class Anilist(IAnilistClient anilistClient)
+public class Anilist(IAnilistClient anilistClient, AnilistHelper anilistHelper)
 {
+    // Límite de caracteres de la description de un embed de Discord.
+    private const int EmbedDescriptionLimit = 4096;
+
     [Command("statsserver")]
     [Description("Estadisticas de los usuarios del servidor de un anime o manga en AniList")]
     public async Task StatsServer(
-        CommandContext ctx,
+        SlashCommandContext ctx,
         [Parameter("Nombre")] [Description("Nombre del anime o manga a buscar")] string mediaNombre,
         [Parameter("Tipo")] [Description("Elige si buscas anime o manga")] AnilistMediaType tipo)
     {
@@ -30,17 +37,39 @@ public class Anilist(IAnilistClient anilistClient)
             return;
         }
 
-        // TODO: selector entre los varios resultados (lo que antes hacía GetElegido). Por ahora se
-        // toma el primero (el más relevante según AniList).
-        AnilistMedia media = resultados[0];
-        
+        List<TitleDescription> opciones = resultados.Select(m => new TitleDescription
+        {
+            Title = AnilistMediaFormatter.DisplayTitle(m),
+            Description = AnilistMediaFormatter.OptionSubtitle(m)
+        }).ToList();
+
+        int elegido = await DiscordHelper.GetElegidoAsync(ctx, 60, opciones);
+        if (elegido <= 0)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder()
+                .WithContent("Tiempo agotado esperando la selección."));
+            return;
+        }
+
+        AnilistMedia media = resultados[elegido - 1];
+
+        // Aviso intermedio: recorrer los miembros y consultar Aniville por lotes puede demorar.
+        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+        {
+            Title = $"Buscando scores de {AnilistMediaFormatter.DisplayTitle(media)}…",
+            Description = "Esto puede demorar unos segundos.",
+            Color = DiscordHelper.GetColor()
+        }));
+
+        string scores = await anilistHelper.GetServerScoresAsync(ctx.Guild!, media, includeUsersWithoutScore: true);
+
+        // Embed base sin description: se usa tal cual (página única) o como plantilla de cada página.
         DiscordEmbedBuilder embed = new()
         {
             Title = media.IsAdult
-                ? $"{AnilistMediaFormatter.DisplayTitle(media)} [NSFW]"
-                : AnilistMediaFormatter.DisplayTitle(media),
+                ? $"Scores de {AnilistMediaFormatter.DisplayTitle(media)} [NSFW] en {ctx.Guild!.Name}"
+                : $"Scores de {AnilistMediaFormatter.DisplayTitle(media)} en {ctx.Guild!.Name}",
             Url = media.SiteUrl,
-            Description = AnilistMediaFormatter.Description(media),
             Color = DiscordHelper.GetColor()
         };
 
@@ -54,16 +83,25 @@ public class Anilist(IAnilistClient anilistClient)
             embed.AddField($"{DiscordEmoji.FromName(ctx.Client, ":dividers:")} Formato", StringHelper.NormalizarField(media.Format), true);
 
         embed.AddField($"{DiscordEmoji.FromName(ctx.Client, ":hourglass_flowing_sand:")} Estado", AnilistMediaFormatter.Status(media), true);
-        embed.AddField($"{DiscordEmoji.FromName(ctx.Client, ":star:")} Score", AnilistMediaFormatter.Score(media), true);
         embed.AddField($"{DiscordEmoji.FromName(ctx.Client, ":calendar_spiral:")} Fecha", AnilistMediaFormatter.Dates(media), false);
 
-        if (media.Genres.Count > 0)
-            embed.AddField("Géneros", AnilistMediaFormatter.Genres(media), false);
+        if (string.IsNullOrEmpty(scores))
+        {
+            embed.Description = $"Todavía nadie tiene **{AnilistMediaFormatter.DisplayTitle(media)}** en su lista.";
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embed));
+            return;
+        }
 
-        // TODO: feature original de "statsserver" — calcular y mostrar los scores de los usuarios del
-        // servidor para este media (lo que antes hacía GetScoreMediaUsuarios), con paginación si excede
-        // el límite del embed.
+        // Si entra en una sola description, embed simple. Si no, paginamos partiendo por líneas.
+        if (scores.Length <= EmbedDescriptionLimit)
+        {
+            embed.Description = scores;
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embed));
+            return;
+        }
 
-        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embed));
+        IEnumerable<Page> pages = InteractivityExtension.GeneratePagesInEmbed(scores, SplitType.Line, embed);
+        InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
+        await interactivity.SendPaginatedResponseAsync(ctx.Interaction, ephemeral: false, ctx.User, pages);
     }
 }

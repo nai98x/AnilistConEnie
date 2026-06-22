@@ -38,6 +38,25 @@ internal sealed class AnilistClient(AnilistGraphQLExecutor executor) : IAnilistC
         return media is null ? [] : media.Select(MediaMapper.ToDomain).ToList();
     }
 
+    public async Task<IReadOnlyList<AnilistUserScore>> GetMediaUserScoresAsync(
+        int mediaId,
+        IReadOnlyCollection<int> userIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (userIds.Count == 0) return [];
+
+        GraphQLRequest request = new()
+        {
+            Query = AnilistQueries.MediaUserScores,
+            Variables = new { mediaId, ids = userIds }
+        };
+
+        AnilistResponse<MediaScoresResponse> response = await executor.SendQueryAsync<MediaScoresResponse>(request, cancellationToken);
+        List<MediaListEntryDto>? entries = response.Data?.Page?.MediaList;
+
+        return entries is null ? [] : entries.Select(MediaMapper.ToUserScore).ToList();
+    }
+
     public async Task<AnilistRateLimit> GetRateLimitAsync(CancellationToken cancellationToken = default)
     {
         GraphQLRequest request = new() { Query = AnilistQueries.RateLimitProbe };

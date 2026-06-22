@@ -12,6 +12,14 @@ public static class AnilistMediaFormatter
     public static string DisplayTitle(AnilistMedia media) =>
         media.Title?.Romaji ?? media.Title?.English ?? media.Title?.Native ?? "(Sin título)";
 
+    /// <summary>Subtítulo corto para listar un resultado en el selector: "Formato - Año".</summary>
+    public static string OptionSubtitle(AnilistMedia media)
+    {
+        string formato = string.IsNullOrEmpty(media.Format) ? "?" : media.Format;
+        int? anio = media.SeasonYear ?? media.StartDate?.Year;
+        return $"{formato} - {(anio?.ToString() ?? "No emitido")}";
+    }
+
     public static string Genres(AnilistMedia media) => string.Join(", ", media.Genres);
 
     /// <summary>Une los tags separados por coma; los marcados como spoiler se envuelven en <c>||…||</c>.</summary>
@@ -26,6 +34,16 @@ public static class AnilistMediaFormatter
 
     public static string Score(AnilistMedia media) =>
         media.MeanScore is { } score ? $"{score}/100" : "—";
+
+    /// <summary>Muestra el score de un usuario en su propio formato de AniList (POINT_100/10/5/3…).</summary>
+    public static string UserScore(AnilistUserScore score) => score.ScoreFormat switch
+    {
+        "POINT_10_DECIMAL" => $"{score.RawScore:0.#}/10",
+        "POINT_10" => $"{score.RawScore:0}/10",
+        "POINT_5" => $"{score.RawScore:0}/5",
+        "POINT_3" => $"{score.RawScore:0}/3",
+        _ => $"{score.RawScore:0}/100"
+    };
 
     public static string Status(AnilistMedia media)
     {

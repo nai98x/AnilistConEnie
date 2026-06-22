@@ -25,6 +25,16 @@ public interface IAnilistClient
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Obtiene las entradas de lista (score, estado, progreso) de un media para los usuarios de AniList
+    /// indicados. Pensado para lotes; AniList limita a 50 ids por página, así que el llamador debe
+    /// trocear (<c>Chunk(50)</c>) si tiene más.
+    /// </summary>
+    Task<IReadOnlyList<AnilistUserScore>> GetMediaUserScoresAsync(
+        int mediaId,
+        IReadOnlyCollection<int> userIds,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Consulta liviana cuyo único objetivo es leer el estado actual del rate limit de AniList.
     /// </summary>
     Task<AnilistRateLimit> GetRateLimitAsync(CancellationToken cancellationToken = default);

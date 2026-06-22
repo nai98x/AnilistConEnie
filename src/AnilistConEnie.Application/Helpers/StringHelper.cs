@@ -33,6 +33,15 @@ public static class StringHelper
             return aux.Remove(aux.Length - 4) + " ...";
     }
     
+    public static string NormalizarBoton(string s)
+    {
+        if (s.Length > 80)
+        {
+            return s.Remove(76) + " ...";
+        }
+        return s;
+    }
+    
     public static string LimpiarTexto(string texto)
     {
         if (string.IsNullOrEmpty(texto))

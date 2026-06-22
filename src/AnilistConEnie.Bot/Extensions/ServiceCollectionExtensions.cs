@@ -4,6 +4,9 @@ using DSharpPlus;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Extensions;
+using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Enums;
+using DSharpPlus.Interactivity.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,6 +22,12 @@ public static class ServiceCollectionExtensions
             ?? throw new InvalidOperationException("'discordToken' es obligatorio: configuralo via User Secrets (local) o variable de entorno 'discordToken' (servidor)");
         
         services.AddDiscordClient(token, DiscordIntents.All);
+        
+        services.AddInteractivityExtension(new InteractivityConfiguration
+        {
+            Timeout = TimeSpan.FromMinutes(5),
+            ButtonBehavior = ButtonPaginationBehavior.Disable
+        });
 
         services.ConfigureEventHandlers(events => events.BindEventHandlers());
 

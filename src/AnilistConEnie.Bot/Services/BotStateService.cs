@@ -12,14 +12,7 @@ class BotStateService(
     IUsuariosDiscordRepository usuariosDiscordRepository,
     IUsuariosAnilistRepository usuariosAnilistRepository)
 {
-    public bool Initialized { get; private set; }
-
-    public void SetInitialized() => Initialized = true;
-
-    private bool _yepMode;
-    private DiscordEmoji _emoji;
     private List<UsuarioAnilist> _usuarios = [];
-    private List<ulong> _tempVoiceChannels = [];
     private List<ulong> _boosters = [];
     private List<int> _anilistBaneados = [];
     private (bool, ulong) _debugXp = (false, 0);
@@ -42,22 +35,21 @@ class BotStateService(
     private Dictionary<ulong, List<ulong>> _confessions = new();
 
     #region Emote mode
-    public bool YepMode => _yepMode;
-    public DiscordEmoji Emote => _emoji;
+    public bool YepMode { get; private set; }
+
+    public DiscordEmoji? Emote { get; private set; }
 
     public void ActivarYepMode(DiscordEmoji emojiNuevo)
     {
-        _yepMode = true;
-        _emoji = emojiNuevo;
+        YepMode = true;
+        Emote = emojiNuevo;
     }
 
     public void DesactivarYepMode()
     {
-        if (_yepMode)
-        {
-            _yepMode = false;
-            _emoji = null;
-        }
+        if (!YepMode) return;
+        YepMode = false;
+        Emote = null;
     }
     #endregion
 
@@ -65,20 +57,6 @@ class BotStateService(
     public List<UsuarioAnilist> Usuarios => _usuarios;
 
     public void SetUsuarios(List<UsuarioAnilist> newUsers) => _usuarios = newUsers;
-    #endregion
-
-    #region Canales de VC temporales
-    public bool EsCanalTemporal(ulong id) => _tempVoiceChannels.Contains(id);
-
-    public void AgregarCanalTemporal(ulong id)
-    {
-        if (!EsCanalTemporal(id)) _tempVoiceChannels.Add(id);
-    }
-
-    public void EliminarCanalTemporal(ulong id)
-    {
-        if (EsCanalTemporal(id)) _tempVoiceChannels.Remove(id);
-    }
     #endregion
 
     #region Highlights

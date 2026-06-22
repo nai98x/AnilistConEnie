@@ -49,7 +49,7 @@ public class MessageCreatedHandler(
 
         #region YepMode
         if (botStateService.YepMode && args.Channel.Id == config.Channels.General)
-            await args.Message.CreateReactionAsync(botStateService.Emote);
+            await args.Message.CreateReactionAsync(botStateService.Emote!);
         #endregion
 
         #region Autoban hacked accounts
@@ -67,7 +67,7 @@ public class MessageCreatedHandler(
             || (discordBotService.Debug && args.Message.Author?.Id == config.OwnerId))
         {
             string mensajeOriginal = args.Message.Content.ToLower();
-            var triggers = botStateService.GetActiveTriggers();
+            IReadOnlyDictionary<string, Trigger> triggers = botStateService.GetActiveTriggers();
             List<KeyValuePair<string, Trigger>> matches = triggers.Where(x => mensajeOriginal.Contains(x.Key)).ToList();
 
             foreach (KeyValuePair<string, Trigger> trigger in matches)
@@ -115,7 +115,6 @@ public class MessageCreatedHandler(
             DiscordMember? autor = args.Message.Author as DiscordMember;
             List<DiscordAttachment> images = args.Message.Attachments.Where(x => x.MediaType.StartsWith("image/")).Take(5).ToList();
             DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder().WithContent($"{args.Message.JumpLink}");
-            DiscordChannel repostChannel;
             DiscordEmbedBuilder embed = new DiscordEmbedBuilder()
                 .WithDescription(args.Message.Content)
                 .WithAuthor(autor?.DisplayName, iconUrl: autor?.GuildAvatarUrl ?? autor?.AvatarUrl)
@@ -143,7 +142,7 @@ public class MessageCreatedHandler(
                 messageBuilder.AddEmbed(embed);
             }
 
-            var tagChannelMap = new Dictionary<string, ulong>
+            Dictionary<string, ulong> tagChannelMap = new()
             {
                 ["anime"]   = config.Channels.Intercambios.Anime,
                 ["manga"]   = config.Channels.Intercambios.Manga,
@@ -153,11 +152,11 @@ public class MessageCreatedHandler(
                 ["fanarts"] = config.Channels.Intercambios.Fanarts,
             };
 
-            foreach (var (tagName, channelId) in tagChannelMap)
+            foreach ((string tagName, ulong channelId) in tagChannelMap)
             {
                 if (!forumPost!.AppliedTags.Any(x => x.Name.ToLowerInvariant() == tagName)) continue;
 
-                repostChannel = args.Guild.Channels[channelId];
+                DiscordChannel repostChannel = args.Guild.Channels[channelId];
                 DiscordMessage msgRepost = await repostChannel.SendMessageAsync(messageBuilder);
                 await intercambiosRepostRepository.SetMensaje(args.Message.ChannelId, args.Message.Id, msgRepost.ChannelId, msgRepost.Id);
             }

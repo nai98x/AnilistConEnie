@@ -35,6 +35,7 @@ public static class Program
                 .AddLogging(builder => builder.AddConsole())
                 .AddSingleton<BotStateService>()
                 .AddSingleton<DiscordHelper>()
+                .AddSingleton<BehaviorHelper>()
                 .AddSingleton<DiscordBotService>()
                 .AddHostedService(sp => sp.GetRequiredService<DiscordBotService>());
         }

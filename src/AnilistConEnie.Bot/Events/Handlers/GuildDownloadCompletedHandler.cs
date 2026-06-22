@@ -12,12 +12,13 @@ using Microsoft.Extensions.Logging;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class GuildDownloadCompletedHandler(IServiceProvider services, ILogger<GuildDownloadCompletedHandler> logger, BotConfiguration config, DiscordHelper discordHelper, IUsuariosAnilistRepository usuariosAnilistRepository, IUsuariosDiscordRepository usuariosDiscordRepository, ITriggersRepository triggersRepository)
+public class GuildDownloadCompletedHandler(IServiceProvider services, ILogger<GuildDownloadCompletedHandler> logger, BotConfiguration config, BehaviorHelper behaviorHelper, IUsuariosAnilistRepository usuariosAnilistRepository, IUsuariosDiscordRepository usuariosDiscordRepository, ITriggersRepository triggersRepository)
 {
     public async Task Handle(DiscordClient client, GuildDownloadCompletedEventArgs args)
     {
         DiscordBotService discordBotService = services.GetRequiredService<DiscordBotService>();
         BotStateService botStateService = services.GetRequiredService<BotStateService>();
+        DiscordGuild guild = client.Guilds[config.GuildId];
 
         discordBotService.SetChannels();
 
@@ -56,8 +57,6 @@ public class GuildDownloadCompletedHandler(IServiceProvider services, ILogger<Gu
             #region Control de roles en startup
             try
             {
-                DiscordGuild guild = client.Guilds[config.GuildId];
-                DiscordRole coloresExtra = guild.Roles[config.Roles.ColoresExtra];
                 DiscordRole noVinculadoRole = guild.Roles[config.Roles.NoVinculado];
                 foreach (DiscordMember member in guild.Members.Values)
                 {
@@ -65,37 +64,24 @@ public class GuildDownloadCompletedHandler(IServiceProvider services, ILogger<Gu
                     {
                         await member.GrantRoleAsync(noVinculadoRole);
                     }
-
-                    if (discordHelper.RangoAPartirDe(guild, member, RangoEnum.Senpai, false))
-                    {
-                        if (!member.Roles.Any(x => x.Id == coloresExtra.Id))
-                        {
-                            await member.GrantRoleAsync(coloresExtra);
-                        }
-                    }
                 }
             }
             catch (Exception) { /* Nothing to do */ }
             #endregion
+
+            #region Behavior
+            await behaviorHelper.ClearInvitesRoleOnStartup(guild);
+            await behaviorHelper.ManageBoosters(guild);
+            await behaviorHelper.ManageNewUsuarios(guild);
+            await behaviorHelper.ManageUsuariosActivos(guild);
+            await behaviorHelper.ManageXpUserHistory(guild);
+            await behaviorHelper.ManageUnlinkedAccounts(client);
+            await behaviorHelper.ManageFundadores(guild);
+            #endregion
         }
         
-        botStateService.SetInitialized();
+        discordBotService.SetInicializado();
         logger.LogInformation("Bot inicializado correctamente");
-        await discordBotService.Playroom.SendMessageAsync("Bot inicializado correctamente");
-
-        /*if (!discordBotService.Debug)
-        {
-            await Funciones.ManageBoosters(client.Guilds[...]);
-            await Funciones.ManageNewUsuarios(client.Guilds[...]);
-            await Funciones.ManageUsuariosActivos(client.Guilds[...]);
-            await Funciones.ManagSpamAccounts(client.Guilds[...]);
-            await Funciones.ClearInvitesRoleOnStartup(client.Guilds[...]);
-            await Funciones.ManageXPUserHistory(client.Guilds[...]);
-            await Funciones.ManageUnlinkedAccounts(_discordClient);
-            await Funciones.ManageFundadores(_discordClient);
-            await Funciones.ManageUserDates();
-        }*/
-
-        await Task.CompletedTask;
+        await discordBotService.Playroom.SendMessageAsync($"Bot inicializado correctamente.\nDebugging: {discordBotService.Debug.ToString()}");
     }
 }

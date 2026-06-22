@@ -38,6 +38,7 @@ public class BotConfiguration
         public required ulong Miembro { get; init; }
         public required ulong NoVinculado { get; init; }
         public required ulong Inactivo { get; init; }
+        public required ulong Invite { get; init; }
         public required ulong ColoresExtra { get; init; }
         public required RangosConfiguration Rangos { get; init; }
         public required IReadOnlyList<ColorRangoConfiguration> ColoresRango { get; init; }
@@ -95,6 +96,7 @@ public class BotConfiguration
                 Miembro = RequireUlong(roles, "Miembro"),
                 NoVinculado = RequireUlong(roles, "NoVinculado"),
                 Inactivo = RequireUlong(roles, "Inactivo"),
+                Invite = RequireUlong(roles, "Invite"),
                 ColoresExtra = RequireUlong(roles, "ColoresExtra"),
                 Rangos = new RolesConfiguration.RangosConfiguration
                 {

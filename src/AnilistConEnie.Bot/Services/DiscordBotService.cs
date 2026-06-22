@@ -10,6 +10,7 @@ public class DiscordBotService(DiscordClient client, BotConfiguration config, IL
     : IHostedService
 {
     public bool Debug { get; } = SetDebug();
+    public bool Inicializado { get; private set; } = false;
 
     private DiscordChannel? _logChannelInfo;
     private DiscordChannel? _logChannelErrors;
@@ -37,6 +38,11 @@ public class DiscordBotService(DiscordClient client, BotConfiguration config, IL
     {
         logger.LogInformation("Desconectando bot de Discord");
         await client.DisconnectAsync();
+    }
+
+    public void SetInicializado()
+    {
+        Inicializado = true;
     }
 
     private static bool SetDebug()

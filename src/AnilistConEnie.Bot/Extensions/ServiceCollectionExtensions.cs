@@ -18,7 +18,7 @@ public static class ServiceCollectionExtensions
             IConfiguration configuration = provider.GetRequiredService<IConfiguration>();
 
             string token = configuration.GetValue<string>("discordToken")
-                ?? throw new InvalidOperationException("'discordToken' es obligatorio en appsettings.json");
+                ?? throw new InvalidOperationException("'discordToken' es obligatorio: configuralo via User Secrets (local) o variable de entorno 'discordToken' (servidor)");
 
             DiscordClientBuilder clientBuilder = DiscordClientBuilder.CreateDefault(token, DiscordIntents.All);
 

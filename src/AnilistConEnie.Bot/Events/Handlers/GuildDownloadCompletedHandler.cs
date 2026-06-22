@@ -83,11 +83,13 @@ public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, 
         await behaviorHelper.ManageFundadores(guild);
         logger.LogInformation("Fundadores gestionados correctamente");
         
-        if (config.ManageXpUserHistory)
+        if (!discordBotService.Debug || config.LoadXpUserHistoryOnDebug)
         {
             await behaviorHelper.ManageXpUserHistory(guild);
             logger.LogInformation("Historial de XP de usuarios gestionado correctamente");
         }
+        else
+            logger.LogWarning("Historial de XP no cargado [DESHABILITADO EN DEBUG]");
         #endregion
         
         discordBotService.SetInicializado();

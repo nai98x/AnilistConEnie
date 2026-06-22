@@ -6,7 +6,7 @@ public class BotConfiguration
 {
     public required ulong GuildId { get; init; }
     public required ulong OwnerId { get; init; }
-    public required bool ManageXpUserHistory { get; init; }
+    public required bool LoadXpUserHistoryOnDebug { get; init; }
     public required ChannelConfiguration Channels { get; init; }
     public required RolesConfiguration Roles { get; init; }
     public required EmotesConfiguration Emotes { get; init; }
@@ -92,7 +92,7 @@ public class BotConfiguration
         {
             GuildId = RequireUlong(ids, "GuildId"),
             OwnerId = RequireUlong(ids, "OwnerId"),
-            ManageXpUserHistory = bool.TryParse(configuration["ManageXpUserHistory"], out bool manageXpUserHistory) && manageXpUserHistory,
+            LoadXpUserHistoryOnDebug = bool.TryParse(configuration["LoadXpUserHistoryOnDebug"], out bool loadXpUserHistoryOnDebug) && loadXpUserHistoryOnDebug,
             Channels = new ChannelConfiguration
             {
                 General = RequireUlong(channels, "General"),

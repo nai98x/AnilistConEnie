@@ -1,6 +1,7 @@
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Extensions;
 using AnilistConEnie.Infrastructure.Extensions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -53,6 +54,11 @@ public static class Program
     private static IHost CreateHostBuilder(string[] args)
     {
         HostApplicationBuilder host = Host.CreateApplicationBuilder(args);
+
+        // El token de Discord no se versiona: local via User Secrets, en el servidor via variable de entorno (discordToken).
+        host.Configuration
+            .AddUserSecrets(typeof(Program).Assembly, optional: true)
+            .AddEnvironmentVariables();
 
         BotConfiguration botConfig = BotConfiguration.FromConfiguration(host.Configuration);
 

@@ -1,0 +1,31 @@
+using AnilistConEnie.Model.Entities.Anilist;
+
+namespace AnilistConEnie.Model.Interfaces;
+
+/// <summary>
+/// Cliente de alto nivel de la API GraphQL de AniList. Cada método representa una consulta y
+/// devuelve el objeto de dominio correspondiente. El manejo de cliente, reintentos, excepciones
+/// y rate limit está centralizado en la implementación (capa Infrastructure).
+/// </summary>
+public interface IAnilistClient
+{
+    /// <summary>Obtiene un Media (anime/manga) por su id de AniList.</summary>
+    /// <returns>El media, o <c>null</c> si la consulta no devolvió datos.</returns>
+    Task<AnilistMedia?> GetMediaAsync(int id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Busca media por nombre, devolviendo hasta <paramref name="perPage"/> candidatos ordenados por
+    /// relevancia (igual que la búsqueda de AniList). La selección entre los resultados es
+    /// responsabilidad de quien consume.
+    /// </summary>
+    Task<IReadOnlyList<AnilistMedia>> SearchMediaAsync(
+        string search,
+        AnilistMediaType type,
+        int perPage = 5,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Consulta liviana cuyo único objetivo es leer el estado actual del rate limit de AniList.
+    /// </summary>
+    Task<AnilistRateLimit> GetRateLimitAsync(CancellationToken cancellationToken = default);
+}

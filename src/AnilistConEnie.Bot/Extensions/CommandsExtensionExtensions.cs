@@ -21,7 +21,8 @@ public static class CommandsExtensionExtensions
             .GetTypes()
             .Where(type => type.Namespace == SlashCommandsNamespace
                            && type is { IsClass: true, IsAbstract: false }
-                           && type.GetCustomAttribute<CommandAttribute>() is not null);
+                           && (type.GetCustomAttribute<CommandAttribute>() is not null
+                               || type.GetMethods().Any(method => method.GetCustomAttribute<CommandAttribute>() is not null)));
 
 #if DEBUG
         commandTypes = commandTypes.Where(type => type.GetCustomAttribute<TestCommandAttribute>() is not null);

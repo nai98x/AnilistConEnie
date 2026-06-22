@@ -2,7 +2,11 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using AnilistConEnie.Bot.Commands.SlashCommands.Attributes;
 using AnilistConEnie.Bot.Extensions;
+using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
+using AnilistConEnie.Model.Entities.Anilist;
+using AnilistConEnie.Model.Interfaces;
+using DSharpPlus;
 using DSharpPlus.Commands;
 using DSharpPlus.Entities;
 
@@ -12,7 +16,7 @@ namespace AnilistConEnie.Bot.Commands.SlashCommands;
 [TestCommand]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
 [SuppressMessage("ReSharper", "UnusedType.Global")]
-public class Owner(BotStateService botStateService, DiscordBotService  discordBotService)
+public class Owner(BotStateService botStateService, DiscordBotService discordBotService, IAnilistClient anilistClient)
 {
     [Command("test")]
     [Description("Comando general para testear cosas")]
@@ -60,14 +64,14 @@ public class Owner(BotStateService botStateService, DiscordBotService  discordBo
     [Description("Set permanent username")]
     public async Task SetPermanentUsername(
         CommandContext ctx, 
-        [Parameter("Usuario")] [Description("El usuario del que quieres que tenga el nickname permanente")] DiscordUser user,
+        [Parameter("Usuario")] [Description("El usuario del que quieres que tenga el nickname permanente")] DiscordMember member,
         [Parameter("Username")] [Description("El nickname")] string username)
     {
         await ctx.DeferEphemeralAsync();
-        botStateService.SetPermanentUsername(user.Id, username);
+        botStateService.SetPermanentUsername(member.Id, username);
 
         await ctx.FollowupAsync(new DiscordFollowupMessageBuilder()
-            .WithContent($"El usuario {user.Username} ahora tiene el nickname permanente '{username}'")
+            .WithContent($"El usuario {member.Username} ahora tiene el nickname permanente '{username}'")
             .AsEphemeral());
     }
 
@@ -75,12 +79,33 @@ public class Owner(BotStateService botStateService, DiscordBotService  discordBo
     [Description("Remove permanent username")]
     public async Task RemovePermanentUsername(
         CommandContext ctx,
-        [Parameter("Usuario")] [Description("El usuario del que quieres que tenga el nickname permanente")] DiscordUser user)
+        [Parameter("Usuario")] [Description("El usuario del que quieres que tenga el nickname permanente")] DiscordMember member)
     {
         await ctx.DeferEphemeralAsync();
-        botStateService.RemovePermanentUsername(user.Id);
+        botStateService.RemovePermanentUsername(member.Id);
         await ctx.FollowupAsync(new DiscordFollowupMessageBuilder()
-            .WithContent($"El usuario {user.Username} ya no tiene el nickname permanente")
+            .WithContent($"El usuario {member.Username} ya no tiene el nickname permanente")
             .AsEphemeral());
     }
+    
+    [Command("ratelimits")]
+    [Description("Muestra los ratelimits de APIs que interactual con el bot")]
+    public async Task Ratelimits(CommandContext ctx)
+    {
+        await ctx.DeferEphemeralAsync();
+
+        AnilistRateLimit rateLimit = await anilistClient.GetRateLimitAsync();
+
+        string desc = $"{Formatter.Bold("AniList:")}\n" +
+                      $"Limit: {rateLimit.Limit?.ToString() ?? "?"}\n" +
+                      $"Remaining: {rateLimit.Remaining?.ToString() ?? "?"}";
+
+        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+        {
+            Title = "Rate limits",
+            Description = desc,
+            Color = DiscordHelper.GetColor()
+        }));
+    }
+
 }

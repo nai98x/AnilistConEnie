@@ -1,5 +1,7 @@
+using AnilistConEnie.Infrastructure.Anilist;
 using AnilistConEnie.Infrastructure.Firebase;
 using AnilistConEnie.Infrastructure.Repositories;
+using AnilistConEnie.Model.Interfaces;
 using AnilistConEnie.Model.Interfaces.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,6 +22,11 @@ public static class InfrastructureServiceExtensions
         services.AddSingleton<IImagenesRepository, ImagenesRepository>();
         services.AddSingleton<IIntercambiosRepostRepository, IntercambiosRepostRepository>();
         services.AddSingleton<IUsuariosActivosRepository, UsuariosActivosRepository>();
+
+        // Cliente de AniList: el executor (que posee el GraphQLHttpClient) y el cliente de alto
+        // nivel son singletons para reutilizar la conexión HTTP entre todas las consultas.
+        services.AddSingleton<AnilistGraphQLExecutor>();
+        services.AddSingleton<IAnilistClient, AnilistClient>();
 
         return services;
     }

@@ -18,6 +18,7 @@ public static class Program
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Information()
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+            .MinimumLevel.Override("System.Net.Http.HttpClient", LogEventLevel.Warning)
             .Enrich.WithProcessId()
             .Enrich.FromLogContext()
             .WriteTo.Console(
@@ -65,7 +66,7 @@ public static class Program
         host.Services
             .AddSingleton(botConfig)
             .AddInfrastructure()
-            .AddConfiguredDiscordClient()
+            .AddConfiguredDiscordClient(host.Configuration)
             .AddSerilog()
             .AddBotServices();
 

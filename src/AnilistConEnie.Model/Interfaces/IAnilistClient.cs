@@ -41,6 +41,13 @@ public interface IAnilistClient
     Task<AnilistUser?> SearchUserAsync(string search, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Obtiene los datos del usuario autenticado (<c>Viewer</c>) usando su token OAuth. Pensado para
+    /// el flujo de vinculación de cuentas.
+    /// </summary>
+    /// <returns>El usuario autenticado, o <c>null</c> si la consulta no devolvió datos.</returns>
+    Task<AnilistViewer?> GetViewerAsync(string accessToken, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Consulta liviana cuyo único objetivo es leer el estado actual del rate limit de AniList.
     /// </summary>
     Task<AnilistRateLimit> GetRateLimitAsync(CancellationToken cancellationToken = default);

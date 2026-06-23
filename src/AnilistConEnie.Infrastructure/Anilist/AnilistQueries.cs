@@ -88,6 +88,24 @@ internal static class AnilistQueries
         }
         """;
 
+    /// <summary>
+    /// Datos del usuario autenticado. Requiere enviar el token OAuth del usuario en el header
+    /// <c>Authorization</c> (ver <c>SendAuthenticatedQueryAsync</c>).
+    /// </summary>
+    public const string Viewer =
+        """
+        query {
+            Viewer {
+                id
+                name
+                siteUrl
+                avatar { medium }
+                bannerImage
+                createdAt
+            }
+        }
+        """;
+
     /// <summary>Query mínima usada solo para leer los headers de rate limit.</summary>
     public const string RateLimitProbe =
         """

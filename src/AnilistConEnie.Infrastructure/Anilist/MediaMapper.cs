@@ -69,6 +69,16 @@ internal static class MediaMapper
         SiteUrl = dto.SiteUrl ?? string.Empty
     };
 
+    public static AnilistViewer ToViewer(ViewerDto dto) => new()
+    {
+        Id = dto.Id,
+        Name = dto.Name ?? string.Empty,
+        SiteUrl = dto.SiteUrl ?? string.Empty,
+        AvatarMedium = dto.Avatar?.Medium,
+        BannerImage = dto.BannerImage,
+        CreatedAt = DateTimeOffset.FromUnixTimeSeconds(dto.CreatedAt)
+    };
+
     private static AnilistFuzzyDate? ToFuzzyDate(FuzzyDateDto? dto) =>
         dto is null ? null : new AnilistFuzzyDate { Year = dto.Year, Month = dto.Month, Day = dto.Day };
 }

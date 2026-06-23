@@ -4,15 +4,20 @@ using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Model.Entities.Anilist;
 using AnilistConEnie.Model.Enum;
+using AnilistConEnie.Model.Exceptions;
+using AnilistConEnie.Model.Interfaces;
 using AnilistConEnie.Model.Interfaces.Repositories;
 using AnilistConEnie.Model.Entities;
 using DSharpPlus;
 using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
 using DSharpPlus.Exceptions;
+using DSharpPlus.Interactivity;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace AnilistConEnie.Bot.Helpers;
 
-public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState, BotConfiguration config, DiscordHelper discordHelper, AnilistServerScoreService scoreService, IUsuariosAnilistRepository usuariosAnilistRepository)
+public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState, BotConfiguration config, DiscordHelper discordHelper, AnilistServerScoreService scoreService, IUsuariosAnilistRepository usuariosAnilistRepository, IAnilistClient anilistClient)
 {
     public async Task TerminarVinculacion(DiscordClient client, DiscordUser user, DiscordMember member, DiscordGuild guild, UserApprovalAnilist userApproval)
     {
@@ -131,6 +136,106 @@ public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState,
 
         ServerMediaScores result = await scoreService.AggregateAsync(media, porAnilistId, includeUsersWithoutScore);
         return FormatScores(result, media);
+    }
+    
+    public async Task VincularAniList(DiscordInteraction interaction, DiscordClient client)
+    {
+        InteractivityExtension interactivity = client.ServiceProvider.GetRequiredService<InteractivityExtension>();
+        string modalId = $"modal-{interaction.Id}";
+
+        DiscordModalBuilder modal = new DiscordModalBuilder()
+            .WithCustomId(modalId)
+            .WithTitle("Vincular AniList")
+            .AddTextInput(new DiscordTextInputComponent("AniListToken", placeholder: "Pegar código aquí"), "Código");
+
+        await interaction.CreateResponseAsync(DiscordInteractionResponseType.Modal, modal);
+
+        var modalResult = await interactivity.WaitForModalAsync(modalId, TimeSpan.FromMinutes(5));
+        if (modalResult.TimedOut) return;
+
+        DiscordInteraction modalInteraction = modalResult.Result.Interaction;
+        string accessToken = ((TextInputModalSubmission)modalResult.Result.Values["AniListToken"]).Value;
+
+        await modalInteraction.CreateResponseAsync(DiscordInteractionResponseType.DeferredChannelMessageWithSource, new DiscordInteractionResponseBuilder().AsEphemeral(true));
+
+        AnilistViewer? viewer;
+        try
+        {
+            viewer = await anilistClient.GetViewerAsync(accessToken);
+        }
+        catch (AnilistApiException ex)
+        {
+            await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
+            {
+                Title = "Error",
+                Description = ex.Message,
+                Color = DiscordColor.Red
+            }));
+            return;
+        }
+
+        if (viewer is null)
+        {
+            await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
+            {
+                Title = "Error",
+                Description = "Error desconocido",
+                Color = DiscordColor.Red
+            }));
+            return;
+        }
+
+        DiscordMember member = await interaction.Guild.GetMemberAsync(interaction.User.Id, true);
+
+        if (anilistUsersState.IsAnilistUserBaneado(viewer.Id))
+        {
+            await interaction.Guild.BanMemberAsync(interaction.User.Id, TimeSpan.Zero, "Usuario baneado por AniList baneado");
+            return;
+        }
+
+        UserApprovalAnilist userApproval = new()
+        {
+            IdDiscord = (long)interaction.User.Id,
+            IdAnilist = viewer.Id,
+            Name = viewer.Name,
+            SiteUrl = viewer.SiteUrl,
+            Avatar = viewer.AvatarMedium ?? string.Empty,
+            Banner = viewer.BannerImage ?? string.Empty
+        };
+
+        DateTimeOffset monthBefore = DateTimeOffset.Now.AddMonths(-1);
+        if (interaction.User.CreationTimestamp > monthBefore || viewer.CreatedAt > monthBefore)
+        {
+            DiscordButtonComponent aprobar = new(DiscordButtonStyle.Success, $"sync-true-{interaction.User.Id}", "Aprobar");
+            DiscordButtonComponent denegar = new(DiscordButtonStyle.Danger, $"sync-false-{interaction.User.Id}", "Denegar");
+
+            DiscordMessageBuilder msgBuilderApproval = new DiscordMessageBuilder()
+                .AddEmbed(new DiscordEmbedBuilder
+                {
+                    Color = DiscordColor.Yellow,
+                    Title = "Vinculacion de AniList pendiente de aprobación",
+                    Description =
+                        $"El usuario {interaction.User.Mention} | Nombre: {Formatter.InlineCode(member.DisplayName)} | Id: {Formatter.InlineCode(interaction.User.Id.ToString())} ({Formatter.MaskedUrl("Link de su AniList", new Uri(viewer.SiteUrl))}) ha vinculado su cuenta de AniList pero su cuenta de Discord o AniList es muy reciente, por lo que debe ser aprobada manualmente por el staff.\n\n" +
+                        $"- Discord: {interaction.User.CreationTimestamp:dd/MM/yyyy}\n" +
+                        $"- AniList: {viewer.CreatedAt.ToLocalTime():dd/MM/yyyy}",
+                })
+                .AddActionRowComponent(aprobar, denegar);
+
+            await usuariosAnilistRepository.AgregarUsuarioApproval(userApproval);
+            await interaction.Guild.Channels[config.Channels.Moderacion].SendMessageAsync(msgBuilderApproval);
+
+            await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
+            {
+                Title = "Atencion",
+                Description = "La cuenta debe ser vinculada manualmente por el staff.",
+                Color = DiscordColor.Yellow
+            }));
+
+            return;
+        }
+
+        await TerminarVinculacion(client, interaction.User, member, interaction.Guild, userApproval);
+        await modalInteraction.DeleteOriginalResponseAsync();
     }
 
     private static string FormatScores(ServerMediaScores result, AnilistMedia media)

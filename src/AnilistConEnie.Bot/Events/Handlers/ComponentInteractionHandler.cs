@@ -18,7 +18,7 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
 
         if (args.Interaction.Data.CustomId.StartsWith("modal-anilistprofileset") && !discordBotService.Debug)
         {
-            //await anilistHelper.VincularAniList(args.Interaction, client, args);
+            await anilistHelper.VincularAniList(args.Interaction, client);
         }
         else if (args.Interaction.Data.CustomId.StartsWith("colores"))
         {

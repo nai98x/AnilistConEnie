@@ -77,6 +77,15 @@ internal sealed class AnilistClient(AnilistGraphQLExecutor executor) : IAnilistC
         catch (AnilistApiException) { return null; }
     }
 
+    public async Task<AnilistViewer?> GetViewerAsync(string accessToken, CancellationToken cancellationToken = default)
+    {
+        GraphQLRequest request = new() { Query = AnilistQueries.Viewer };
+
+        AnilistResponse<ViewerResponse> response = await executor.SendAuthenticatedQueryAsync<ViewerResponse>(request, accessToken, cancellationToken);
+        ViewerDto? viewer = response.Data?.Viewer;
+        return viewer is null ? null : MediaMapper.ToViewer(viewer);
+    }
+
     public async Task<AnilistRateLimit> GetRateLimitAsync(CancellationToken cancellationToken = default)
     {
         GraphQLRequest request = new() { Query = AnilistQueries.RateLimitProbe };

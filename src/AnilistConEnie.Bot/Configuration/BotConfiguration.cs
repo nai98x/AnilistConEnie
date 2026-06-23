@@ -26,6 +26,7 @@ public class BotConfiguration
         public required ulong LogChannelPuerta { get; init; }
         public required ulong Perfiles { get; init; }
         public required ulong Playroom { get; init; }
+        public required ulong Moderacion { get; init; }
         public required IntercambiosChannelConfiguration Intercambios { get; init; }
 
         public class IntercambiosChannelConfiguration
@@ -107,6 +108,7 @@ public class BotConfiguration
                 LogChannelError = RequireUlong(channels, "LogChannelError"),
                 Perfiles = RequireUlong(channels, "Perfiles"),
                 Playroom = RequireUlong(channels, "Playroom"),
+                Moderacion = RequireUlong(channels, "Moderacion"),
                 LogChannelPuerta = RequireUlong(channels, "LogChannelPuerta"),
                 Intercambios = new ChannelConfiguration.IntercambiosChannelConfiguration
                 {

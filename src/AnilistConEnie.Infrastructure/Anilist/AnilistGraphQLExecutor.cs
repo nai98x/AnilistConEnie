@@ -36,6 +36,13 @@ internal sealed class AnilistGraphQLExecutor : IDisposable
         _client = new GraphQLHttpClient(Endpoint, new NewtonsoftJsonSerializer());
         _pipeline = BuildPipeline();
     }
+    
+    /// <summary>
+    /// Igual que <see cref="SendQueryAsync{T}"/> pero adjuntando el token OAuth del usuario en el
+    /// header <c>Authorization</c> (consultas sobre <c>Viewer</c> y demás datos privados).
+    /// </summary>
+    public Task<AnilistResponse<T>> SendAuthenticatedQueryAsync<T>(GraphQLRequest request, string accessToken, CancellationToken cancellationToken) =>
+        SendQueryAsync<T>(new AuthenticatedGraphQLHttpRequest(request, accessToken), cancellationToken);
 
     /// <summary>
     /// Ejecuta una query y devuelve los datos tipados junto al estado de rate limit. Aplica la

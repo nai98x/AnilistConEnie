@@ -62,6 +62,13 @@ internal static class MediaMapper
         Progress = dto.Progress
     };
 
+    public static AnilistUser ToUser(UserDto dto) => new()
+    {
+        Id = dto.Id,
+        Name = dto.Name ?? string.Empty,
+        SiteUrl = dto.SiteUrl ?? string.Empty
+    };
+
     private static AnilistFuzzyDate? ToFuzzyDate(FuzzyDateDto? dto) =>
         dto is null ? null : new AnilistFuzzyDate { Year = dto.Year, Month = dto.Month, Day = dto.Day };
 }

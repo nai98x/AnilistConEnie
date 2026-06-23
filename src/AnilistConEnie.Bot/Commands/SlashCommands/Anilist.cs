@@ -2,6 +2,8 @@ using System.ComponentModel;
 using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Bot.Commands.SlashCommands.Attributes;
 using AnilistConEnie.Bot.Helpers;
+using AnilistConEnie.Bot.Services.State;
+using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Entities.Anilist;
 using AnilistConEnie.Model.Interfaces;
 using DSharpPlus.Commands;
@@ -14,7 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace AnilistConEnie.Bot.Commands.SlashCommands;
 
 [TestCommand]
-public class Anilist(IAnilistClient anilistClient, AnilistHelper anilistHelper)
+public class Anilist(IAnilistClient anilistClient, AnilistHelper anilistHelper, AnilistUsersState anilistUsersState)
 {
     // Límite de caracteres de la description de un embed de Discord.
     private const int EmbedDescriptionLimit = 4096;
@@ -103,5 +105,36 @@ public class Anilist(IAnilistClient anilistClient, AnilistHelper anilistHelper)
         IEnumerable<Page> pages = InteractivityExtension.GeneratePagesInEmbed(scores, SplitType.Line, embed);
         InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
         await interactivity.SendPaginatedResponseAsync(ctx.Interaction, ephemeral: false, ctx.User, pages);
+    }
+    
+    [Command("usuarioanilist")]
+    [Description("Busca un usuario de AniList para saber si se encuentra en el servidor")]
+    public async Task Busqueda(CommandContext ctx, [Parameter("Nombre")][Description("Nombre de usuario en AniList")] string buscar)
+    {
+        await ctx.DeferResponseAsync();
+
+        AnilistUser? usuarioAnilist = await anilistClient.SearchUserAsync(buscar);
+        if (usuarioAnilist is not null)
+        {
+            UsuarioAnilist? vinculado = anilistUsersState.Usuarios.Find(x => x.AnilistURL == usuarioAnilist.SiteUrl);
+            if (vinculado is not null && ctx.Guild!.Members.TryGetValue((ulong)vinculado.UserId, out DiscordMember? miembro))
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+                {
+                    Title = "Usuario encontrado",
+                    Description = $"El usuario de AniList `{buscar}` se encuentra en el servidor y es `{miembro.DisplayName}` ({miembro.Mention})",
+                    Color = DiscordColor.Green
+                }.WithThumbnail(miembro.GuildAvatarUrl ?? miembro.AvatarUrl)));
+
+                return;
+            }
+        }
+
+        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+        {
+            Title = "Usuario no encontrado",
+            Description = $"El usuario `{buscar}` no se encuentra en el servidor",
+            Color = DiscordColor.Red
+        }));
     }
 }

@@ -1,5 +1,6 @@
 using AnilistConEnie.Infrastructure.Anilist.Responses;
 using AnilistConEnie.Model.Entities.Anilist;
+using AnilistConEnie.Model.Exceptions;
 using AnilistConEnie.Model.Interfaces;
 using GraphQL;
 
@@ -55,6 +56,25 @@ internal sealed class AnilistClient(AnilistGraphQLExecutor executor) : IAnilistC
         List<MediaListEntryDto>? entries = response.Data?.Page?.MediaList;
 
         return entries is null ? [] : entries.Select(MediaMapper.ToUserScore).ToList();
+    }
+
+    public async Task<AnilistUser?> SearchUserAsync(string search, CancellationToken cancellationToken = default)
+    {
+        GraphQLRequest request = new()
+        {
+            Query = AnilistQueries.UserByName,
+            Variables = new { search }
+        };
+
+        try
+        {
+            AnilistResponse<UserSearchResponse> response = await executor.SendQueryAsync<UserSearchResponse>(request, cancellationToken);
+            UserDto? user = response.Data?.User;
+            return user is null ? null : MediaMapper.ToUser(user);
+        }
+        // AniList responde con un error GraphQL ("Not Found") cuando ningún usuario coincide.
+        catch (AnilistRateLimitException) { throw; }
+        catch (AnilistApiException) { return null; }
     }
 
     public async Task<AnilistRateLimit> GetRateLimitAsync(CancellationToken cancellationToken = default)

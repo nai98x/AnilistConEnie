@@ -76,6 +76,18 @@ internal static class AnilistQueries
         }
         """;
 
+    /// <summary>Busca un usuario por nombre, devolviendo lo mínimo para ubicarlo (id, nombre y url).</summary>
+    public const string UserByName =
+        """
+        query ($search: String) {
+            User(search: $search) {
+                id
+                name
+                siteUrl
+            }
+        }
+        """;
+
     /// <summary>Query mínima usada solo para leer los headers de rate limit.</summary>
     public const string RateLimitProbe =
         """

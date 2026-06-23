@@ -35,6 +35,12 @@ public interface IAnilistClient
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Busca un usuario de AniList por nombre.
+    /// </summary>
+    /// <returns>El usuario, o <c>null</c> si AniList no encontró ninguna coincidencia.</returns>
+    Task<AnilistUser?> SearchUserAsync(string search, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Consulta liviana cuyo único objetivo es leer el estado actual del rate limit de AniList.
     /// </summary>
     Task<AnilistRateLimit> GetRateLimitAsync(CancellationToken cancellationToken = default);

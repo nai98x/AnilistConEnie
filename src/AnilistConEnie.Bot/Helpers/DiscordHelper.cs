@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Model.Entities;
@@ -26,6 +27,51 @@ public class DiscordHelper(BotConfiguration config, ILogger<DiscordHelper> logge
     /// </summary>
     public static ValueTask<DiscordEmoji> GetApplicationEmojiAsync(DiscordClient client, ulong emojiId)
         => client.GetApplicationEmojiAsync(emojiId, false);
+
+    /// <summary>
+    /// Convierte el texto de un emoji (un emoji custom <c>&lt;:nombre:id&gt;</c> / <c>&lt;a:nombre:id&gt;</c>
+    /// o un emoji unicode) en un <see cref="DiscordEmoji"/> usable, o <c>null</c> si no se puede resolver.
+    /// </summary>
+    public static DiscordEmoji? ToEmoji(DiscordClient client, string text)
+    {
+        text = text.Trim();
+        Match match = Regex.Match(text, @"^<?a?:?([a-zA-Z0-9_]+):([0-9]+)>?$");
+        if (!match.Success)
+            return DiscordEmoji.TryFromUnicode(text, out DiscordEmoji? emoji) ? emoji : null;
+
+        return ulong.TryParse(match.Groups[2].Value, out ulong id) && DiscordEmoji.TryFromGuildEmote(client, id, out DiscordEmoji? guildEmote)
+            ? guildEmote
+            : null;
+    }
+
+    /// <summary>
+    /// Muestra un mensaje de confirmación (botones "Si"/"No") como followup y devuelve la respuesta del
+    /// usuario. Devuelve <c>false</c> si se agota el tiempo de espera. Requiere que la interacción ya
+    /// haya sido diferida.
+    /// </summary>
+    public static async Task<bool> GetSiNoInteractivity(CommandContext ctx, string titulo, string descripcion, DiscordEmbed? embed = null)
+    {
+        InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
+
+        DiscordFollowupMessageBuilder builder = new DiscordFollowupMessageBuilder()
+            .AddEmbed(new DiscordEmbedBuilder { Title = titulo, Description = descripcion });
+
+        if (embed != null) builder.AddEmbed(embed);
+
+        builder.AddActionRowComponent(
+            new DiscordButtonComponent(DiscordButtonStyle.Success, "true", "Si"),
+            new DiscordButtonComponent(DiscordButtonStyle.Danger, "false", "No"));
+
+        DiscordMessage msg = await ctx.FollowupAsync(builder);
+
+        InteractivityResult<ComponentInteractionCreatedEventArgs> result =
+            await interactivity.WaitForButtonAsync(msg, ctx.User, TimeSpan.FromMinutes(2));
+
+        if (result.TimedOut) return false;
+
+        await result.Result.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
+        return bool.Parse(result.Result.Id);
+    }
 
     public bool RangoAPartirDe(DiscordGuild guild, DiscordMember member, RangoEnum rango, bool verificarActivo)
     {

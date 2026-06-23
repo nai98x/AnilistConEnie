@@ -32,6 +32,7 @@ public class BotConfiguration
         public required ulong Perfiles { get; init; }
         public required ulong Playroom { get; init; }
         public required ulong Moderacion { get; init; }
+        public required ulong Pdd { get; init; }
         public required IntercambiosChannelConfiguration Intercambios { get; init; }
 
         public class IntercambiosChannelConfiguration
@@ -53,6 +54,7 @@ public class BotConfiguration
         public required ulong NoVinculado { get; init; }
         public required ulong Inactivo { get; init; }
         public required ulong Invite { get; init; }
+        public required ulong Pdd { get; init; }
         public required ulong KamiSama { get; init; }
         public required ulong Colaborador { get; init; }
         public required ulong Cumple { get; init; }
@@ -79,6 +81,7 @@ public class BotConfiguration
         public required EmoteIds UmaPoints { get; init; }
         public required EmoteIds Worrysad { get; init; }
         public required ulong ConfessionReaction { get; init; }
+        public required ulong Pdd { get; init; }
 
         public record EmoteIds(ulong Prod, ulong Test)
         {
@@ -118,6 +121,7 @@ public class BotConfiguration
                 Perfiles = RequireUlong(channels, "Perfiles"),
                 Playroom = RequireUlong(channels, "Playroom"),
                 Moderacion = RequireUlong(channels, "Moderacion"),
+                Pdd = RequireUlong(channels, "Pdd"),
                 LogChannelPuerta = RequireUlong(channels, "LogChannelPuerta"),
                 Intercambios = new ChannelConfiguration.IntercambiosChannelConfiguration
                 {
@@ -137,6 +141,7 @@ public class BotConfiguration
                 NoVinculado = RequireUlong(roles, "NoVinculado"),
                 Inactivo = RequireUlong(roles, "Inactivo"),
                 Invite = RequireUlong(roles, "Invite"),
+                Pdd = RequireUlong(roles, "Pdd"),
                 KamiSama = RequireUlong(roles, "KamiSama"),
                 Colaborador = RequireUlong(roles, "Colaborador"),
                 Cumple = RequireUlong(roles, "Cumple"),
@@ -160,6 +165,7 @@ public class BotConfiguration
                 UmaPoints = RequireEmoteIds(emotes, "UmaPoints"),
                 Worrysad = RequireEmoteIds(emotes, "Worrysad"),
                 ConfessionReaction = RequireUlong(emotes, "ConfessionReaction"),
+                Pdd = RequireUlong(emotes, "Pdd"),
             },
             PaisTimezones = RequirePaisTimezones(ids),
             FechasEntradaExcepciones = ReadFechasEntradaExcepciones(configuration)

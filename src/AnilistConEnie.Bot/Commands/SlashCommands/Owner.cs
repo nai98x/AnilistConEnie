@@ -127,6 +127,73 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
             .AsEphemeral());
     }
     
+    [Command("configurarbienvenida")]
+    [Description("Agrega el mensaje de bienvenida")]
+    public async Task ConfigurarBienvenida(CommandContext ctx)
+    {
+        await ctx.DeferEphemeralAsync();
+
+        DiscordChannel channel = ctx.Guild!.Channels[config.Channels.Bienvenida];
+
+        DiscordMessageBuilder msgBuilder = new DiscordMessageBuilder()
+            .AddEmbed(new DiscordEmbedBuilder()
+                .WithThumbnail("https://media.discordapp.net/attachments/879612956848062514/879628082921762826/imagen_2021-07-15_150953_1.png")
+                .WithTitle("Vincula tu AniList")
+                .WithDescription(
+                    "# **Instrucciones**:\n\n" +
+                    "- Haz click en el botón llamado **Autorizar**\n" +
+                    "- Una vez se abra la página web, haz click en el botón verde **Authorize** y luego copia el texto que te aparecerá para copiar\n" +
+                    "- Cierra la página web y haz click en el botón llamado **Pegar código aquí**\n" +
+                    "- Pega el código en el formulario y envíalo")
+                .WithFooter("Apenas tengas tu cuenta de AniList vinculada, se te desbloquearán todos los canales del servidor.")
+                .WithColor(DiscordHelper.GetColor()))
+            .AddActionRowComponent(
+                new DiscordLinkButtonComponent("https://anilist.co/api/v2/oauth/authorize?client_id=8655&response_type=token", "Autorizar"),
+                new DiscordButtonComponent(DiscordButtonStyle.Primary, "modal-anilistprofileset", "Pegar código aquí"));
+
+        await channel.SendMessageAsync(msgBuilder);
+
+        await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Mensaje de bienvenida creado con exito"));
+    }
+
+    [Command("configurarcolores")]
+    [Description("Agrega el mensaje de colores")]
+    public async Task ConfigurarColores(CommandContext ctx)
+    {
+        await ctx.DeferEphemeralAsync();
+
+        DiscordChannel channel = ctx.Guild!.Channels[config.Channels.Colores];
+
+        (string Rango, string Header)[] grupos =
+        [
+            ("Miembro", "# Colores básicos\nAccesibles para cualquier rango."),
+            ("Senpai", "# Colores Avanzados\nAccesibles para rango Senpai."),
+            ("Ousama", "# Colores con degradado\nAccesibles para rango Ousama."),
+            ("Teiou", "# Colores Premium\nAccesibles para rango Teiou.")
+        ];
+
+        int selectIndex = 0;
+        foreach ((string rango, string header) in grupos)
+        {
+            List<BotConfiguration.ColorRangoConfiguration> colores = config.Roles.ColoresRango.Where(x => x.Rango == rango).ToList();
+            if (colores.Count == 0) continue;
+
+            DiscordMessageBuilder msgBuilder = new DiscordMessageBuilder().WithContent(header);
+
+            foreach (BotConfiguration.ColorRangoConfiguration[] chunk in colores.Chunk(25))
+            {
+                List<DiscordSelectComponentOption> options = chunk
+                    .Select(c => new DiscordSelectComponentOption(c.Nombre, c.RoleId.ToString()))
+                    .ToList();
+                msgBuilder.AddActionRowComponent(new DiscordSelectComponent($"colores{++selectIndex}", "Selecciona un color", options));
+            }
+
+            await channel.SendMessageAsync(msgBuilder);
+        }
+
+        await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Mensaje de colores creado con exito"));
+    }
+
     [Command("ratelimits")]
     [Description("Muestra los ratelimits de APIs que interactual con el bot")]
     public async Task Ratelimits(CommandContext ctx)

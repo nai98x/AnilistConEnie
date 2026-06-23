@@ -13,7 +13,6 @@ public static class BotServiceExtensions
         // Estado en memoria del bot, separado por responsabilidad
         services.AddSingleton<EmoteModeState>();
         services.AddSingleton<AnilistUsersState>();
-        services.AddSingleton<HighlightsState>();
         services.AddSingleton<TriggersState>();
         services.AddSingleton<MemberActivityState>();
         services.AddSingleton<InviteLinkState>();

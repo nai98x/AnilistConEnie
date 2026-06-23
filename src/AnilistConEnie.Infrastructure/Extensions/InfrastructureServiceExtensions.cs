@@ -18,7 +18,6 @@ public static class InfrastructureServiceExtensions
         services.AddSingleton<IUsuariosAnilistRepository, UsuariosAnilistRepository>();
         services.AddSingleton<IUsuariosDiscordRepository, UsuariosDiscordRepository>();
         services.AddSingleton<ITriggersRepository, TriggersRepository>();
-        services.AddSingleton<ITemazosRepository, TemazosRepository>();
         services.AddSingleton<IPremiosRepository, PremiosRepository>();
         services.AddSingleton<IImagenesRepository, ImagenesRepository>();
         services.AddSingleton<IImagenStorageRepository, ImagenStorageRepository>();

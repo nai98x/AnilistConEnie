@@ -33,6 +33,8 @@ public class BotConfiguration
         public required ulong Playroom { get; init; }
         public required ulong Moderacion { get; init; }
         public required ulong Pdd { get; init; }
+        public required ulong Bienvenida { get; init; }
+        public required ulong Colores { get; init; }
         public required IntercambiosChannelConfiguration Intercambios { get; init; }
 
         public class IntercambiosChannelConfiguration
@@ -122,6 +124,8 @@ public class BotConfiguration
                 Playroom = RequireUlong(channels, "Playroom"),
                 Moderacion = RequireUlong(channels, "Moderacion"),
                 Pdd = RequireUlong(channels, "Pdd"),
+                Bienvenida = RequireUlong(channels, "Bienvenida"),
+                Colores = RequireUlong(channels, "Colores"),
                 LogChannelPuerta = RequireUlong(channels, "LogChannelPuerta"),
                 Intercambios = new ChannelConfiguration.IntercambiosChannelConfiguration
                 {

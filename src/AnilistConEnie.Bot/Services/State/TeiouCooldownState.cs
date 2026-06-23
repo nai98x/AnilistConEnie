@@ -11,7 +11,7 @@ public class TeiouCooldownState
         _teiouNicknameCooldown.TryGetValue(id, out var cd) && cd > DateTime.Now;
 
     public double GetHoursCooldownTeiou(ulong id) =>
-        (DateTime.Now - _teiouNicknameCooldown[id]).TotalHours;
+        (_teiouNicknameCooldown[id] - DateTime.Now).TotalHours;
 
     public void AddTeiouCooldown(ulong id) =>
         _teiouNicknameCooldown[id] = DateTime.Now.AddHours(24);

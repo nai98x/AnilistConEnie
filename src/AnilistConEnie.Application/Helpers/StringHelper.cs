@@ -2,6 +2,16 @@ namespace AnilistConEnie.Application.Helpers;
 
 public static class StringHelper
 {
+    private const string AllowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789";
+
+    public static string CreateString(int length)
+    {
+        char[] chars = new char[length];
+        for (int i = 0; i < length; i++)
+            chars[i] = AllowedChars[Random.Shared.Next(AllowedChars.Length)];
+        return new string(chars);
+    }
+
     public static string TextAfter(this string value, string search)
     {
         return value[(value.IndexOf(search, StringComparison.Ordinal) + search.Length)..];

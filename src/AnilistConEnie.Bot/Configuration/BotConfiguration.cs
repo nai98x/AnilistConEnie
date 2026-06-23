@@ -56,6 +56,8 @@ public class BotConfiguration
         public required ulong KamiSama { get; init; }
         public required ulong Colaborador { get; init; }
         public required ulong Cumple { get; init; }
+        public required ulong GeneroMasculino { get; init; }
+        public required ulong GeneroFemenino { get; init; }
         public required RangosConfiguration Rangos { get; init; }
         public required IReadOnlyList<ColorRangoConfiguration> ColoresRango { get; init; }
 
@@ -138,6 +140,8 @@ public class BotConfiguration
                 KamiSama = RequireUlong(roles, "KamiSama"),
                 Colaborador = RequireUlong(roles, "Colaborador"),
                 Cumple = RequireUlong(roles, "Cumple"),
+                GeneroMasculino = RequireUlong(roles, "GeneroMasculino"),
+                GeneroFemenino = RequireUlong(roles, "GeneroFemenino"),
                 Rangos = new RolesConfiguration.RangosConfiguration
                 {
                     Tama = RequireUlong(rangos, "Tama"),

@@ -1,4 +1,5 @@
 using AnilistConEnie.Infrastructure.Anilist;
+using AnilistConEnie.Infrastructure.Charts;
 using AnilistConEnie.Infrastructure.Firebase;
 using AnilistConEnie.Infrastructure.Repositories;
 using AnilistConEnie.Model.Interfaces;
@@ -20,6 +21,7 @@ public static class InfrastructureServiceExtensions
         services.AddSingleton<ITemazosRepository, TemazosRepository>();
         services.AddSingleton<IPremiosRepository, PremiosRepository>();
         services.AddSingleton<IImagenesRepository, ImagenesRepository>();
+        services.AddSingleton<IImagenStorageRepository, ImagenStorageRepository>();
         services.AddSingleton<IIntercambiosRepostRepository, IntercambiosRepostRepository>();
         services.AddSingleton<IUsuariosActivosRepository, UsuariosActivosRepository>();
 
@@ -27,6 +29,9 @@ public static class InfrastructureServiceExtensions
         // nivel son singletons para reutilizar la conexión HTTP entre todas las consultas.
         services.AddSingleton<AnilistGraphQLExecutor>();
         services.AddSingleton<IAnilistClient, AnilistClient>();
+
+        // Cliente de charts (QuickChart) centralizado, vía typed HttpClient.
+        services.AddHttpClient<IChartClient, QuickChartClient>();
 
         return services;
     }

@@ -1,6 +1,8 @@
 using System.Text.Json;
+using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Firestore;
 using Google.Cloud.Firestore.V1;
+using Google.Cloud.Storage.V1;
 
 namespace AnilistConEnie.Infrastructure.Firebase;
 
@@ -15,6 +17,14 @@ public class FirebaseService
     public Task<FirestoreDb> GetAnilistConEnie() => _anilistConEnie.Value;
 
     public FirestoreDb GetYumiko() => _yumiko.Value;
+
+    public async Task<(StorageClient Client, string Bucket)> GetAnilistConEnieStorageAsync()
+    {
+        string jsonCredentials = await File.ReadAllTextAsync(CredentialPath(AnilistConEnieCredentialFile));
+        GoogleCredential credential = GoogleCredential.FromJson(jsonCredentials);
+        StorageClient client = await StorageClient.CreateAsync(credential);
+        return (client, $"{ProjectId(jsonCredentials, AnilistConEnieCredentialFile)}.appspot.com");
+    }
 
     private static async Task<FirestoreDb> CreateAsync(string credentialFile)
     {

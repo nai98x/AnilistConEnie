@@ -29,6 +29,10 @@ public static class BotServiceExtensions
         services.AddSingleton<DiscordHelper>();
         services.AddSingleton<AnilistHelper>();
         services.AddSingleton<BehaviorHelper>();
+        services.AddSingleton<FunHelper>();
+
+        // HttpClient para descargas de imágenes y APIs externas (horóscopo, traducción, QuickChart)
+        services.AddHttpClient();
 
         // Servicio principal (hosted service)
         services.AddSingleton<DiscordBotService>();

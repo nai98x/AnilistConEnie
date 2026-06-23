@@ -7,10 +7,10 @@ namespace AnilistConEnie.Infrastructure.Repositories;
 
 public class TriggersRepository(FirebaseService firebase) : FirestoreRepository(firebase), ITriggersRepository
 {
-    public async Task<List<Trigger>> GetTriggers(bool enabled)
+    public async Task<List<Trigger>> GetTriggers()
     {
         FirestoreDb db = await GetDbAsync();
-        Query query = db.Collection("Triggers").WhereEqualTo("Activo", enabled);
+        Query query = db.Collection("Triggers");
         List<Trigger> ret = await QueryListAsync<Trigger>(query);
 
         ret.Sort((x, y) => string.Compare(x.Nombre, y.Nombre, StringComparison.Ordinal));
@@ -22,34 +22,16 @@ public class TriggersRepository(FirebaseService firebase) : FirestoreRepository(
     {
         FirestoreDb db = await GetDbAsync();
         DocumentReference doc = db.Collection("Triggers").Document($"{trigger.Nombre}");
-        DocumentSnapshot snap = await doc.GetSnapshotAsync();
 
-        if (snap.Exists)
+        Dictionary<string, object> data = new()
         {
-            Trigger registro = snap.ConvertTo<Trigger>();
+            { "Nombre", trigger.Nombre.ToLower() },
+            { "Texto", trigger.Texto },
+            { "ImageUrl", trigger.ImageUrl },
+            { "Tipo", trigger.Tipo },
+        };
 
-            Dictionary<string, object> data = new()
-            {
-                { "Nombre", registro.Nombre },
-                { "Texto", trigger.Texto },
-                { "ImageUrl", trigger.ImageUrl },
-                { "Activo", registro.Activo },
-                { "Tipo", trigger.Tipo },
-            };
-            await doc.UpdateAsync(data);
-        }
-        else
-        {
-            Dictionary<string, object> data = new()
-            {
-                { "Nombre", trigger.Nombre.ToLower() },
-                { "Texto", trigger.Texto },
-                { "ImageUrl", trigger.ImageUrl },
-                { "Activo", true },
-                { "Tipo", trigger.Tipo },
-            };
-            await doc.SetAsync(data);
-        }
+        await doc.SetAsync(data);
     }
 
     public async Task<bool> DeleteTrigger(string triggerName)
@@ -63,31 +45,5 @@ public class TriggersRepository(FirebaseService firebase) : FirestoreRepository(
         await doc.DeleteAsync();
 
         return true;
-    }
-
-    public async Task<Trigger?> EnableTrigger(string triggerName)
-    {
-        FirestoreDb db = await GetDbAsync();
-        DocumentReference doc = db.Collection("Triggers").Document($"{triggerName}");
-        DocumentSnapshot snap = await doc.GetSnapshotAsync();
-
-        if (!snap.Exists) return null;
-
-        Trigger registro = snap.ConvertTo<Trigger>();
-
-        if (registro.Activo) return null;
-
-        Dictionary<string, object> data = new()
-        {
-            { "Nombre", registro.Nombre },
-            { "Texto", registro.Texto },
-            { "ImageUrl", registro.ImageUrl },
-            { "Activo", true },
-            { "Tipo", registro.Tipo },
-        };
-
-        await doc.UpdateAsync(data);
-
-        return registro;
     }
 }

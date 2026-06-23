@@ -15,8 +15,5 @@ public class Trigger
     public string ImageUrl { get; set; } = string.Empty;
 
     [FirestoreProperty]
-    public bool Activo { get; set; }
-
-    [FirestoreProperty]
     public int Tipo { get; set; }
 }

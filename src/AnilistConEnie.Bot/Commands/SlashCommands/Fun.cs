@@ -515,7 +515,7 @@ public class Fun(
 
         try
         {
-            horoscopo = await TranslateTextAsync(client, horoscopo, "en", "es");
+            horoscopo = await TranslationHelper.TranslateAsync(client, horoscopo, "en", "es");
         }
         catch (Exception ex)
         {
@@ -605,18 +605,6 @@ public class Fun(
         return ImageHelper.OverlapImage(merged, File.ReadAllBytes(ImagePath(FrameLove)), 1024, 512);
     }
 
-    private static async Task<string> TranslateTextAsync(HttpClient client, string text, string source, string target)
-    {
-        if (string.IsNullOrEmpty(text)) return text;
-
-        string url = $"http://127.0.0.1:5000/translate?q={Uri.EscapeDataString(text)}&source={source}&target={target}";
-        HttpResponseMessage response = await client.PostAsync(url, null);
-        if (!response.IsSuccessStatusCode) return text;
-
-        TranslateResponse? result = JsonSerializer.Deserialize<TranslateResponse>(await response.Content.ReadAsStringAsync(), JsonOptions);
-        return string.IsNullOrEmpty(result?.TranslatedText) ? text : result.TranslatedText;
-    }
-
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     private sealed class HoroscopoResponse
@@ -628,10 +616,5 @@ public class Fun(
     {
         [JsonPropertyName("date")] public string Date { get; set; } = string.Empty;
         [JsonPropertyName("horoscope")] public string HoroscopeData { get; set; } = string.Empty;
-    }
-
-    private sealed class TranslateResponse
-    {
-        [JsonPropertyName("translatedText")] public string TranslatedText { get; set; } = string.Empty;
     }
 }

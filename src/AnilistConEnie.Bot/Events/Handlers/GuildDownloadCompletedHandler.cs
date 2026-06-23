@@ -27,7 +27,7 @@ public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, 
         #endregion
         
         #region Triggers
-        List<Trigger> triggers = await triggersRepository.GetTriggers(true);
+        List<Trigger> triggers = await triggersRepository.GetTriggers();
         triggersState.FillTriggers(triggers);
         logger.LogInformation("Triggers cargados correctamente");
         #endregion

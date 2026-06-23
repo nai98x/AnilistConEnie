@@ -60,7 +60,12 @@ public class MessageCreatedHandler(
             hackedAccountState.AddRecentUserMessage(args.Author.Id, args.Channel.Id, args.Message.Content);
 
             if (hackedAccountState.IsHackedAccount(args.Author.Id))
-                await args.Guild.Members[args.Author.Id].BanAsync(TimeSpan.FromDays(1), "Autoban por cuenta hackeada");
+            {
+                DiscordMember member = args.Guild.Members[args.Author.Id];
+
+                if (member.Roles.All(x => x.Id != config.Roles.KamiSama))
+                    await member.RemoveAsync("Autoban por cuenta hackeada");
+            }
         }
         #endregion
 

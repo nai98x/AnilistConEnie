@@ -93,6 +93,25 @@ public class DiscordHelper(BotConfiguration config, ILogger<DiscordHelper> logge
         };
     }
 
+    public DiscordRole GetRoleByXpActual(DiscordGuild guild, DiscordMember member)
+    {
+        DiscordRole miembro = guild.Roles[config.Roles.Miembro];
+        DiscordRole tama = guild.Roles[config.Roles.Rangos.Tama];
+        DiscordRole casual = guild.Roles[config.Roles.Rangos.Casual];
+        DiscordRole kouhai = guild.Roles[config.Roles.Rangos.Kouhai];
+        DiscordRole senpai = guild.Roles[config.Roles.Rangos.Senpai];
+        DiscordRole hikikomori = guild.Roles[config.Roles.Rangos.Hikikomori];
+        DiscordRole sensei = guild.Roles[config.Roles.Rangos.Sensei];
+        DiscordRole ousama = guild.Roles[config.Roles.Rangos.Ousama];
+        DiscordRole teiou = guild.Roles[config.Roles.Rangos.Teiou];
+
+        return member.Roles.FirstOrDefault(x => x.Id == tama.Id) ?? member.Roles.FirstOrDefault(x => x.Id == casual.Id) ??
+               member.Roles.FirstOrDefault(x => x.Id == kouhai.Id) ?? member.Roles.FirstOrDefault(x => x.Id == senpai.Id) ??
+               member.Roles.FirstOrDefault(x => x.Id == hikikomori.Id) ?? member.Roles.FirstOrDefault(x => x.Id == sensei.Id) ??
+               member.Roles.FirstOrDefault(x => x.Id == ousama.Id) ?? member.Roles.FirstOrDefault(x => x.Id == teiou.Id) ??
+               miembro;
+    }
+
     public async Task BorrarMensajeUsuarioAnilist(DiscordGuild guild, long oldMessageId)
     {
         DiscordChannel canalPerfiles = guild.Channels[config.Channels.Perfiles];

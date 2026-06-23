@@ -1,5 +1,6 @@
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
+using AnilistConEnie.Bot.Services.Scheduling.Tasks;
 using AnilistConEnie.Bot.Services.State;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -31,6 +32,12 @@ public static class BotServiceExtensions
         // Servicio principal (hosted service)
         services.AddSingleton<DiscordBotService>();
         services.AddHostedService(sp => sp.GetRequiredService<DiscordBotService>());
+
+        // Tareas programadas (corren en paralelo al procesamiento de comandos)
+        services.AddHostedService<MinuteScheduledService>();
+        services.AddHostedService<HourlyScheduledService>();
+        services.AddHostedService<DailyScheduledService>();
+        services.AddHostedService<AnnualScheduledService>();
 
         return services;
     }

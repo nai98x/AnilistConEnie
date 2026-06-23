@@ -1,6 +1,7 @@
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
+using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Enum;
 using AnilistConEnie.Model.Interfaces.Repositories;
@@ -11,7 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, BotStateService botStateService, ILogger<GuildDownloadCompletedHandler> logger, BotConfiguration config, BehaviorHelper behaviorHelper, IUsuariosAnilistRepository usuariosAnilistRepository, IUsuariosDiscordRepository usuariosDiscordRepository, ITriggersRepository triggersRepository)
+public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, AnilistUsersState anilistUsersState, TriggersState triggersState, XpState xpState, TeiouCooldownState teiouCooldownState, ILogger<GuildDownloadCompletedHandler> logger, BotConfiguration config, BehaviorHelper behaviorHelper, IUsuariosAnilistRepository usuariosAnilistRepository, IUsuariosDiscordRepository usuariosDiscordRepository, ITriggersRepository triggersRepository)
 {
     public async Task Handle(DiscordClient client, GuildDownloadCompletedEventArgs args)
     {
@@ -21,31 +22,31 @@ public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, 
 
         #region Usuarios Anilist
         List<UsuarioAnilist> usuarios =  await usuariosAnilistRepository.GetListaUsuarios();
-        botStateService.SetUsuarios(usuarios);
+        anilistUsersState.SetUsuarios(usuarios);
         logger.LogInformation("Usuarios Anilist cargados correctamente");
         #endregion
         
         #region Triggers
         List<Trigger> triggers = await triggersRepository.GetTriggers(true);
-        botStateService.FillTriggers(triggers);
+        triggersState.FillTriggers(triggers);
         logger.LogInformation("Triggers cargados correctamente");
         #endregion
 
         #region Usuarios Discord (xp)
         List<UserXp> ranking = await usuariosDiscordRepository.GetRanking();
-        botStateService.FillGuildXp(ranking.ToDictionary(r => (ulong)r.UserId));
+        xpState.FillGuildXp(ranking.ToDictionary(r => (ulong)r.UserId));
         logger.LogInformation("Xp de usuarios de Discord cargada correctamente");
         #endregion
 
         #region Teious
         List<TeiouCooldownNickname> cooldownTeious = await usuariosDiscordRepository.GetListTeiouNicknameCooldown();
-        botStateService.FillTeiouFromDb(cooldownTeious);
+        teiouCooldownState.FillTeiouFromDb(cooldownTeious);
         logger.LogInformation("Teious cargados correctamente");
         #endregion
 
         #region Cuentas baneadas AniList
         List<UsuarioAnilistBaneado> usersBaneados = await usuariosAnilistRepository.GetListaUsuariosBaneados();
-        botStateService.FillAnilistBaneados(usersBaneados);
+        anilistUsersState.FillAnilistBaneados(usersBaneados);
         logger.LogInformation("Usuarios baneados de Anilist cargados correctamente");
         #endregion
 

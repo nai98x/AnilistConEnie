@@ -25,7 +25,7 @@ public static class EventHandlerRegistrar
     // La resolución de cada handler se difiere al momento en que se dispara el evento, vía
     // c.ServiceProvider (el contenedor del Host, que comparte el DiscordClient). Esto evita el ciclo
     // DiscordClient -> Handler -> DiscordBotService -> DiscordClient en el arranque,
-    // permitiendo que los handlers inyecten DiscordBotService/BotStateService por constructor.
+    // permitiendo que los handlers inyecten DiscordBotService y los servicios de estado por constructor.
     public static EventHandlingBuilder BindEventHandlers(this EventHandlingBuilder builder)
     {
         return builder

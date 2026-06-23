@@ -1,6 +1,7 @@
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
+using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Enum;
 using AnilistConEnie.Model.Interfaces.Repositories;
@@ -12,7 +13,11 @@ namespace AnilistConEnie.Bot.Events.Handlers;
 
 public class MessageCreatedHandler(
     DiscordBotService discordBotService,
-    BotStateService botStateService,
+    MemberActivityState memberActivityState,
+    XpState xpState,
+    EmoteModeState emoteModeState,
+    HackedAccountState hackedAccountState,
+    TriggersState triggersState,
     BotConfiguration config,
     IIntercambiosRepostRepository intercambiosRepostRepository)
 {
@@ -23,7 +28,7 @@ public class MessageCreatedHandler(
         #region Deteccion de usuarios activos en el servidor
         if (!args.Author.IsBot && !discordBotService.Debug)
         {
-            _ = botStateService.AddDailyActiveUser(args.Author.Id, client.Guilds[config.GuildId]);
+            _ = memberActivityState.AddDailyActiveUser(args.Author.Id, client.Guilds[config.GuildId]);
         }
         #endregion
 
@@ -41,20 +46,20 @@ public class MessageCreatedHandler(
             && ((args.Channel is DiscordThreadChannel && !canalesSinXp.Contains(args.Channel.Parent.Id))
                 || (args.Channel is not DiscordThreadChannel && !canalesSinXp.Contains(args.Channel.Id)))
             && !(args.Message.Content.StartsWith('<') && args.Message.Content.EndsWith('>') && args.Message.Content.Split(' ').Length == 1))
-            botStateService.AddMemberToObtainXp(args.Author.Id);
+            xpState.AddMemberToObtainXp(args.Author.Id);
         #endregion
 
         #region YepMode
-        if (botStateService.YepMode && args.Channel.Id == config.Channels.General)
-            await args.Message.CreateReactionAsync(botStateService.Emote!);
+        if (emoteModeState.YepMode && args.Channel.Id == config.Channels.General)
+            await args.Message.CreateReactionAsync(emoteModeState.Emote!);
         #endregion
 
         #region Autoban hacked accounts
         if (!args.Author.IsBot && (!discordBotService.Debug || (discordBotService.Debug && args.Author.Id == config.OwnerId)))
         {
-            botStateService.AddRecentUserMessage(args.Author.Id, args.Channel.Id, args.Message.Content);
+            hackedAccountState.AddRecentUserMessage(args.Author.Id, args.Channel.Id, args.Message.Content);
 
-            if (botStateService.IsHackedAccount(args.Author.Id))
+            if (hackedAccountState.IsHackedAccount(args.Author.Id))
                 await args.Guild.Members[args.Author.Id].BanAsync(TimeSpan.FromDays(1), "Autoban por cuenta hackeada");
         }
         #endregion
@@ -64,7 +69,7 @@ public class MessageCreatedHandler(
             || (discordBotService.Debug && args.Message.Author?.Id == config.OwnerId))
         {
             string mensajeOriginal = args.Message.Content.ToLower();
-            IReadOnlyDictionary<string, Trigger> triggers = botStateService.GetActiveTriggers();
+            IReadOnlyDictionary<string, Trigger> triggers = triggersState.GetActiveTriggers();
             List<KeyValuePair<string, Trigger>> matches = triggers.Where(x => mensajeOriginal.Contains(x.Key)).ToList();
 
             foreach (KeyValuePair<string, Trigger> trigger in matches)

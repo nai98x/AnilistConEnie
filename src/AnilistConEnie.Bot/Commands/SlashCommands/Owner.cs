@@ -4,11 +4,13 @@ using AnilistConEnie.Bot.Commands.SlashCommands.Attributes;
 using AnilistConEnie.Bot.Extensions;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
+using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Model.Entities.Anilist;
 using AnilistConEnie.Model.Interfaces;
 using DSharpPlus;
 using DSharpPlus.Commands;
 using DSharpPlus.Entities;
+using Microsoft.Extensions.Hosting;
 
 namespace AnilistConEnie.Bot.Commands.SlashCommands;
 
@@ -16,7 +18,7 @@ namespace AnilistConEnie.Bot.Commands.SlashCommands;
 [TestCommand]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
 [SuppressMessage("ReSharper", "UnusedType.Global")]
-public class Owner(BotStateService botStateService, DiscordBotService discordBotService, IAnilistClient anilistClient)
+public class Owner(XpState xpState, PermanentUsernameState permanentUsernameState, DiscordBotService discordBotService, IAnilistClient anilistClient, IHostApplicationLifetime appLifetime)
 {
     [Command("test")]
     [Description("Comando general para testear cosas")]
@@ -33,7 +35,7 @@ public class Owner(BotStateService botStateService, DiscordBotService discordBot
         await ctx.DeferEphemeralAsync();
         await ctx.EditResponseAsync($"Apagando el bot...");
 
-        Environment.Exit(0);
+        appLifetime.StopApplication();
     }
 
     [Command("debugxpenable")]
@@ -42,7 +44,7 @@ public class Owner(BotStateService botStateService, DiscordBotService discordBot
     {
         await ctx.DeferEphemeralAsync();
         
-        botStateService.EnableDebugXp(usuario.Id);
+        xpState.EnableDebugXp(usuario.Id);
 
         await discordBotService.Playroom.SendMessageAsync($"Empezo el debug de xp del usuario {usuario.Username}");
         await ctx.DeleteResponseAsync();
@@ -54,7 +56,7 @@ public class Owner(BotStateService botStateService, DiscordBotService discordBot
     {
         await ctx.DeferEphemeralAsync();
 
-        botStateService.DisableDebugXp();
+        xpState.DisableDebugXp();
 
         await discordBotService.Playroom.SendMessageAsync("Finalizo el debug de xp");
         await ctx.DeleteResponseAsync();
@@ -68,7 +70,7 @@ public class Owner(BotStateService botStateService, DiscordBotService discordBot
         [Parameter("Username")] [Description("El nickname")] string username)
     {
         await ctx.DeferEphemeralAsync();
-        botStateService.SetPermanentUsername(member.Id, username);
+        permanentUsernameState.SetPermanentUsername(member.Id, username);
 
         await ctx.FollowupAsync(new DiscordFollowupMessageBuilder()
             .WithContent($"El usuario {member.Username} ahora tiene el nickname permanente '{username}'")
@@ -82,7 +84,7 @@ public class Owner(BotStateService botStateService, DiscordBotService discordBot
         [Parameter("Usuario")] [Description("El usuario del que quieres que tenga el nickname permanente")] DiscordMember member)
     {
         await ctx.DeferEphemeralAsync();
-        botStateService.RemovePermanentUsername(member.Id);
+        permanentUsernameState.RemovePermanentUsername(member.Id);
         await ctx.FollowupAsync(new DiscordFollowupMessageBuilder()
             .WithContent($"El usuario {member.Username} ya no tiene el nickname permanente")
             .AsEphemeral());

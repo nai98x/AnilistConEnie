@@ -1,5 +1,6 @@
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Services;
+using AnilistConEnie.Bot.Services.State;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
@@ -8,7 +9,7 @@ namespace AnilistConEnie.Bot.Events.Handlers;
 
 public class MessageReactionAddedHandler(
     DiscordBotService discordBotService,
-    BotStateService botStateService,
+    ConfessionsState confessionsState,
     BotConfiguration config)
 {
     public async Task Handle(DiscordClient client, MessageReactionAddedEventArgs args)
@@ -28,10 +29,10 @@ public class MessageReactionAddedHandler(
         #region Confesiones
         DiscordEmoji emote = DiscordEmoji.FromGuildEmote(client, config.Emotes.ConfessionReaction);
         if (args.Channel.Id == config.Channels.General
-            && botStateService.IsConfession(args.Message.Id)
+            && confessionsState.IsConfession(args.Message.Id)
             && args.Emoji.Id == emote.Id)
         {
-            (bool guessed, ulong? messageId, ulong? userId) = botStateService.AddConfessionReaction(args.Message.Id, args.User.Id);
+            (bool guessed, ulong? messageId, ulong? userId) = confessionsState.AddConfessionReaction(args.Message.Id, args.User.Id);
             if (guessed)
             {
                 DiscordMember confessionUser = args.Guild!.Members[userId!.Value];

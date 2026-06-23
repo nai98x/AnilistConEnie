@@ -5,20 +5,13 @@ using Google.Cloud.Firestore;
 
 namespace AnilistConEnie.Infrastructure.Repositories;
 
-public class TriggersRepository(FirebaseService firebase) : ITriggersRepository
+public class TriggersRepository(FirebaseService firebase) : FirestoreRepository(firebase), ITriggersRepository
 {
     public async Task<List<Trigger>> GetTriggers(bool enabled)
     {
-        List<Trigger> ret = [];
-        FirestoreDb db = await firebase.GetAnilistConEnie();
-
-        Query? query = db.Collection("Triggers").WhereEqualTo("Activo", enabled);
-        QuerySnapshot? snap = await query.GetSnapshotAsync();
-
-        if (snap.Count > 0)
-        {
-            ret.AddRange(snap.Documents.Select(document => document.ConvertTo<Trigger>()));
-        }
+        FirestoreDb db = await GetDbAsync();
+        Query query = db.Collection("Triggers").WhereEqualTo("Activo", enabled);
+        List<Trigger> ret = await QueryListAsync<Trigger>(query);
 
         ret.Sort((x, y) => string.Compare(x.Nombre, y.Nombre, StringComparison.Ordinal));
 
@@ -27,9 +20,9 @@ public class TriggersRepository(FirebaseService firebase) : ITriggersRepository
 
     public async Task SetTrigger(Trigger trigger)
     {
-        FirestoreDb db = await firebase.GetAnilistConEnie();
+        FirestoreDb db = await GetDbAsync();
         DocumentReference doc = db.Collection("Triggers").Document($"{trigger.Nombre}");
-        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
+        DocumentSnapshot snap = await doc.GetSnapshotAsync();
 
         if (snap.Exists)
         {
@@ -61,9 +54,9 @@ public class TriggersRepository(FirebaseService firebase) : ITriggersRepository
 
     public async Task<bool> DeleteTrigger(string triggerName)
     {
-        FirestoreDb db = await firebase.GetAnilistConEnie();
+        FirestoreDb db = await GetDbAsync();
         DocumentReference doc = db.Collection("Triggers").Document($"{triggerName}");
-        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
+        DocumentSnapshot snap = await doc.GetSnapshotAsync();
 
         if (!snap.Exists) return false;
 
@@ -74,9 +67,9 @@ public class TriggersRepository(FirebaseService firebase) : ITriggersRepository
 
     public async Task<Trigger?> EnableTrigger(string triggerName)
     {
-        FirestoreDb db = await firebase.GetAnilistConEnie();
+        FirestoreDb db = await GetDbAsync();
         DocumentReference doc = db.Collection("Triggers").Document($"{triggerName}");
-        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
+        DocumentSnapshot snap = await doc.GetSnapshotAsync();
 
         if (!snap.Exists) return null;
 

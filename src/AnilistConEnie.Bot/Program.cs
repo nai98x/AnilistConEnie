@@ -1,3 +1,4 @@
+using AnilistConEnie.Application.Extensions;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Extensions;
 using AnilistConEnie.Infrastructure.Extensions;
@@ -65,6 +66,7 @@ public static class Program
 
         host.Services
             .AddSingleton(botConfig)
+            .AddApplication()
             .AddInfrastructure()
             .AddConfiguredDiscordClient(host.Configuration)
             .AddSerilog()

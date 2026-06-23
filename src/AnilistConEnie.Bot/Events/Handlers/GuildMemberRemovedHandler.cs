@@ -1,6 +1,7 @@
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
+using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Model.Interfaces.Repositories;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Enum;
@@ -10,7 +11,7 @@ using DSharpPlus.EventArgs;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class GuildMemberRemovedHandler(DiscordBotService discordBotService, BotStateService botStateService, BotConfiguration config, DiscordHelper discordHelper, IUsuariosAnilistRepository usuariosAnilistRepository)
+public class GuildMemberRemovedHandler(DiscordBotService discordBotService, XpState xpState, BotConfiguration config, DiscordHelper discordHelper, IUsuariosAnilistRepository usuariosAnilistRepository)
 {
     public async Task Handle(DiscordClient client, GuildMemberRemovedEventArgs args)
     {
@@ -19,7 +20,7 @@ public class GuildMemberRemovedHandler(DiscordBotService discordBotService, BotS
         if (!args.Member.IsBot && !discordBotService.Debug)
         {
             #region Mensaje de despedida
-            UserXp rank = botStateService.GetUserXp(args.Member.Id);
+            UserXp rank = xpState.GetUserXp(args.Member.Id);
 
             if (args.Member.Roles.Any(x => x.Id == config.Roles.Miembro))
             {

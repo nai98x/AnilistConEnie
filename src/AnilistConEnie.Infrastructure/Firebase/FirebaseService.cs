@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Google.Cloud.Firestore;
 using Google.Cloud.Firestore.V1;
 
@@ -5,28 +6,34 @@ namespace AnilistConEnie.Infrastructure.Firebase;
 
 public class FirebaseService
 {
-    private FirestoreDb? _anilistConEnie;
-    private FirestoreDb? _yumiko;
+    private const string AnilistConEnieCredentialFile = "firebase-anilistconenie.json";
+    private const string YumikoCredentialFile = "firebase-yumiko.json";
 
-    public async Task<FirestoreDb> GetAnilistConEnie()
+    private readonly Lazy<Task<FirestoreDb>> _anilistConEnie = new(() => CreateAsync(AnilistConEnieCredentialFile));
+    private readonly Lazy<FirestoreDb> _yumiko = new(() => Create(YumikoCredentialFile));
+
+    public Task<FirestoreDb> GetAnilistConEnie() => _anilistConEnie.Value;
+
+    public FirestoreDb GetYumiko() => _yumiko.Value;
+
+    private static async Task<FirestoreDb> CreateAsync(string credentialFile)
     {
-        if (_anilistConEnie != null) return _anilistConEnie;
-
-        string path = AppDomain.CurrentDomain.BaseDirectory + "firebase-anilistconenie.json";
-        string jsonString = await File.ReadAllTextAsync(path);
-        FirestoreClientBuilder builder = new() { JsonCredentials = jsonString };
-        _anilistConEnie = await FirestoreDb.CreateAsync("anilistconenie-e09cb", await builder.BuildAsync());
-        return _anilistConEnie;
+        string jsonCredentials = await File.ReadAllTextAsync(CredentialPath(credentialFile));
+        FirestoreClientBuilder builder = new() { JsonCredentials = jsonCredentials };
+        return await FirestoreDb.CreateAsync(ProjectId(jsonCredentials, credentialFile), await builder.BuildAsync());
     }
 
-    public FirestoreDb GetYumiko()
+    private static FirestoreDb Create(string credentialFile)
     {
-        if (_yumiko != null) return _yumiko;
-
-        string path = AppDomain.CurrentDomain.BaseDirectory + "firebase-yumiko.json";
-        string jsonString = File.ReadAllText(path);
-        FirestoreClientBuilder builder = new() { JsonCredentials = jsonString };
-        _yumiko = FirestoreDb.Create("yumiko-1590195019393", builder.Build());
-        return _yumiko;
+        string jsonCredentials = File.ReadAllText(CredentialPath(credentialFile));
+        FirestoreClientBuilder builder = new() { JsonCredentials = jsonCredentials };
+        return FirestoreDb.Create(ProjectId(jsonCredentials, credentialFile), builder.Build());
     }
+
+    private static string CredentialPath(string credentialFile) =>
+        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, credentialFile);
+
+    private static string ProjectId(string jsonCredentials, string credentialFile) =>
+        JsonDocument.Parse(jsonCredentials).RootElement.GetProperty("project_id").GetString()
+        ?? throw new InvalidOperationException($"'project_id' no encontrado en {credentialFile}");
 }

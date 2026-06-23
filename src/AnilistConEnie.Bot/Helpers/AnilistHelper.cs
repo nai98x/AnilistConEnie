@@ -1,19 +1,18 @@
 using System.Text;
+using AnilistConEnie.Application.Anilist;
 using AnilistConEnie.Bot.Configuration;
-using AnilistConEnie.Bot.Services;
+using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Model.Entities.Anilist;
 using AnilistConEnie.Model.Enum;
-using AnilistConEnie.Model.Interfaces;
 using AnilistConEnie.Model.Interfaces.Repositories;
 using AnilistConEnie.Model.Entities;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.Exceptions;
-using Microsoft.Extensions.Logging;
 
 namespace AnilistConEnie.Bot.Helpers;
 
-public class AnilistHelper(BotStateService botStateService, BotConfiguration config, DiscordHelper discordHelper, IAnilistClient anilistClient, IUsuariosAnilistRepository usuariosAnilistRepository, ILogger<AnilistHelper> logger)
+public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState, BotConfiguration config, DiscordHelper discordHelper, AnilistServerScoreService scoreService, IUsuariosAnilistRepository usuariosAnilistRepository)
 {
     public async Task TerminarVinculacion(DiscordClient client, DiscordUser user, DiscordMember member, DiscordGuild guild, UserApprovalAnilist userApproval)
     {
@@ -71,16 +70,16 @@ public class AnilistHelper(BotStateService botStateService, BotConfiguration con
         await usuariosAnilistRepository.SetAnilist(member.Id, userApproval.SiteUrl, (long)mensaje!.Id);
         await usuariosAnilistRepository.SetAnilistYumiko(userApproval.IdAnilist, member.Id);
 
-        List<UsuarioAnilist> users = botStateService.Usuarios;
+        List<UsuarioAnilist> users = anilistUsersState.Usuarios;
         if (!users.Where(u => (ulong)u.UserId == user.Id).Any())
         {
             List<UsuarioAnilist> newList = await usuariosAnilistRepository.GetListaUsuarios();
             UsuarioAnilist newUser = newList.First(u => (ulong)u.UserId == user.Id);
             users.Add(newUser);
-            botStateService.SetUsuarios(users);
+            anilistUsersState.SetUsuarios(users);
         }
 
-        UserXp prevXp = botStateService.GetUserXp(user.Id);
+        UserXp prevXp = xpState.GetUserXp(user.Id);
 
         DiscordMessageBuilder msgBuilder = new DiscordMessageBuilder()
             .WithContent(user.Mention)
@@ -113,85 +112,53 @@ public class AnilistHelper(BotStateService botStateService, BotConfiguration con
         }
     }
 
-    /// <summary>
-    /// Arma el bloque de scores de los usuarios del servidor para <paramref name="media"/>: resuelve los
-    /// miembros vinculados (rango Miembro+ y activos), consulta sus listas en AniList por lotes de 50 y
-    /// devuelve el texto listo para la description del embed (promedio + scores + sin-score). Devuelve
-    /// cadena vacía si nadie tiene el media en su lista.
-    /// </summary>
     public async Task<string> GetServerScoresAsync(DiscordGuild guild, AnilistMedia media, bool includeUsersWithoutScore)
     {
         Dictionary<ulong, DiscordMember> miembros = [];
         await foreach (DiscordMember miembro in guild.GetAllMembersAsync())
             miembros[miembro.Id] = miembro;
 
-        // Usuarios vinculados que están en el servidor con rango Miembro+ y no inactivos.
-        List<UsuarioAnilist> usuariosServidor = [];
-        foreach (UsuarioAnilist usuario in botStateService.Usuarios)
+        Dictionary<int, string> porAnilistId = [];
+        foreach (UsuarioAnilist usuario in anilistUsersState.Usuarios)
         {
-            if (miembros.TryGetValue((ulong)usuario.UserId, out DiscordMember? miembro)
-                && discordHelper.RangoAPartirDe(guild, miembro, RangoEnum.Miembro, true))
-                usuariosServidor.Add(usuario);
+            if (!miembros.TryGetValue((ulong)usuario.UserId, out DiscordMember? miembro)
+                || !discordHelper.RangoAPartirDe(guild, miembro, RangoEnum.Miembro, true))
+                continue;
+
+            if (AnilistProfileUrl.TryGetUserId(usuario.AnilistURL, out int anilistId))
+                porAnilistId[anilistId] = miembro.DisplayName;
         }
 
-        // id de AniList -> usuario, para reasociar cada score con su DiscordMember.
-        Dictionary<int, UsuarioAnilist> porAnilistId = new();
-        foreach (UsuarioAnilist usuario in usuariosServidor)
-        {
-            if (TryGetAnilistId(usuario.AnilistURL, out int anilistId))
-                porAnilistId[anilistId] = usuario;
-        }
-
-        if (porAnilistId.Count == 0) return string.Empty;
-
-        List<string> conScore = [];
-        List<string> sinScore = [];
-        double suma100 = 0;
-        int registros = 0;
-
-        foreach (int[] lote in porAnilistId.Keys.Chunk(50))
-        {
-            IReadOnlyList<AnilistUserScore> scores = await anilistClient.GetMediaUserScoresAsync(media.Id, lote);
-
-            foreach (AnilistUserScore entry in scores)
-            {
-                if (!porAnilistId.TryGetValue(entry.UserId, out UsuarioAnilist? usuario)
-                    || !miembros.TryGetValue((ulong)usuario.UserId, out DiscordMember? miembro))
-                    continue;
-
-                string link = Formatter.MaskedUrl(miembro.DisplayName, new Uri(entry.UserSiteUrl));
-                string progreso = FormatProgreso(media, entry.Progress);
-
-                if (entry.HasScore)
-                {
-                    string score = AnilistMediaFormatter.UserScore(entry);
-                    conScore.Add(entry.Status == "COMPLETED"
-                        ? $"{link} - {score}\n"
-                        : $"{link} - {score} {Formatter.InlineCode($"{entry.Status} - Progreso: {progreso}")}\n");
-
-                    suma100 += entry.Score100;
-                    registros++;
-                }
-                else if (includeUsersWithoutScore && !entry.Status.Equals("PLANNING", StringComparison.OrdinalIgnoreCase))
-                {
-                    sinScore.Add($"{link} - {Formatter.InlineCode($"{entry.Status} - Progreso: {progreso}")}\n");
-                }
-            }
-        }
-
-        return ComposeScores(conScore, sinScore, suma100, registros);
+        ServerMediaScores result = await scoreService.AggregateAsync(media, porAnilistId, includeUsersWithoutScore);
+        return FormatScores(result, media);
     }
 
-    private static string ComposeScores(List<string> conScore, List<string> sinScore, double suma100, int registros)
+    private static string FormatScores(ServerMediaScores result, AnilistMedia media)
     {
-        if (conScore.Count == 0 && sinScore.Count == 0) return string.Empty;
+        if (result.IsEmpty) return string.Empty;
+
+        List<string> conScore = [];
+        foreach (MemberMediaScore m in result.Scored)
+        {
+            string link = Formatter.MaskedUrl(m.DisplayName, new Uri(m.Entry.UserSiteUrl));
+            string score = AnilistMediaFormatter.UserScore(m.Entry);
+            conScore.Add(m.Entry.Status == "COMPLETED"
+                ? $"{link} - {score}\n"
+                : $"{link} - {score} {Formatter.InlineCode($"{m.Entry.Status} - Progreso: {FormatProgreso(media, m.Entry.Progress)}")}\n");
+        }
+
+        List<string> sinScore = [];
+        foreach (MemberMediaScore m in result.Unscored)
+        {
+            string link = Formatter.MaskedUrl(m.DisplayName, new Uri(m.Entry.UserSiteUrl));
+            sinScore.Add($"{link} - {Formatter.InlineCode($"{m.Entry.Status} - Progreso: {FormatProgreso(media, m.Entry.Progress)}")}\n");
+        }
 
         StringBuilder sb = new();
 
         if (conScore.Count > 0)
         {
-            double promedio = suma100 / registros;
-            sb.Append($"{Formatter.Bold("Promedio:")} {Math.Round(promedio, 2)}/100\n\n");
+            sb.Append($"{Formatter.Bold("Promedio:")} {Math.Round(result.Average100 ?? 0, 2)}/100\n\n");
 
             conScore.Sort();
             sb.Append(string.Concat(conScore));
@@ -213,23 +180,10 @@ public class AnilistHelper(BotStateService botStateService, BotConfiguration con
         return sb.ToString();
     }
 
-    /// <summary>Progreso del usuario sobre el total del media: "12/24" (o solo "12" si no se conoce el total).</summary>
     private static string FormatProgreso(AnilistMedia media, int? progress)
     {
         string actual = (progress ?? 0).ToString();
         int? total = media.Episodes ?? media.Chapters;
         return total is { } t ? $"{actual}/{t}" : actual;
-    }
-
-    /// <summary>Extrae el id numérico de AniList del final de la URL del perfil (ej. .../user/12345).</summary>
-    private static bool TryGetAnilistId(string anilistUrl, out int anilistId)
-    {
-        anilistId = 0;
-        if (string.IsNullOrEmpty(anilistUrl)) return false;
-
-        string trimmed = anilistUrl.TrimEnd('/');
-        int slash = trimmed.LastIndexOf('/');
-        string segment = slash >= 0 ? trimmed[(slash + 1)..] : trimmed;
-        return int.TryParse(segment, out anilistId);
     }
 }

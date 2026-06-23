@@ -6,22 +6,12 @@ using Google.Cloud.Firestore;
 
 namespace AnilistConEnie.Infrastructure.Repositories;
 
-public class UsuariosDiscordRepository(FirebaseService firebase) : IUsuariosDiscordRepository
+public class UsuariosDiscordRepository(FirebaseService firebase) : FirestoreRepository(firebase), IUsuariosDiscordRepository
 {
     public async Task<List<UsuarioDiscord>> GetListaUsuarios()
     {
-        FirestoreDb db = await firebase.GetAnilistConEnie();
-        List<UsuarioDiscord> ret = [];
-
-        CollectionReference col = db.Collection("Cumpleaños");
-        QuerySnapshot? snap = await col.GetSnapshotAsync();
-
-        if (snap.Count > 0)
-        {
-            ret.AddRange(snap.Documents.Select(document => document.ConvertTo<UsuarioDiscord>()));
-        }
-
-        return ret;
+        FirestoreDb db = await GetDbAsync();
+        return await QueryListAsync<UsuarioDiscord>(db.Collection("Cumpleaños"));
     }
 
     public async Task<List<UserCumple>> GetBirthdaysHoy()
@@ -110,117 +100,67 @@ public class UsuariosDiscordRepository(FirebaseService firebase) : IUsuariosDisc
 
     public async Task SetBirthday(ulong userId, DateTime fecha, bool mostrarEdad, DateTime fechaOriginal)
     {
-        FirestoreDb db = await firebase.GetAnilistConEnie();
+        FirestoreDb db = await GetDbAsync();
         DocumentReference doc = db.Collection("Cumpleaños").Document($"{userId}");
-        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
         DateTime timeUtc = new(day: fecha.Day, month: fecha.Month, year: fecha.Year, hour: fecha.Hour, minute: 0, second: 0, kind: DateTimeKind.Utc);
-        if (snap.Exists)
+
+        Dictionary<string, object> data = new()
         {
-            UsuarioDiscord registro = snap.ConvertTo<UsuarioDiscord>();
-            registro.Birthday = timeUtc;
-            registro.MostrarYear = mostrarEdad;
-            registro.DiaFechaOriginal = fechaOriginal.Day;
-            registro.MesFechaOriginal = fechaOriginal.Month;
-            registro.AnioFechaOriginal = fechaOriginal.Year;
-            Dictionary<string, object> data = new()
-            {
-                { "user_id", registro.user_id },
-                { "Birthday", registro.Birthday },
-                { "MostrarYear", registro.MostrarYear },
-                { "DiaFechaOriginal", registro.DiaFechaOriginal },
-                { "MesFechaOriginal", registro.MesFechaOriginal },
-                { "AnioFechaOriginal", registro.AnioFechaOriginal }
-            };
-            await doc.UpdateAsync(data);
-        }
-        else
-        {
-            Dictionary<string, object> data = new()
-            {
-                { "user_id", userId },
-                { "Birthday", timeUtc },
-                { "MostrarYear", mostrarEdad },
-                { "DiaFechaOriginal", fechaOriginal.Day },
-                { "MesFechaOriginal", fechaOriginal.Month },
-                { "AnioFechaOriginal", fechaOriginal.Year }
-            };
-            await doc.SetAsync(data);
-        }
+            { "user_id", userId },
+            { "Birthday", timeUtc },
+            { "MostrarYear", mostrarEdad },
+            { "DiaFechaOriginal", fechaOriginal.Day },
+            { "MesFechaOriginal", fechaOriginal.Month },
+            { "AnioFechaOriginal", fechaOriginal.Year }
+        };
+
+        await UpsertAsync(doc, data);
     }
 
     public async Task DeleteBirthday(ulong userId)
     {
-        FirestoreDb db = await firebase.GetAnilistConEnie();
+        FirestoreDb db = await GetDbAsync();
         DocumentReference doc = db.Collection("Cumpleaños").Document($"{userId}");
-        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
-        if (snap.Exists)
-        {
-            await doc.DeleteAsync();
-        }
+        await DeleteIfExistsAsync(doc);
     }
 
     public async Task<List<UserDailyXp>> GetDailyXpChartFromUser(ulong userId, DateRangeXp range = DateRangeXp.Completo)
     {
-        FirestoreDb db = await firebase.GetAnilistConEnie();
-        List<UserDailyXp> ret = [];
+        FirestoreDb db = await GetDbAsync();
+        CollectionReference col = db.Collection("XpChartHistory").Document($"{userId}").Collection("History").Document("Year").Collection($"{DateTime.Now.Year}");
+        List<UserDailyXp> all = await QueryListAsync<UserDailyXp>(col);
 
-        CollectionReference? col = db.Collection("XpChartHistory").Document($"{userId}").Collection("History").Document("Year").Collection($"{DateTime.Now.Year}");
-        QuerySnapshot? snap = await col.GetSnapshotAsync();
-
-        if (snap.Count > 0)
+        IEnumerable<UserDailyXp> filtered = range switch
         {
-            foreach (DocumentSnapshot? document in snap.Documents)
-            {
-                UserDailyXp? doc = document.ConvertTo<UserDailyXp>();
-                switch (range)
-                {
-                    case DateRangeXp.Semanal:
-                        if (DateTime.Now.AddDays(-7) <= doc.Date)
-                            ret.Add(doc);
-                        break;
-                    case DateRangeXp.Mensual:
-                        if (new DateTime(day: 1, month: DateTime.Now.Month, year: DateTime.Now.Year) <= doc.Date)
-                            ret.Add(doc);
-                        break;
-                    case DateRangeXp.Anual:
-                        ret.Add(doc);
-                        break;
-                    case DateRangeXp.Completo:
-                    default:
-                        ret.Add(doc);
-                        break;
-                }
-            }
-        }
+            DateRangeXp.Semanal => all.Where(x => DateTime.Now.AddDays(-7) <= x.Date),
+            DateRangeXp.Mensual => all.Where(x => new DateTime(day: 1, month: DateTime.Now.Month, year: DateTime.Now.Year) <= x.Date),
+            _ => all
+        };
 
-        ret = [.. ret.OrderBy(x => x.Date)];
-
-        return ret;
+        return filtered.OrderBy(x => x.Date).ToList();
     }
 
     public async Task AddDailyXp(DateTime date, ulong userId, long xp)
     {
-        FirestoreDb db = await firebase.GetAnilistConEnie();
+        FirestoreDb db = await GetDbAsync();
         DocumentReference doc = db.Collection("XpChartHistory").Document($"{userId}").Collection("History").Document("Year").Collection($"{date.Year}").Document($"{date.DayOfYear}");
-        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
-        if (!snap.Exists)
+
+        Dictionary<string, object> data = new()
         {
-            Dictionary<string, object> data = new()
-            {
-                { "UserId", userId },
-                { "Xp", xp },
-                { "Date", date },
-            };
-            await doc.SetAsync(data);
-        }
+            { "UserId", userId },
+            { "Xp", xp },
+            { "Date", date },
+        };
+
+        await SetIfAbsentAsync(doc, data);
     }
 
     public async Task AddOrRemoveUserXp(ulong userId, int action, int total, int booster, int challenges, int eventos, int intercambios, int otros)
     {
-        FirestoreDb db = await firebase.GetAnilistConEnie();
+        FirestoreDb db = await GetDbAsync();
 
         DocumentReference doc = db.Collection("XpUsers").Document($"{userId}");
-        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
+        DocumentSnapshot snap = await doc.GetSnapshotAsync();
         if (!snap.Exists)
         {
             Dictionary<string, object> data = new()
@@ -238,7 +178,7 @@ public class UsuariosDiscordRepository(FirebaseService firebase) : IUsuariosDisc
         }
         else
         {
-            UserXp? registro = snap.ConvertTo<UserXp>();
+            UserXp registro = snap.ConvertTo<UserXp>();
 
             long booster1, challenges1, eventos1, intercambios1, otros1;
 
@@ -279,25 +219,14 @@ public class UsuariosDiscordRepository(FirebaseService firebase) : IUsuariosDisc
 
     public async Task<List<UserXp>> GetRanking()
     {
-        FirestoreDb db = await firebase.GetAnilistConEnie();
-        List<UserXp> ret = [];
-
-        CollectionReference col = db.Collection("XpUsers");
-        QuerySnapshot? snap = await col.GetSnapshotAsync();
-
-        if (snap.Count > 0)
-        {
-            ret.AddRange(snap.Documents.Select(document => document.ConvertTo<UserXp>()));
-        }
-
-        return ret;
+        FirestoreDb db = await GetDbAsync();
+        return await QueryListAsync<UserXp>(db.Collection("XpUsers"));
     }
 
     public async Task SetCooldownTeiou(ulong userId)
     {
-        FirestoreDb db = await firebase.GetAnilistConEnie();
+        FirestoreDb db = await GetDbAsync();
         DocumentReference doc = db.Collection("TeiouCooldown").Document($"Nickname").Collection("Usuarios").Document($"{userId}");
-        DocumentSnapshot? snap = await doc.GetSnapshotAsync();
 
         DateTime date = new DateTime(day: DateTime.UtcNow.Day, month: DateTime.UtcNow.Month, year: DateTime.UtcNow.Year, hour: DateTime.UtcNow.Hour, minute: DateTime.UtcNow.Minute, second: DateTime.UtcNow.Second, kind: DateTimeKind.Utc);
         date = date.AddHours(24);
@@ -308,25 +237,13 @@ public class UsuariosDiscordRepository(FirebaseService firebase) : IUsuariosDisc
             { "Cooldown", date }
         };
 
-        if (snap.Exists)
-            await doc.UpdateAsync(data);
-        else
-            await doc.SetAsync(data);
+        await UpsertAsync(doc, data);
     }
 
     public async Task<List<TeiouCooldownNickname>> GetListTeiouNicknameCooldown()
     {
-        FirestoreDb db = await firebase.GetAnilistConEnie();
-        List<TeiouCooldownNickname> ret = [];
-
+        FirestoreDb db = await GetDbAsync();
         CollectionReference col = db.Collection("TeiouCooldown").Document($"Nickname").Collection("Usuarios");
-        QuerySnapshot? snap = await col.GetSnapshotAsync();
-
-        if (snap.Count > 0)
-        {
-            ret.AddRange(snap.Documents.Select(document => document.ConvertTo<TeiouCooldownNickname>()));
-        }
-
-        return ret;
+        return await QueryListAsync<TeiouCooldownNickname>(col);
     }
 }

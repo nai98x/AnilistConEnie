@@ -121,7 +121,7 @@ public class Challenges(
             return;
         }
 
-        DiscordEmoji umaPoints = DiscordEmoji.FromGuildEmote(ctx.Client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
+        DiscordEmoji umaPoints = await DiscordHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
 
         List<ChallengeCompletado> completaron = await challengesRepository.GetListaUsuariosCompletaron(challenge);
         string descTerminados = "(Ningún usuario ha completado este challenge)";
@@ -197,7 +197,7 @@ public class Challenges(
                 return;
             }
 
-            DiscordEmoji umaPoints = DiscordEmoji.FromGuildEmote(ctx.Client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
+            DiscordEmoji umaPoints = await DiscordHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
 
             List<UsuarioChallenge> challengesUsuario = await challengesRepository.GetChallengesUsuario(usuario.Id);
             List<Challenge> todos = await challengesRepository.GetLista();
@@ -322,7 +322,7 @@ public class Challenges(
         await challengesRepository.SetUsuarioChallenge(challenge, (long)usuario.Id, (int)xp, ctx.Interaction.CreationTimestamp);
         await usuariosDiscordRepository.AddOrRemoveUserXp(usuario.Id, 0, (int)xp, 0, (int)xp, 0, 0, 0);
 
-        DiscordEmoji umaPoints = DiscordEmoji.FromGuildEmote(ctx.Client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
+        DiscordEmoji umaPoints = await DiscordHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
 
         DiscordFollowupMessageBuilder builder = new DiscordFollowupMessageBuilder()
             .WithContent(usuario.Mention)

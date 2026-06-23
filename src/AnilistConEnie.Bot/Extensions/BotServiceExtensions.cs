@@ -23,6 +23,7 @@ public static class BotServiceExtensions
         services.AddSingleton<BoluditosState>();
         services.AddSingleton<ConfessionsState>();
         services.AddSingleton<PermanentUsernameState>();
+        services.AddSingleton<ChallengePostsState>();
 
         // Helpers
         services.AddSingleton<DiscordHelper>();

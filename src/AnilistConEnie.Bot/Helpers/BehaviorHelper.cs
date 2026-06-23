@@ -129,7 +129,7 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, Inv
     private async Task SubirRango(DiscordGuild guild, DiscordMember member, DiscordRole oldRango, DiscordRole newRango)
     {
         DiscordChannel channel = guild.Channels[config.Channels.General];
-        DiscordEmoji emote = guild.Emojis[config.Emotes.UmaPoints.Get(discordBotService.Debug)];
+        DiscordEmoji emote = await DiscordHelper.GetApplicationEmojiAsync(discordBotService.Client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
         bool yaTieneNuevoRango = false;
 
         try

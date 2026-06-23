@@ -9,6 +9,7 @@ namespace AnilistConEnie.Bot.Services;
 public class DiscordBotService(DiscordClient client, BotConfiguration config, ILogger<DiscordBotService> logger)
     : IHostedService
 {
+    public DiscordClient Client => client;
     public bool Debug { get; } = SetDebug();
     public bool Inicializado { get; private set; } = false;
 

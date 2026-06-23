@@ -17,7 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AnilistConEnie.Bot.Helpers;
 
-public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState, BotConfiguration config, DiscordHelper discordHelper, AnilistServerScoreService scoreService, IUsuariosAnilistRepository usuariosAnilistRepository, IAnilistClient anilistClient)
+public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState, ChallengePostsState challengePostsState, BotConfiguration config, DiscordHelper discordHelper, AnilistServerScoreService scoreService, IUsuariosAnilistRepository usuariosAnilistRepository, IAnilistClient anilistClient)
 {
     public async Task TerminarVinculacion(DiscordClient client, DiscordUser user, DiscordMember member, DiscordGuild guild, AnilistUser anilistUser)
     {
@@ -258,7 +258,7 @@ public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState,
         {
             if (!TryGetActivityId(challenge.Link, out int activityId)) continue;
 
-            IReadOnlyList<int> replyUserIds = await anilistClient.GetActivityReplyUserIdsAsync(activityId);
+            IReadOnlyList<int> replyUserIds = await GetActivityReplyUserIdsCachedAsync(activityId);
             if (replyUserIds.Contains(anilistUserId))
                 ret.Add(challenge);
         }
@@ -275,7 +275,7 @@ public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState,
         List<UsuarioAnilist> ret = [];
         if (!TryGetActivityId(challenge.Link, out int activityId)) return ret;
 
-        IReadOnlyList<int> replyUserIds = await anilistClient.GetActivityReplyUserIdsAsync(activityId);
+        IReadOnlyList<int> replyUserIds = await GetActivityReplyUserIdsCachedAsync(activityId);
         foreach (int replyUserId in replyUserIds)
         {
             UsuarioAnilist? usuario = anilistUsersState.Usuarios.Find(x =>
@@ -286,6 +286,20 @@ public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState,
         }
 
         return ret;
+    }
+
+    /// <summary>
+    /// Devuelve los ids de usuario que respondieron al post, usando la cache compartida
+    /// (<see cref="ChallengePostsState"/>) y consultando a AniList solo si no hay un valor vigente.
+    /// </summary>
+    private async Task<IReadOnlyList<int>> GetActivityReplyUserIdsCachedAsync(int activityId)
+    {
+        if (challengePostsState.TryGet(activityId, out IReadOnlyList<int> cached))
+            return cached;
+
+        IReadOnlyList<int> replyUserIds = await anilistClient.GetActivityReplyUserIdsAsync(activityId);
+        challengePostsState.Set(activityId, replyUserIds);
+        return replyUserIds;
     }
 
     private static bool TryGetActivityId(string link, out int activityId)

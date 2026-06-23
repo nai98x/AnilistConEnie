@@ -19,6 +19,14 @@ public class DiscordHelper(BotConfiguration config, ILogger<DiscordHelper> logge
 {
     public static DiscordColor GetColor() => DiscordColor.Blurple;
 
+    /// <summary>
+    /// Resuelve un emoji propiedad de la aplicación (bot), no del guild. Los emotes configurados del
+    /// bot están subidos a nivel de aplicación, por lo que <c>FromGuildEmote</c> y
+    /// <c>guild.Emojis[...]</c> no los encuentran. Usa la caché de la librería (no fuerza fetch).
+    /// </summary>
+    public static ValueTask<DiscordEmoji> GetApplicationEmojiAsync(DiscordClient client, ulong emojiId)
+        => client.GetApplicationEmojiAsync(emojiId, false);
+
     public bool RangoAPartirDe(DiscordGuild guild, DiscordMember member, RangoEnum rango, bool verificarActivo)
     {
         if (verificarActivo && member.Roles.Any(x => x.Id ==  config.Roles.Inactivo))

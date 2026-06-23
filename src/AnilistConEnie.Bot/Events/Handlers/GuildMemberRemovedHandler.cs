@@ -24,8 +24,8 @@ public class GuildMemberRemovedHandler(DiscordBotService discordBotService, XpSt
 
             if (args.Member.Roles.Any(x => x.Id == config.Roles.Miembro))
             {
-                DiscordEmoji umaPoints = DiscordEmoji.FromGuildEmote(client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
-                DiscordEmoji worrysad = DiscordEmoji.FromGuildEmote(client, config.Emotes.Worrysad.Get(discordBotService.Debug));
+                DiscordEmoji umaPoints = await DiscordHelper.GetApplicationEmojiAsync(client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
+                DiscordEmoji worrysad = await DiscordHelper.GetApplicationEmojiAsync(client, config.Emotes.Worrysad.Get(discordBotService.Debug));
                 DiscordRole role = discordHelper.GetRoleByXp(args.Guild, rank.Total);
 
                 if (rank.Total > DiscordHelper.GetXpFromRango(RangoEnum.Casual))

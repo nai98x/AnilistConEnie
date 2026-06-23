@@ -5,9 +5,11 @@ using NCrontab;
 
 namespace AnilistConEnie.Bot.Services.Scheduling;
 
-public abstract class CronBackgroundService(IServiceScopeFactory scopeFactory, ILogger logger) : BackgroundService
+public abstract class CronBackgroundService(IServiceScopeFactory scopeFactory, DiscordBotService discordBotService, ILogger logger) : BackgroundService
 {
     protected IServiceScopeFactory ScopeFactory => scopeFactory;
+
+    protected bool Inicializado => discordBotService.Inicializado;
 
     protected abstract string CronExpression { get; }
 
@@ -15,6 +17,12 @@ public abstract class CronBackgroundService(IServiceScopeFactory scopeFactory, I
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (discordBotService.Debug)
+        {
+            logger.LogInformation("Tareas programadas deshabilitadas en modo debug ({Task})", GetType().Name);
+            return;
+        }
+
         CrontabSchedule schedule = CrontabSchedule.Parse(CronExpression);
 
         while (!stoppingToken.IsCancellationRequested)

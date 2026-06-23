@@ -1,6 +1,5 @@
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
-using AnilistConEnie.Bot.Services;
 using AnilistConEnie.Bot.Services.State;
 using DSharpPlus;
 using DSharpPlus.Entities;
@@ -18,13 +17,13 @@ public class DailyScheduledService(
     BehaviorHelper behaviorHelper,
     ConfessionsState confessionsState,
     BoluditosState boluditosState)
-    : CronBackgroundService(scopeFactory, logger)
+    : CronBackgroundService(scopeFactory, discordBotService, logger)
 {
     protected override string CronExpression => "0 0 * * *";
 
     protected override async Task DoWorkAsync(CancellationToken cancellationToken)
     {
-        if (!discordBotService.Inicializado || !client.Guilds.TryGetValue(config.GuildId, out DiscordGuild? guild))
+        if (!Inicializado || !client.Guilds.TryGetValue(config.GuildId, out DiscordGuild? guild))
             return;
 
         await behaviorHelper.ManageNewUsuarios(guild);

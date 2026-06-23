@@ -66,7 +66,9 @@ internal static class MediaMapper
     {
         Id = dto.Id,
         Name = dto.Name ?? string.Empty,
-        SiteUrl = dto.SiteUrl ?? string.Empty
+        SiteUrl = dto.SiteUrl ?? string.Empty,
+        AvatarMedium = dto.Avatar?.Medium,
+        BannerImage = dto.BannerImage
     };
 
     public static AnilistViewer ToViewer(ViewerDto dto) => new()

@@ -76,7 +76,7 @@ internal static class AnilistQueries
         }
         """;
 
-    /// <summary>Busca un usuario por nombre, devolviendo lo mínimo para ubicarlo (id, nombre y url).</summary>
+    /// <summary>Busca un usuario por nombre, devolviendo lo necesario para ubicarlo y vincularlo.</summary>
     public const string UserByName =
         """
         query ($search: String) {
@@ -84,6 +84,8 @@ internal static class AnilistQueries
                 id
                 name
                 siteUrl
+                avatar { medium }
+                bannerImage
             }
         }
         """;

@@ -19,7 +19,7 @@ namespace AnilistConEnie.Bot.Helpers;
 
 public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState, BotConfiguration config, DiscordHelper discordHelper, AnilistServerScoreService scoreService, IUsuariosAnilistRepository usuariosAnilistRepository, IAnilistClient anilistClient)
 {
-    public async Task TerminarVinculacion(DiscordClient client, DiscordUser user, DiscordMember member, DiscordGuild guild, UserApprovalAnilist userApproval)
+    public async Task TerminarVinculacion(DiscordClient client, DiscordUser user, DiscordMember member, DiscordGuild guild, AnilistUser anilistUser)
     {
         DiscordEmbedBuilder bienvenidaEmbed = new()
         {
@@ -36,24 +36,24 @@ public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState,
             Description = $"AniList de {user.Mention}",
             Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail
             {
-                Url = userApproval.Avatar
+                Url = anilistUser.AvatarMedium ?? string.Empty
             },
             Author = new DiscordEmbedBuilder.EmbedAuthor
             {
-                Url = userApproval.SiteUrl,
-                Name = userApproval.Name,
+                Url = anilistUser.SiteUrl,
+                Name = anilistUser.Name,
                 IconUrl = user.AvatarUrl
             }
         };
 
-        if (!string.IsNullOrEmpty(userApproval.Banner))
+        if (!string.IsNullOrEmpty(anilistUser.BannerImage))
         {
-            newProfileEmbed.WithImageUrl(userApproval.Banner);
+            newProfileEmbed.WithImageUrl(anilistUser.BannerImage);
         }
 
-        DiscordLinkButtonComponent profile = new($"{userApproval.SiteUrl}", "Perfil", false, new DiscordComponentEmoji("👤"));
-        DiscordLinkButtonComponent animeList = new($"{userApproval.SiteUrl}/animelist", "Lista de anime", false, new DiscordComponentEmoji("📺"));
-        DiscordLinkButtonComponent mangaList = new($"{userApproval.SiteUrl}/mangalist", "Lista de manga", false, new DiscordComponentEmoji("📖"));
+        DiscordLinkButtonComponent profile = new($"{anilistUser.SiteUrl}", "Perfil", false, new DiscordComponentEmoji("👤"));
+        DiscordLinkButtonComponent animeList = new($"{anilistUser.SiteUrl}/animelist", "Lista de anime", false, new DiscordComponentEmoji("📺"));
+        DiscordLinkButtonComponent mangaList = new($"{anilistUser.SiteUrl}/mangalist", "Lista de manga", false, new DiscordComponentEmoji("📖"));
 
         DiscordChannel perfiles = guild.Channels[config.Channels.Perfiles];
         DiscordMessage? mensaje = null;
@@ -64,16 +64,16 @@ public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState,
             if (usrPreexistente is not null)
             {
                 mensaje = await perfiles.GetMessageAsync((ulong)usrPreexistente.MessageId);
-                await mensaje.ModifyAsync($"**Perfil de {member.Mention}**\n\n{userApproval.SiteUrl}");
+                await mensaje.ModifyAsync($"**Perfil de {member.Mention}**\n\n{anilistUser.SiteUrl}");
             }
         }
         catch (NotFoundException) { /* Ignored */ }
         
         if (usrPreexistente is null)
-            mensaje = await perfiles.SendMessageAsync($"**Perfil de {member.Mention}**\n\n{userApproval.SiteUrl}");
+            mensaje = await perfiles.SendMessageAsync($"**Perfil de {member.Mention}**\n\n{anilistUser.SiteUrl}");
         
-        await usuariosAnilistRepository.SetAnilist(member.Id, userApproval.SiteUrl, (long)mensaje!.Id);
-        await usuariosAnilistRepository.SetAnilistYumiko(userApproval.IdAnilist, member.Id);
+        await usuariosAnilistRepository.SetAnilist(member.Id, anilistUser.SiteUrl, (long)mensaje!.Id);
+        await usuariosAnilistRepository.SetAnilistYumiko(anilistUser.Id, member.Id);
 
         List<UsuarioAnilist> users = anilistUsersState.Usuarios;
         if (!users.Where(u => (ulong)u.UserId == user.Id).Any())
@@ -193,14 +193,13 @@ public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState,
             return;
         }
 
-        UserApprovalAnilist userApproval = new()
+        AnilistUser anilistUser = new()
         {
-            IdDiscord = (long)interaction.User.Id,
-            IdAnilist = viewer.Id,
+            Id = viewer.Id,
             Name = viewer.Name,
             SiteUrl = viewer.SiteUrl,
-            Avatar = viewer.AvatarMedium ?? string.Empty,
-            Banner = viewer.BannerImage ?? string.Empty
+            AvatarMedium = viewer.AvatarMedium,
+            BannerImage = viewer.BannerImage
         };
 
         DateTimeOffset monthBefore = DateTimeOffset.Now.AddMonths(-1);
@@ -221,6 +220,16 @@ public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState,
                 })
                 .AddActionRowComponent(aprobar, denegar);
 
+            UserApprovalAnilist userApproval = new()
+            {
+                IdDiscord = (long)interaction.User.Id,
+                IdAnilist = viewer.Id,
+                Name = viewer.Name,
+                SiteUrl = viewer.SiteUrl,
+                Avatar = viewer.AvatarMedium ?? string.Empty,
+                Banner = viewer.BannerImage ?? string.Empty
+            };
+
             await usuariosAnilistRepository.AgregarUsuarioApproval(userApproval);
             await interaction.Guild.Channels[config.Channels.Moderacion].SendMessageAsync(msgBuilderApproval);
 
@@ -234,7 +243,7 @@ public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState,
             return;
         }
 
-        await TerminarVinculacion(client, interaction.User, member, interaction.Guild, userApproval);
+        await TerminarVinculacion(client, interaction.User, member, interaction.Guild, anilistUser);
         await modalInteraction.DeleteOriginalResponseAsync();
     }
 

@@ -6,4 +6,6 @@ public class AnilistUser
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string SiteUrl { get; set; } = string.Empty;
+    public string? AvatarMedium { get; set; }
+    public string? BannerImage { get; set; }
 }

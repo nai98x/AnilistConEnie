@@ -3,6 +3,7 @@ using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
 using AnilistConEnie.Model.Interfaces.Repositories;
 using AnilistConEnie.Model.Entities;
+using AnilistConEnie.Model.Entities.Anilist;
 using AnilistConEnie.Model.Enum;
 using DSharpPlus;
 using DSharpPlus.Entities;
@@ -114,7 +115,15 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
                 if (aprobado)
                 {
                     DiscordUser user = await client.GetUserAsync((ulong)discordId);
-                    await anilistHelper.TerminarVinculacion(client, user, member, args.Guild, userApproval);
+                    AnilistUser anilistUser = new()
+                    {
+                        Id = userApproval.IdAnilist,
+                        Name = userApproval.Name,
+                        SiteUrl = userApproval.SiteUrl,
+                        AvatarMedium = userApproval.Avatar,
+                        BannerImage = userApproval.Banner
+                    };
+                    await anilistHelper.TerminarVinculacion(client, user, member, args.Guild, anilistUser);
 
                     await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
                         .WithTitle("Solicitud Aprobada")

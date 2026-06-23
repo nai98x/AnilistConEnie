@@ -233,9 +233,13 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, Inv
             }
 
             List<KeyValuePair<ulong, DiscordMember>> membersAniversaries = guild.Members
-                .Where(x => aniversariesDates.Any(aniversaryDate =>
-                    x.Value.JoinedAt.Date == aniversaryDate &&
-                    x.Value.JoinedAt.Hour == DateTime.Now.Hour))
+                .Where(x =>
+                {
+                    DateTimeOffset fechaEntrada = config.GetFechaEntrada(x.Key, x.Value.JoinedAt);
+                    return aniversariesDates.Any(aniversaryDate =>
+                        fechaEntrada.Date == aniversaryDate &&
+                        fechaEntrada.Hour == DateTime.Now.Hour);
+                })
                 .ToList();
 
             DiscordChannel canal = guild.Channels[config.Channels.General];
@@ -249,7 +253,7 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, Inv
                     if (!discordHelper.RangoAPartirDe(guild, member, RangoEnum.Kouhai, true))
                         continue;
 
-                    DateTimeOffset joinedAt = member.JoinedAt;
+                    DateTimeOffset joinedAt = config.GetFechaEntrada(member.Id, member.JoinedAt);
                     int yearsInServer = DateTime.Now.Year - joinedAt.Year;
 
                     if (joinedAt.Month > DateTime.Now.Month ||
@@ -365,7 +369,7 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, Inv
             DiscordRole fundadorRole = guild.Roles[config.Roles.Fundador];
             DiscordRole noVerificadoRole = guild.Roles[config.Roles.NoVinculado];
 
-            List<KeyValuePair<ulong, DiscordMember>> miembrosNoFundadores = guild.Members.Where(x => x.Value.JoinedAt.Date == guildCreation && !x.Value.Roles.Contains(fundadorRole) && !x.Value.Roles.Contains(noVerificadoRole) && !x.Value.IsBot).ToList();
+            List<KeyValuePair<ulong, DiscordMember>> miembrosNoFundadores = guild.Members.Where(x => config.GetFechaEntrada(x.Key, x.Value.JoinedAt).Date == guildCreation && !x.Value.Roles.Contains(fundadorRole) && !x.Value.Roles.Contains(noVerificadoRole) && !x.Value.IsBot).ToList();
 
             foreach (KeyValuePair<ulong, DiscordMember> member in miembrosNoFundadores)
             {

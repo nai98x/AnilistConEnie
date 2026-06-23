@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using AnilistConEnie.Bot.Commands.SlashCommands.Attributes;
+using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Extensions;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
@@ -18,14 +19,50 @@ namespace AnilistConEnie.Bot.Commands.SlashCommands;
 [TestCommand]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
 [SuppressMessage("ReSharper", "UnusedType.Global")]
-public class Owner(XpState xpState, PermanentUsernameState permanentUsernameState, DiscordBotService discordBotService, IAnilistClient anilistClient, IHostApplicationLifetime appLifetime)
+public class Owner(XpState xpState, PermanentUsernameState permanentUsernameState, DiscordBotService discordBotService, IAnilistClient anilistClient, IHostApplicationLifetime appLifetime, BotConfiguration config)
 {
     [Command("test")]
     [Description("Comando general para testear cosas")]
-    public static async Task TestCommand(CommandContext ctx, [Description("Test input 1")]string input)
+    public async Task TestCommand(CommandContext ctx, [Description("Test input 1")]string input)
     {
         await ctx.DeferEphemeralAsync();
-        await ctx.EditResponseAsync($"Test input: {input}");
+
+        List<ulong> ids =
+        [
+            ..config.FechasEntradaExcepciones.Select(x => x.UserId),
+            638190435835183117
+        ];
+
+        List<string> lineas = [];
+        foreach (ulong id in ids)
+        {
+            DateTimeOffset real;
+            try
+            {
+                DiscordMember member = await ctx.Guild!.GetMemberAsync(id);
+                real = member.JoinedAt;
+            }
+            catch
+            {
+                lineas.Add($"`{id}`: no se pudo obtener el miembro");
+                continue;
+            }
+
+            DateTimeOffset resuelta = config.GetFechaEntrada(id, real);
+            bool esExcepcion = resuelta != real;
+
+            lineas.Add(
+                $"`{id}` {(esExcepcion ? "✅ excepción" : "➖ fecha real")}\n" +
+                $"- Real: {real:yyyy/MM/dd HH:mm:ss}\n" +
+                $"- Resuelta: {resuelta:yyyy/MM/dd HH:mm:ss}");
+        }
+
+        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+        {
+            Title = "Test GetFechaEntrada",
+            Description = string.Join("\n\n", lineas),
+            Color = DiscordHelper.GetColor()
+        }));
     }
     
     [Command("apagar")]

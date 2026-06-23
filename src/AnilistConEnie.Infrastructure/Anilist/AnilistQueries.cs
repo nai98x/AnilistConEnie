@@ -108,6 +108,21 @@ internal static class AnilistQueries
         }
         """;
 
+    /// <summary>
+    /// Ids de usuario de AniList que respondieron (reply) a una actividad/post. Se usa para saber
+    /// qué usuarios participaron en un challenge a partir del link de su post.
+    /// </summary>
+    public const string ActivityReplies =
+        """
+        query ($id: Int) {
+            Page {
+                activityReplies(activityId: $id) {
+                    userId
+                }
+            }
+        }
+        """;
+
     /// <summary>Query mínima usada solo para leer los headers de rate limit.</summary>
     public const string RateLimitProbe =
         """

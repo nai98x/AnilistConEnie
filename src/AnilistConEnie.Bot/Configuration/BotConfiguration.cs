@@ -54,6 +54,7 @@ public class BotConfiguration
         public required ulong Inactivo { get; init; }
         public required ulong Invite { get; init; }
         public required ulong KamiSama { get; init; }
+        public required ulong Colaborador { get; init; }
         public required ulong Cumple { get; init; }
         public required RangosConfiguration Rangos { get; init; }
         public required IReadOnlyList<ColorRangoConfiguration> ColoresRango { get; init; }
@@ -135,6 +136,7 @@ public class BotConfiguration
                 Inactivo = RequireUlong(roles, "Inactivo"),
                 Invite = RequireUlong(roles, "Invite"),
                 KamiSama = RequireUlong(roles, "KamiSama"),
+                Colaborador = RequireUlong(roles, "Colaborador"),
                 Cumple = RequireUlong(roles, "Cumple"),
                 Rangos = new RolesConfiguration.RangosConfiguration
                 {

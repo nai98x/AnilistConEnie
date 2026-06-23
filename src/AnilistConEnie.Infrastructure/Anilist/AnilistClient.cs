@@ -93,4 +93,18 @@ internal sealed class AnilistClient(AnilistGraphQLExecutor executor) : IAnilistC
         AnilistResponse<MediaQueryResponse> response = await executor.SendQueryAsync<MediaQueryResponse>(request, cancellationToken);
         return response.RateLimit;
     }
+
+    public async Task<IReadOnlyList<int>> GetActivityReplyUserIdsAsync(int activityId, CancellationToken cancellationToken = default)
+    {
+        GraphQLRequest request = new()
+        {
+            Query = AnilistQueries.ActivityReplies,
+            Variables = new { id = activityId }
+        };
+
+        AnilistResponse<ActivityRepliesResponse> response = await executor.SendQueryAsync<ActivityRepliesResponse>(request, cancellationToken);
+        List<ActivityReplyDto>? replies = response.Data?.Page?.ActivityReplies;
+
+        return replies is null ? [] : replies.Select(r => r.UserId).ToList();
+    }
 }

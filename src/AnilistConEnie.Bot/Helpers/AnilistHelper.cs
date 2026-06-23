@@ -247,6 +247,56 @@ public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState,
         await modalInteraction.DeleteOriginalResponseAsync();
     }
 
+    /// <summary>
+    /// De la lista de challenges indicada, devuelve aquellos en cuyo post de AniList el usuario
+    /// (<paramref name="anilistUserId"/>) dejó un reply, es decir, los que está realizando.
+    /// </summary>
+    public async Task<List<Challenge>> ChallengesPostsFromMemberAsync(int anilistUserId, IReadOnlyList<Challenge> challenges)
+    {
+        List<Challenge> ret = [];
+        foreach (Challenge challenge in challenges)
+        {
+            if (!TryGetActivityId(challenge.Link, out int activityId)) continue;
+
+            IReadOnlyList<int> replyUserIds = await anilistClient.GetActivityReplyUserIdsAsync(activityId);
+            if (replyUserIds.Contains(anilistUserId))
+                ret.Add(challenge);
+        }
+
+        return ret;
+    }
+
+    /// <summary>
+    /// Usuarios del servidor (con AniList vinculado) que dejaron un reply en el post del challenge,
+    /// es decir, los que están participando en él.
+    /// </summary>
+    public async Task<List<UsuarioAnilist>> PostsFromChallengeAsync(Challenge challenge)
+    {
+        List<UsuarioAnilist> ret = [];
+        if (!TryGetActivityId(challenge.Link, out int activityId)) return ret;
+
+        IReadOnlyList<int> replyUserIds = await anilistClient.GetActivityReplyUserIdsAsync(activityId);
+        foreach (int replyUserId in replyUserIds)
+        {
+            UsuarioAnilist? usuario = anilistUsersState.Usuarios.Find(x =>
+                AnilistProfileUrl.TryGetUserId(x.AnilistURL, out int id) && id == replyUserId);
+
+            if (usuario is not null && !ret.Contains(usuario))
+                ret.Add(usuario);
+        }
+
+        return ret;
+    }
+
+    private static bool TryGetActivityId(string link, out int activityId)
+    {
+        activityId = 0;
+        if (string.IsNullOrEmpty(link)) return false;
+
+        string segment = link.TrimEnd('/').Split('/').Last();
+        return int.TryParse(segment, out activityId);
+    }
+
     private static string FormatScores(ServerMediaScores result, AnilistMedia media)
     {
         if (result.IsEmpty) return string.Empty;

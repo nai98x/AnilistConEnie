@@ -213,4 +213,54 @@ public class DiscordHelper(BotConfiguration config, ILogger<DiscordHelper> logge
         return int.Parse(resultElegir.Values[0]);
 
     }
+
+    /// <summary>
+    /// Muestra varios embeds (uno por pestaña) en un único mensaje, con un botón por pestaña para
+    /// alternar entre ellos. La pestaña activa queda con su botón deshabilitado. Admite entre 1 y 5
+    /// pestañas. Los botones se deshabilitan tras 2 minutos de inactividad o al acercarse al límite
+    /// de vida de la interacción (15 minutos por regla de Discord), lo que ocurra primero.
+    /// </summary>
+    public static async Task SwitchTabsAsync(CommandContext ctx, Dictionary<string, DiscordEmbed> tabs)
+    {
+        if (tabs.Count is 0 or > 5) return;
+
+        InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
+
+        // El token de la interacción expira a los 15 minutos (regla de Discord). Cortamos un poco
+        // antes para alcanzar a editar el mensaje y dejar los botones deshabilitados mientras el
+        // token sigue siendo válido.
+        DateTimeOffset deadline = DateTimeOffset.UtcNow.AddMinutes(14);
+        TimeSpan inactivityTimeout = TimeSpan.FromMinutes(2);
+
+        string activeTab = tabs.First().Key;
+
+        while (true)
+        {
+            DiscordMessage message = await ctx.EditResponseAsync(new DiscordWebhookBuilder()
+                .AddEmbed(tabs[activeTab])
+                .AddActionRowComponent(BuildTabButtons(tabs.Keys, activeTab, disabled: false)));
+
+            TimeSpan remaining = deadline - DateTimeOffset.UtcNow;
+            if (remaining <= TimeSpan.Zero) break;
+
+            TimeSpan waitFor = remaining < inactivityTimeout ? remaining : inactivityTimeout;
+
+            InteractivityResult<ComponentInteractionCreatedEventArgs> response =
+                await interactivity.WaitForButtonAsync(message, ctx.User, waitFor);
+
+            if (response.TimedOut) break;
+
+            await response.Result.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
+            activeTab = response.Result.Id;
+        }
+
+        // Inactividad o límite de vida de la interacción alcanzado: dejamos la última pestaña con
+        // todos los botones deshabilitados.
+        await ctx.EditResponseAsync(new DiscordWebhookBuilder()
+            .AddEmbed(tabs[activeTab])
+            .AddActionRowComponent(BuildTabButtons(tabs.Keys, activeTab, disabled: true)));
+    }
+
+    private static IEnumerable<DiscordButtonComponent> BuildTabButtons(IEnumerable<string> keys, string activeTab, bool disabled) =>
+        keys.Select(key => new DiscordButtonComponent(DiscordButtonStyle.Primary, key, key, disabled || key == activeTab)).ToList();
 }

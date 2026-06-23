@@ -48,6 +48,12 @@ public interface IAnilistClient
     Task<AnilistViewer?> GetViewerAsync(string accessToken, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Obtiene los ids de usuario de AniList que respondieron (reply) a una actividad/post. Se usa
+    /// para saber qué usuarios participaron en un challenge a partir del link de su post.
+    /// </summary>
+    Task<IReadOnlyList<int>> GetActivityReplyUserIdsAsync(int activityId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Consulta liviana cuyo único objetivo es leer el estado actual del rate limit de AniList.
     /// </summary>
     Task<AnilistRateLimit> GetRateLimitAsync(CancellationToken cancellationToken = default);

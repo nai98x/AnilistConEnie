@@ -18,7 +18,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AnilistConEnie.Bot.Commands.SlashCommands;
 
-[TestCommand]
+//[TestCommand]
 public class Anilist(IAnilistClient anilistClient, AnilistHelper anilistHelper, AnilistUsersState anilistUsersState, BotConfiguration config)
 {
     // Límite de caracteres de la description de un embed de Discord.

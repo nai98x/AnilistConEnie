@@ -59,6 +59,65 @@ public class DiscordHelper(BotConfiguration config, ILogger<DiscordHelper> logge
         };
     }
     
+    public static RangoEnum GetNextRangoByXp(long xp)
+    {
+        return xp switch
+        {
+            < 2000 => RangoEnum.Tama,
+            < 10000 => RangoEnum.Casual,
+            < 40000 => RangoEnum.Kouhai,
+            < 80000 => RangoEnum.Senpai,
+            < 120000 => RangoEnum.Hikikomori,
+            < 200000 => RangoEnum.Sensei,
+            < 500000 => RangoEnum.Ousama,
+            _ => RangoEnum.Teiou,
+        };
+    }
+
+    public static RangoEnum GetPrevRangoByXp(long xp)
+    {
+        return xp switch
+        {
+            > 1000000 => RangoEnum.Teiou,
+            > 500000 => RangoEnum.Ousama,
+            > 200000 => RangoEnum.Sensei,
+            > 120000 => RangoEnum.Hikikomori,
+            > 80000 => RangoEnum.Senpai,
+            > 40000 => RangoEnum.Kouhai,
+            > 10000 => RangoEnum.Casual,
+            > 2000 => RangoEnum.Tama,
+            _ => RangoEnum.Miembro,
+        };
+    }
+
+    /// <summary>Devuelve el rol de país del miembro (según los timezones configurados), o <c>null</c> si no tiene.</summary>
+    public DiscordRole? GetMemberPais(DiscordMember member)
+    {
+        HashSet<ulong> paisRoles = config.PaisTimezones.Select(x => x.RoleId).ToHashSet();
+        return member.Roles.FirstOrDefault(x => paisRoles.Contains(x.Id));
+    }
+
+    public static string EstimarTiempoEstimadoRango(long nextXp, double promedioXp, string rangoName, int mensajes)
+    {
+        if (promedioXp <= 0)
+            return $"- No se puede estimar el tiempo para el siguiente rango ({rangoName}) porque no se ha registrado ningún punto de experiencia ganado.";
+
+        if (nextXp <= 0)
+            return $"- ¡Felicidades! Ya has alcanzado el rango **{rangoName}** o lo has superado.";
+
+        int diasTotales = (int)Math.Ceiling(nextXp / promedioXp);
+
+        if (diasTotales < 365)
+            return $"- A este ritmo llegarás a **{rangoName}** en **{diasTotales} días** (equivale a aproximadamente {mensajes.ToSpanish()} mensajes)";
+
+        int anios = diasTotales / 365;
+        int diasRestantes = diasTotales % 365;
+
+        return diasRestantes == 0
+            ? $"- A este ritmo llegarás a **{rangoName}** en **{anios} año(s)** (equivale a aproximadamente {mensajes.ToSpanish()} mensajes)"
+            : $"- A este ritmo llegarás a **{rangoName}** en **{anios} año(s) y {diasRestantes} días** (equivale a aproximadamente {mensajes.ToSpanish()} mensajes)";
+    }
+
     public static long GetXpFromRango(RangoEnum rango)
     {
         return rango switch

@@ -24,7 +24,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AnilistConEnie.Bot.Commands.SlashCommands;
 
-[TestCommand]
+//[TestCommand]
 public class Fun(
     BotConfiguration config,
     DiscordHelper discordHelper,

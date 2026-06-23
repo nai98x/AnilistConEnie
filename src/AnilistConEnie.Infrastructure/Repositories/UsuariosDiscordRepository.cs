@@ -127,17 +127,51 @@ public class UsuariosDiscordRepository(FirebaseService firebase) : FirestoreRepo
     public async Task<List<UserDailyXp>> GetDailyXpChartFromUser(ulong userId, DateRangeXp range = DateRangeXp.Completo)
     {
         FirestoreDb db = await GetDbAsync();
-        CollectionReference col = db.Collection("XpChartHistory").Document($"{userId}").Collection("History").Document("Year").Collection($"{DateTime.Now.Year}");
-        List<UserDailyXp> all = await QueryListAsync<UserDailyXp>(col);
+        DocumentReference yearDoc = db.Collection("XpChartHistory").Document($"{userId}").Collection("History").Document("Year");
+        int currentYear = DateTime.Now.Year;
+        List<UserDailyXp> ret = [];
 
-        IEnumerable<UserDailyXp> filtered = range switch
+        // Se recorren todas las colecciones por año: el año actual trae todos los registros (según el
+        // rango) y los años anteriores se reducen a un registro por mes para no traer el historial completo.
+        await foreach (CollectionReference yearCol in yearDoc.ListCollectionsAsync())
         {
-            DateRangeXp.Semanal => all.Where(x => DateTime.Now.AddDays(-7) <= x.Date),
-            DateRangeXp.Mensual => all.Where(x => new DateTime(day: 1, month: DateTime.Now.Month, year: DateTime.Now.Year) <= x.Date),
-            _ => all
-        };
+            if (!int.TryParse(yearCol.Id, out int year))
+                continue;
 
-        return filtered.OrderBy(x => x.Date).ToList();
+            if (year == currentYear)
+            {
+                List<UserDailyXp> all = await QueryListAsync<UserDailyXp>(yearCol);
+                IEnumerable<UserDailyXp> filtered = range switch
+                {
+                    DateRangeXp.Semanal => all.Where(x => DateTime.Now.AddDays(-7) <= x.Date),
+                    DateRangeXp.Mensual => all.Where(x => new DateTime(day: 1, month: DateTime.Now.Month, year: currentYear) <= x.Date),
+                    _ => all
+                };
+                ret.AddRange(filtered);
+            }
+            else
+            {
+                for (int mes = 1; mes <= 12; mes++)
+                {
+                    DateTime desde = new(year, mes, 1, 0, 0, 0, DateTimeKind.Utc);
+                    DateTime hasta = mes == 12
+                        ? new DateTime(year + 1, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                        : new DateTime(year, mes + 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+                    Query query = yearCol
+                        .WhereGreaterThanOrEqualTo("Date", desde)
+                        .WhereLessThan("Date", hasta)
+                        .OrderBy("Date")
+                        .Limit(1);
+
+                    QuerySnapshot snap = await query.GetSnapshotAsync();
+                    if (snap.Count > 0)
+                        ret.Add(snap.Documents[0].ConvertTo<UserDailyXp>());
+                }
+            }
+        }
+
+        return ret.OrderBy(x => x.Date).ToList();
     }
 
     public async Task AddDailyXp(DateTime date, ulong userId, long xp)

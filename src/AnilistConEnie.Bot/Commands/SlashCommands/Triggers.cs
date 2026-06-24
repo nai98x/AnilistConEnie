@@ -16,7 +16,7 @@ namespace AnilistConEnie.Bot.Commands.SlashCommands;
 
 [Command("trigger")]
 [Description("Comandos para triggers")]
-[TestCommand]
+//[TestCommand]
 public class Triggers(ITriggersRepository triggersRepository, TriggersState triggersState, DiscordLogService logService)
 {
     [Command("set")]

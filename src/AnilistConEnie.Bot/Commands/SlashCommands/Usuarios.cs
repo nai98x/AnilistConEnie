@@ -19,7 +19,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AnilistConEnie.Bot.Commands.SlashCommands;
 
-[TestCommand]
+//[TestCommand]
 public class Usuarios(
     IUsuariosDiscordRepository usuariosDiscordRepository,
     XpState xpState,

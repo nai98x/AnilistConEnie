@@ -26,7 +26,7 @@ namespace AnilistConEnie.Bot.Commands.SlashCommands;
 
 [Command("admin")]
 [Description("Comandos de los admins del servidor")]
-[TestCommand]
+//[TestCommand]
 public class Admin(
     BotConfiguration config,
     DiscordBotService discordBotService,

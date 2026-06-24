@@ -20,7 +20,7 @@ namespace AnilistConEnie.Bot.Commands.SlashCommands;
 
 [Command("challenges")]
 [Description("Comandos de los challenges del servidor")]
-[TestCommand]
+//[TestCommand]
 public class Challenges(
     IChallengesRepository challengesRepository,
     IUsuariosDiscordRepository usuariosDiscordRepository,

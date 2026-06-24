@@ -69,11 +69,16 @@ public static class Program
 
         BotConfiguration botConfig = BotConfiguration.FromConfiguration(host.Configuration);
 
+        // Carpeta con los firebase-*.json: local via User Secrets, en el servidor via variable de entorno (FIREBASE_CREDENTIALS_DIR).
+        string firebaseCredentialsDir = host.Configuration.GetValue<string>("FIREBASE_CREDENTIALS_DIR") is { Length: > 0 } dir
+            ? dir
+            : throw new InvalidOperationException("'FIREBASE_CREDENTIALS_DIR' es obligatorio: configuralo via User Secrets (local) o variable de entorno (servidor)");
+
         host.Services
             .AddSingleton(botConfig)
             .AddBehaviorSettings(host.Configuration)
             .AddApplication()
-            .AddInfrastructure()
+            .AddInfrastructure(firebaseCredentialsDir)
             .AddConfiguredDiscordClient(host.Configuration)
             .AddSerilog()
             .AddBotServices();

@@ -41,12 +41,6 @@
     <None Update="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="firebase-anilistconenie.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="firebase-yumiko.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="Images\frame-love.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

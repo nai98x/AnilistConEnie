@@ -10,8 +10,16 @@ public class FirebaseService
     private const string AnilistConEnieCredentialFile = "firebase-anilistconenie.json";
     private const string YumikoCredentialFile = "firebase-yumiko.json";
 
-    private readonly Lazy<Task<FirestoreDb>> _anilistConEnie = new(() => CreateAsync(AnilistConEnieCredentialFile));
-    private readonly Lazy<FirestoreDb> _yumiko = new(() => Create(YumikoCredentialFile));
+    private readonly string _credentialsDir;
+    private readonly Lazy<Task<FirestoreDb>> _anilistConEnie;
+    private readonly Lazy<FirestoreDb> _yumiko;
+
+    public FirebaseService(string credentialsDir)
+    {
+        _credentialsDir = credentialsDir;
+        _anilistConEnie = new Lazy<Task<FirestoreDb>>(() => CreateAsync(AnilistConEnieCredentialFile));
+        _yumiko = new Lazy<FirestoreDb>(() => Create(YumikoCredentialFile));
+    }
 
     public Task<FirestoreDb> GetAnilistConEnie() => _anilistConEnie.Value;
 
@@ -25,7 +33,7 @@ public class FirebaseService
         return (client, $"{ProjectId(jsonCredentials, AnilistConEnieCredentialFile)}.appspot.com");
     }
 
-    private static async Task<FirestoreDb> CreateAsync(string credentialFile)
+    private async Task<FirestoreDb> CreateAsync(string credentialFile)
     {
         string jsonCredentials = await File.ReadAllTextAsync(CredentialPath(credentialFile));
         FirestoreDbBuilder builder = new()
@@ -37,7 +45,7 @@ public class FirebaseService
         return await builder.BuildAsync();
     }
 
-    private static FirestoreDb Create(string credentialFile)
+    private FirestoreDb Create(string credentialFile)
     {
         string jsonCredentials = File.ReadAllText(CredentialPath(credentialFile));
         FirestoreDbBuilder builder = new()
@@ -49,8 +57,7 @@ public class FirebaseService
         return builder.Build();
     }
 
-    private static string CredentialPath(string credentialFile) =>
-        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, credentialFile);
+    private string CredentialPath(string credentialFile) => Path.Combine(_credentialsDir, credentialFile);
 
     private static string ProjectId(string jsonCredentials, string credentialFile) =>
         JsonDocument.Parse(jsonCredentials).RootElement.GetProperty("project_id").GetString()

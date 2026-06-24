@@ -5,15 +5,32 @@ on:
     branches: [main]
 
 jobs:
-
-  build:
-    runs-on: ubuntu-18.04
-    if: "!contains(format('{0} {1}', github.event.head_commit.message, github.event.pull_request.title), '[ci-skip]')"
+  ci-cd:
+    runs-on: self-hosted
+    if: "!contains(github.event.head_commit.message, '[ci-skip]')"
     steps:
-      - name: Run SSH command
-        uses: garygrossgarten/github-action-ssh@release
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
         with:
-            command: cd ~/bots/AnilistConEnie && git reset --hard && git pull && chmod +x deploy && (./deploy >& bot-log.txt &disown);
-            host: ${{ secrets.HOST }}
-            username: ${{ secrets.USERNAME }}
-            privateKey: ${{ secrets.PRIVATE_KEY}}
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build (gate)
+        run: dotnet build -c Release --no-restore
+
+      - name: Test
+        run: |
+          if find . -name '*.csproj' | xargs grep -lq 'Microsoft.NET.Test.Sdk'; then
+            dotnet test -c Release --no-build
+          else
+            echo "Sin proyecto de tests todavía — skip"
+          fi
+
+      - name: Publish
+        run: dotnet publish src/AnilistConEnie.Bot -c Release --no-build -o "$HOME/bots/AnilistConEnie-app"
+
+      - name: Restart
+        run: systemctl --user restart anilistconenie

@@ -10,9 +10,9 @@ namespace AnilistConEnie.Infrastructure.Extensions;
 
 public static class InfrastructureServiceExtensions
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, string firebaseCredentialsDir)
     {
-        services.AddSingleton<FirebaseService>();
+        services.AddSingleton(new FirebaseService(firebaseCredentialsDir));
 
         services.AddSingleton<IChallengesRepository, ChallengesRepository>();
         services.AddSingleton<IUsuariosAnilistRepository, UsuariosAnilistRepository>();

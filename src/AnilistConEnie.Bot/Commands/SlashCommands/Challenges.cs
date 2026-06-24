@@ -12,6 +12,7 @@ using AnilistConEnie.Model.Enum;
 using AnilistConEnie.Model.Interfaces.Repositories;
 using DSharpPlus;
 using DSharpPlus.Commands;
+using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
@@ -32,6 +33,7 @@ public class Challenges(
 {
     [Command("set")]
     [Description("Agrega o modifica un challenge (Staff)")]
+    [RequirePermissions(DiscordPermission.ManageGuild)]
     public async Task Set(
         SlashCommandContext ctx,
         [Parameter("Nombre")] [Description("Nombre del challenge")] string nombre,
@@ -350,20 +352,5 @@ public class Challenges(
             builder.AddEmbed(new DiscordEmbedBuilder { Color = DiscordColor.Blurple, ImageUrl = imagen3 });
 
         await ctx.FollowupAsync(builder);
-    }
-
-    [Command("numero")]
-    [Description("Saca un numero aleatorio entre el 1 y el 10")]
-    public async Task Numero(SlashCommandContext ctx)
-    {
-        await ctx.DeferResponseAsync();
-        Random rnd = new((int)ctx.User.Id);
-
-        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-        {
-            Title = "Numero aleatorio",
-            Description = $"Tu numero es `{rnd.Next(1, 10)}`",
-            Color = DiscordColor.Blurple
-        }));
     }
 }

@@ -10,6 +10,7 @@ using AnilistConEnie.Model.Entities.Anilist;
 using AnilistConEnie.Model.Interfaces;
 using DSharpPlus;
 using DSharpPlus.Commands;
+using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Entities;
 using Microsoft.Extensions.Hosting;
 
@@ -17,8 +18,7 @@ namespace AnilistConEnie.Bot.Commands.SlashCommands;
 
 [Command("owner")]
 [TestCommand]
-[SuppressMessage("ReSharper", "UnusedMember.Global")]
-[SuppressMessage("ReSharper", "UnusedType.Global")]
+[RequirePermissions(DiscordPermission.Administrator)]
 public class Owner(XpState xpState, PermanentUsernameState permanentUsernameState, DiscordBotService discordBotService, IAnilistClient anilistClient, IHostApplicationLifetime appLifetime, BotConfiguration config)
 {
     [Command("test")]

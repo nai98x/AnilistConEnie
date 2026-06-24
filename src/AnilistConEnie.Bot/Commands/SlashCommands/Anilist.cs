@@ -9,6 +9,7 @@ using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Entities.Anilist;
 using AnilistConEnie.Model.Interfaces;
 using DSharpPlus.Commands;
+using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
 using DSharpPlus.Exceptions;

@@ -49,7 +49,7 @@ public static class Program
         }
         catch (Exception ex)
         {
-            Log.Fatal(ex, "El servicio principal terminó de forma inesperada");
+            Log.Fatal(ex, "El servicio principal terminó de forma inesperada, error general");
             throw;
         }
         finally

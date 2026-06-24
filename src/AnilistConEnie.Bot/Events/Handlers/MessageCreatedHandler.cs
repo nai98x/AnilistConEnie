@@ -106,7 +106,7 @@ public class MessageCreatedHandler(
                     messageBuilder.AddEmbed(
                         new DiscordEmbedBuilder()
                             .WithImageUrl(trigger.Value.ImageUrl)
-                            .WithColor(DiscordHelper.GetColor())
+                            .WithColor(DiscordEmojiHelper.GetColor())
                             .Build()
                     );
 

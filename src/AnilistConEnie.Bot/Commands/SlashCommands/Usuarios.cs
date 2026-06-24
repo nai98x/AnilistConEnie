@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Globalization;
 using AnilistConEnie.Application.Extensions;
+using AnilistConEnie.Application.Xp;
 using AnilistConEnie.Bot.Commands.SlashCommands.Attributes;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
@@ -71,7 +72,7 @@ public class Usuarios(
                 Text = $"Invocado por {ctx.Member!.DisplayName} ({ctx.Member.Username})",
                 IconUrl = ctx.Member.AvatarUrl
             },
-            Color = DiscordHelper.GetColor(),
+            Color = DiscordEmojiHelper.GetColor(),
             Title = "Cumpleaños"
         };
 
@@ -128,7 +129,7 @@ public class Usuarios(
         });
 
         UserXp rango = xpState.GetUserXp(ctx.Member.Id);
-        long xpRangoNecesario = DiscordHelper.GetXpFromRango(RangoEnum.Casual);
+        long xpRangoNecesario = RangoXp.XpRequerida(RangoEnum.Casual);
         if (rango.Total < xpRangoNecesario)
         {
             builder.AddEmbed(new DiscordEmbedBuilder

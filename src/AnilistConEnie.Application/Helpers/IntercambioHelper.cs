@@ -2,10 +2,8 @@ namespace AnilistConEnie.Application.Helpers;
 
 public static class IntercambioHelper
 {
-    private static readonly Random Rng = new();
-
     public static Dictionary<string, int> Shuffle(this Dictionary<string, int> dict) =>
-        dict.OrderBy(_ => Rng.Next()).ToDictionary(pair => pair.Key, pair => pair.Value);
+        dict.OrderBy(_ => Random.Shared.Next()).ToDictionary(pair => pair.Key, pair => pair.Value);
 
     /// <summary>
     /// Algoritmo de reparto que minimiza repeticiones de la combinación (dador → receptor) y reparte
@@ -58,7 +56,7 @@ public static class IntercambioHelper
     /// </summary>
     public static List<string> RepartirClasico(Dictionary<string, int> pelisPorRecibir)
     {
-        Random rnd = new();
+        Random rnd = Random.Shared;
         bool exit = false;
 
         List<string> poolOriginal = [.. pelisPorRecibir.Keys];

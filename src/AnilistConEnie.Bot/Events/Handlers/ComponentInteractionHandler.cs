@@ -11,7 +11,7 @@ using DSharpPlus.EventArgs;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class ComponentInteractionHandler(DiscordBotService discordBotService, BotConfiguration config, DiscordHelper discordHelper, AnilistHelper anilistHelper, IUsuariosAnilistRepository usuariosAnilistRepository)
+public class ComponentInteractionHandler(DiscordBotService discordBotService, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, AnilistHelper anilistHelper, IUsuariosAnilistRepository usuariosAnilistRepository)
 {
     public async Task Handle(DiscordClient client, ComponentInteractionCreatedEventArgs args)
     {
@@ -32,7 +32,7 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
             KeyValuePair<ulong, RangoEnum> chosenColor = coloresPorRango.FirstOrDefault(x => x.Key == chosenColorId);
             DiscordRole newColor = args.Guild.Roles[chosenColorId];
 
-            if (discordHelper.RangoAPartirDe(args.Guild, member, chosenColor.Value, false))
+            if (rangoRoles.RangoAPartirDe(args.Guild, member, chosenColor.Value, false))
             {
                 // do the actual color change (sacar el viejo si existe (pueden existir más de 1, usar where) y poner el nuevo)
                 IEnumerable<DiscordRole> oldColors = member.Roles.Where(x => coloresPorRango.ContainsKey(x.Id) && x.Id != chosenColorId);
@@ -45,7 +45,7 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
                     }
                     catch(Exception ex) 
                     {
-                        await discordHelper.GrabarLogGeneralError(args.Guild, $"No se pudo quitar el color antiguo {oldColor.Mention} a {member.Mention}: {ex.Message} {Formatter.BlockCode(ex.StackTrace)}");
+                        await logService.GrabarLogGeneralError(args.Guild, $"No se pudo quitar el color antiguo {oldColor.Mention} a {member.Mention}: {ex.Message} {Formatter.BlockCode(ex.StackTrace)}");
                     }
                 }
 
@@ -56,7 +56,7 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
                 }
                 catch (Exception ex)
                 {
-                    await discordHelper.GrabarLogGeneralError(args.Guild, $"No se pudo asignar el color {newColor.Mention} a {member.Mention}: {ex.Message} {Formatter.BlockCode(ex.StackTrace)}");
+                    await logService.GrabarLogGeneralError(args.Guild, $"No se pudo asignar el color {newColor.Mention} a {member.Mention}: {ex.Message} {Formatter.BlockCode(ex.StackTrace)}");
                 }
 
                 if (ok)

@@ -1,3 +1,6 @@
+using AnilistConEnie.Application.Challenges;
+using AnilistConEnie.Application.Membership;
+using AnilistConEnie.Application.Xp;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Services;
 using AnilistConEnie.Bot.Services.State;
@@ -10,7 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AnilistConEnie.Bot.Helpers;
 
-public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, InviteLinkState inviteLinkState, PermanentUsernameState permanentUsernameState, BotConfiguration config, DiscordHelper discordHelper, DiscordBotService discordBotService, IUsuariosActivosRepository usuariosActivosRepository, IUsuariosDiscordRepository usuariosDiscordRepository, IChallengesRepository challengesRepository)
+public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, XpChartService xpChartService, InviteLinkState inviteLinkState, PermanentUsernameState permanentUsernameState, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, DiscordBotService discordBotService, IUsuariosActivosRepository usuariosActivosRepository, IUsuariosDiscordRepository usuariosDiscordRepository, IChallengesRepository challengesRepository)
 {
     public async Task ClearInvitesRoleOnStartup(DiscordGuild guild)
     {
@@ -68,17 +71,11 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, Inv
 
     public async Task ManageMemberXp(DiscordGuild guild)
     {
-        const int min = 10;
-        const int max = 20;
-        const int minBoost = 1;
-        const int maxBoost = 3;
-
         (bool habilitado, ulong usuarioId) debug = xpState.GetDebugXp();
         DiscordChannel playroom = guild.Channels[config.Channels.Playroom];
 
         try
         {
-            Random rnd = new();
 
             List<ulong> membersToAddXp = xpState.GetMembersToObtainXp();
 
@@ -87,29 +84,23 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, Inv
                 if (!guild.Members.TryGetValue(userId, out DiscordMember? member) || member.IsBot)
                     continue;
 
-                int xp = rnd.Next(min, max + 1);
                 UserXp memberXp = xpState.GetUserXp(userId);
+                XpAccrual accrual = XpReward.Accrue(memberXp, member.PremiumSince != null, Random.Shared);
 
-                if (member.PremiumSince != null)
+                if (accrual.BoosterXp > 0)
                 {
-                    int xpBoost = rnd.Next(minBoost, maxBoost + 1);
-
-                    await usuariosDiscordRepository.AddOrRemoveUserXp(userId, 0, 0, xpBoost, 0, 0, 0, 0);
-                    long boosterXp = memberXp.Booster += xpBoost;
-                    xpState.UpdateUserXp(userId, boosterXp, TipoXp.Booster);
-
-                    xp += xpBoost;
+                    await usuariosDiscordRepository.AddOrRemoveUserXp(userId, new UserXpDelta { Booster = accrual.BoosterXp });
+                    xpState.UpdateUserXp(userId, accrual.NewBoosterTotal, TipoXp.Booster);
                 }
 
-                DiscordRole roleBefore = discordHelper.GetRoleByXpActual(guild, member);
-                long totalXp = memberXp.Total += xp;
-                DiscordRole roleAfter = discordHelper.GetRoleByXp(guild, totalXp);
-                xpState.UpdateUserXp(userId, totalXp, TipoXp.Total);
-                await usuariosDiscordRepository.AddOrRemoveUserXp(userId, 0, xp, 0, 0, 0, 0, 0);
+                DiscordRole roleBefore = rangoRoles.GetRoleByXpActual(guild, member);
+                DiscordRole roleAfter = rangoRoles.GetRoleByXp(guild, accrual.NewGrandTotal);
+                xpState.UpdateUserXp(userId, accrual.NewGrandTotal, TipoXp.Total);
+                await usuariosDiscordRepository.AddOrRemoveUserXp(userId, new UserXpDelta { Total = accrual.TotalGranted });
 
                 if (debug.habilitado && member.Id == debug.usuarioId)
                 {
-                    _ = playroom.SendMessageAsync($"Usuario: {member.DisplayName} | Cambio de XP: {xp} | XP Total: {totalXp} | Rango antes: {roleBefore.Mention} | Rango después: {roleAfter.Mention}");
+                    _ = playroom.SendMessageAsync($"Usuario: {member.DisplayName} | Cambio de XP: {accrual.TotalGranted} | XP Total: {accrual.NewGrandTotal} | Rango antes: {roleBefore.Mention} | Rango después: {roleAfter.Mention}");
                 }
 
                 if (roleBefore != roleAfter || member.Roles.All(x => x.Id != roleAfter.Id))
@@ -120,7 +111,7 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, Inv
         }
         catch (Exception ex)
         {
-            await discordHelper.GrabarLogGeneralError(guild, $"Error al dar XP\n{ex.Message}: {ex.StackTrace}");
+            await logService.GrabarLogGeneralError(guild, $"Error al dar XP\n{ex.Message}: {ex.StackTrace}");
         }
 
         xpState.ResetMembersToObtainXp();
@@ -129,7 +120,7 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, Inv
     private async Task SubirRango(DiscordGuild guild, DiscordMember member, DiscordRole oldRango, DiscordRole newRango)
     {
         DiscordChannel channel = guild.Channels[config.Channels.General];
-        DiscordEmoji emote = await DiscordHelper.GetApplicationEmojiAsync(discordBotService.Client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
+        DiscordEmoji emote = await DiscordEmojiHelper.GetApplicationEmojiAsync(discordBotService.Client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
         bool yaTieneNuevoRango = false;
 
         try
@@ -141,7 +132,7 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, Inv
         }
         catch (Exception ex)
         {
-            await discordHelper.GrabarLogGeneralError(guild, $"ERROR subiendo de rango {member.Mention} al rango {newRango.Mention}\n\n{ex.Message}:{Formatter.BlockCode(ex.StackTrace)}");
+            await logService.GrabarLogGeneralError(guild, $"ERROR subiendo de rango {member.Mention} al rango {newRango.Mention}\n\n{ex.Message}:{Formatter.BlockCode(ex.StackTrace)}");
         }
 
         if (!yaTieneNuevoRango)
@@ -160,7 +151,7 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, Inv
         }
         else
         {
-            await discordHelper.GrabarLogGeneralError(guild, $"El usuario {member.Mention} ya tenia el rango {newRango.Mention}\nSe omite mensaje de subir rango en general");
+            await logService.GrabarLogGeneralError(guild, $"El usuario {member.Mention} ya tenia el rango {newRango.Mention}\nSe omite mensaje de subir rango en general");
         }
     }
 
@@ -191,7 +182,7 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, Inv
                 try
                 {
                     DiscordMember userBday = guild.Members[(ulong)birthday.Id];
-                    if (userBday.Roles.All(x => x.Id != role.Id) && discordHelper.RangoAPartirDe(guild, userBday, RangoEnum.Casual, true))
+                    if (userBday.Roles.All(x => x.Id != role.Id) && rangoRoles.RangoAPartirDe(guild, userBday, RangoEnum.Casual, true))
                     {
                         await userBday.GrantRoleAsync(role);
 
@@ -224,22 +215,11 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, Inv
     {
         try
         {
-            List<DateTime> aniversariesDates = [];
-            int yearsGuildExists = DateTime.Now.Year - guild.CreationTimestamp.Year;
-
-            for (int i = 1; i <= yearsGuildExists; i++)
-            {
-                aniversariesDates.Add(DateTime.Now.AddYears(-i).Date);
-            }
+            DateTime now = DateTime.Now;
+            int guildCreationYear = guild.CreationTimestamp.Year;
 
             List<KeyValuePair<ulong, DiscordMember>> membersAniversaries = guild.Members
-                .Where(x =>
-                {
-                    DateTimeOffset fechaEntrada = config.GetFechaEntrada(x.Key, x.Value.JoinedAt);
-                    return aniversariesDates.Any(aniversaryDate =>
-                        fechaEntrada.Date == aniversaryDate &&
-                        fechaEntrada.Hour == DateTime.Now.Hour);
-                })
+                .Where(x => AniversarioCalculator.EsAniversarioAhora(config.GetFechaEntrada(x.Key, x.Value.JoinedAt), now, guildCreationYear))
                 .ToList();
 
             DiscordChannel canal = guild.Channels[config.Channels.General];
@@ -250,17 +230,11 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, Inv
                 {
                     DiscordMember member = memberPair.Value;
 
-                    if (!discordHelper.RangoAPartirDe(guild, member, RangoEnum.Kouhai, true))
+                    if (!rangoRoles.RangoAPartirDe(guild, member, RangoEnum.Kouhai, true))
                         continue;
 
                     DateTimeOffset joinedAt = config.GetFechaEntrada(member.Id, member.JoinedAt);
-                    int yearsInServer = DateTime.Now.Year - joinedAt.Year;
-
-                    if (joinedAt.Month > DateTime.Now.Month ||
-                        (joinedAt.Month == DateTime.Now.Month && joinedAt.Day > DateTime.Now.Day))
-                    {
-                        yearsInServer--;
-                    }
+                    int yearsInServer = AniversarioCalculator.AniosEnServidor(joinedAt, now);
 
                     await canal.SendMessageAsync(new DiscordEmbedBuilder()
                         .WithTitle("¡Aniversario en el servidor!")
@@ -271,13 +245,13 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, Inv
                 }
                 catch (Exception ex)
                 {
-                    await discordHelper.GrabarLogGeneralError(guild, $"Error al procesar aniversario de {memberPair.Value.DisplayName}: {ex.Message}");
+                    await logService.GrabarLogGeneralError(guild, $"Error al procesar aniversario de {memberPair.Value.DisplayName}: {ex.Message}");
                 }
             }
         }
         catch (Exception ex)
         {
-            await discordHelper.GrabarLogGeneralError(guild, $"Error en ManageAniversaries: {ex.Message}\n\n{Formatter.BlockCode(ex.StackTrace)}");
+            await logService.GrabarLogGeneralError(guild, $"Error en ManageAniversaries: {ex.Message}\n\n{Formatter.BlockCode(ex.StackTrace)}");
         }
     }
 
@@ -314,7 +288,8 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, Inv
     public async Task ManageChallenges()
     {
         List<Challenge> challenges = await challengesRepository.GetLista();
-        IEnumerable<Challenge> challengesObsoletos = challenges.Where(x => x.Vencimiento != null && x.Disponible && DateTime.Today.AddDays(1) > x.Vencimiento);
+        DateTime hoy = DateTime.Today;
+        IEnumerable<Challenge> challengesObsoletos = challenges.Where(x => ChallengePolicy.EstaVencido(x, hoy));
 
         foreach (Challenge challenge in challengesObsoletos)
         {
@@ -331,7 +306,7 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, Inv
             foreach (UserXp user in rankings)
             {
                 await usuariosDiscordRepository.AddDailyXp(date, (ulong)user.UserId, user.Total);
-                await xpState.AddUserXpToChartHistory((ulong)user.UserId, user.Total, date);
+                await xpChartService.AddUserXpToChartHistory((ulong)user.UserId, user.Total, date);
             }
         }
         catch (Exception e)

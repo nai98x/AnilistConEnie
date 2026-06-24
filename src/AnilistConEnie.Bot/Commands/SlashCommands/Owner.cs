@@ -61,7 +61,7 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
         {
             Title = "Test GetFechaEntrada",
             Description = string.Join("\n\n", lineas),
-            Color = DiscordHelper.GetColor()
+            Color = DiscordEmojiHelper.GetColor()
         }));
     }
     
@@ -146,7 +146,7 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
                     "- Cierra la página web y haz click en el botón llamado **Pegar código aquí**\n" +
                     "- Pega el código en el formulario y envíalo")
                 .WithFooter("Apenas tengas tu cuenta de AniList vinculada, se te desbloquearán todos los canales del servidor.")
-                .WithColor(DiscordHelper.GetColor()))
+                .WithColor(DiscordEmojiHelper.GetColor()))
             .AddActionRowComponent(
                 new DiscordLinkButtonComponent("https://anilist.co/api/v2/oauth/authorize?client_id=8655&response_type=token", "Autorizar"),
                 new DiscordButtonComponent(DiscordButtonStyle.Primary, "modal-anilistprofileset", "Pegar código aquí"));
@@ -210,7 +210,7 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
         {
             Title = "Rate limits",
             Description = desc,
-            Color = DiscordHelper.GetColor()
+            Color = DiscordEmojiHelper.GetColor()
         }));
     }
 

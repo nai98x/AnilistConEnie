@@ -25,7 +25,8 @@ public static class BotServiceExtensions
         services.AddSingleton<ChallengePostsState>();
 
         // Helpers
-        services.AddSingleton<DiscordHelper>();
+        services.AddSingleton<RangoRoles>();
+        services.AddSingleton<DiscordLogService>();
         services.AddSingleton<AnilistHelper>();
         services.AddSingleton<BehaviorHelper>();
         services.AddSingleton<FunHelper>();

@@ -24,8 +24,7 @@ public static class NumberHelper
     {
         if (min <= 0 && max <= 0)
             return 0;
-        Random rnd = new();
-        return rnd.Next(minValue: min, maxValue: max);
+        return Random.Shared.Next(minValue: min, maxValue: max);
     }
 
     public static long ObtenerMultiploAnterior(long numero, int multiplo) => numero / multiplo * multiplo;

@@ -45,7 +45,7 @@ public class Premios(IPremiosRepository premiosRepository)
         {
             Title = "Premios de temporada del servidor",
             Description = desc,
-            Color = DiscordHelper.GetColor(),
+            Color = DiscordEmojiHelper.GetColor(),
             Footer = new DiscordEmbedBuilder.EmbedFooter
             {
                 Text = "Si no puedes acceder a los links debes agregar la actividad \"Contenido extra\""

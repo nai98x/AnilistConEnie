@@ -35,6 +35,7 @@ public class BotConfiguration
         public required ulong Pdd { get; init; }
         public required ulong Bienvenida { get; init; }
         public required ulong Colores { get; init; }
+        public required ulong Teiou { get; init; }
         public required IntercambiosChannelConfiguration Intercambios { get; init; }
 
         public class IntercambiosChannelConfiguration
@@ -62,6 +63,7 @@ public class BotConfiguration
         public required ulong Cumple { get; init; }
         public required ulong GeneroMasculino { get; init; }
         public required ulong GeneroFemenino { get; init; }
+        public required ulong OtrosPais { get; init; }
         public required RangosConfiguration Rangos { get; init; }
         public required IReadOnlyList<ColorRangoConfiguration> ColoresRango { get; init; }
 
@@ -82,8 +84,10 @@ public class BotConfiguration
     {
         public required EmoteIds UmaPoints { get; init; }
         public required EmoteIds Worrysad { get; init; }
+        public required EmoteIds GatoVanguard { get; init; }
+        public required EmoteIds LoreaEste { get; init; }
         public required ulong ConfessionReaction { get; init; }
-        public required ulong Pdd { get; init; }
+        public required ulong Tenshi { get; init; }
 
         public record EmoteIds(ulong Prod, ulong Test)
         {
@@ -126,6 +130,7 @@ public class BotConfiguration
                 Pdd = RequireUlong(channels, "Pdd"),
                 Bienvenida = RequireUlong(channels, "Bienvenida"),
                 Colores = RequireUlong(channels, "Colores"),
+                Teiou = RequireUlong(channels, "Teiou"),
                 LogChannelPuerta = RequireUlong(channels, "LogChannelPuerta"),
                 Intercambios = new ChannelConfiguration.IntercambiosChannelConfiguration
                 {
@@ -151,6 +156,7 @@ public class BotConfiguration
                 Cumple = RequireUlong(roles, "Cumple"),
                 GeneroMasculino = RequireUlong(roles, "GeneroMasculino"),
                 GeneroFemenino = RequireUlong(roles, "GeneroFemenino"),
+                OtrosPais = RequireUlong(roles, "OtrosPais"),
                 Rangos = new RolesConfiguration.RangosConfiguration
                 {
                     Tama = RequireUlong(rangos, "Tama"),
@@ -168,8 +174,10 @@ public class BotConfiguration
             {
                 UmaPoints = RequireEmoteIds(emotes, "UmaPoints"),
                 Worrysad = RequireEmoteIds(emotes, "Worrysad"),
+                GatoVanguard = RequireEmoteIds(emotes, "Gatovanguard"),
+                LoreaEste = RequireEmoteIds(emotes, "LoreaEste"),
                 ConfessionReaction = RequireUlong(emotes, "ConfessionReaction"),
-                Pdd = RequireUlong(emotes, "Pdd"),
+                Tenshi = RequireUlong(emotes, "Tenshi"),
             },
             PaisTimezones = RequirePaisTimezones(ids),
             FechasEntradaExcepciones = ReadFechasEntradaExcepciones(configuration)

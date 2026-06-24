@@ -2,10 +2,12 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using AnilistConEnie.Application.Charts;
 using AnilistConEnie.Application.Extensions;
 using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
+using AnilistConEnie.Bot.Services;
 using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Enum;
@@ -26,7 +28,8 @@ namespace AnilistConEnie.Bot.Commands.SlashCommands;
 //[TestCommand]
 public class Fun(
     BotConfiguration config,
-    DiscordHelper discordHelper,
+    DiscordBotService discordBotService,
+    RangoRoles rangoRoles,
     FunHelper funHelper,
     BoluditosState boluditosState,
     ConfessionsState confessionsState,
@@ -147,7 +150,7 @@ public class Fun(
 
         foreach (KeyValuePair<ulong, DiscordMember> member in ctx.Guild!.Members)
         {
-            if (member.Value.IsBot || member.Value.Id == usuario.Id || !discordHelper.RangoAPartirDe(ctx.Guild, member.Value, RangoEnum.Tama, true))
+            if (member.Value.IsBot || member.Value.Id == usuario.Id || !rangoRoles.RangoAPartirDe(ctx.Guild, member.Value, RangoEnum.Tama, true))
                 continue;
 
             Random rnd = new((int)(usuario.Id + member.Key));
@@ -227,10 +230,10 @@ public class Fun(
         await ctx.DeferResponseAsync();
 
         InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
-        Random rnd = new();
+        Random rnd = Random.Shared;
 
         List<DiscordMember> miembros = ctx.Guild!.Members.Values
-            .Where(x => !x.IsBot && x.Id != ctx.User.Id && discordHelper.RangoAPartirDe(ctx.Guild, x, RangoEnum.Tama, activo))
+            .Where(x => !x.IsBot && x.Id != ctx.User.Id && rangoRoles.RangoAPartirDe(ctx.Guild, x, RangoEnum.Tama, activo))
             .ToList();
 
         if (miembros.Count < 3)
@@ -389,46 +392,19 @@ public class Fun(
                 .WithColor(DiscordColor.Gold));
         }
 
-        string gaugeConfig = $$"""
-        {
-            type: 'gauge',
-            data: {
-                labels: ['Normal', 'Boludo', 'Boludito'],
-                datasets: [{ data: [50, 100], value: {{value}}, minValue: 0, backgroundColor: ['green', 'red'], borderWidth: 4 }]
-            },
-            options: {
-                legend: { display: false },
-                title: { display: false, text: 'Boludometro' },
-                needle: { radiusPercentage: 1, widthPercentage: 1, lengthPercentage: 60, color: '#fff' },
-                valueLabel: { fontSize: 35, backgroundColor: 'transparent', color: '#00F0FF', formatter: function (value, context) { return value + '%'; }, bottomMarginPercentage: 10 },
-                plugins: { datalabels: { display: 'auto', formatter: function (value, context) { return context.chart.data.labels[context.dataIndex]; }, color: '#fff' } }
-            }
-        }
-        """;
-
         double promedio = puntosPorDia.Values.Average();
         KeyValuePair<int, int> max = puntosPorDia.MaxBy(x => x.Value);
         KeyValuePair<int, int> min = puntosPorDia.MinBy(x => x.Value);
 
-        string lineConfig = $$"""
-        {
-            type: 'line',
-            data: {
-                labels: [ {{string.Join(",", puntosPorDia.Keys)}} ],
-                datasets: [{ label: 'Boludómetro de {{member.DisplayName}}', backgroundColor: 'rgb(255, 99, 132)', borderColor: 'rgb(255, 99, 132)', data: [ {{string.Join(",", puntosPorDia.Values)}} ], fill: false }]
-            },
-            "options": { "scales": { "yAxes": [ { "ticks": { "min": 0, "max": 100 } } ] } }
-        }
-        """;
-
-        string gaugeUrl = await chartClient.CreateUrlAsync(new ChartRequest { Config = gaugeConfig, Width = 500, Height = 300, BackgroundColor = "transparent" });
-        string lineUrl = await chartClient.CreateUrlAsync(new ChartRequest { Config = lineConfig, Width = 500, Height = 300, BackgroundColor = "transparent" });
+        string gaugeUrl = await chartClient.CreateUrlAsync(FunCharts.BoludoGauge(value));
+        string lineUrl = await chartClient.CreateUrlAsync(FunCharts.BoludoLine(member.DisplayName, puntosPorDia.Keys, puntosPorDia.Values));
 
         char genero = funHelper.GetGenero(member);
+        DiscordEmoji loreaEste = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.LoreaEste.Get(discordBotService.Debug));
 
         DiscordEmbed embedDiario = new DiscordEmbedBuilder()
             .WithTitle("Boludómetro")
-            .WithDescription(funHelper.BoluditoLevel(ctx.Client, member, value))
+            .WithDescription(funHelper.BoluditoLevel(loreaEste, member, value))
             .WithThumbnail(member.GuildAvatarUrl ?? member.AvatarUrl)
             .WithImageUrl(gaugeUrl)
             .Build();
@@ -450,7 +426,7 @@ public class Fun(
             { "Historial", embedHistorial }
         };
 
-        await DiscordHelper.SwitchTabsAsync(ctx, tabs);
+        await DiscordInteractivity.SwitchTabsAsync(ctx, tabs);
     }
 
     [Command("horoscopo")]
@@ -589,7 +565,7 @@ public class Fun(
     {
         List<DiscordMember> miembros = ctx.Guild!.Members.Values
             .Where(x => !x.IsBot && x.Id != excluirId
-                        && (ctx.Guild.Id != config.GuildId || discordHelper.RangoAPartirDe(ctx.Guild, x, RangoEnum.Tama, true)))
+                        && (ctx.Guild.Id != config.GuildId || rangoRoles.RangoAPartirDe(ctx.Guild, x, RangoEnum.Tama, true)))
             .ToList();
 
         return miembros[Random.Shared.Next(miembros.Count)];

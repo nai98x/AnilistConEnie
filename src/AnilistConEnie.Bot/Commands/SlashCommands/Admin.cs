@@ -6,6 +6,7 @@ using AnilistConEnie.Bot.Commands.Enums;
 using AnilistConEnie.Bot.Commands.SlashCommands.Attributes;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
+using AnilistConEnie.Bot.Services;
 using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Entities.Anilist;
@@ -28,7 +29,8 @@ namespace AnilistConEnie.Bot.Commands.SlashCommands;
 [TestCommand]
 public class Admin(
     BotConfiguration config,
-    DiscordHelper discordHelper,
+    DiscordBotService discordBotService,
+    DiscordLogService logService,
     EmoteModeState emoteModeState,
     InviteLinkState inviteLinkState,
     AnilistUsersState anilistUsersState,
@@ -105,7 +107,7 @@ public class Admin(
         await ctx.DeferResponseAsync();
         if (!await EnsureAdminAsync(ctx)) return;
 
-        DiscordEmoji? emote = DiscordHelper.ToEmoji(ctx.Client, emojiStr);
+        DiscordEmoji? emote = DiscordEmojiHelper.ToEmoji(ctx.Client, emojiStr);
         if (emote is null)
         {
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
@@ -246,9 +248,10 @@ public class Admin(
         };
         string desc = desc1 + desc2;
         int action = accion == AccionXp.Agregar ? 0 : 1;
+        XpOperation operation = accion == AccionXp.Agregar ? XpOperation.Add : XpOperation.Remove;
         string accionTitulo = darXp ? $"{accionStr} Xp?" : $"Agregar xp a categoria {((Enum)categoria).GetDescription().ToLower()} sin dar xp?";
 
-        bool confirmed = await DiscordHelper.GetSiNoInteractivity(ctx, accionTitulo, desc);
+        bool confirmed = await DiscordInteractivity.GetSiNoInteractivity(ctx, accionTitulo, desc);
 
         if (confirmed)
         {
@@ -286,7 +289,7 @@ public class Admin(
                     if (darXp)
                     {
                         xpState.UpdateUserXp(miembro.Id, totalXp, TipoXp.Total);
-                        await usuariosDiscordRepository.AddOrRemoveUserXp(miembro.Id, action, (int)xp, 0, challenges, eventos, intercambios, otros);
+                        await usuariosDiscordRepository.AddOrRemoveUserXp(miembro.Id, new UserXpDelta { Total = (int)xp, Challenges = challenges, Eventos = eventos, Intercambios = intercambios, Otros = otros }, operation);
 
                         await channel.SendMessageAsync(new DiscordEmbedBuilder()
                             .WithTitle("Experiencia modificada")
@@ -296,7 +299,7 @@ public class Admin(
                     }
                     else
                     {
-                        await usuariosDiscordRepository.AddOrRemoveUserXp(miembro.Id, action, 0, 0, challenges, eventos, intercambios, otros);
+                        await usuariosDiscordRepository.AddOrRemoveUserXp(miembro.Id, new UserXpDelta { Challenges = challenges, Eventos = eventos, Intercambios = intercambios, Otros = otros }, operation);
 
                         await channel.SendMessageAsync(new DiscordEmbedBuilder()
                             .WithTitle("Experiencia modificada sin dar xp")
@@ -307,7 +310,7 @@ public class Admin(
                 }
                 catch (Exception ex)
                 {
-                    await discordHelper.GrabarLogGeneralError(ctx.Guild, $"Error agregando xp\n{ex.Message}\n{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
+                    await logService.GrabarLogGeneralError(ctx.Guild, $"Error agregando xp\n{ex.Message}\n{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
 
                     await channel.SendMessageAsync(new DiscordEmbedBuilder()
                         .WithTitle("Experiencia no agregada")
@@ -408,7 +411,7 @@ public class Admin(
         if (!await EnsureAdminAsync(ctx)) return;
 
         DiscordChannel channel = ctx.Guild!.Channels[config.Channels.Pdd];
-        DiscordEmoji emote = DiscordEmoji.FromGuildEmote(ctx.Client, config.Emotes.Pdd);
+        DiscordEmoji emote = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.GatoVanguard.Get(discordBotService.Debug));
         DiscordRole rol = ctx.Guild.Roles[config.Roles.Pdd];
 
         DiscordEmbedBuilder embed = new DiscordEmbedBuilder()
@@ -419,7 +422,7 @@ public class Admin(
             .WithFooter("Sugerir preguntas disminuye tu porcentaje de boludito", PddFooterIcon)
             .WithColor(DiscordColor.Blue);
 
-        bool ok = await DiscordHelper.GetSiNoInteractivity(ctx, "Confirmar PDD", "Confirma la creación de esta pregunta del día", embed.Build());
+        bool ok = await DiscordInteractivity.GetSiNoInteractivity(ctx, "Confirmar PDD", "Confirma la creación de esta pregunta del día", embed.Build());
 
         if (!ok)
         {
@@ -617,7 +620,7 @@ public class Admin(
         }
         catch (Exception ex)
         {
-            await discordHelper.GrabarLogGeneralError(ctx.Guild!, $"{ex.Message}\n\n{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
+            await logService.GrabarLogGeneralError(ctx.Guild!, $"{ex.Message}\n\n{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
         }
     }
 

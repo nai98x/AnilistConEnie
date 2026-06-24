@@ -1,3 +1,4 @@
+using AnilistConEnie.Application.Xp;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
@@ -11,7 +12,7 @@ using DSharpPlus.EventArgs;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class GuildMemberRemovedHandler(DiscordBotService discordBotService, XpState xpState, BotConfiguration config, DiscordHelper discordHelper, IUsuariosAnilistRepository usuariosAnilistRepository)
+public class GuildMemberRemovedHandler(DiscordBotService discordBotService, XpState xpState, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, IUsuariosAnilistRepository usuariosAnilistRepository)
 {
     public async Task Handle(DiscordClient client, GuildMemberRemovedEventArgs args)
     {
@@ -24,11 +25,11 @@ public class GuildMemberRemovedHandler(DiscordBotService discordBotService, XpSt
 
             if (args.Member.Roles.Any(x => x.Id == config.Roles.Miembro))
             {
-                DiscordEmoji umaPoints = await DiscordHelper.GetApplicationEmojiAsync(client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
-                DiscordEmoji worrysad = await DiscordHelper.GetApplicationEmojiAsync(client, config.Emotes.Worrysad.Get(discordBotService.Debug));
-                DiscordRole role = discordHelper.GetRoleByXp(args.Guild, rank.Total);
+                DiscordEmoji umaPoints = await DiscordEmojiHelper.GetApplicationEmojiAsync(client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
+                DiscordEmoji worrysad = await DiscordEmojiHelper.GetApplicationEmojiAsync(client, config.Emotes.Worrysad.Get(discordBotService.Debug));
+                DiscordRole role = rangoRoles.GetRoleByXp(args.Guild, rank.Total);
 
-                if (rank.Total > DiscordHelper.GetXpFromRango(RangoEnum.Casual))
+                if (rank.Total > RangoXp.XpRequerida(RangoEnum.Casual))
                 {
                     DiscordEmbedBuilder embedBuilder = new();
                     embedBuilder.WithTitle($"Tenemos una baja");
@@ -49,9 +50,9 @@ public class GuildMemberRemovedHandler(DiscordBotService discordBotService, XpSt
             UsuarioAnilist? usuario = await usuariosAnilistRepository.GetPerfil(args.Member.Id);
             if (usuario != null)
             {
-                await discordHelper.BorrarMensajeUsuarioAnilist(args.Guild, usuario.MessageId);
+                await logService.BorrarMensajeUsuarioAnilist(args.Guild, usuario.MessageId);
                 await usuariosAnilistRepository.DeleteAnilist(args.Member.Id);
-                await discordHelper.GrabarLogUsuarioOutAnilist(args.Guild, args.Member, usuario, rank);
+                await logService.GrabarLogUsuarioOutAnilist(args.Guild, args.Member, usuario, rank);
             }
             #endregion
         }

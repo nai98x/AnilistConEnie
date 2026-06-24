@@ -17,7 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AnilistConEnie.Bot.Helpers;
 
-public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState, ChallengePostsState challengePostsState, BotConfiguration config, DiscordHelper discordHelper, AnilistServerScoreService scoreService, IUsuariosAnilistRepository usuariosAnilistRepository, IAnilistClient anilistClient)
+public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState, ChallengePostsState challengePostsState, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, AnilistServerScoreService scoreService, IUsuariosAnilistRepository usuariosAnilistRepository, IAnilistClient anilistClient)
 {
     public async Task TerminarVinculacion(DiscordClient client, DiscordUser user, DiscordMember member, DiscordGuild guild, AnilistUser anilistUser)
     {
@@ -26,7 +26,7 @@ public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState,
             Title = $"¡Bienvenido {member.DisplayName}!",
             Description = $"Hola {member.Mention}, ¡Bienvenido a **Añilist**! Eres nuestro **miembro nº {guild.MemberCount}**",
             ImageUrl = $"https://images-ext-2.discordapp.net/external/S1VMfYfgS0oqoMukCNxKw5HsZxZQTEvWkpG-4Q3qVyA/https/cdn-longterm.mee6.xyz/plugins/welcome/images/{config.GuildId}/20b91584d1b680f1905f5b2f5295a44907bd17e876c56ab10de43f1cd406d1db.gif",
-            Color = DiscordHelper.GetColor()
+            Color = DiscordEmojiHelper.GetColor()
         };
 
         DiscordEmbedBuilder newProfileEmbed = new()
@@ -104,7 +104,7 @@ public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState,
 
             if (prevXp.Total > 0)
             {
-                DiscordRole role = discordHelper.GetRoleByXp(guild, prevXp.Total);
+                DiscordRole role = rangoRoles.GetRoleByXp(guild, prevXp.Total);
                 if (!member.Roles.Any(x => x.Id == role.Id))
                 {
                     await member.GrantRoleAsync(role);
@@ -113,7 +113,7 @@ public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState,
         }
         catch (Exception ex)
         {
-            await discordHelper.GrabarLogGeneralError(guild, $"Error agregando rol miembro al vincular AniList para el usuario {user.Id}\n\n{ex.Message}:\n\n{ex.StackTrace}");
+            await logService.GrabarLogGeneralError(guild, $"Error agregando rol miembro al vincular AniList para el usuario {user.Id}\n\n{ex.Message}:\n\n{ex.StackTrace}");
         }
     }
 
@@ -127,7 +127,7 @@ public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState,
         foreach (UsuarioAnilist usuario in anilistUsersState.Usuarios)
         {
             if (!miembros.TryGetValue((ulong)usuario.UserId, out DiscordMember? miembro)
-                || !discordHelper.RangoAPartirDe(guild, miembro, RangoEnum.Miembro, true))
+                || !rangoRoles.RangoAPartirDe(guild, miembro, RangoEnum.Miembro, true))
                 continue;
 
             if (AnilistProfileUrl.TryGetUserId(usuario.AnilistURL, out int anilistId))

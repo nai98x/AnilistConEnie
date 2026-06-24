@@ -189,7 +189,7 @@ public class UsuariosDiscordRepository(FirebaseService firebase) : FirestoreRepo
         await SetIfAbsentAsync(doc, data);
     }
 
-    public async Task AddOrRemoveUserXp(ulong userId, int action, int total, int booster, int challenges, int eventos, int intercambios, int otros)
+    public async Task AddOrRemoveUserXp(ulong userId, UserXpDelta delta, XpOperation operation = XpOperation.Add)
     {
         FirestoreDb db = await GetDbAsync();
 
@@ -200,12 +200,12 @@ public class UsuariosDiscordRepository(FirebaseService firebase) : FirestoreRepo
             Dictionary<string, object> data = new()
             {
                 { "UserId", userId },
-                { "Total", total },
-                { "Booster", booster },
-                { "Challenges", challenges },
-                { "Eventos", eventos },
-                { "Intercambios", intercambios },
-                { "Otros", otros }
+                { "Total", delta.Total },
+                { "Booster", delta.Booster },
+                { "Challenges", delta.Challenges },
+                { "Eventos", delta.Eventos },
+                { "Intercambios", delta.Intercambios },
+                { "Otros", delta.Otros }
             };
 
             await doc.SetAsync(data);
@@ -213,38 +213,17 @@ public class UsuariosDiscordRepository(FirebaseService firebase) : FirestoreRepo
         else
         {
             UserXp registro = snap.ConvertTo<UserXp>();
-
-            long booster1, challenges1, eventos1, intercambios1, otros1;
-
-            long total1 = registro.Total;
-            if (action == 0)
-            {
-                total1 += total;
-                booster1 = registro.Booster; booster1 += booster;
-                challenges1 = registro.Challenges; challenges1 += challenges;
-                eventos1 = registro.Eventos; eventos1 += eventos;
-                intercambios1 = registro.Intercambios; intercambios1 += intercambios;
-                otros1 = registro.Otros; otros1 += otros;
-            }
-            else
-            {
-                total1 -= total;
-                booster1 = registro.Booster; booster1 -= booster;
-                challenges1 = registro.Challenges; challenges1 -= challenges;
-                eventos1 = registro.Eventos; eventos1 -= eventos;
-                intercambios1 = registro.Intercambios; intercambios1 -= intercambios;
-                otros1 = registro.Otros; otros1 -= otros;
-            }
+            int sign = operation == XpOperation.Add ? 1 : -1;
 
             Dictionary<string, object> data = new()
             {
                 { "UserId", registro.UserId },
-                { "Total", total1 },
-                { "Booster", booster1 },
-                { "Challenges", challenges1 },
-                { "Eventos", eventos1 },
-                { "Intercambios", intercambios1 },
-                { "Otros", otros1 }
+                { "Total", registro.Total + sign * delta.Total },
+                { "Booster", registro.Booster + sign * delta.Booster },
+                { "Challenges", registro.Challenges + sign * delta.Challenges },
+                { "Eventos", registro.Eventos + sign * delta.Eventos },
+                { "Intercambios", registro.Intercambios + sign * delta.Intercambios },
+                { "Otros", registro.Otros + sign * delta.Otros }
             };
 
             await doc.UpdateAsync(data);

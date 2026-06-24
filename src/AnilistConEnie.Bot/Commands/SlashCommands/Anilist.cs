@@ -48,7 +48,7 @@ public class Anilist(IAnilistClient anilistClient, AnilistHelper anilistHelper, 
             Description = AnilistMediaFormatter.OptionSubtitle(m)
         }).ToList();
 
-        int elegido = await DiscordHelper.GetElegidoAsync(ctx, 60, opciones);
+        int elegido = await DiscordInteractivity.GetElegidoAsync(ctx, 60, opciones);
         if (elegido <= 0)
         {
             await ctx.EditResponseAsync(new DiscordWebhookBuilder()
@@ -63,7 +63,7 @@ public class Anilist(IAnilistClient anilistClient, AnilistHelper anilistHelper, 
         {
             Title = $"Buscando scores de {AnilistMediaFormatter.DisplayTitle(media)}…",
             Description = "Esto puede demorar unos segundos.",
-            Color = DiscordHelper.GetColor()
+            Color = DiscordEmojiHelper.GetColor()
         }));
 
         string scores = await anilistHelper.GetServerScoresAsync(ctx.Guild!, media, includeUsersWithoutScore: true);
@@ -75,7 +75,7 @@ public class Anilist(IAnilistClient anilistClient, AnilistHelper anilistHelper, 
                 ? $"Scores de {AnilistMediaFormatter.DisplayTitle(media)} [NSFW] en {ctx.Guild!.Name}"
                 : $"Scores de {AnilistMediaFormatter.DisplayTitle(media)} en {ctx.Guild!.Name}",
             Url = media.SiteUrl,
-            Color = DiscordHelper.GetColor()
+            Color = DiscordEmojiHelper.GetColor()
         };
 
         if (!media.IsAdult || ctx.Channel.IsNSFW || (ctx.Channel.Parent?.IsNSFW ?? false))

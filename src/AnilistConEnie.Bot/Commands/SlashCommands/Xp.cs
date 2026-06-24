@@ -1,9 +1,11 @@
 using System.ComponentModel;
 using System.Globalization;
+using AnilistConEnie.Application.Charts;
 using AnilistConEnie.Application.Extensions;
 using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Application.Xp;
 using AnilistConEnie.Bot.Commands.Enums;
+using AnilistConEnie.Bot.Commands.SlashCommands.Attributes;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
@@ -24,18 +26,16 @@ namespace AnilistConEnie.Bot.Commands.SlashCommands;
 //[TestCommand]
 public class Xp(
     BotConfiguration config,
-    DiscordHelper discordHelper,
+    RangoRoles rangoRoles,
     XpState xpState,
+    XpChartService xpChartService,
     IChartClient chartClient,
     DiscordBotService discordBotService)
 {
     private const string RankThumbnail = "https://media.discordapp.net/attachments/862568630365323264/990747470508204032/unknown.png";
-    private const ulong OtrosPaisRoleId = 1072636983643480127;
-    private const ulong TeiouChannelId = 1263346364750758019;
-    private const ulong TenshiEmoteId = 1236843853882069103;
 
     private ValueTask<DiscordEmoji> UmaPointsAsync(SlashCommandContext ctx) =>
-        DiscordHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
+        DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
 
     [Command("top")]
     [Description("Muestra el ranking de experiencia del servidor")]
@@ -47,71 +47,42 @@ public class Xp(
 
         DiscordEmoji ghost = DiscordEmoji.FromUnicode("👻");
         List<UserXp> xp = xpState.GetGuildXp(ctx.Guild!);
-        List<RankEntry> rankings = [];
 
-        switch (tipo)
+        XpRankingCategory category = tipo switch
         {
-            case TipoXpTopCommand.Total:
-                int i = 0;
-                foreach (UserXp xpUsr in xp.OrderByDescending(x => x.Total))
-                    rankings.Add(new RankEntry(++i, xpUsr.Total, (ulong)xpUsr.UserId));
-                break;
-            case TipoXpTopCommand.Mensajes:
-                int y = 0;
-                IEnumerable<(long UserId, long Mensajes)> mensajes = xp
-                    .Select(x => (x.UserId, x.Total - x.Booster - x.Intercambios - x.Challenges - x.Eventos - x.Otros))
-                    .OrderByDescending(x => x.Item2);
-                foreach ((long userId, long score) in mensajes)
-                    if (score > 0) rankings.Add(new RankEntry(++y, score, (ulong)userId));
-                break;
-            default:
-                int z = 0;
-                IEnumerable<(long UserId, long Score)> categoria = tipo switch
-                {
-                    TipoXpTopCommand.Eventos => xp.Select(x => (x.UserId, x.Eventos)),
-                    TipoXpTopCommand.Challenges => xp.Select(x => (x.UserId, x.Challenges)),
-                    TipoXpTopCommand.Intercambios => xp.Select(x => (x.UserId, x.Intercambios)),
-                    TipoXpTopCommand.Booster => xp.Select(x => (x.UserId, x.Booster)),
-                    _ => xp.Select(x => (x.UserId, x.Otros))
-                };
-                foreach ((long userId, long score) in categoria.OrderByDescending(x => x.Item2))
-                    if (score > 0) rankings.Add(new RankEntry(++z, score, (ulong)userId));
+            TipoXpTopCommand.Total => XpRankingCategory.Total,
+            TipoXpTopCommand.Mensajes => XpRankingCategory.Mensajes,
+            TipoXpTopCommand.Intercambios => XpRankingCategory.Intercambios,
+            TipoXpTopCommand.Eventos => XpRankingCategory.Eventos,
+            TipoXpTopCommand.Challenges => XpRankingCategory.Challenges,
+            TipoXpTopCommand.Booster => XpRankingCategory.Booster,
+            _ => XpRankingCategory.Otros
+        };
 
-                if (rankings.Count == 0)
-                {
-                    await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-                        .WithTitle("Error")
-                        .WithDescription($"No hay registros para la categoria `{((Enum)tipo).GetDescription()}`")
-                        .WithColor(DiscordColor.Red)));
-                    return;
-                }
-                break;
+        IReadOnlyList<XpRankEntry> rankings = XpRanking.Build(xp, category);
+
+        if (rankings.Count == 0 && tipo is not (TipoXpTopCommand.Total or TipoXpTopCommand.Mensajes))
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                .WithTitle("Error")
+                .WithDescription($"No hay registros para la categoria `{((Enum)tipo).GetDescription()}`")
+                .WithColor(DiscordColor.Red)));
+            return;
         }
 
         DiscordEmoji umaPoints = await UmaPointsAsync(ctx);
 
-        string positionDesc = "No participas en este ranking";
-        int position = rankings.FindIndex(x => x.UserId == ctx.User.Id);
-        if (position >= 0)
+        string RivalName(ulong rivalId) =>
+            ctx.Guild!.Members.TryGetValue(rivalId, out DiscordMember? r) ? r.DisplayName : "un fantasma";
+
+        RankPosition pos = XpRanking.ResolvePosition(rankings, ctx.User.Id);
+        string positionDesc = pos.Kind switch
         {
-            RankEntry you = rankings[position];
-            if (rankings.Count == 1)
-            {
-                positionDesc = "Tu posición es #1";
-            }
-            else if (position > 0)
-            {
-                RankEntry rival = rankings[position - 1];
-                string rivalName = ctx.Guild!.Members.TryGetValue(rival.UserId, out DiscordMember? r) ? r.DisplayName : "un fantasma";
-                positionDesc = $"Tu posición es #{position + 1} y te faltan {(rival.Score - you.Score).ToSpanish()} de xp para alcanzar a {rivalName}";
-            }
-            else
-            {
-                RankEntry rival = rankings[1];
-                string rivalName = ctx.Guild!.Members.TryGetValue(rival.UserId, out DiscordMember? r) ? r.DisplayName : "un fantasma";
-                positionDesc = $"Tu posición es #1 y a {rivalName} le faltan {(you.Score - rival.Score).ToSpanish()} de xp para alcanzarte";
-            }
-        }
+            RankPositionKind.Absent => "No participas en este ranking",
+            RankPositionKind.SoloLeader => "Tu posición es #1",
+            RankPositionKind.Behind => $"Tu posición es #{pos.PositionNumber} y te faltan {pos.Diff.ToSpanish()} de xp para alcanzar a {RivalName(pos.RivalUserId)}",
+            _ => $"Tu posición es #1 y a {RivalName(pos.RivalUserId)} le faltan {pos.Diff.ToSpanish()} de xp para alcanzarte"
+        };
 
         string fullText = string.Join("\n", rankings.Select(rk =>
         {
@@ -120,7 +91,7 @@ public class Xp(
         }));
 
         DiscordEmbedBuilder embed = new DiscordEmbedBuilder()
-            .WithColor(DiscordHelper.GetColor())
+            .WithColor(DiscordEmojiHelper.GetColor())
             .WithTitle($"Ranking de experiencia [{((Enum)tipo).GetDescription().ToUpper()}]")
             .WithThumbnail(RankThumbnail)
             .WithFooter(positionDesc, ctx.User.AvatarUrl);
@@ -151,72 +122,20 @@ public class Xp(
         }
 
         DiscordEmoji umaPoints = await UmaPointsAsync(ctx);
-        DiscordRole role = discordHelper.GetRoleByXp(ctx.Guild!, rank.Total);
+        DiscordRole role = rangoRoles.GetRoleByXp(ctx.Guild!, rank.Total);
 
-        List<UserDailyXp> chartHistory = await xpState.GetUserChartHistory(member.Id);
+        List<UserDailyXp> chartHistory = await xpChartService.GetUserChartHistory(member.Id);
         chartHistory.Add(new UserDailyXp { Xp = rank.Total, Date = DateTime.Now, UserId = (long)member.Id });
 
         Dictionary<string, DiscordEmbed> embeds = new();
 
         #region Resumen
-        RangoEnum nextRango = DiscordHelper.GetNextRangoByXp(rank.Total);
-        long nextRangeXp = DiscordHelper.GetXpFromRango(nextRango);
-        long nextXp = nextRangeXp - rank.Total;
         double promedioXp = chartHistory.GetPromedio();
-
-        int mensajesNecesarios = Math.Max(0, (int)Math.Ceiling((nextXp - promedioXp) / 15.0));
-
-        string progressBarConfig = $@"{{
-                      ""type"": ""horizontalBar"",
-                      ""data"": {{
-                        ""datasets"": [
-                          {{
-                            ""label"": ""Dataset 1"",
-                            ""data"": [ {rank.Total} ],
-                            ""backgroundColor"": ""rgba(54, 162, 235, 0.6)"",
-                            ""fill"": false,
-                            ""type"": ""horizontalBar"",
-                            ""borderColor"": ""rgba(54, 162, 235, 0.6)"",
-                            ""borderWidth"": 3
-                          }}
-                        ],
-                        ""labels"": [ """" ]
-                      }},
-                      ""options"": {{
-                        ""legend"": {{ ""display"": false }},
-                        ""scales"": {{
-                          ""xAxes"": [
-                            {{
-                              ""ticks"": {{
-                                ""beginAtZero"": true,
-                                ""fontSize"": 17,
-                                ""fontColor"": ""#ffffff"",
-                                ""fontStyle"": ""bold"",
-                                ""min"": 0,
-                                ""max"": {nextRangeXp},
-                                ""stepSize"": {nextRangeXp}
-                              }},
-                              ""gridLines"": {{ ""color"": ""rgba(255, 255, 255, 1)"", ""zeroLineColor"": ""rgba(255, 255, 255, 1)"" }}
-                            }}
-                          ],
-                          ""yAxes"": []
-                        }},
-                        ""plugins"": {{
-                          ""datalabels"": {{
-                            ""display"": true,
-                            ""align"": ""center"",
-                            ""anchor"": ""center"",
-                            ""backgroundColor"": ""#ffffff"",
-                            ""borderColor"": ""#ddd"",
-                            ""borderRadius"": 6,
-                            ""borderWidth"": 1,
-                            ""padding"": 5,
-                            ""color"": ""#000000"",
-                            ""font"": {{ ""size"": 25 }}
-                          }}
-                        }}
-                      }}
-                    }}";
+        XpProgressionInfo prog = XpProgression.Describe(rank.Total, promedioXp);
+        RangoEnum nextRango = prog.NextRango;
+        long nextRangeXp = prog.NextRangeXp;
+        long nextXp = prog.NextXp;
+        int mensajesNecesarios = prog.MensajesNecesarios;
 
         List<UserXp> totalOrdered = xpState.GetGuildXp(ctx.Guild!).OrderByDescending(x => x.Total).ToList();
         int userRank = totalOrdered.FindIndex(x => (ulong)x.UserId == member.Id) + 1;
@@ -225,9 +144,9 @@ public class Xp(
         if (nextXp > 0) desc += $"- Obteniendo **{nextXp.ToSpanish()} {umaPoints}** llegarás a **{((Enum)nextRango).GetDescription()}**\n";
         desc += $"- Eres la persona **#{userRank}** con mas xp {umaPoints} del servidor\n";
         desc += $"- Estas obteniendo en promedio **{promedioXp.ToSpanish()}** de xp por día\n";
-        if (nextXp > 0) desc += DiscordHelper.EstimarTiempoEstimadoRango(nextXp, promedioXp, ((Enum)nextRango).GetDescription(), mensajesNecesarios);
+        if (nextXp > 0) desc += XpProgression.EstimarTiempo(nextXp, promedioXp, ((Enum)nextRango).GetDescription(), mensajesNecesarios);
 
-        string progressBarUrl = await chartClient.CreateUrlAsync(new ChartRequest { Config = progressBarConfig, Width = 500, Height = 150 });
+        string progressBarUrl = await chartClient.CreateUrlAsync(XpCharts.ProgressBar(rank.Total, nextRangeXp));
 
         embeds.Add("Resumen", new DiscordEmbedBuilder()
             .WithTitle($"Experiencia de {member.DisplayName}")
@@ -238,74 +157,27 @@ public class Xp(
         #endregion
 
         #region Detalle (distribución)
-        long challengesXp = rank.Challenges;
-        long eventosXp = rank.Eventos;
-        long intercambiosXp = rank.Intercambios;
-        long otrosXp = rank.Otros;
-
-        decimal challengesPercentage = Math.Round(Convert.ToDecimal(challengesXp * 100 / rank.Total), 2);
-        decimal eventosPercentage = Math.Round(Convert.ToDecimal(eventosXp * 100 / rank.Total), 2);
-        decimal intercambiosPercentage = Math.Round(Convert.ToDecimal(intercambiosXp * 100 / rank.Total), 2);
-        decimal otrosPercentage = Math.Round(Convert.ToDecimal(otrosXp * 100 / rank.Total), 2);
-
-        long messagesXp = rank.Total - challengesXp - eventosXp - intercambiosXp - otrosXp;
-        decimal messagesXpPercentage = 100 - challengesPercentage - eventosPercentage - intercambiosPercentage - otrosPercentage;
-
-        List<(long Valor, string Label, string Color)> valores = [];
+        List<XpCharts.PieSlice> valores = [];
         List<(long Valor, string Detalle)> detalles = [];
 
-        if (messagesXp > 0)
+        foreach (XpCategoryShare share in XpDistribution.Build(rank))
         {
-            valores.Add((messagesXp, "Mensajes", "#FF6384"));
-            detalles.Add((messagesXp, $"- {messagesXp.ToSpanish()} {umaPoints} ({messagesXpPercentage}%) fueron obtenidos por mensajes"));
-        }
-        if (challengesXp > 0)
-        {
-            valores.Add((challengesXp, "Challenges", "#36A2EB"));
-            detalles.Add((challengesXp, $"- {challengesXp.ToSpanish()} {umaPoints} ({challengesPercentage}%) fueron obtenidos por challenges"));
-        }
-        if (eventosXp > 0)
-        {
-            valores.Add((eventosXp, "Eventos y actividades", "#23C46C"));
-            detalles.Add((eventosXp, $"- {eventosXp.ToSpanish()} {umaPoints} ({eventosPercentage}%) fueron obtenidos por eventos y actividades"));
-        }
-        if (intercambiosXp > 0)
-        {
-            valores.Add((intercambiosXp, "Intercambios", "#C4BA23"));
-            detalles.Add((intercambiosXp, $"- {intercambiosXp.ToSpanish()} {umaPoints} ({intercambiosPercentage}%) fueron obtenidos por intercambios"));
-        }
-        if (otrosXp > 0)
-        {
-            valores.Add((otrosXp, "Otros", "#8C23C4"));
-            detalles.Add((otrosXp, $"- {otrosXp.ToSpanish()} {umaPoints} ({otrosPercentage}%) fueron obtenidos por otros motivos"));
+            if (share.Value <= 0) continue;
+
+            (string label, string color, string motivo) = share.Category switch
+            {
+                XpCategory.Mensajes => ("Mensajes", "#FF6384", "mensajes"),
+                XpCategory.Challenges => ("Challenges", "#36A2EB", "challenges"),
+                XpCategory.Eventos => ("Eventos y actividades", "#23C46C", "eventos y actividades"),
+                XpCategory.Intercambios => ("Intercambios", "#C4BA23", "intercambios"),
+                _ => ("Otros", "#8C23C4", "otros motivos")
+            };
+
+            valores.Add(new XpCharts.PieSlice(label, share.Value, color));
+            detalles.Add((share.Value, $"- {share.Value.ToSpanish()} {umaPoints} ({share.Percentage}%) fueron obtenidos por {motivo}"));
         }
 
-        string pieConfig = $@"{{
-                      ""type"": ""pie"",
-                      ""data"": {{
-                        ""datasets"": [
-                          {{
-                            ""data"": [ {string.Join(",", valores.Select(x => $"{x.Valor}"))} ],
-                            ""backgroundColor"": [ {string.Join(",", valores.Select(x => $"\"{x.Color}\""))} ],
-                            ""label"": ""Dataset 1"",
-                            ""type"": ""pie"",
-                            ""borderColor"": [ {string.Join(",", valores.Select(x => $"\"{x.Color}\""))} ],
-                            ""borderWidth"": 3
-                          }}
-                        ],
-                        ""labels"": [ {string.Join(",", valores.Select(x => $"\"{x.Label}\""))} ]
-                      }},
-                      ""options"": {{
-                        ""legend"": {{
-                          ""display"": true,
-                          ""position"": ""top"",
-                          ""labels"": {{ ""fontColor"": ""#ffffff"" }}
-                        }},
-                        ""plugins"": {{ ""datalabels"": {{ ""display"": false }} }}
-                      }}
-                    }}";
-
-        string pieUrl = await chartClient.CreateUrlAsync(new ChartRequest { Config = pieConfig, Width = 500, Height = 300 });
+        string pieUrl = await chartClient.CreateUrlAsync(XpCharts.Distribution(valores));
 
         embeds.Add("Detalle", new DiscordEmbedBuilder()
             .WithTitle($"Experiencia de {member.DisplayName}")
@@ -359,57 +231,21 @@ public class Xp(
             resultado = resultado.Skip(resultado.Count - registrosMaximos).ToList();
 
         UserDailyXp minXpValue = resultado.MinBy(x => x.Xp)!;
-        RangoEnum prevRango = DiscordHelper.GetPrevRangoByXp(minXpValue.Xp);
-        long prevRangeXp = DiscordHelper.GetXpFromRango(prevRango);
+        RangoEnum prevRango = RangoXp.RangoAnterior(minXpValue.Xp);
+        long prevRangeXp = RangoXp.XpRequerida(prevRango);
         long xpSubida = rank.Total - minXpValue.Xp;
         double days = (DateTime.Today - minXpValue.Date).TotalDays;
         long maxXpChart = (long)(resultado.Max(x => x.Xp) * 1.1);
-
-        string lineConfig = $@"{{
-                      ""type"": ""line"",
-                      ""data"": {{
-                        ""datasets"": [
-                          {{
-                            ""label"": ""Experiencia"",
-                            ""data"": [ {string.Join(",", resultado.Select(x => $"{x.Xp}"))} ],
-                            ""fill"": true,
-                            ""borderColor"": ""rgb(255, 255, 255)"",
-                            ""lineTension"": 0.2,
-                            ""type"": ""line"",
-                            ""backgroundColor"": ""rgb(4, 172, 255)"",
-                            ""borderWidth"": 3
-                          }}
-                        ],
-                        ""labels"": [ {string.Join(",", resultado.Select(x => $"\"{x.Date:dd/MM/yyyy}\""))} ]
-                      }},
-                      ""options"": {{
-                        ""legend"": {{ ""display"": false }},
-                        ""scales"": {{
-                          ""xAxes"": [ {{ ""ticks"": {{ ""fontColor"": ""#ffffff"" }}, ""gridLines"": {{ ""display"": false }} }} ],
-                          ""yAxes"": [
-                            {{
-                              ""ticks"": {{
-                                ""beginAtZero"": true,
-                                ""fontColor"": ""#ffffff"",
-                                ""min"": {prevRangeXp},
-                                ""max"": {maxXpChart}
-                              }},
-                              ""gridLines"": {{ ""color"": ""rgba(255, 255, 255, 1)"", ""zeroLineColor"": ""rgba(255, 255, 255, 1)"" }}
-                            }}
-                          ]
-                        }}
-                      }}
-                    }}";
 
         string descHistorial =
             $"### Tienes {rank.Total.ToSpanish()} {umaPoints}\n\n- Tu rango actual es {role.Mention}\n" +
             $"- Empezaste teniendo **{minXpValue.Xp.ToSpanish()} {umaPoints}** ({minXpValue.Date.Day}/{minXpValue.Date.Month}/{minXpValue.Date.Year})\n" +
             $"- En {days.ToSpanish()} dias subiste **{xpSubida.ToSpanish()} {umaPoints}**";
 
-        if (nextRango != prevRango && nextRango != DiscordHelper.GetPrevRangoByXp(rank.Total))
+        if (nextRango != prevRango && nextRango != RangoXp.RangoAnterior(rank.Total))
             descHistorial += $"\n- El siguiente rango es **{((Enum)nextRango).GetDescription()}** llegando a **{nextRangeXp.ToSpanish()} {umaPoints}**";
 
-        string lineUrl = await chartClient.CreateUrlAsync(new ChartRequest { Config = lineConfig, Width = 500, Height = 300 });
+        string lineUrl = await chartClient.CreateUrlAsync(XpCharts.History([.. resultado.Select(x => (x.Xp, x.Date))], prevRangeXp, maxXpChart));
 
         embeds.Add("Historial", new DiscordEmbedBuilder()
             .WithTitle($"Experiencia de {member.DisplayName}")
@@ -419,7 +255,7 @@ public class Xp(
             .Build());
         #endregion
 
-        await DiscordHelper.SwitchTabsAsync(ctx, embeds);
+        await DiscordInteractivity.SwitchTabsAsync(ctx, embeds);
     }
 
     [Command("topchart")]
@@ -453,7 +289,7 @@ public class Xp(
 
             List<UserDailyXp> chartTmp = [];
             foreach (UserXp rnk in rankings)
-                chartTmp.AddRange(await xpState.GetUserChartHistory((ulong)rnk.UserId, true));
+                chartTmp.AddRange(await xpChartService.GetUserChartHistory((ulong)rnk.UserId, true));
 
             if (chartTmp.Count == 0)
             {
@@ -464,7 +300,7 @@ public class Xp(
             long minXpValue = NumberHelper.ObtenerMultiploAnterior(chartTmp.Min(x => x.Xp), 1000);
             long maxXpValue = NumberHelper.ObtenerMultiploSiguiente(chartTmp.Max(x => x.Xp), 1000);
 
-            string datasets = string.Empty;
+            List<XpCharts.LineSeries> series = [];
             int it = 0;
             colors.Shuffle();
             foreach (UserXp ranking in rankings)
@@ -472,7 +308,7 @@ public class Xp(
                 if (!ctx.Guild!.Members.TryGetValue((ulong)ranking.UserId, out DiscordMember? member))
                     continue;
 
-                List<UserDailyXp> chartHistory = await xpState.GetUserChartHistory(member.Id, true);
+                List<UserDailyXp> chartHistory = await xpChartService.GetUserChartHistory(member.Id, true);
                 chartHistory.Add(new UserDailyXp { Xp = ranking.Total });
 
                 if (first)
@@ -481,47 +317,12 @@ public class Xp(
                     first = false;
                 }
 
-                datasets += $@"{{
-                            ""label"": ""{member.DisplayName}"",
-                            ""data"": [ {string.Join(",", chartHistory.Select(x => $"{x.Xp}"))} ],
-                            ""fill"": false,
-                            ""borderColor"": ""{colors[it]}"",
-                            ""lineTension"": 0.2,
-                            ""type"": ""line"",
-                            ""backgroundColor"": ""rgb(4, 172, 255)"",
-                            ""borderWidth"": 3
-                            }},";
+                series.Add(new XpCharts.LineSeries(member.DisplayName, [.. chartHistory.Select(x => x.Xp)], colors[it]));
                 it++;
             }
 
-            string chartConfig = $@"{{
-                      ""type"": ""line"",
-                      ""data"": {{
-                        ""datasets"": [ {datasets} ],
-                        ""labels"": [ {string.Join(",", chartHistoryLabels.Select(x => $"\"{x.Date.Day}/{x.Date.Month}/{x.Date.Year}\""))} ]
-                      }},
-                      ""options"": {{
-                        ""legend"": {{ ""display"": true, ""position"": ""top"", ""labels"": {{ ""fontSize"": 20, ""fontColor"": ""#ffffff"", ""fontStyle"": ""bold"" }} }},
-                        ""scales"": {{
-                          ""xAxes"": [ {{ ""display"": false }} ],
-                          ""yAxes"": [
-                            {{
-                              ""ticks"": {{
-                                ""beginAtZero"": true,
-                                ""fontSize"": 20,
-                                ""fontColor"": ""#ffffff"",
-                                ""fontStyle"": ""bold"",
-                                ""min"": {minXpValue},
-                                ""max"": {maxXpValue}
-                              }},
-                              ""gridLines"": {{ ""color"": ""rgba(255, 255, 255, 1)"", ""zeroLineColor"": ""rgba(255, 255, 255, 1)"" }}
-                            }}
-                          ]
-                        }}
-                      }}
-                    }}";
-
-            byte[] image = await chartClient.RenderAsync(new ChartRequest { Config = chartConfig, Width = 1000, Height = 600 });
+            byte[] image = await chartClient.RenderAsync(
+                XpCharts.TopMultiLine(series, [.. chartHistoryLabels.Select(x => x.Date)], minXpValue, maxXpValue));
             string fileName = $"{StringHelper.CreateString(10)}.png";
 
             int end = start + 5;
@@ -557,67 +358,39 @@ public class Xp(
     {
         await ctx.DeferResponseAsync();
 
-        Random rand = new();
         List<UserXp> serverRanking = xpState.GetGuildXp(ctx.Guild!);
         DiscordEmoji umaPoints = await UmaPointsAsync(ctx);
 
-        Dictionary<DiscordRole, long> xpPerCountry = [];
+        Dictionary<ulong, CountryXp> xpPerCountry = [];
         foreach (UserXp ranking in serverRanking)
         {
             if (!ctx.Guild!.Members.TryGetValue((ulong)ranking.UserId, out DiscordMember? member)) continue;
 
-            DiscordRole? pais = discordHelper.GetMemberPais(member);
+            DiscordRole? pais = rangoRoles.GetMemberPais(member);
             if (pais == null) continue;
 
-            xpPerCountry[pais] = xpPerCountry.GetValueOrDefault(pais) + ranking.Total;
+            long acumulado = xpPerCountry.TryGetValue(pais.Id, out CountryXp prev) ? prev.Xp : 0;
+            string nombre = pais.Id == config.Roles.OtrosPais ? "Otros" : pais.Name;
+            xpPerCountry[pais.Id] = new CountryXp(pais.Id, nombre, acumulado + ranking.Total);
         }
 
-        List<KeyValuePair<DiscordRole, long>> list = xpPerCountry.OrderByDescending(x => x.Value).ToList();
-
-        KeyValuePair<DiscordRole, long> otrosItem = list.First(x => x.Key.Id == OtrosPaisRoleId);
-        list.Remove(otrosItem);
-
-        List<KeyValuePair<DiscordRole, long>> top10 = list.Take(10).ToList();
-        long otrosXpCount = list.Skip(10).Sum(x => x.Value) + otrosItem.Value;
-
-        Dictionary<DiscordRole, long> dict = top10.ToDictionary(x => x.Key, x => x.Value);
-        dict[otrosItem.Key] = otrosXpCount;
-        top10 = dict.OrderByDescending(x => x.Value).ToList();
-
-        List<(string Nombre, long Valor)> res = top10
-            .Select(x => (x.Key.Id == OtrosPaisRoleId ? "Otros" : x.Key.Name, x.Value))
+        List<CountryXp> rankingPaises = xpPerCountry.Values
+            .Where(x => x.CountryId != config.Roles.OtrosPais)
+            .OrderByDescending(x => x.Xp)
             .ToList();
-        res.RemoveAt(res.Count - 1);
 
-        List<string> chartColors = top10.Select(_ => $"#{rand.Next(0x1000000):X6}").ToList();
+        IReadOnlyList<CountryXp> res = XpCountryRanking.BuildChartSeries([.. xpPerCountry.Values], config.Roles.OtrosPais);
 
-        string chartConfig = $@"{{
-                      ""type"": ""pie"",
-                      ""data"": {{
-                        ""datasets"": [
-                          {{
-                            ""data"": [ {string.Join(",", res.Select(x => $"{x.Valor}"))} ],
-                            ""backgroundColor"": [ {string.Join(",", chartColors.Select(x => $"\"{x}\""))} ],
-                            ""label"": ""Dataset 1"",
-                            ""type"": ""pie"",
-                            ""borderColor"": [ {string.Join(",", chartColors.Select(x => $"\"{x}\""))} ],
-                            ""borderWidth"": 3
-                          }}
-                        ],
-                        ""labels"": [ {string.Join(",", res.Select(x => $"\"{x.Nombre}\""))} ]
-                      }},
-                      ""options"": {{
-                        ""legend"": {{ ""display"": true, ""position"": ""top"", ""labels"": {{ ""fontColor"": ""#ffffff"" }} }},
-                        ""plugins"": {{ ""datalabels"": {{ ""display"": false }} }}
-                      }}
-                    }}";
+        List<XpCharts.PieSlice> slices = res
+            .Select(x => new XpCharts.PieSlice(x.Name, x.Xp, $"#{Random.Shared.Next(0x1000000):X6}"))
+            .ToList();
 
-        byte[] image = await chartClient.RenderAsync(new ChartRequest { Config = chartConfig, Width = 500, Height = 300 });
+        byte[] image = await chartClient.RenderAsync(XpCharts.CountryPie(slices));
 
         await ctx.EditResponseAsync(new DiscordWebhookBuilder()
             .AddEmbed(new DiscordEmbedBuilder()
                 .WithTitle("Top de experiencia por país")
-                .WithDescription(string.Join("\n", list.Select(x => $"**{x.Key.Name}**: {x.Value.ToSpanish()} {umaPoints}")))
+                .WithDescription(string.Join("\n", rankingPaises.Select(x => $"**{x.Name}**: {x.Xp.ToSpanish()} {umaPoints}")))
                 .WithImageUrl("attachment://xpchartcountries.png"))
             .AddFile("xpchartcountries.png", image.ToMemoryStream()));
     }
@@ -643,7 +416,7 @@ public class Xp(
         foreach (DiscordMember member in ctx.Guild!.Members.Values)
         {
             if (member.IsBot) continue;
-            List<UserDailyXp> chartHistory = await xpState.GetUserChartHistory(member.Id);
+            List<UserDailyXp> chartHistory = await xpChartService.GetUserChartHistory(member.Id);
             if (chartHistory.Count == 0) continue;
             promediosByUser.Add(member, chartHistory.GetPromedio());
         }
@@ -676,24 +449,13 @@ public class Xp(
 
         foreach (UserXp member in xp)
         {
-            RangoEnum nextRango = DiscordHelper.GetNextRangoByXp(member.Total);
-            long nextXp = DiscordHelper.GetXpFromRango(nextRango) - member.Total;
+            RangoEnum nextRango = RangoXp.RangoSiguiente(member.Total);
+            long nextXp = RangoXp.XpRequerida(nextRango) - member.Total;
 
             if (nextXp <= 0 || !ctx.Guild!.Members.TryGetValue((ulong)member.UserId, out DiscordMember? user)) continue;
             if (user.Roles.Any(x => x.Id == config.Roles.Inactivo)) continue;
 
-            bool proxSubir = nextRango switch
-            {
-                RangoEnum.Tama => nextXp < 500,
-                RangoEnum.Casual => nextXp < 1000,
-                RangoEnum.Kouhai or RangoEnum.Senpai => nextXp < 2500,
-                RangoEnum.Hikikomori or RangoEnum.Sensei => nextXp < 5000,
-                RangoEnum.Ousama => nextXp < 7500,
-                RangoEnum.Teiou => nextXp < 10000,
-                _ => false
-            };
-
-            if (proxSubir) ret.Add((user, nextXp, nextRango));
+            if (XpProgression.EstaProximoASubir(nextRango, nextXp)) ret.Add((user, nextXp, nextRango));
         }
 
         if (ret.Count == 0)
@@ -722,23 +484,23 @@ public class Xp(
         await ctx.DeferResponseAsync();
 
         DiscordMember member = ctx.Member!;
-        DiscordEmoji tenshiEmote = DiscordEmoji.FromGuildEmote(ctx.Client, TenshiEmoteId);
+        DiscordEmoji tenshiEmote = DiscordEmoji.FromGuildEmote(ctx.Client, config.Emotes.Tenshi);
         string desc = string.Empty;
 
-        if (discordHelper.RangoAPartirDe(ctx.Guild!, member, RangoEnum.Tama, false))
+        if (rangoRoles.RangoAPartirDe(ctx.Guild!, member, RangoEnum.Tama, false))
             desc += "### 🥚 Tama:\n- Participar en los intercambios\n- Adjuntar archivos\n\n";
 
-        if (discordHelper.RangoAPartirDe(ctx.Guild!, member, RangoEnum.Kouhai, false))
+        if (rangoRoles.RangoAPartirDe(ctx.Guild!, member, RangoEnum.Kouhai, false))
             desc += "### 🍙 Kouhai:\n- Entrada garantizada a eventos del servidor\n\n";
 
-        if (discordHelper.RangoAPartirDe(ctx.Guild!, member, RangoEnum.Sensei, false))
+        if (rangoRoles.RangoAPartirDe(ctx.Guild!, member, RangoEnum.Sensei, false))
             desc += "### 🍜 Senpai:\n- Elegir entre 45 colores para tu usuario\n\n";
 
-        if (discordHelper.RangoAPartirDe(ctx.Guild!, member, RangoEnum.Ousama, false))
+        if (rangoRoles.RangoAPartirDe(ctx.Guild!, member, RangoEnum.Ousama, false))
             desc += "### 👑 Ousama:\n- Canal de voz propio\n\n";
 
-        if (discordHelper.RangoAPartirDe(ctx.Guild!, member, RangoEnum.Teiou, false))
-            desc += $"### 🥕 Teiou:\n- Escribir en {ctx.Guild!.Channels[TeiouChannelId].Mention}\n- Comando {Formatter.InlineCode("/teiou nickname")}\n\n";
+        if (rangoRoles.RangoAPartirDe(ctx.Guild!, member, RangoEnum.Teiou, false))
+            desc += $"### 🥕 Teiou:\n- Escribir en {ctx.Guild!.Channels[config.Channels.Teiou].Mention}\n- Comando {Formatter.InlineCode("/teiou nickname")}\n\n";
 
         if (member.PremiumSince != null)
             desc += $"### 😇 Tenshi:\n- Emotes exclusivos `{tenshiEmote}`\n- 1 a 3 de XP extra por mensaje\n\n";
@@ -749,6 +511,4 @@ public class Xp(
             .WithAuthor(member.DisplayName, iconUrl: member.AvatarUrl)
             .WithColor(DiscordColor.Blurple)));
     }
-
-    private readonly record struct RankEntry(int Rank, long Score, ulong UserId);
 }

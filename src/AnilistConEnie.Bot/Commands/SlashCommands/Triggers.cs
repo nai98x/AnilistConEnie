@@ -17,7 +17,7 @@ namespace AnilistConEnie.Bot.Commands.SlashCommands;
 [Command("trigger")]
 [Description("Comandos para triggers")]
 [TestCommand]
-public class Triggers(ITriggersRepository triggersRepository, TriggersState triggersState, DiscordHelper discordHelper)
+public class Triggers(ITriggersRepository triggersRepository, TriggersState triggersState, DiscordLogService logService)
 {
     [Command("set")]
     [Description("Agrega o modifica un trigger")]
@@ -141,7 +141,7 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
         }
         catch (Exception ex)
         {
-            await discordHelper.GrabarLogGeneralError(ctx.Guild!, $"Error en SetFromMessageText:\n\n{ex.Message}:\n{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
+            await logService.GrabarLogGeneralError(ctx.Guild!, $"Error en SetFromMessageText:\n\n{ex.Message}:\n{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
 
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
             {

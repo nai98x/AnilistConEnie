@@ -20,7 +20,7 @@ namespace AnilistConEnie.Bot.Commands.SlashCommands;
 
 [Command("challenges")]
 [Description("Comandos de los challenges del servidor")]
-//[TestCommand]
+[TestCommand]
 public class Challenges(
     IChallengesRepository challengesRepository,
     IUsuariosDiscordRepository usuariosDiscordRepository,
@@ -96,7 +96,7 @@ public class Challenges(
         {
             Title = "Challenges del servidor",
             Description = desc,
-            Color = DiscordHelper.GetColor()
+            Color = DiscordEmojiHelper.GetColor()
         }));
     }
 
@@ -121,7 +121,7 @@ public class Challenges(
             return;
         }
 
-        DiscordEmoji umaPoints = await DiscordHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
+        DiscordEmoji umaPoints = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
 
         List<ChallengeCompletado> completaron = await challengesRepository.GetListaUsuariosCompletaron(challenge);
         string descTerminados = "(Ningún usuario ha completado este challenge)";
@@ -172,7 +172,7 @@ public class Challenges(
             { "Pendientes", embedPendientes.Build() }
         };
 
-        await DiscordHelper.SwitchTabsAsync(ctx, tabs);
+        await DiscordInteractivity.SwitchTabsAsync(ctx, tabs);
     }
 
     [Command("usuario")]
@@ -197,7 +197,7 @@ public class Challenges(
                 return;
             }
 
-            DiscordEmoji umaPoints = await DiscordHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
+            DiscordEmoji umaPoints = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
 
             List<UsuarioChallenge> challengesUsuario = await challengesRepository.GetChallengesUsuario(usuario.Id);
             List<Challenge> todos = await challengesRepository.GetLista();
@@ -224,7 +224,7 @@ public class Challenges(
             DiscordEmbed embedCompletados = new DiscordEmbedBuilder()
                 .WithTitle($"Challenges completados por {usuario.DisplayName}")
                 .WithDescription(descCompletados)
-                .WithColor(DiscordHelper.GetColor())
+                .WithColor(DiscordEmojiHelper.GetColor())
                 .Build();
 
             string descEnCurso = enCurso.Count > 0
@@ -234,7 +234,7 @@ public class Challenges(
             DiscordEmbed embedEnCurso = new DiscordEmbedBuilder()
                 .WithTitle($"Challenges en curso por {usuario.DisplayName}")
                 .WithDescription(descEnCurso)
-                .WithColor(DiscordHelper.GetColor())
+                .WithColor(DiscordEmojiHelper.GetColor())
                 .Build();
 
             string descSinPost = "(Ningún challenge pendiente de hacer el post)";
@@ -248,7 +248,7 @@ public class Challenges(
             DiscordEmbed embedSinPost = new DiscordEmbedBuilder()
                 .WithTitle($"Challenges sin posts publicados de {usuario.DisplayName}")
                 .WithDescription(descSinPost)
-                .WithColor(DiscordHelper.GetColor())
+                .WithColor(DiscordEmojiHelper.GetColor())
                 .Build();
 
             string descNoDisponibles = "**Post realizado:**\n";
@@ -278,7 +278,7 @@ public class Challenges(
                 { "No disponibles", embedNoDisponibles }
             };
 
-            await DiscordHelper.SwitchTabsAsync(ctx, tabs);
+            await DiscordInteractivity.SwitchTabsAsync(ctx, tabs);
         }
         catch (Exception ex)
         {
@@ -320,9 +320,9 @@ public class Challenges(
         xpState.UpdateUserXp(usuario.Id, totalChallenges, TipoXp.Challenges);
 
         await challengesRepository.SetUsuarioChallenge(challenge, (long)usuario.Id, (int)xp, ctx.Interaction.CreationTimestamp);
-        await usuariosDiscordRepository.AddOrRemoveUserXp(usuario.Id, 0, (int)xp, 0, (int)xp, 0, 0, 0);
+        await usuariosDiscordRepository.AddOrRemoveUserXp(usuario.Id, new UserXpDelta { Total = (int)xp, Challenges = (int)xp });
 
-        DiscordEmoji umaPoints = await DiscordHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
+        DiscordEmoji umaPoints = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
 
         DiscordFollowupMessageBuilder builder = new DiscordFollowupMessageBuilder()
             .WithContent(usuario.Mention)

@@ -14,7 +14,7 @@ namespace AnilistConEnie.Bot.Commands.SlashCommands;
 [Command("teiou")]
 [Description("Comandos para rango teiou")]
 //[TestCommand]
-public class Teiou(TeiouCooldownState teiouCooldownState, DiscordHelper discordHelper, IUsuariosDiscordRepository usuariosDiscordRepository)
+public class Teiou(TeiouCooldownState teiouCooldownState, RangoRoles rangoRoles, IUsuariosDiscordRepository usuariosDiscordRepository)
 {
     [Command("nickname")]
     [Description("Cambia el nickname de una persona")]
@@ -25,7 +25,7 @@ public class Teiou(TeiouCooldownState teiouCooldownState, DiscordHelper discordH
     {
         await ctx.DeferResponseAsync(true);
 
-        if (ctx.Member is null || !discordHelper.RangoAPartirDe(ctx.Guild!, ctx.Member, RangoEnum.Teiou, false))
+        if (ctx.Member is null || !rangoRoles.RangoAPartirDe(ctx.Guild!, ctx.Member, RangoEnum.Teiou, false))
         {
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 .WithTitle("Sin permiso")

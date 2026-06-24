@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Firestore;
-using Google.Cloud.Firestore.V1;
 using Google.Cloud.Storage.V1;
 
 namespace AnilistConEnie.Infrastructure.Firebase;
@@ -29,15 +28,25 @@ public class FirebaseService
     private static async Task<FirestoreDb> CreateAsync(string credentialFile)
     {
         string jsonCredentials = await File.ReadAllTextAsync(CredentialPath(credentialFile));
-        FirestoreClientBuilder builder = new() { JsonCredentials = jsonCredentials };
-        return await FirestoreDb.CreateAsync(ProjectId(jsonCredentials, credentialFile), await builder.BuildAsync());
+        FirestoreDbBuilder builder = new()
+        {
+            ProjectId = ProjectId(jsonCredentials, credentialFile),
+            JsonCredentials = jsonCredentials,
+            ConverterRegistry = FirestoreConverters.Registry
+        };
+        return await builder.BuildAsync();
     }
 
     private static FirestoreDb Create(string credentialFile)
     {
         string jsonCredentials = File.ReadAllText(CredentialPath(credentialFile));
-        FirestoreClientBuilder builder = new() { JsonCredentials = jsonCredentials };
-        return FirestoreDb.Create(ProjectId(jsonCredentials, credentialFile), builder.Build());
+        FirestoreDbBuilder builder = new()
+        {
+            ProjectId = ProjectId(jsonCredentials, credentialFile),
+            JsonCredentials = jsonCredentials,
+            ConverterRegistry = FirestoreConverters.Registry
+        };
+        return builder.Build();
     }
 
     private static string CredentialPath(string credentialFile) =>

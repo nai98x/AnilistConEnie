@@ -13,7 +13,7 @@ public interface IUsuariosDiscordRepository
     Task DeleteBirthday(ulong userId);
     Task<List<UserDailyXp>> GetDailyXpChartFromUser(ulong userId, DateRangeXp range = DateRangeXp.Completo);
     Task AddDailyXp(DateTime date, ulong userId, long xp);
-    Task AddOrRemoveUserXp(ulong userId, int action, int total, int booster, int challenges, int eventos, int intercambios, int otros);
+    Task AddOrRemoveUserXp(ulong userId, UserXpDelta delta, XpOperation operation = XpOperation.Add);
     Task<List<UserXp>> GetRanking();
     Task SetCooldownTeiou(ulong userId);
     Task<List<TeiouCooldownNickname>> GetListTeiouNicknameCooldown();

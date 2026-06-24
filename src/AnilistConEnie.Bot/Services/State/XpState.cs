@@ -1,20 +1,17 @@
-using AnilistConEnie.Application.Xp;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Enum;
-using AnilistConEnie.Model.Interfaces.Repositories;
 using DSharpPlus.Entities;
 using System.Collections.Concurrent;
 
 namespace AnilistConEnie.Bot.Services.State;
 
-public class XpState(IUsuariosDiscordRepository usuariosDiscordRepository)
+public class XpState
 {
     private List<ulong> _boosters = [];
     private (bool, ulong) _debugXp = (false, 0);
 
     private readonly ConcurrentDictionary<ulong, bool> _usersXp = new();
     private readonly ConcurrentDictionary<ulong, UserXp> _generalXp = new();
-    private readonly ConcurrentDictionary<ulong, List<UserDailyXp>> _dailyXp = new();
 
     #region Boosters extra xp
     public void FillBoosters(List<ulong> users) => _boosters = users;
@@ -61,46 +58,6 @@ public class XpState(IUsuariosDiscordRepository usuariosDiscordRepository)
 
     public UserXp GetUserXp(ulong userId) =>
         _generalXp.TryGetValue(userId, out var xp) ? xp : new UserXp();
-    #endregion
-
-    #region Daily XP Chart
-    public async Task AddUserXpToChartHistory(ulong userId, long xpFromDay, DateTime date)
-    {
-        if (_dailyXp.TryGetValue(userId, out var xp))
-        {
-            xp.Add(new UserDailyXp { Date = date, UserId = (long)userId, Xp = xpFromDay });
-        }
-        else
-        {
-            xp = await usuariosDiscordRepository.GetDailyXpChartFromUser(userId, DateRangeXp.Anual);
-            _dailyXp[userId] = xp;
-        }
-    }
-
-    public async Task<List<UserDailyXp>> GetUserChartHistory(
-        ulong userId,
-        bool includeZeroXp = false,
-        bool rellenarDiasFaltantes = true)
-    {
-        if (!_dailyXp.TryGetValue(userId, out var listTmp))
-        {
-            listTmp = await usuariosDiscordRepository.GetDailyXpChartFromUser(userId, DateRangeXp.Anual);
-            _dailyXp[userId] = listTmp;
-        }
-
-        XpChartResult chart = XpChartBuilder.Build((long)userId, listTmp, DateTime.Today, includeZeroXp, rellenarDiasFaltantes);
-
-        if (chart.MissingDaysToPersist.Count > 0)
-        {
-            _dailyXp[userId] = [..chart.Points];
-            foreach (UserDailyXp day in chart.MissingDaysToPersist)
-                _ = usuariosDiscordRepository.AddDailyXp(day.Date, userId, day.Xp);
-        }
-
-        return [..chart.Points];
-    }
-
-    public void ResetXpChartHistory() => _dailyXp.Clear();
     #endregion
 
     #region Debug XP

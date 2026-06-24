@@ -14,7 +14,6 @@ public enum CategoriaHoroscopo
 
 public class FunHelper(BotConfiguration config)
 {
-    private const ulong BoluditoEmoteId = 1256321836132728973;
 
     public char GetGenero(DiscordMember member, bool uppercase = false)
     {
@@ -24,14 +23,14 @@ public class FunHelper(BotConfiguration config)
         return '@';
     }
 
-    public string BoluditoLevel(DiscordClient client, DiscordMember member, int numero)
+    public string BoluditoLevel(DiscordEmoji loreaEste, DiscordMember member, int numero)
     {
         return numero switch
         {
             0 => "Eres la auténtica anti boludez, tu rechazo hacia lo boludito es impresionante, eres un ejemplo a seguir",
             < 25 => "Chill de cojones, la boludez no es algo que exista en tu persona este día.",
             < 50 => $"Estás bien pero no te descuides porque te puedes volver boludit{GetGenero(member)} de un día para el otro.",
-            < 75 => $"Hoy te tocó ser bolud{GetGenero(member)} {DiscordEmoji.FromGuildEmote(client, BoluditoEmoteId)}",
+            < 75 => $"Hoy te tocó ser bolud{GetGenero(member)} {loreaEste}",
             < 100 => $"Hoy estas muy bolud{GetGenero(member)}, muchísimo mas de la cuenta, y eso es decir bastante.",
             _ => $"Eres el autentico BOLUDIT{GetGenero(member, true)}, un ejemplo para la sociedad de lo que NO se debe ser. Por el bien mayor, aléjate de la sociedad por este día."
         };

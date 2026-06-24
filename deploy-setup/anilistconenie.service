@@ -1,0 +1,14 @@
+[Unit]
+Description=AnilistConEnie Discord Bot
+After=network-online.target
+
+[Service]
+WorkingDirectory=%h/bots/AnilistConEnie-app
+ExecStart=%h/bots/AnilistConEnie-app/AnilistConEnie.Bot
+Environment=FIREBASE_CREDENTIALS_DIR=%h/bots/secrets
+EnvironmentFile=%h/bots/secrets/anilistconenie.env
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

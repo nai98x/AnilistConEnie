@@ -1,0 +1,131 @@
+using AnilistConEnie.Application.Helpers;
+using AnilistConEnie.Model.Entities.Anilist;
+using DSharpPlus;
+using DSharpPlus.Commands;
+using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
+using DSharpPlus.Interactivity;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace AnilistConEnie.Bot.Helpers;
+
+/// <summary>Helpers de interactividad (confirmaciones, selección y pestañas) sobre DSharpPlus.</summary>
+public static class DiscordInteractivity
+{
+    /// <summary>
+    /// Muestra un mensaje de confirmación (botones "Si"/"No") como followup y devuelve la respuesta del
+    /// usuario. Devuelve <c>false</c> si se agota el tiempo de espera. Requiere que la interacción ya
+    /// haya sido diferida.
+    /// </summary>
+    public static async Task<bool> GetSiNoInteractivity(CommandContext ctx, string titulo, string descripcion, DiscordEmbed? embed = null)
+    {
+        InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
+
+        DiscordFollowupMessageBuilder builder = new DiscordFollowupMessageBuilder()
+            .AddEmbed(new DiscordEmbedBuilder { Title = titulo, Description = descripcion });
+
+        if (embed != null) builder.AddEmbed(embed);
+
+        builder.AddActionRowComponent(
+            new DiscordButtonComponent(DiscordButtonStyle.Success, "true", "Si"),
+            new DiscordButtonComponent(DiscordButtonStyle.Danger, "false", "No"));
+
+        DiscordMessage msg = await ctx.FollowupAsync(builder);
+
+        InteractivityResult<ComponentInteractionCreatedEventArgs> result =
+            await interactivity.WaitForButtonAsync(msg, ctx.User, TimeSpan.FromMinutes(2));
+
+        if (result.TimedOut) return false;
+
+        await result.Result.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
+        return bool.Parse(result.Result.Id);
+    }
+
+    public static async Task<int> GetElegidoAsync(CommandContext ctx, double timeoutGeneral, List<TitleDescription> opciones)
+    {
+        int cantidadOpciones = opciones.Count;
+        if (cantidadOpciones == 1)
+        {
+            return 1;
+        }
+
+        InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
+        List<DiscordSelectComponentOption> options = [];
+        const string customId = "dropdownGetElegido";
+
+        int i = 0;
+        opciones.ForEach(opc =>
+        {
+            if (i >= 25 || opc.Title == null) return;
+            i++;
+            options.Add(new DiscordSelectComponentOption(StringHelper.NormalizarBoton(opc.Title), $"{i}", opc.Description ?? string.Empty));
+        });
+
+        DiscordSelectComponent dropdown = new(customId, "Selecciona una opción", options);
+
+        DiscordEmbedBuilder embed = new()
+        {
+            Color = DiscordColor.Blurple,
+            Title = "Elige una opción",
+        };
+
+        DiscordMessage elegirMsg = await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddActionRowComponent(dropdown).AddEmbed(embed));
+
+        InteractivityResult<ComponentInteractionCreatedEventArgs> msgElegirInter = await interactivity.WaitForSelectAsync(elegirMsg, ctx.User, customId, TimeSpan.FromSeconds(timeoutGeneral));
+
+        if (msgElegirInter.TimedOut) return -1;
+
+        ComponentInteractionCreatedEventArgs resultElegir = msgElegirInter.Result;
+        return int.Parse(resultElegir.Values[0]);
+    }
+
+    /// <summary>
+    /// Muestra varios embeds (uno por pestaña) en un único mensaje, con un botón por pestaña para
+    /// alternar entre ellos. La pestaña activa queda con su botón deshabilitado. Admite entre 1 y 5
+    /// pestañas. Los botones se deshabilitan tras 2 minutos de inactividad o al acercarse al límite
+    /// de vida de la interacción (15 minutos por regla de Discord), lo que ocurra primero.
+    /// </summary>
+    public static async Task SwitchTabsAsync(CommandContext ctx, Dictionary<string, DiscordEmbed> tabs)
+    {
+        if (tabs.Count is 0 or > 5) return;
+
+        InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
+
+        // El token de la interacción expira a los 15 minutos (regla de Discord). Cortamos un poco
+        // antes para alcanzar a editar el mensaje y dejar los botones deshabilitados mientras el
+        // token sigue siendo válido.
+        DateTimeOffset deadline = DateTimeOffset.UtcNow.AddMinutes(14);
+        TimeSpan inactivityTimeout = TimeSpan.FromMinutes(2);
+
+        string activeTab = tabs.First().Key;
+
+        while (true)
+        {
+            DiscordMessage message = await ctx.EditResponseAsync(new DiscordWebhookBuilder()
+                .AddEmbed(tabs[activeTab])
+                .AddActionRowComponent(BuildTabButtons(tabs.Keys, activeTab, disabled: false)));
+
+            TimeSpan remaining = deadline - DateTimeOffset.UtcNow;
+            if (remaining <= TimeSpan.Zero) break;
+
+            TimeSpan waitFor = remaining < inactivityTimeout ? remaining : inactivityTimeout;
+
+            InteractivityResult<ComponentInteractionCreatedEventArgs> response =
+                await interactivity.WaitForButtonAsync(message, ctx.User, waitFor);
+
+            if (response.TimedOut) break;
+
+            await response.Result.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
+            activeTab = response.Result.Id;
+        }
+
+        // Inactividad o límite de vida de la interacción alcanzado: dejamos la última pestaña con
+        // todos los botones deshabilitados.
+        await ctx.EditResponseAsync(new DiscordWebhookBuilder()
+            .AddEmbed(tabs[activeTab])
+            .AddActionRowComponent(BuildTabButtons(tabs.Keys, activeTab, disabled: true)));
+    }
+
+    private static IEnumerable<DiscordButtonComponent> BuildTabButtons(IEnumerable<string> keys, string activeTab, bool disabled) =>
+        keys.Select(key => new DiscordButtonComponent(DiscordButtonStyle.Primary, key, key, disabled || key == activeTab)).ToList();
+}

@@ -1,0 +1,54 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  ci-cd:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[ci-skip]')"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build (gate)
+        run: dotnet build -c Release --no-restore
+
+      - name: Test
+        run: |
+          if find . -name '*.csproj' | xargs grep -lq 'Microsoft.NET.Test.Sdk'; then
+            dotnet test -c Release --no-build
+          else
+            echo "Sin proyecto de tests todavía — skip"
+          fi
+
+      - name: Publish
+        run: dotnet publish src/AnilistConEnie.Bot -c Release -r linux-arm64 --no-self-contained -o ./publish
+
+      - name: Empaquetar artefacto
+        run: tar czf publish.tar.gz -C ./publish .
+
+      - name: Copiar artefacto al server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.PRIVATE_KEY }}
+          source: publish.tar.gz
+          target: ~/bots
+
+      - name: Desplegar y reiniciar
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.PRIVATE_KEY }}
+          script: |
+            bash -c 'set -e; export XDG_RUNTIME_DIR="/run/user/$(id -u)"; APP="$HOME/bots/AnilistConEnie-app"; systemctl --user stop anilistconenie || true; mkdir -p "$APP"; find "$APP" -mindepth 1 -maxdepth 1 ! -name logs -exec rm -rf {} +; tar xzf "$HOME/bots/publish.tar.gz" -C "$APP"; rm -f "$HOME/bots/publish.tar.gz"; chmod +x "$APP/AnilistConEnie.Bot"; systemctl --user start anilistconenie'

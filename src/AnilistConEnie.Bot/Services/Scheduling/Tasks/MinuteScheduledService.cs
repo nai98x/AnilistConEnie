@@ -13,7 +13,7 @@ public class MinuteScheduledService(
     DiscordClient client,
     BotConfiguration config,
     DiscordBotService discordBotService,
-    BehaviorHelper behaviorHelper)
+    GuildMaintenanceService guildMaintenanceService)
     : CronBackgroundService(scopeFactory, discordBotService, logger)
 {
     protected override string CronExpression => "* * * * *";
@@ -23,8 +23,8 @@ public class MinuteScheduledService(
         if (!Inicializado || !client.Guilds.TryGetValue(config.GuildId, out DiscordGuild? guild))
             return;
 
-        await behaviorHelper.ManageMemberXp(guild);
-        await behaviorHelper.ManageInvitesRole(guild);
-        await behaviorHelper.ManagePermanentUsernames(guild);
+        await guildMaintenanceService.ManageMemberXp(guild);
+        await guildMaintenanceService.ManageInvitesRole(guild);
+        await guildMaintenanceService.ManagePermanentUsernames(guild);
     }
 }

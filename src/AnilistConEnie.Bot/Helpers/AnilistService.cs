@@ -17,7 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AnilistConEnie.Bot.Helpers;
 
-public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState, ChallengePostsState challengePostsState, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, AnilistServerScoreService scoreService, IUsuariosAnilistRepository usuariosAnilistRepository, IAnilistClient anilistClient)
+public class AnilistService(XpState xpState, AnilistUsersState anilistUsersState, ChallengePostsState challengePostsState, BotConfiguration config, LimpiezaMiembrosSettings limpiezaSettings, RangoRoles rangoRoles, DiscordLogService logService, AnilistServerScoreService scoreService, IUsuariosAnilistRepository usuariosAnilistRepository, IAnilistClient anilistClient)
 {
     public async Task TerminarVinculacion(DiscordClient client, DiscordUser user, DiscordMember member, DiscordGuild guild, AnilistUser anilistUser)
     {
@@ -67,7 +67,7 @@ public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState,
                 await mensaje.ModifyAsync($"**Perfil de {member.Mention}**\n\n{anilistUser.SiteUrl}");
             }
         }
-        catch (NotFoundException) { /* Ignored */ }
+        catch (NotFoundException ex) { await logService.LogException(guild, ex, "TerminarVinculacion - perfil preexistente"); }
         
         if (usrPreexistente is null)
             mensaje = await perfiles.SendMessageAsync($"**Perfil de {member.Mention}**\n\n{anilistUser.SiteUrl}");
@@ -202,7 +202,7 @@ public class AnilistHelper(XpState xpState, AnilistUsersState anilistUsersState,
             BannerImage = viewer.BannerImage
         };
 
-        DateTimeOffset monthBefore = DateTimeOffset.Now.AddMonths(-1);
+        DateTimeOffset monthBefore = DateTimeOffset.Now.AddMonths(-limpiezaSettings.CuentaNuevaMeses);
         if (interaction.User.CreationTimestamp > monthBefore || viewer.CreatedAt > monthBefore)
         {
             DiscordButtonComponent aprobar = new(DiscordButtonStyle.Success, $"sync-true-{interaction.User.Id}", "Aprobar");

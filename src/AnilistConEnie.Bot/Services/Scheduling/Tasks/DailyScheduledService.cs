@@ -14,7 +14,7 @@ public class DailyScheduledService(
     DiscordClient client,
     BotConfiguration config,
     DiscordBotService discordBotService,
-    BehaviorHelper behaviorHelper,
+    GuildMaintenanceService guildMaintenanceService,
     ConfessionsState confessionsState,
     BoluditosState boluditosState)
     : CronBackgroundService(scopeFactory, discordBotService, logger)
@@ -26,10 +26,10 @@ public class DailyScheduledService(
         if (!Inicializado || !client.Guilds.TryGetValue(config.GuildId, out DiscordGuild? guild))
             return;
 
-        await behaviorHelper.ManageNewUsuarios(guild);
-        await behaviorHelper.ManageChallenges();
-        await behaviorHelper.ManageUsuariosActivos(guild);
-        await behaviorHelper.ManageXpUserHistory(guild);
+        await guildMaintenanceService.ManageNewUsuarios(guild);
+        await guildMaintenanceService.ManageChallenges();
+        await guildMaintenanceService.ManageUsuariosActivos(guild);
+        await guildMaintenanceService.ManageXpUserHistory(guild);
         confessionsState.ResetDailyConfessions();
         boluditosState.ResetBoluditos();
     }

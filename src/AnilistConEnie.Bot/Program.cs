@@ -16,6 +16,11 @@ public static class Program
 {
     private static async Task Main(string[] args)
     {
+        LogsSettings logsSettings = LogsSettings.FromConfiguration(new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: true)
+            .Build());
+
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Information()
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
@@ -29,9 +34,9 @@ public static class Program
                 levelSwitch: new LoggingLevelSwitch(LogEventLevel.Information),
                 path: "logs/anilistconenie-.log",
                 outputTemplate: "[{Timestamp:dd-MM-yyyy HH:mm:ss}] [{Level:u3}]: {Message:lj}{NewLine}{Exception}",
-                fileSizeLimitBytes: 8_388_608, /* 8 megabytes */
+                fileSizeLimitBytes: logsSettings.TamanoArchivoBytes,
                 rollOnFileSizeLimit: true,
-                retainedFileCountLimit: 50)
+                retainedFileCountLimit: logsSettings.ArchivosRetenidos)
             .CreateLogger();
 
         try
@@ -66,6 +71,7 @@ public static class Program
 
         host.Services
             .AddSingleton(botConfig)
+            .AddBehaviorSettings(host.Configuration)
             .AddApplication()
             .AddInfrastructure()
             .AddConfiguredDiscordClient(host.Configuration)

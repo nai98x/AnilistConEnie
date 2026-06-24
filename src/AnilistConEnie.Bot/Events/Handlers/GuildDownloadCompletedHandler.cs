@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, AnilistUsersState anilistUsersState, TriggersState triggersState, XpState xpState, TeiouCooldownState teiouCooldownState, ILogger<GuildDownloadCompletedHandler> logger, BotConfiguration config, BehaviorHelper behaviorHelper, IUsuariosAnilistRepository usuariosAnilistRepository, IUsuariosDiscordRepository usuariosDiscordRepository, ITriggersRepository triggersRepository)
+public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, AnilistUsersState anilistUsersState, TriggersState triggersState, XpState xpState, TeiouCooldownState teiouCooldownState, ILogger<GuildDownloadCompletedHandler> logger, BotConfiguration config, DiscordLogService logService, GuildMaintenanceService guildMaintenanceService, IUsuariosAnilistRepository usuariosAnilistRepository, IUsuariosDiscordRepository usuariosDiscordRepository, ITriggersRepository triggersRepository)
 {
     public async Task Handle(DiscordClient client, GuildDownloadCompletedEventArgs args)
     {
@@ -62,31 +62,31 @@ public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, 
                 }
             }
         }
-        catch (Exception) { /* Nothing to do */ }
+        catch (Exception ex) { await logService.LogException(guild, ex, "Control de roles en startup"); }
         #endregion
 
         #region Behavior
-        await behaviorHelper.ClearInvitesRoleOnStartup(guild);
+        await guildMaintenanceService.ClearInvitesRoleOnStartup(guild);
         logger.LogInformation("Roles de invitacion limpiados correctamente");
         
-        await behaviorHelper.ManageBoosters(guild);
+        await guildMaintenanceService.ManageBoosters(guild);
         logger.LogInformation("Boosters cargados correctamente");
         
-        await behaviorHelper.ManageNewUsuarios(guild);
+        await guildMaintenanceService.ManageNewUsuarios(guild);
         logger.LogInformation("Nuevos usuarios gestionados correctamente");
         
-        await behaviorHelper.ManageUsuariosActivos(guild);
+        await guildMaintenanceService.ManageUsuariosActivos(guild);
         logger.LogInformation("Usuarios activos gestionados correctamente");
         
-        await behaviorHelper.ManageUnlinkedAccounts(client);
+        await guildMaintenanceService.ManageUnlinkedAccounts(client);
         logger.LogInformation("Cuentas sin vincular gestionadas correctamente");
         
-        await behaviorHelper.ManageFundadores(guild);
+        await guildMaintenanceService.ManageFundadores(guild);
         logger.LogInformation("Fundadores gestionados correctamente");
         
         if (!discordBotService.Debug || config.LoadXpUserHistoryOnDebug)
         {
-            await behaviorHelper.ManageXpUserHistory(guild);
+            await guildMaintenanceService.ManageXpUserHistory(guild);
             logger.LogInformation("Historial de XP de usuarios gestionado correctamente");
         }
         else

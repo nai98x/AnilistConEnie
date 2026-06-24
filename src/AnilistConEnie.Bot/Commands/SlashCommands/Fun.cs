@@ -30,7 +30,7 @@ public class Fun(
     BotConfiguration config,
     DiscordBotService discordBotService,
     RangoRoles rangoRoles,
-    FunHelper funHelper,
+    FunService funService,
     BoluditosState boluditosState,
     ConfessionsState confessionsState,
     IImagenStorageRepository imagenStorageRepository,
@@ -399,12 +399,12 @@ public class Fun(
         string gaugeUrl = await chartClient.CreateUrlAsync(FunCharts.BoludoGauge(value));
         string lineUrl = await chartClient.CreateUrlAsync(FunCharts.BoludoLine(member.DisplayName, puntosPorDia.Keys, puntosPorDia.Values));
 
-        char genero = funHelper.GetGenero(member);
+        char genero = funService.GetGenero(member);
         DiscordEmoji loreaEste = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.LoreaEste.Get(discordBotService.Debug));
 
         DiscordEmbed embedDiario = new DiscordEmbedBuilder()
             .WithTitle("Boludómetro")
-            .WithDescription(funHelper.BoluditoLevel(loreaEste, member, value))
+            .WithDescription(funService.BoluditoLevel(loreaEste, member, value))
             .WithThumbnail(member.GuildAvatarUrl ?? member.AvatarUrl)
             .WithImageUrl(gaugeUrl)
             .Build();
@@ -447,10 +447,10 @@ public class Fun(
             return;
         }
 
-        SignoZodiacal signo = FunHelper.GetSignoByBirthday(birthday.Birthday.Day, birthday.Birthday.Month);
+        SignoZodiacal signo = FunService.GetSignoByBirthday(birthday.Birthday.Day, birthday.Birthday.Month);
         string signoStrEnglish = signo.ToString().ToLowerInvariant();
         string signoStr = ((Enum)signo).GetDescription();
-        DiscordEmoji emote = FunHelper.EmoteOfSignoZodiacal(signo);
+        DiscordEmoji emote = FunService.EmoteOfSignoZodiacal(signo);
 
         string diaString = DateTime.Today.ToString("yyyy-MM-dd");
         HttpClient client = httpClientFactory.CreateClient();
@@ -499,9 +499,9 @@ public class Fun(
             logger.LogWarning(ex, "No se pudo traducir el horoscopo, se muestra el texto original en inglés");
         }
 
-        (string Texto, DiscordEmoji Emote) amor = FunHelper.GetHoroscopoCategoria(CategoriaHoroscopo.Amor, rndAmor, endMemberSignoDay);
-        (string Texto, DiscordEmoji Emote) dinero = FunHelper.GetHoroscopoCategoria(CategoriaHoroscopo.Dinero, rndDinero, endMemberSignoDay);
-        (string Texto, DiscordEmoji Emote) bienestar = FunHelper.GetHoroscopoCategoria(CategoriaHoroscopo.Bienestar, rndSalud, endMemberSignoDay);
+        (string Texto, DiscordEmoji Emote) amor = FunService.GetHoroscopoCategoria(CategoriaHoroscopo.Amor, rndAmor, endMemberSignoDay);
+        (string Texto, DiscordEmoji Emote) dinero = FunService.GetHoroscopoCategoria(CategoriaHoroscopo.Dinero, rndDinero, endMemberSignoDay);
+        (string Texto, DiscordEmoji Emote) bienestar = FunService.GetHoroscopoCategoria(CategoriaHoroscopo.Bienestar, rndSalud, endMemberSignoDay);
 
         CultureInfo es = new("es-ES");
         string dateSpanish = date.ToString("dddd dd", es) + " de " + date.ToString("MMMM", es) + $" del {date.Year}";

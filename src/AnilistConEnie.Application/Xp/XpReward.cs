@@ -19,15 +19,10 @@ public readonly record struct XpAccrual(
 /// </summary>
 public static class XpReward
 {
-    public const int MinPorMensaje = 10;
-    public const int MaxPorMensaje = 20;
-    public const int MinBooster = 1;
-    public const int MaxBooster = 3;
-
-    public static XpAccrual Accrue(UserXp current, bool isBooster, Random rng)
+    public static XpAccrual Accrue(UserXp current, bool isBooster, Random rng, int minPorMensaje, int maxPorMensaje, int minBooster, int maxBooster)
     {
-        int baseXp = rng.Next(MinPorMensaje, MaxPorMensaje + 1);
-        int boosterXp = isBooster ? rng.Next(MinBooster, MaxBooster + 1) : 0;
+        int baseXp = rng.Next(minPorMensaje, maxPorMensaje + 1);
+        int boosterXp = isBooster ? rng.Next(minBooster, maxBooster + 1) : 0;
         int totalGranted = baseXp + boosterXp;
 
         return new XpAccrual(

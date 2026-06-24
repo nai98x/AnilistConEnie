@@ -23,14 +23,8 @@ public abstract class FirestoreRepository(FirebaseService firebase)
         return snap.Exists ? snap.ConvertTo<T>() : null;
     }
 
-    protected static async Task UpsertAsync(DocumentReference doc, Dictionary<string, object> data)
-    {
-        DocumentSnapshot snap = await doc.GetSnapshotAsync();
-        if (snap.Exists)
-            await doc.UpdateAsync(data);
-        else
-            await doc.SetAsync(data);
-    }
+    protected static Task UpsertAsync(DocumentReference doc, Dictionary<string, object> data)
+        => doc.SetAsync(data, SetOptions.MergeAll);
 
     protected static async Task SetIfAbsentAsync(DocumentReference doc, object data)
     {

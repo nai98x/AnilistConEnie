@@ -1,9 +1,10 @@
 using AnilistConEnie.Application.Confessions;
 using AnilistConEnie.Application.Helpers;
+using AnilistConEnie.Bot.Configuration;
 
 namespace AnilistConEnie.Bot.Services.State;
 
-public class ConfessionsState
+public class ConfessionsState(ConfesionesSettings settings)
 {
     // Las confesiones se resetean juntas como unidad y tienen operaciones multi-dict; sin acceso concurrente real
     private readonly Dictionary<ulong, ulong> _dailyConfessionUsers = new();
@@ -39,7 +40,7 @@ public class ConfessionsState
         confessionReactions.Add(userReactedId);
         _confessions[confessionUser.Key] = confessionReactions;
 
-        int revealPercentage = ConfessionRevealPolicy.RevealChancePercent(confessionReactions.Count);
+        int revealPercentage = ConfessionRevealPolicy.RevealChancePercent(confessionReactions.Count, settings.PorcentajePorReaccion);
         if (NumberHelper.GetNumeroRandom(0, 100) > revealPercentage) return (false, 0, 0);
 
         _dailyConfessedMessages.Add(confessionUser.Value, confessionUser.Key);

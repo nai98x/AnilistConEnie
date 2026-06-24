@@ -64,13 +64,35 @@ public class DiscordLogService(BotConfiguration config, ILogger<DiscordLogServic
 
     public async Task GrabarLogGeneralError(DiscordGuild guild, string descripcion)
     {
-        DiscordChannel channelErrores = guild.Channels[config.Channels.LogChannelError];
-        await channelErrores.SendMessageAsync(new DiscordEmbedBuilder
-        {
-            Title = "Error no controlado",
-            Description = descripcion,
-            Color = DiscordColor.Red,
-        });
         logger.LogError("Error no controlado: {Descripcion}", descripcion);
+        try
+        {
+            DiscordChannel channelErrores = guild.Channels[config.Channels.LogChannelError];
+            await channelErrores.SendMessageAsync(new DiscordEmbedBuilder
+            {
+                Title = "Error no controlado",
+                Description = descripcion,
+                Color = DiscordColor.Red,
+            });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "No se pudo escribir en el canal de errores");
+        }
+    }
+
+    public async Task LogException(DiscordGuild guild, Exception ex, string contexto)
+    {
+        if (ex is NotFoundException)
+        {
+            logger.LogDebug("{Contexto}: entidad no encontrada ({Message})", contexto, ex.Message);
+            return;
+        }
+
+        string stackTrace = ex.StackTrace ?? string.Empty;
+        if (stackTrace.Length > 1500)
+            stackTrace = stackTrace[..1500];
+
+        await GrabarLogGeneralError(guild, $"{contexto}: {ex.Message}\n\n{Formatter.BlockCode(stackTrace)}");
     }
 }

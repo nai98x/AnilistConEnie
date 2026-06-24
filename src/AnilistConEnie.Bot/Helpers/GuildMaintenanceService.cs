@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AnilistConEnie.Bot.Helpers;
 
-public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, XpChartService xpChartService, InviteLinkState inviteLinkState, PermanentUsernameState permanentUsernameState, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, DiscordBotService discordBotService, IUsuariosActivosRepository usuariosActivosRepository, IUsuariosDiscordRepository usuariosDiscordRepository, IChallengesRepository challengesRepository)
+public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, XpState xpState, XpChartService xpChartService, InviteLinkState inviteLinkState, PermanentUsernameState permanentUsernameState, BotConfiguration config, XpSettings xpSettings, LimpiezaMiembrosSettings limpiezaSettings, RangoRoles rangoRoles, DiscordLogService logService, DiscordBotService discordBotService, IUsuariosActivosRepository usuariosActivosRepository, IUsuariosDiscordRepository usuariosDiscordRepository, IChallengesRepository challengesRepository)
 {
     public async Task ClearInvitesRoleOnStartup(DiscordGuild guild)
     {
@@ -26,7 +26,7 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, XpC
                 await userPair.Value.RevokeRoleAsync(inviteRole);
             }
         }
-        catch (Exception) { /* Ignored */ }
+        catch (Exception ex) { await logService.LogException(guild, ex, "ClearInvitesRoleOnStartup"); }
     }
 
     public async Task ManageInvitesRole(DiscordGuild guild)
@@ -46,7 +46,7 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, XpC
                 }
             }
         }
-        catch (Exception) { /* Ignored */ }
+        catch (Exception ex) { await logService.LogException(guild, ex, "ManageInvitesRole"); }
     }
 
     public async Task ManagePermanentUsernames(DiscordGuild guild)
@@ -62,10 +62,7 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, XpC
                     await member.ModifyAsync(x => x.Nickname = username.Value);
                 }
             }
-            catch (Exception)
-            {
-                // Ignored
-            }
+            catch (Exception ex) { await logService.LogException(guild, ex, "ManagePermanentUsernames"); }
         }
     }
 
@@ -85,7 +82,7 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, XpC
                     continue;
 
                 UserXp memberXp = xpState.GetUserXp(userId);
-                XpAccrual accrual = XpReward.Accrue(memberXp, member.PremiumSince != null, Random.Shared);
+                XpAccrual accrual = XpReward.Accrue(memberXp, member.PremiumSince != null, Random.Shared, xpSettings.MinPorMensaje, xpSettings.MaxPorMensaje, xpSettings.MinBooster, xpSettings.MaxBooster);
 
                 if (accrual.BoosterXp > 0)
                 {
@@ -196,7 +193,7 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, XpC
                         );
                     }
                 }
-                catch (Exception) { /* Ignored */ }
+                catch (Exception ex) { await logService.LogException(guild, ex, "ManageBirthdayRole (grant cumpleaños)"); }
             }
 
             IEnumerable<KeyValuePair<ulong, DiscordMember>> usersWithBirthdayRole = guild.Members.Where(x => x.Value.Roles.Any(y => y.Id == role.Id));
@@ -208,7 +205,7 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, XpC
                 }
             }
         }
-        catch (Exception) { /* Ignored */ }
+        catch (Exception ex) { await logService.LogException(guild, ex, "ManageBirthdayRole"); }
     }
 
     public async Task ManageAniversaries(DiscordGuild guild)
@@ -326,13 +323,13 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, XpC
         {
             try
             {
-                if (member.Value.JoinedAt.AddDays(1) >= System.DateTime.Now) continue;
+                if (member.Value.JoinedAt.AddDays(limpiezaSettings.GraciaNoVinculadoDias) >= System.DateTime.Now) continue;
                 
                 DiscordMember memberNew = await guild.GetMemberAsync(member.Key, true);
                 if (memberNew.Roles.Contains(noVerificadoRole) && !memberNew.Roles.Contains(miembroRole))
                     await member.Value.RemoveAsync("Kick automatico - 24hs sin vincular");
             }
-            catch (Exception) { /* Ignored */ }
+            catch (Exception ex) { await logService.LogException(guild, ex, "ManageUnlinkedAccounts"); }
         }
     }
     
@@ -352,9 +349,9 @@ public class BehaviorHelper(ILogger<BehaviorHelper> logger, XpState xpState, XpC
                 {
                     await member.Value.GrantRoleAsync(fundadorRole);
                 }
-                catch (Exception) { /* Ignored */ }
+                catch (Exception ex) { await logService.LogException(guild, ex, "ManageFundadores (grant)"); }
             }
         }
-        catch (Exception) { /* Ignored */ }
+        catch (Exception ex) { await logService.LogException(guild, ex, "ManageFundadores"); }
     }
 }

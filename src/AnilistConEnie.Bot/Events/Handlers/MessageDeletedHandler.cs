@@ -1,4 +1,5 @@
 using AnilistConEnie.Bot.Configuration;
+using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Interfaces.Repositories;
@@ -11,6 +12,7 @@ namespace AnilistConEnie.Bot.Events.Handlers;
 public class MessageDeletedHandler(
     DiscordBotService discordBotService,
     BotConfiguration config,
+    DiscordLogService logService,
     IIntercambiosRepostRepository intercambiosRepostRepository)
 {
     public async Task Handle(DiscordClient client, MessageDeletedEventArgs args)
@@ -30,7 +32,7 @@ public class MessageDeletedHandler(
                     await repostChannel.DeleteMessageAsync(repostMessage);
                     await intercambiosRepostRepository.DeleteMensaje(args.Message.Id);
                 }
-                catch (Exception) { /* Ignored */ }
+                catch (Exception ex) { await logService.LogException(args.Guild, ex, "Intercambios repost - borrar mensaje"); }
             }
         }
         #endregion

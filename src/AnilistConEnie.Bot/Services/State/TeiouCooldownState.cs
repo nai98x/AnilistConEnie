@@ -1,9 +1,10 @@
+using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Model.Entities;
 using System.Collections.Concurrent;
 
 namespace AnilistConEnie.Bot.Services.State;
 
-public class TeiouCooldownState
+public class TeiouCooldownState(CooldownsSettings settings)
 {
     private readonly ConcurrentDictionary<ulong, DateTime> _teiouNicknameCooldown = new();
 
@@ -14,7 +15,7 @@ public class TeiouCooldownState
         (_teiouNicknameCooldown[id] - DateTime.Now).TotalHours;
 
     public void AddTeiouCooldown(ulong id) =>
-        _teiouNicknameCooldown[id] = DateTime.Now.AddHours(24);
+        _teiouNicknameCooldown[id] = DateTime.Now.AddHours(settings.TeiouApodoHoras);
 
     public void FillTeiouFromDb(List<TeiouCooldownNickname> list)
     {

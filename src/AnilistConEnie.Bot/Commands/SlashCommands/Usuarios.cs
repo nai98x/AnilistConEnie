@@ -24,6 +24,7 @@ public class Usuarios(
     IUsuariosDiscordRepository usuariosDiscordRepository,
     XpState xpState,
     BotConfiguration config,
+    DiscordLogService logService,
     IHttpClientFactory httpClientFactory)
 {
     [Command("birthdays")]
@@ -164,7 +165,7 @@ public class Usuarios(
             if (ctx.Member.Roles.Contains(bdayRole))
                 await ctx.Member.RevokeRoleAsync(bdayRole);
         }
-        catch (Exception) { /* Ignore */ }
+        catch (Exception ex) { await logService.LogException(ctx.Guild!, ex, "DeleteBirthday - revocar rol cumpleaños"); }
     }
 
     [Command("fundadores")]

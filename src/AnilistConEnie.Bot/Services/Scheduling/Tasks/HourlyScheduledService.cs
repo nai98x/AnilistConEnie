@@ -13,7 +13,7 @@ public class HourlyScheduledService(
     DiscordClient client,
     BotConfiguration config,
     DiscordBotService discordBotService,
-    BehaviorHelper behaviorHelper)
+    GuildMaintenanceService guildMaintenanceService)
     : CronBackgroundService(scopeFactory, discordBotService, logger)
 {
     protected override string CronExpression => "0 * * * *";
@@ -23,9 +23,9 @@ public class HourlyScheduledService(
         if (!Inicializado || !client.Guilds.TryGetValue(config.GuildId, out DiscordGuild? guild))
             return;
 
-        await behaviorHelper.ManageBoosters(guild);
-        await behaviorHelper.ManageBirthdayRole(guild);
-        await behaviorHelper.ManageAniversaries(guild);
-        await behaviorHelper.ManageUnlinkedAccounts(client);
+        await guildMaintenanceService.ManageBoosters(guild);
+        await guildMaintenanceService.ManageBirthdayRole(guild);
+        await guildMaintenanceService.ManageAniversaries(guild);
+        await guildMaintenanceService.ManageUnlinkedAccounts(client);
     }
 }

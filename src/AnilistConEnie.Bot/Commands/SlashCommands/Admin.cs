@@ -29,6 +29,8 @@ namespace AnilistConEnie.Bot.Commands.SlashCommands;
 //[TestCommand]
 public class Admin(
     BotConfiguration config,
+    CooldownsSettings cooldownsSettings,
+    LimpiezaMiembrosSettings limpiezaSettings,
     DiscordBotService discordBotService,
     DiscordLogService logService,
     EmoteModeState emoteModeState,
@@ -78,12 +80,12 @@ public class Admin(
         if (member.Roles.All(y => y.Id != role.Id))
         {
             await member.GrantRoleAsync(role);
-            inviteLinkState.AddLinkRoleUser(member.Id, DateTime.Now.AddMinutes(5));
+            inviteLinkState.AddLinkRoleUser(member.Id, DateTime.Now.AddMinutes(cooldownsSettings.InvitePermisoMinutos));
 
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
             {
                 Title = "Invitaciones permitidas",
-                Description = $"{member.Mention}, puedes mandar invitaciones a otros servidores por los próximos 5 minutos.",
+                Description = $"{member.Mention}, puedes mandar invitaciones a otros servidores por los próximos {cooldownsSettings.InvitePermisoMinutos} minutos.",
                 Color = DiscordColor.Green
             }).AddMention(new UserMention(member.Id)));
         }
@@ -469,18 +471,18 @@ public class Admin(
         if (!await EnsureAdminAsync(ctx)) return;
 
         HashSet<ulong> memberIds = ctx.Guild!.Members.Keys.ToHashSet();
-        List<UsuarioActivo> inactivos = await usuariosActivosRepository.GetUsuariosInactivos(memberIds, 12);
+        List<UsuarioActivo> inactivos = await usuariosActivosRepository.GetUsuariosInactivos(memberIds, limpiezaSettings.InactividadMeses);
         List<ulong> kickeables = [];
 
         foreach (DiscordMember member in ctx.Guild.Members.Values)
         {
-            if (xpState.GetUserXp(member.Id).Total < 1000 && inactivos.Any(x => x.UserId == (long)member.Id))
+            if (xpState.GetUserXp(member.Id).Total < limpiezaSettings.XpMinimoInactivo && inactivos.Any(x => x.UserId == (long)member.Id))
                 kickeables.Add(member.Id);
         }
 
         string membersStr = string.Join("\n", kickeables.Select(x => ctx.Guild.Members[x].DisplayName));
         await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-            .WithTitle("Miembros inactivos hace mas de un año con menos de 1000 de xp")
+            .WithTitle($"Miembros inactivos hace mas de {limpiezaSettings.InactividadMeses} meses con menos de {limpiezaSettings.XpMinimoInactivo} de xp")
             .WithDescription(membersStr)));
     }
 
@@ -609,7 +611,7 @@ public class Admin(
                         await member.GrantRoleAsync(rol);
                         rolAgregado.Add(member);
                     }
-                    catch (Exception) { /* Ignored */ }
+                    catch (Exception ex) { await logService.LogException(ctx.Guild!, ex, "Asignar rol por reacción"); }
                 }
             }
 

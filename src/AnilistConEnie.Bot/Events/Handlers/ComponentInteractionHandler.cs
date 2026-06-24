@@ -11,7 +11,7 @@ using DSharpPlus.EventArgs;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class ComponentInteractionHandler(DiscordBotService discordBotService, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, AnilistHelper anilistHelper, IUsuariosAnilistRepository usuariosAnilistRepository)
+public class ComponentInteractionHandler(DiscordBotService discordBotService, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, AnilistService anilistService, IUsuariosAnilistRepository usuariosAnilistRepository)
 {
     public async Task Handle(DiscordClient client, ComponentInteractionCreatedEventArgs args)
     {
@@ -19,7 +19,7 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
 
         if (args.Interaction.Data.CustomId.StartsWith("modal-anilistprofileset") && !discordBotService.Debug)
         {
-            await anilistHelper.VincularAniList(args.Interaction, client);
+            await anilistService.VincularAniList(args.Interaction, client);
         }
         else if (args.Interaction.Data.CustomId.StartsWith("colores"))
         {
@@ -123,7 +123,7 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
                         AvatarMedium = userApproval.Avatar,
                         BannerImage = userApproval.Banner
                     };
-                    await anilistHelper.TerminarVinculacion(client, user, member, args.Guild, anilistUser);
+                    await anilistService.TerminarVinculacion(client, user, member, args.Guild, anilistUser);
 
                     await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
                         .WithTitle("Solicitud Aprobada")
@@ -146,7 +146,7 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
                 {
                     await args.Message.DeleteAsync();
                 }
-                catch (Exception){ /* Ignored */ }
+                catch (Exception ex) { await logService.LogException(args.Guild, ex, "Rechazo de vinculación - borrar mensaje"); }
             }
 
         }

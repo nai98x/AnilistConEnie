@@ -12,7 +12,7 @@ public enum CategoriaHoroscopo
     Dinero
 }
 
-public class FunHelper(BotConfiguration config)
+public class FunService(BotConfiguration config)
 {
 
     public char GetGenero(DiscordMember member, bool uppercase = false)

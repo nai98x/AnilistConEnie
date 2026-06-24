@@ -27,7 +27,7 @@ public class Challenges(
     IUsuariosDiscordRepository usuariosDiscordRepository,
     XpState xpState,
     AnilistUsersState anilistUsersState,
-    AnilistHelper anilistHelper,
+    AnilistService anilistService,
     DiscordBotService discordBotService,
     BotConfiguration config)
 {
@@ -142,7 +142,7 @@ public class Challenges(
             .WithDescription(descTerminados)
             .WithColor(DiscordColor.Green);
 
-        List<UsuarioAnilist> participantes = await anilistHelper.PostsFromChallengeAsync(challengeData);
+        List<UsuarioAnilist> participantes = await anilistService.PostsFromChallengeAsync(challengeData);
         List<UsuarioAnilist> pendientes = participantes.Where(x => completaron.All(y => y.UserId != x.UserId)).ToList();
 
         string descPendientes = "(Ningún usuario tiene pendiente este challenge)";
@@ -204,7 +204,7 @@ public class Challenges(
             List<UsuarioChallenge> challengesUsuario = await challengesRepository.GetChallengesUsuario(usuario.Id);
             List<Challenge> todos = await challengesRepository.GetLista();
             List<Challenge> noCompletados = todos.Where(x => challengesUsuario.All(y => y.Challenge.Nombre != x.Nombre)).ToList();
-            List<Challenge> enCurso = await anilistHelper.ChallengesPostsFromMemberAsync(anilistUserId, noCompletados);
+            List<Challenge> enCurso = await anilistService.ChallengesPostsFromMemberAsync(anilistUserId, noCompletados);
             List<Challenge> sinPost = noCompletados.Where(x => enCurso.All(y => y.Nombre != x.Nombre)).ToList();
             List<Challenge> sinPostDisponibles = sinPost.Where(x => x.Disponible).ToList();
             List<Challenge> sinPostNoDisponibles = sinPost.Where(x => !x.Disponible).ToList();

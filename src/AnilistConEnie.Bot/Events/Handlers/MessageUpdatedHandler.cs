@@ -1,4 +1,5 @@
 using AnilistConEnie.Bot.Configuration;
+using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Interfaces.Repositories;
@@ -11,6 +12,7 @@ namespace AnilistConEnie.Bot.Events.Handlers;
 public class MessageUpdatedHandler(
     DiscordBotService discordBotService,
     BotConfiguration config,
+    DiscordLogService logService,
     IIntercambiosRepostRepository intercambiosRepostRepository)
 {
     public async Task Handle(DiscordClient client, MessageUpdatedEventArgs args)
@@ -34,7 +36,7 @@ public class MessageUpdatedHandler(
 
                     await repostMessage.ModifyAsync(embed: newEmbed.Build());
                 }
-                catch (Exception) { /* Ignored */ }
+                catch (Exception ex) { await logService.LogException(args.Guild, ex, "Intercambios repost - editar mensaje"); }
             }
         }
         #endregion

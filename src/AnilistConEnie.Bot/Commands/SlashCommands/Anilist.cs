@@ -20,7 +20,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace AnilistConEnie.Bot.Commands.SlashCommands;
 
 //[TestCommand]
-public class Anilist(IAnilistClient anilistClient, AnilistHelper anilistHelper, AnilistUsersState anilistUsersState, BotConfiguration config)
+public class Anilist(IAnilistClient anilistClient, AnilistService anilistService, AnilistUsersState anilistUsersState, BotConfiguration config)
 {
     // Límite de caracteres de la description de un embed de Discord.
     private const int EmbedDescriptionLimit = 4096;
@@ -67,7 +67,7 @@ public class Anilist(IAnilistClient anilistClient, AnilistHelper anilistHelper, 
             Color = DiscordEmojiHelper.GetColor()
         }));
 
-        string scores = await anilistHelper.GetServerScoresAsync(ctx.Guild!, media, includeUsersWithoutScore: true);
+        string scores = await anilistService.GetServerScoresAsync(ctx.Guild!, media, includeUsersWithoutScore: true);
 
         // Embed base sin description: se usa tal cual (página única) o como plantilla de cada página.
         DiscordEmbedBuilder embed = new()
@@ -192,7 +192,7 @@ public class Anilist(IAnilistClient anilistClient, AnilistHelper anilistHelper, 
             return;
         }
 
-        await anilistHelper.TerminarVinculacion(ctx.Client, user, miembro, ctx.Guild!, anilistUser);
+        await anilistService.TerminarVinculacion(ctx.Client, user, miembro, ctx.Guild!, anilistUser);
 
         await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
         {

@@ -128,4 +128,84 @@ public static class DiscordInteractivity
 
     private static IEnumerable<DiscordButtonComponent> BuildTabButtons(IEnumerable<string> keys, string activeTab, bool disabled) =>
         keys.Select(key => new DiscordButtonComponent(DiscordButtonStyle.Primary, key, key, disabled || key == activeTab)).ToList();
+
+    /// <summary>
+    /// Pagina una lista en un container de Components V2 con botones "Anterior"/"Siguiente". Cada item se
+    /// renderiza con <paramref name="renderItem"/>; el header recibe una línea "Página x/x" cuando hay más
+    /// de una página. "Anterior" se deshabilita en la primera página y "Siguiente" en la última; ambos se
+    /// deshabilitan tras 3 minutos de inactividad o al acercarse al límite de vida de la interacción (15
+    /// minutos por regla de Discord). Requiere que la respuesta ya haya sido diferida.
+    /// </summary>
+    public static async Task PaginarContainerV2Async<T>(
+        CommandContext ctx,
+        IReadOnlyList<T> items,
+        int porPagina,
+        string header,
+        Func<T, DiscordComponent> renderItem,
+        DiscordColor? color = null)
+    {
+        int totalPaginas = Math.Max(1, (int)Math.Ceiling(items.Count / (double)porPagina));
+        int pagina = 0;
+
+        DiscordWebhookBuilder Build(bool inactivo)
+        {
+            List<DiscordComponent> componentes =
+            [
+                new DiscordTextDisplayComponent(
+                    header + (totalPaginas > 1 ? $"\n-# Página {pagina + 1}/{totalPaginas}" : "")),
+                new DiscordSeparatorComponent(divider: true, spacing: DiscordSeparatorSpacing.Large)
+            ];
+
+            foreach (T item in items.Skip(pagina * porPagina).Take(porPagina))
+                componentes.Add(renderItem(item));
+
+            DiscordWebhookBuilder builder = new DiscordWebhookBuilder()
+                .EnableV2Components()
+                .AddContainerComponent(new DiscordContainerComponent(componentes, color: color ?? DiscordColor.Blurple));
+
+            if (totalPaginas > 1)
+                builder.AddActionRowComponent(
+                    new DiscordButtonComponent(DiscordButtonStyle.Secondary, "anterior", "Anterior", inactivo || pagina == 0),
+                    new DiscordButtonComponent(DiscordButtonStyle.Secondary, "siguiente", "Siguiente", inactivo || pagina == totalPaginas - 1));
+
+            return builder;
+        }
+
+        if (totalPaginas <= 1)
+        {
+            await ctx.EditResponseAsync(Build(inactivo: false));
+            return;
+        }
+
+        InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
+
+        DateTimeOffset deadline = DateTimeOffset.UtcNow.AddMinutes(14);
+        TimeSpan inactivityTimeout = TimeSpan.FromMinutes(3);
+
+        while (true)
+        {
+            DiscordMessage message = await ctx.EditResponseAsync(Build(inactivo: false));
+
+            TimeSpan remaining = deadline - DateTimeOffset.UtcNow;
+            if (remaining <= TimeSpan.Zero) break;
+
+            TimeSpan waitFor = remaining < inactivityTimeout ? remaining : inactivityTimeout;
+
+            InteractivityResult<ComponentInteractionCreatedEventArgs> response =
+                await interactivity.WaitForButtonAsync(message, ctx.User, waitFor);
+
+            if (response.TimedOut) break;
+
+            await response.Result.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
+
+            pagina = response.Result.Id switch
+            {
+                "anterior" => Math.Max(0, pagina - 1),
+                "siguiente" => Math.Min(totalPaginas - 1, pagina + 1),
+                _ => pagina
+            };
+        }
+
+        await ctx.EditResponseAsync(Build(inactivo: true));
+    }
 }

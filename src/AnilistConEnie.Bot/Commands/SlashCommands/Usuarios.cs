@@ -21,7 +21,7 @@ using AnilistConEnie.Bot.Services;
 
 namespace AnilistConEnie.Bot.Commands.SlashCommands;
 
-//[TestCommand]
+[TestCommand]
 public class Usuarios(
     IUsuariosDiscordRepository usuariosDiscordRepository,
     XpState xpState,
@@ -191,17 +191,24 @@ public class Usuarios(
 
         List<DiscordMember> miembrosFundadores = guild.Members.Values
             .Where(x => config.GetFechaEntrada(x.Id, x.JoinedAt).Date == guildCreation && !x.Roles.Contains(noVerificadoRole) && !x.IsBot)
-            .OrderBy(x => x.DisplayName)
+            .OrderBy(x => config.GetFechaEntrada(x.Id, x.JoinedAt))
             .ToList();
 
-        string desc = string.Join("\n", miembrosFundadores.Select(x => $"- {x.DisplayName}"));
-
-        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-            .WithTitle("Miembros fundadores del servidor")
-            .WithDescription(desc)
-            .WithColor(DiscordColor.Blurple)
-            .WithThumbnail("https://media.discordapp.net/attachments/862568630365323264/990747470508204032/unknown.png")
-            .WithFooter("Lista de personas que estuvieron en el servidor desde el día 1", "https://images-ext-2.discordapp.net/external/_MXm_JhN6pfBs8WNrO6p2Ct0grLmS21-1QWud9kYHdU/https/cdn.discordapp.com/emojis/899327966390157312.png")));
+        await DiscordInteractivity.PaginarContainerV2Async(
+            ctx,
+            miembrosFundadores,
+            porPagina: 7,
+            header: "# Miembros fundadores del servidor\n" +
+                    "Personas que entraron al server el día 7 de julio.\n" +
+                    "-# Horarios en hora de Argentina (UTC-3).",
+            renderItem: miembro =>
+            {
+                DateTimeOffset entrada = config.GetFechaEntrada(miembro.Id, miembro.JoinedAt).ToOffset(TimeSpan.FromHours(-3));
+                return new DiscordSectionComponent(
+                    text: $"### {miembro.DisplayName}\n" +
+                          $"Entró a las {entrada:HH:mm}",
+                    accessory: new DiscordThumbnailComponent(miembro.GuildAvatarUrl ?? miembro.AvatarUrl));
+            });
     }
 
     [Command("Traducir")]

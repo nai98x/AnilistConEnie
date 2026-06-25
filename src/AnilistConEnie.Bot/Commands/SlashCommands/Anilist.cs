@@ -7,6 +7,7 @@ using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Entities.Anilist;
+using AnilistConEnie.Model.Exceptions;
 using AnilistConEnie.Model.Interfaces;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.ContextChecks;
@@ -38,7 +39,16 @@ public class Anilist(IAnilistClient anilistClient, AnilistService anilistService
 
         await ctx.DeferResponseAsync();
 
-        IReadOnlyList<AnilistMedia> resultados = await anilistClient.SearchMediaAsync(mediaNombre, tipo);
+        IReadOnlyList<AnilistMedia> resultados;
+        try
+        {
+            resultados = await anilistClient.SearchMediaAsync(mediaNombre, tipo);
+        }
+        catch (AnilistServerErrorException)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(AnilistErrorEmbed.NoDisponible()));
+            return;
+        }
 
         if (resultados.Count == 0)
         {
@@ -71,7 +81,16 @@ public class Anilist(IAnilistClient anilistClient, AnilistService anilistService
             Color = DiscordEmojiHelper.GetColor()
         }));
 
-        string scores = await anilistService.GetServerScoresAsync(ctx.Guild!, media, includeUsersWithoutScore: true);
+        string scores;
+        try
+        {
+            scores = await anilistService.GetServerScoresAsync(ctx.Guild!, media, includeUsersWithoutScore: true);
+        }
+        catch (AnilistServerErrorException)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(AnilistErrorEmbed.NoDisponible()));
+            return;
+        }
 
         // Embed base sin description: se usa tal cual (página única) o como plantilla de cada página.
         DiscordEmbedBuilder embed = new()
@@ -123,7 +142,17 @@ public class Anilist(IAnilistClient anilistClient, AnilistService anilistService
 
         await ctx.DeferResponseAsync();
 
-        AnilistUser? usuarioAnilist = await anilistClient.SearchUserAsync(buscar);
+        AnilistUser? usuarioAnilist;
+        try
+        {
+            usuarioAnilist = await anilistClient.SearchUserAsync(buscar);
+        }
+        catch (AnilistServerErrorException)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(AnilistErrorEmbed.NoDisponible()));
+            return;
+        }
+
         if (usuarioAnilist is not null)
         {
             UsuarioAnilist? vinculado = anilistUsersState.Usuarios.Find(x => x.AnilistURL == usuarioAnilist.SiteUrl);
@@ -172,7 +201,17 @@ public class Anilist(IAnilistClient anilistClient, AnilistService anilistService
 
         string nombre = AnilistProfileUrl.ExtractUserName(perfil);
 
-        AnilistUser? anilistUser = await anilistClient.SearchUserAsync(nombre);
+        AnilistUser? anilistUser;
+        try
+        {
+            anilistUser = await anilistClient.SearchUserAsync(nombre);
+        }
+        catch (AnilistServerErrorException)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(AnilistErrorEmbed.NoDisponible()));
+            return;
+        }
+
         if (anilistUser is null)
         {
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder

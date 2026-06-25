@@ -11,6 +11,7 @@ using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Entities.Anilist;
 using AnilistConEnie.Model.Enum;
+using AnilistConEnie.Model.Exceptions;
 using AnilistConEnie.Model.Interfaces;
 using AnilistConEnie.Model.Interfaces.Repositories;
 using DSharpPlus;
@@ -517,7 +518,17 @@ public class Admin(
         if (!await EnsureAdminAsync(ctx)) return;
         if (!await EnsureCanalPermitidoAsync(ctx)) return;
 
-        AnilistUser? perfil = await anilistClient.SearchUserAsync(userName);
+        AnilistUser? perfil;
+        try
+        {
+            perfil = await anilistClient.SearchUserAsync(userName);
+        }
+        catch (AnilistServerErrorException)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(AnilistErrorEmbed.NoDisponible()));
+            return;
+        }
+
         if (perfil is null)
         {
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
@@ -551,7 +562,17 @@ public class Admin(
         if (!await EnsureAdminAsync(ctx)) return;
         if (!await EnsureCanalPermitidoAsync(ctx)) return;
 
-        AnilistUser? perfil = await anilistClient.SearchUserAsync(userName);
+        AnilistUser? perfil;
+        try
+        {
+            perfil = await anilistClient.SearchUserAsync(userName);
+        }
+        catch (AnilistServerErrorException)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(AnilistErrorEmbed.NoDisponible()));
+            return;
+        }
+
         if (perfil is null)
         {
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder

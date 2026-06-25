@@ -77,6 +77,10 @@ internal sealed class AnilistGraphQLExecutor : IDisposable
         {
             throw new AnilistRateLimitException(GetRetryAfter(ex.ResponseHeaders), ex);
         }
+        catch (GraphQLHttpRequestException ex) when ((int)ex.StatusCode >= 500)
+        {
+            throw new AnilistServerErrorException((int)ex.StatusCode, ex);
+        }
         catch (GraphQLHttpRequestException ex)
         {
             throw new AnilistApiException($"AniList respondió HTTP {(int)ex.StatusCode} ({ex.StatusCode}).", ex);

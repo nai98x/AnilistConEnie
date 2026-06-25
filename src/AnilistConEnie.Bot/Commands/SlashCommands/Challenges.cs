@@ -9,6 +9,7 @@ using AnilistConEnie.Bot.Services;
 using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Enum;
+using AnilistConEnie.Model.Exceptions;
 using AnilistConEnie.Model.Interfaces.Repositories;
 using DSharpPlus;
 using DSharpPlus.Commands;
@@ -149,7 +150,17 @@ public class Challenges(
             .WithDescription(descTerminados)
             .WithColor(DiscordColor.Green);
 
-        List<UsuarioAnilist> participantes = await anilistService.PostsFromChallengeAsync(challengeData);
+        List<UsuarioAnilist> participantes;
+        try
+        {
+            participantes = await anilistService.PostsFromChallengeAsync(challengeData);
+        }
+        catch (AnilistServerErrorException)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(AnilistErrorEmbed.NoDisponible()));
+            return;
+        }
+
         List<UsuarioAnilist> pendientes = participantes.Where(x => completaron.All(y => y.UserId != x.UserId)).ToList();
 
         string descPendientes = "(Ningún usuario tiene pendiente este challenge)";
@@ -290,6 +301,10 @@ public class Challenges(
             };
 
             await DiscordInteractivity.SwitchTabsAsync(ctx, tabs);
+        }
+        catch (AnilistServerErrorException)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(AnilistErrorEmbed.NoDisponible()));
         }
         catch (Exception ex)
         {

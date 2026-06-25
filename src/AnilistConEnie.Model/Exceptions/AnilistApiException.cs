@@ -13,6 +13,21 @@ public class AnilistApiException : Exception
 }
 
 /// <summary>
+/// Se lanza cuando AniList responde con un error de servidor (5xx) tras agotar los reintentos.
+/// Suele indicar que la API está caída o degradada, no un problema de la consulta.
+/// </summary>
+public class AnilistServerErrorException : AnilistApiException
+{
+    public int StatusCode { get; }
+
+    public AnilistServerErrorException(int statusCode, Exception innerException)
+        : base($"AniList respondió HTTP {statusCode}; la API probablemente esté caída.", innerException)
+    {
+        StatusCode = statusCode;
+    }
+}
+
+/// <summary>
 /// Se lanza cuando AniList responde 429 (Too Many Requests) y los reintentos se agotaron.
 /// <see cref="RetryAfter"/> indica cuánto esperar antes de volver a intentar, si el header
 /// <c>Retry-After</c> lo informó.

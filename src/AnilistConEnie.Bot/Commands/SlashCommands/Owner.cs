@@ -7,6 +7,7 @@ using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
 using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Model.Entities.Anilist;
+using AnilistConEnie.Model.Exceptions;
 using AnilistConEnie.Model.Interfaces;
 using DSharpPlus;
 using DSharpPlus.Commands;
@@ -256,7 +257,16 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
     {
         await ctx.DeferEphemeralAsync();
 
-        AnilistRateLimit rateLimit = await anilistClient.GetRateLimitAsync();
+        AnilistRateLimit rateLimit;
+        try
+        {
+            rateLimit = await anilistClient.GetRateLimitAsync();
+        }
+        catch (AnilistServerErrorException)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(AnilistErrorEmbed.NoDisponible()));
+            return;
+        }
 
         string desc = $"{Formatter.Bold("AniList:")}\n" +
                       $"Limit: {rateLimit.Limit?.ToString() ?? "?"}\n" +

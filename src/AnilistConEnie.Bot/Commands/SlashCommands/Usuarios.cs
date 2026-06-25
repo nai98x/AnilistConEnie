@@ -3,6 +3,7 @@ using System.Globalization;
 using AnilistConEnie.Application.Extensions;
 using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Application.Xp;
+using AnilistConEnie.Bot.Commands.Enums;
 using AnilistConEnie.Bot.Commands.SlashCommands.Attributes;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
@@ -19,7 +20,7 @@ using AnilistConEnie.Bot.Services;
 
 namespace AnilistConEnie.Bot.Commands.SlashCommands;
 
-[TestCommand]
+//[TestCommand]
 public class Usuarios(
     IUsuariosDiscordRepository usuariosDiscordRepository,
     XpState xpState,
@@ -33,11 +34,13 @@ public class Usuarios(
     [Description("Muestra los cumpleaños de los usuarios")]
     public async Task Birthdays(
         SlashCommandContext ctx,
-        [Parameter("Mes")] [Description("Si quieres ver los cumpleaños del mes o todos los registrados")] bool month)
+        [Parameter("Filtro")] [Description("Si quieres ver los cumpleaños del mes o todos los registrados")] FiltroCumple filtro)
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
         await ctx.DeferResponseAsync();
+
+        bool month = filtro == FiltroCumple.SoloDelMes;
 
         DiscordGuild guild = ctx.Guild!;
         CultureInfo es = CultureInfo.CreateSpecificCulture("es");

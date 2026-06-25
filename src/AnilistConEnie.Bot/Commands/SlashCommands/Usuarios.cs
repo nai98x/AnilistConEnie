@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Globalization;
 using AnilistConEnie.Application.Extensions;
+using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Application.Xp;
 using AnilistConEnie.Bot.Commands.SlashCommands.Attributes;
 using AnilistConEnie.Bot.Configuration;
@@ -25,6 +26,7 @@ namespace AnilistConEnie.Bot.Commands.SlashCommands;
 public class Usuarios(
     IUsuariosDiscordRepository usuariosDiscordRepository,
     XpState xpState,
+    RangoRoles rangoRoles,
     BotConfiguration config,
     DiscordLogService logService,
     IHttpClientFactory httpClientFactory,
@@ -194,6 +196,8 @@ public class Usuarios(
             .OrderBy(x => config.GetFechaEntrada(x.Id, x.JoinedAt))
             .ToList();
 
+        DiscordEmoji umaPoints = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
+
         await DiscordInteractivity.PaginarContainerV2Async(
             ctx,
             miembrosFundadores,
@@ -204,9 +208,12 @@ public class Usuarios(
             renderItem: miembro =>
             {
                 DateTimeOffset entrada = config.GetFechaEntrada(miembro.Id, miembro.JoinedAt).ToOffset(TimeSpan.FromHours(-3));
+                long xp = xpState.GetUserXp(miembro.Id).Total;
+                DiscordRole rango = rangoRoles.GetRoleByXp(guild, xp);
                 return new DiscordSectionComponent(
                     text: $"### {miembro.DisplayName}\n" +
-                          $"Entró a las {entrada:HH:mm}",
+                          $"Entró a las {entrada:HH:mm}\n" +
+                          $"{xp.ToSpanish()} {umaPoints} - {rango.Mention}",
                     accessory: new DiscordThumbnailComponent(miembro.GuildAvatarUrl ?? miembro.AvatarUrl));
             },
             separarItems: true);

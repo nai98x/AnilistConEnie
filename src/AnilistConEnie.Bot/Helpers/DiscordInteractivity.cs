@@ -142,7 +142,8 @@ public static class DiscordInteractivity
         int porPagina,
         string header,
         Func<T, DiscordComponent> renderItem,
-        DiscordColor? color = null)
+        DiscordColor? color = null,
+        bool separarItems = false)
     {
         int totalPaginas = Math.Max(1, (int)Math.Ceiling(items.Count / (double)porPagina));
         int pagina = 0;
@@ -156,8 +157,14 @@ public static class DiscordInteractivity
                 new DiscordSeparatorComponent(divider: true, spacing: DiscordSeparatorSpacing.Large)
             ];
 
+            bool primero = true;
             foreach (T item in items.Skip(pagina * porPagina).Take(porPagina))
+            {
+                if (separarItems && !primero)
+                    componentes.Add(new DiscordSeparatorComponent(divider: true, spacing: DiscordSeparatorSpacing.Small));
                 componentes.Add(renderItem(item));
+                primero = false;
+            }
 
             DiscordWebhookBuilder builder = new DiscordWebhookBuilder()
                 .EnableV2Components()

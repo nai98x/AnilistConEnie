@@ -208,7 +208,8 @@ public class Usuarios(
                     text: $"### {miembro.DisplayName}\n" +
                           $"Entró a las {entrada:HH:mm}",
                     accessory: new DiscordThumbnailComponent(miembro.GuildAvatarUrl ?? miembro.AvatarUrl));
-            });
+            },
+            separarItems: true);
     }
 
     [Command("Traducir")]

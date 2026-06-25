@@ -1,5 +1,7 @@
 # Añilist
 
+[![CodeFactor](https://www.codefactor.io/repository/github/nai98x/anilistconenie/badge)](https://www.codefactor.io/repository/github/nai98x/anilistconenie)
+
 Bot multipropósito para el servidor de Discord **Añilist**, desarrollado en DSharpPlus sobre .NET 10.
 
 ## Stack

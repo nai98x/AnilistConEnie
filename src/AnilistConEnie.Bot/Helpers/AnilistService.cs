@@ -185,7 +185,7 @@ public class AnilistService(XpState xpState, AnilistUsersState anilistUsersState
             return;
         }
 
-        DiscordMember member = await interaction.Guild.GetMemberAsync(interaction.User.Id, true);
+        DiscordMember member = await interaction.Guild!.GetMemberAsync(interaction.User.Id, true);
 
         if (anilistUsersState.IsAnilistUserBaneado(viewer.Id))
         {

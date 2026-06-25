@@ -146,7 +146,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
         }
         catch (Exception ex)
         {
-            await logService.GrabarLogGeneralError(guild, $"ERROR subiendo de rango {member.Mention} al rango {newRango.Mention}\n\n{ex.Message}:{Formatter.BlockCode(ex.StackTrace)}");
+            await logService.GrabarLogGeneralError(guild, $"ERROR subiendo de rango {member.Mention} al rango {newRango.Mention}\n\n{ex.Message}:{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
         }
 
         if (!yaTieneNuevoRango)
@@ -265,7 +265,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
         }
         catch (Exception ex)
         {
-            await logService.GrabarLogGeneralError(guild, $"Error en ManageAniversaries: {ex.Message}\n\n{Formatter.BlockCode(ex.StackTrace)}");
+            await logService.GrabarLogGeneralError(guild, $"Error en ManageAniversaries: {ex.Message}\n\n{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
         }
     }
 

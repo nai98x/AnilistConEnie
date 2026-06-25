@@ -28,8 +28,7 @@ public class FirebaseService
     public async Task<(StorageClient Client, string Bucket)> GetAnilistConEnieStorageAsync()
     {
         string jsonCredentials = await File.ReadAllTextAsync(CredentialPath(AnilistConEnieCredentialFile));
-        GoogleCredential credential = GoogleCredential.FromJson(jsonCredentials);
-        StorageClient client = await StorageClient.CreateAsync(credential);
+        StorageClient client = await StorageClient.CreateAsync(CredentialFrom(jsonCredentials));
         return (client, $"{ProjectId(jsonCredentials, AnilistConEnieCredentialFile)}.appspot.com");
     }
 
@@ -39,7 +38,7 @@ public class FirebaseService
         FirestoreDbBuilder builder = new()
         {
             ProjectId = ProjectId(jsonCredentials, credentialFile),
-            JsonCredentials = jsonCredentials,
+            GoogleCredential = CredentialFrom(jsonCredentials),
             ConverterRegistry = FirestoreConverters.Registry
         };
         return await builder.BuildAsync();
@@ -51,11 +50,14 @@ public class FirebaseService
         FirestoreDbBuilder builder = new()
         {
             ProjectId = ProjectId(jsonCredentials, credentialFile),
-            JsonCredentials = jsonCredentials,
+            GoogleCredential = CredentialFrom(jsonCredentials),
             ConverterRegistry = FirestoreConverters.Registry
         };
         return builder.Build();
     }
+
+    private static GoogleCredential CredentialFrom(string jsonCredentials) =>
+        CredentialFactory.FromJson<ServiceAccountCredential>(jsonCredentials).ToGoogleCredential();
 
     private string CredentialPath(string credentialFile) => Path.Combine(_credentialsDir, credentialFile);
 

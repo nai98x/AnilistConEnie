@@ -220,7 +220,7 @@ public class Fun(
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 .WithTitle("Imagen subida con exito")
                 .WithDescription($"## Url:\n{Formatter.BlockCode(newUrl)}")
-                .WithImageUrl(imagen.Url)
+                .WithImageUrl(imagen.Url!)
                 .WithColor(DiscordColor.Green)));
         }
         else

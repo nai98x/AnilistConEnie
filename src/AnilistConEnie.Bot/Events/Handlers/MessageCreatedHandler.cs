@@ -120,7 +120,7 @@ public class MessageCreatedHandler(
         {
             DiscordThreadChannel? forumPost = args.Channel as DiscordThreadChannel;
             DiscordMember? autor = args.Message.Author as DiscordMember;
-            List<DiscordAttachment> images = args.Message.Attachments.Where(x => x.MediaType.StartsWith("image/")).Take(5).ToList();
+            List<DiscordAttachment> images = args.Message.Attachments.Where(x => x.MediaType?.StartsWith("image/") == true).Take(5).ToList();
             DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder().WithContent($"{args.Message.JumpLink}");
             DiscordEmbedBuilder embed = new DiscordEmbedBuilder()
                 .WithDescription(args.Message.Content)

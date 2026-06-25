@@ -45,7 +45,7 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
                     }
                     catch(Exception ex) 
                     {
-                        await logService.GrabarLogGeneralError(args.Guild, $"No se pudo quitar el color antiguo {oldColor.Mention} a {member.Mention}: {ex.Message} {Formatter.BlockCode(ex.StackTrace)}");
+                        await logService.GrabarLogGeneralError(args.Guild, $"No se pudo quitar el color antiguo {oldColor.Mention} a {member.Mention}: {ex.Message} {Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
                     }
                 }
 
@@ -56,7 +56,7 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
                 }
                 catch (Exception ex)
                 {
-                    await logService.GrabarLogGeneralError(args.Guild, $"No se pudo asignar el color {newColor.Mention} a {member.Mention}: {ex.Message} {Formatter.BlockCode(ex.StackTrace)}");
+                    await logService.GrabarLogGeneralError(args.Guild, $"No se pudo asignar el color {newColor.Mention} a {member.Mention}: {ex.Message} {Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
                 }
 
                 if (ok)

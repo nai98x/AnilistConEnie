@@ -376,7 +376,7 @@ public class Xp(
             if (!ctx.Guild!.Members.TryGetValue((ulong)ranking.UserId, out DiscordMember? member)) continue;
 
             DiscordRole? pais = rangoRoles.GetMemberPais(member);
-            if (pais == null) continue;
+            if (pais is null) continue;
 
             long acumulado = xpPerCountry.TryGetValue(pais.Id, out CountryXp prev) ? prev.Xp : 0;
             string nombre = pais.Id == config.Roles.OtrosPais ? "Otros" : pais.Name;

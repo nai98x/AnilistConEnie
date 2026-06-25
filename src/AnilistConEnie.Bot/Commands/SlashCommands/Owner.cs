@@ -65,6 +65,62 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
         }));
     }
     
+    [Command("testv2")]
+    [Description("Showcase de Components V2 (container, section, gallery, separator)")]
+    public async Task TestComponentsV2(CommandContext ctx)
+    {
+        await ctx.DeferEphemeralAsync();
+
+        DiscordContainerComponent container = new(
+            components:
+            [
+                new DiscordTextDisplayComponent(
+                    "# Components V2\n" +
+                    "Esto es un **container** con borde de color. Adentro van todos los demás " +
+                    "componentes; el texto va en `TextDisplay`, ya no en `content` ni embeds."),
+
+                new DiscordSeparatorComponent(divider: true, spacing: DiscordSeparatorSpacing.Large),
+
+                new DiscordSectionComponent(
+                    text: "## Section con thumbnail\n" +
+                          "Una *section* es texto a la izquierda y un **accessory** a la derecha " +
+                          "(thumbnail o botón). Acá va una imagen.",
+                    accessory: new DiscordThumbnailComponent(
+                        "https://media.discordapp.net/attachments/879612956848062514/879628082921762826/imagen_2021-07-15_150953_1.png",
+                        description: "Logo")),
+
+                new DiscordSeparatorComponent(divider: false, spacing: DiscordSeparatorSpacing.Small),
+
+                new DiscordSectionComponent(
+                    text: "## Section con botón\n" +
+                          "El accessory también puede ser un botón interactivo.",
+                    accessory: new DiscordButtonComponent(
+                        DiscordButtonStyle.Primary, "owner-testv2-boton", "Tocame")),
+
+                new DiscordSeparatorComponent(divider: true, spacing: DiscordSeparatorSpacing.Small),
+
+                new DiscordTextDisplayComponent("## Media gallery"),
+                new DiscordMediaGalleryComponent(
+                [
+                    new DiscordMediaGalleryItem(
+                        "https://media.discordapp.net/attachments/879612956848062514/879628082921762826/imagen_2021-07-15_150953_1.png",
+                        description: "Imagen 1"),
+                    new DiscordMediaGalleryItem(
+                        "https://media.discordapp.net/attachments/879612956848062514/879628082921762826/imagen_2021-07-15_150953_1.png",
+                        description: "Imagen 2")
+                ])
+            ],
+            color: DiscordEmojiHelper.GetColor());
+
+        DiscordMessageBuilder builder = new DiscordMessageBuilder()
+            .EnableV2Components()
+            .AddContainerComponent(container)
+            .AddActionRowComponent(
+                new DiscordLinkButtonComponent("https://anilist.co", "Botón top-level (fuera del container)"));
+
+        await ctx.EditResponseAsync(builder);
+    }
+
     [Command("apagar")]
     [Description("Apaga el bot")]
     public async Task Shutdown(CommandContext ctx)

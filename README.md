@@ -1,8 +1,6 @@
 # Añilist
 
-[![CodeFactor](https://www.codefactor.io/repository/github/nai98x/anilistconenie/badge?s=57db35bd2ed0cf54a69895b0830d6d4b45966edd)](https://www.codefactor.io/repository/github/nai98x/anilistconenie)
-
-Bot multipropósito para el servidor de Discord **Anilist ESP**, desarrollado en DSharpPlus sobre .NET 10.
+Bot multipropósito para el servidor de Discord **Añilist**, desarrollado en DSharpPlus sobre .NET 10.
 
 ## Stack
 
@@ -26,7 +24,7 @@ las de adentro.
 | **AnilistConEnie.Infrastructure** | Acceso a datos y servicios externos: `Firebase/FirebaseService.cs`, `Repositories/*` (Firestore), `Anilist/` (cliente GraphQL: `AnilistClient`, `AnilistGraphQLExecutor`, `AnilistQueries`) y `Charts/`. |
 | **AnilistConEnie.Bot** | Punto de entrada y todo lo relacionado a Discord: comandos, handlers de eventos, tareas programadas, estado en memoria, configuración y cableado de DI. |
 
-**Decisiones clave:**
+**Decisiones de diseño:**
 
 - El **estado en memoria** del bot vive en singletons separados por responsabilidad (`Bot/Services/State/*`).
 - La **lógica de negocio** se mantiene en Application como funciones estáticas puras (reciben sus
@@ -34,7 +32,7 @@ las de adentro.
 - El acceso a **AniList** está centralizado en un único cliente (`Infrastructure/Anilist/`) con
   reintentos (Polly) y rate limit, detrás de la interfaz `IAnilistClient`.
 
-## Mapa del código (dónde está cada cosa)
+## Mapa del código
 
 | Qué | Dónde |
 |-----|-------|
@@ -53,7 +51,7 @@ las de adentro.
 
 ## Configuración
 
-### `appsettings.json` (se versiona)
+### `appsettings.json`
 
 En `src/AnilistConEnie.Bot/appsettings.json`. No contiene secrets. Tiene dos bloques:
 
@@ -61,12 +59,12 @@ En `src/AnilistConEnie.Bot/appsettings.json`. No contiene secrets. Tiene dos blo
 - **Reglas de negocio tuneables** — secciones `AntiSpam`, `LimpiezaMiembros`, `Cooldowns`, `Xp`,
   `Confesiones` y `Logs`. Se bindean en `BehaviorSettings.cs` (cada sección tiene defaults razonables).
 
-### Token de Discord (no se versiona)
+### Token de Discord
 
 Se provee por fuera mediante la clave **`discordToken`**: variable de entorno en el servidor, o User
 Secrets con la misma clave en desarrollo local. Si falta o es inválido, el bot falla al iniciar.
 
-### Credenciales de Firebase (no se versionan)
+### Credenciales de Firebase
 
 Dos archivos JSON de cuenta de servicio, ubicados en `src/AnilistConEnie.Bot/` con estos nombres
 exactos (los que carga `Infrastructure/Firebase/FirebaseService.cs`):

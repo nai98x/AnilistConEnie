@@ -1,11 +1,13 @@
 # Deploy
 
-El bot se deploya por **CI/CD nativo** en el runner self-hosted (`.github/workflows/deploy.yml`):
-`push` a `main` → restore → build → test → `dotnet publish` a `~/bots/AnilistConEnie-app` →
-`systemctl --user restart anilistconenie`.
+El bot se deploya por **CI/CD en GitHub Actions** (`.github/workflows/deploy.yml`). El job corre en
+un runner **hosted de GitHub** (`ubuntu-latest`): `push` a `main` → restore → build → test →
+`dotnet publish -r linux-arm64 --no-self-contained` → empaqueta un `publish.tar.gz` → lo copia al
+server por **SCP** → lo descomprime en `~/bots/AnilistConEnie-app` y reinicia por **SSH** con
+`systemctl --user`.
 
-El proceso lo administra **systemd (servicio de usuario)**: sobrevive al job del runner, reinicia
-solo y loguea en journald.
+El proceso lo administra **systemd (servicio de usuario)**: sobrevive a la sesión SSH del deploy,
+reinicia solo y loguea en journald.
 
 El bot necesita **dos secretos** para arrancar, ninguno versionado:
 
@@ -53,7 +55,11 @@ dotnet user-secrets --project src/AnilistConEnie.Bot \
    systemctl --user enable anilistconenie
    ```
 
-4. En GitHub, borrar los secrets `HOST`, `USERNAME`, `PRIVATE_KEY` (el deploy ya no usa SSH).
+4. En GitHub (Settings → Secrets and variables → Actions), configurar los secrets que usa el deploy
+   por SSH/SCP:
+   - `HOST` — host o IP del server.
+   - `USERNAME` — usuario SSH (el mismo que corre el servicio de systemd).
+   - `PRIVATE_KEY` — clave privada SSH con acceso a ese usuario.
 
 ## Operación
 

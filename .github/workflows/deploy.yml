@@ -22,12 +22,7 @@ jobs:
         run: dotnet build -c Release --no-restore
 
       - name: Test
-        run: |
-          if find . -name '*.csproj' | xargs grep -lq 'Microsoft.NET.Test.Sdk'; then
-            dotnet test -c Release --no-build
-          else
-            echo "Sin proyecto de tests todavía — skip"
-          fi
+        run: dotnet test -c Release --no-build
 
       - name: Publish
         run: dotnet publish src/AnilistConEnie.Bot -c Release -r linux-arm64 --no-self-contained -o ./publish

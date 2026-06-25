@@ -145,6 +145,10 @@ public static class DiscordInteractivity
         DiscordColor? color = null,
         bool separarItems = false)
     {
+        // Discord limita a 40 componentes (anidados incluidos) por mensaje. Recortamos los items por
+        // página al máximo que entra para no exceder el límite si el render de cada item es pesado.
+        porPagina = AjustarPorPagina(items, porPagina, renderItem, separarItems);
+
         int totalPaginas = Math.Max(1, (int)Math.Ceiling(items.Count / (double)porPagina));
         int pagina = 0;
 
@@ -215,4 +219,28 @@ public static class DiscordInteractivity
 
         await ctx.EditResponseAsync(Build(inactivo: true));
     }
+
+    private const int LimiteComponentesV2 = 40;
+
+    private static int AjustarPorPagina<T>(IReadOnlyList<T> items, int porPagina, Func<T, DiscordComponent> renderItem, bool separarItems)
+    {
+        if (items.Count == 0) return Math.Max(1, porPagina);
+
+        // Overhead fijo del container: el propio container, el text display del header, el separador y la
+        // fila de botones (acción + Anterior + Siguiente) por si hay más de una página.
+        const int overhead = 1 + 1 + 1 + 3;
+        int costoItem = ContarComponentes(renderItem(items[0])) + (separarItems ? 1 : 0);
+
+        int maximo = Math.Max(1, (LimiteComponentesV2 - overhead) / costoItem);
+        return Math.Min(porPagina, maximo);
+    }
+
+    private static int ContarComponentes(DiscordComponent componente) => componente switch
+    {
+        DiscordContainerComponent container => 1 + container.Components.Sum(ContarComponentes),
+        DiscordActionRowComponent row => 1 + row.Components.Sum(ContarComponentes),
+        DiscordSectionComponent section => 1 + section.Components.Sum(ContarComponentes)
+                                             + (section.Accessory is null ? 0 : ContarComponentes(section.Accessory)),
+        _ => 1
+    };
 }

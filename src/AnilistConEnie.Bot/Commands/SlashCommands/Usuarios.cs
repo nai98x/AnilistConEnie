@@ -14,15 +14,12 @@ using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.MessageCommands;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
-using DSharpPlus.Interactivity;
-using DSharpPlus.Interactivity.Enums;
-using Microsoft.Extensions.DependencyInjection;
 using AnilistConEnie.Bot.Extensions;
 using AnilistConEnie.Bot.Services;
 
 namespace AnilistConEnie.Bot.Commands.SlashCommands;
 
-//[TestCommand]
+[TestCommand]
 public class Usuarios(
     IUsuariosDiscordRepository usuariosDiscordRepository,
     XpState xpState,
@@ -42,51 +39,52 @@ public class Usuarios(
 
         await ctx.DeferResponseAsync();
 
+        DiscordGuild guild = ctx.Guild!;
+        CultureInfo es = CultureInfo.CreateSpecificCulture("es");
+
         List<UserCumple> lista = await usuariosDiscordRepository.GetBirthdays(month);
         List<UserCumple> hoy = await usuariosDiscordRepository.GetBirthdaysHoy();
 
-        string desc = string.Empty;
+        List<(UserCumple Cumple, DiscordMember Miembro)> proximos = lista
+            .OrderBy(x => x.BirthdayActual)
+            .Select(x => (Cumple: x, Miembro: guild.Members.GetValueOrDefault((ulong)x.Id)))
+            .Where(x => x.Miembro is not null)
+            .Select(x => (x.Cumple, x.Miembro!))
+            .ToList();
 
-        if (hoy.Count > 0)
+        string header = "# Cumpleaños\n";
+
+        List<string> festejanHoy = hoy
+            .Where(u => guild.Members.ContainsKey((ulong)u.Id))
+            .Select(u => guild.Members[(ulong)u.Id].DisplayName)
+            .ToList();
+
+        if (festejanHoy.Count > 0)
         {
-            desc += "**Cumplen años hoy:**\n";
-            foreach (UserCumple user in hoy)
-            {
-                if (ctx.Guild!.Members.TryGetValue((ulong)user.Id, out DiscordMember? miembro))
-                    desc += $"- **{miembro.DisplayName}**\n";
-            }
-            desc += "\n";
+            header += "**Cumplen años hoy:**\n" +
+                      string.Join("\n", festejanHoy.Select(nombre => $"- **{nombre}**")) + "\n\n";
         }
 
-        desc += month ? "**Cumplen años en el próximo mes:**\n" : "**Cumplen años próximamente:**\n";
+        header += month ? "**Cumplen años en el próximo mes:**" : "**Cumplen años próximamente:**";
 
-        CultureInfo es = CultureInfo.CreateSpecificCulture("es");
-        foreach (UserCumple user in lista.OrderBy(x => x.BirthdayActual))
-        {
-            if (!ctx.Guild!.Members.TryGetValue((ulong)user.Id, out DiscordMember? miembro)) continue;
+        if (proximos.Count == 0)
+            header += "\n-# (No hay ningún usuario registrado que cumpla años este mes)";
 
-            string dia = user.FechaOriginal.ToString("dddd", es);
-            string mes = user.FechaOriginal.ToString("MMMM", es);
-            desc += $"- **{miembro.DisplayName}** - Cumple el {dia} {user.FechaOriginal.Day} de {mes}\n";
-        }
-
-        if (string.IsNullOrEmpty(desc))
-            desc = "(No hay ningún usuario registrado que cumpla años este mes)\n";
-
-        DiscordEmbedBuilder embed = new()
-        {
-            Footer = new DiscordEmbedBuilder.EmbedFooter
+        await DiscordInteractivity.PaginarContainerV2Async(
+            ctx,
+            proximos,
+            porPagina: 8,
+            header: header,
+            renderItem: x =>
             {
-                Text = $"Invocado por {ctx.Member!.DisplayName} ({ctx.Member.Username})",
-                IconUrl = ctx.Member.AvatarUrl
+                string dia = x.Cumple.FechaOriginal.ToString("dddd", es);
+                string mes = x.Cumple.FechaOriginal.ToString("MMMM", es);
+                return new DiscordSectionComponent(
+                    text: $"### {x.Miembro.DisplayName}\n" +
+                          $"Cumple el {dia} {x.Cumple.FechaOriginal.Day} de {mes}",
+                    accessory: new DiscordThumbnailComponent(x.Miembro.GuildAvatarUrl ?? x.Miembro.AvatarUrl));
             },
-            Color = DiscordEmojiHelper.GetColor(),
-            Title = "Cumpleaños"
-        };
-
-        InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
-        IEnumerable<Page> pages = InteractivityExtension.GeneratePagesInEmbed(desc, SplitType.Line, embed);
-        await interactivity.SendPaginatedResponseAsync(ctx.Interaction, ephemeral: false, ctx.User, pages);
+            separarItems: true);
     }
 
     [Command("setbirthday")]

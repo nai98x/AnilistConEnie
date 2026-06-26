@@ -74,6 +74,13 @@ exactos (los que carga `Infrastructure/Firebase/FirebaseService.cs`):
 - `firebase-anilistconenie.json`
 - `firebase-yumiko.json`
 
+### Base de datos
+
+Acceso vía **Dapper**, centralizado en `Infrastructure/Database/DbConnectionFactory.cs` (el resto del
+código usa `IDbConnection`). La connection string se provee por fuera con la clave
+**`ConnectionStrings:Database`**: variable de entorno en el servidor, o User Secrets en local. Detalle
+de setup en `deploy-setup/README.md`.
+
 ## Requisitos y ejecución
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download).

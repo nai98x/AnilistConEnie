@@ -1,5 +1,6 @@
 using AnilistConEnie.Infrastructure.Anilist;
 using AnilistConEnie.Infrastructure.Charts;
+using AnilistConEnie.Infrastructure.Database;
 using AnilistConEnie.Infrastructure.Firebase;
 using AnilistConEnie.Infrastructure.Repositories;
 using AnilistConEnie.Model.Interfaces;
@@ -10,9 +11,10 @@ namespace AnilistConEnie.Infrastructure.Extensions;
 
 public static class InfrastructureServiceExtensions
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, string firebaseCredentialsDir)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, string firebaseCredentialsDir, string dbConnectionString)
     {
         services.AddSingleton(new FirebaseService(firebaseCredentialsDir));
+        services.AddSingleton(new DbConnectionFactory(dbConnectionString));
 
         services.AddSingleton<IChallengesRepository, ChallengesRepository>();
         services.AddSingleton<IUsuariosAnilistRepository, UsuariosAnilistRepository>();

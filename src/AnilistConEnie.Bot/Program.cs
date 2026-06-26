@@ -75,11 +75,16 @@ public static class Program
             ? dir
             : throw new InvalidOperationException("'FIREBASE_CREDENTIALS_DIR' es obligatorio: configuralo via User Secrets (local) o variable de entorno (servidor)");
 
+        // Connection string de la base de datos: local via User Secrets (apuntando al túnel SSH), en el servidor via variable de entorno (ConnectionStrings__Database).
+        string dbConnectionString = host.Configuration.GetConnectionString("Database") is { Length: > 0 } db
+            ? db
+            : throw new InvalidOperationException("'ConnectionStrings:Database' es obligatoria: configurala via User Secrets (local) o variable de entorno (servidor)");
+
         host.Services
             .AddSingleton(botConfig)
             .AddBehaviorSettings(host.Configuration)
             .AddApplication()
-            .AddInfrastructure(firebaseCredentialsDir)
+            .AddInfrastructure(firebaseCredentialsDir, dbConnectionString)
             .AddConfiguredDiscordClient(host.Configuration)
             .AddSerilog()
             .AddBotServices();

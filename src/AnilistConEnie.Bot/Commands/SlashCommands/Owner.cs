@@ -6,6 +6,7 @@ using AnilistConEnie.Bot.Extensions;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
 using AnilistConEnie.Bot.Services.State;
+using AnilistConEnie.Infrastructure.Database;
 using AnilistConEnie.Model.Entities.Anilist;
 using AnilistConEnie.Model.Exceptions;
 using AnilistConEnie.Model.Interfaces;
@@ -20,7 +21,7 @@ namespace AnilistConEnie.Bot.Commands.SlashCommands;
 [Command("owner")]
 [TestCommand]
 [RequirePermissions(DiscordPermission.Administrator)]
-public class Owner(XpState xpState, PermanentUsernameState permanentUsernameState, DiscordBotService discordBotService, IAnilistClient anilistClient, IHostApplicationLifetime appLifetime, BotConfiguration config)
+public class Owner(XpState xpState, PermanentUsernameState permanentUsernameState, DiscordBotService discordBotService, IAnilistClient anilistClient, IHostApplicationLifetime appLifetime, BotConfiguration config, DbConnectionFactory dbConnectionFactory)
 {
     [Command("test")]
     [Description("Comando general para testear cosas")]
@@ -28,42 +29,25 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
     {
         await ctx.DeferEphemeralAsync();
 
-        List<ulong> ids =
-        [
-            ..config.FechasEntradaExcepciones.Select(x => x.UserId),
-            638190435835183117
-        ];
-
-        List<string> lineas = [];
-        foreach (ulong id in ids)
+        try
         {
-            DateTimeOffset real;
-            try
+            string version = await dbConnectionFactory.TestConnectionAsync();
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
             {
-                DiscordMember member = await ctx.Guild!.GetMemberAsync(id);
-                real = member.JoinedAt;
-            }
-            catch
-            {
-                lineas.Add($"`{id}`: no se pudo obtener el miembro");
-                continue;
-            }
-
-            DateTimeOffset resuelta = config.GetFechaEntrada(id, real);
-            bool esExcepcion = resuelta != real;
-
-            lineas.Add(
-                $"`{id}` {(esExcepcion ? "✅ excepción" : "➖ fecha real")}\n" +
-                $"- Real: {real:yyyy/MM/dd HH:mm:ss}\n" +
-                $"- Resuelta: {resuelta:yyyy/MM/dd HH:mm:ss}");
+                Title = "Conexión OK",
+                Description = version,
+                Color = DiscordEmojiHelper.GetColor()
+            }));
         }
-
-        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+        catch (Exception ex)
         {
-            Title = "Test GetFechaEntrada",
-            Description = string.Join("\n\n", lineas),
-            Color = DiscordEmojiHelper.GetColor()
-        }));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+            {
+                Title = "Falló la conexión",
+                Description = $"```\n{ex.Message}\n```",
+                Color = DiscordColor.Red
+            }));
+        }
     }
     
     [Command("testv2")]

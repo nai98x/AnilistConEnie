@@ -1,5 +1,5 @@
 using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics;
 using AnilistConEnie.Bot.Commands.SlashCommands.Attributes;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Extensions;
@@ -23,7 +23,7 @@ namespace AnilistConEnie.Bot.Commands.SlashCommands;
 [Command("owner")]
 [TestCommand]
 [RequirePermissions(DiscordPermission.Administrator)]
-public class Owner(XpState xpState, PermanentUsernameState permanentUsernameState, DiscordBotService discordBotService, IAnilistClient anilistClient, IHostApplicationLifetime appLifetime, BotConfiguration config, IXpUsuariosRepository xpUsuariosRepository, IXpDiarioRepository xpDiarioRepository, ILogger<Owner> logger)
+public class Owner(XpState xpState, PermanentUsernameState permanentUsernameState, DiscordBotService discordBotService, IAnilistClient anilistClient, IHostApplicationLifetime appLifetime, BotConfiguration config, IXpUsuariosRepository xpUsuariosRepository, ILogger<Owner> logger)
 {
     [Command("test")]
     [Description("Comando general para testear cosas")]
@@ -89,14 +89,37 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
         await ctx.EditResponseAsync(builder);
     }
 
-    [Command("apagar")]
-    [Description("Apaga el bot")]
-    public async Task Shutdown(CommandContext ctx)
+    [Command("reiniciar")]
+    [Description("Reinicia el bot")]
+    public async Task Restart(CommandContext ctx)
     {
         await ctx.DeferEphemeralAsync();
-        await ctx.EditResponseAsync($"Apagando el bot...");
+        await ctx.EditResponseAsync("Reiniciando el bot...");
 
         appLifetime.StopApplication();
+    }
+
+    [Command("test_db")]
+    [Description("Prueba la conexión a la base de datos relacional")]
+    public async Task TestDb(CommandContext ctx)
+    {
+        await ctx.DeferEphemeralAsync();
+
+        Stopwatch sw = Stopwatch.StartNew();
+        try
+        {
+            UserXp? xp = await xpUsuariosRepository.Obtener(ctx.User.Id);
+            sw.Stop();
+            await ctx.EditResponseAsync(
+                $"✅ Conexión OK ({sw.ElapsedMilliseconds} ms). Lectura de prueba: " +
+                $"{(xp is null ? "sin registro propio (consulta ejecutada igual)" : $"total {xp.Total} XP")}.");
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            logger.LogError(ex, "Falló el test de conexión a la base de datos");
+            await ctx.EditResponseAsync($"❌ Falló la conexión ({sw.ElapsedMilliseconds} ms): {ex.Message}");
+        }
     }
 
     [Command("debugxpenable")]

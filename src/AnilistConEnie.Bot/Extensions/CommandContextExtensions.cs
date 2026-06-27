@@ -20,13 +20,20 @@ public static class CommandContextExtensions
             return true;
         }
 
-        DiscordEmbed embed = new DiscordEmbedBuilder
-        {
-            Title = "El bot se está iniciando",
-            Description = "Espera unos segundos para volver a invocar el comando.",
-            Color = DiscordColor.Red,
-            ImageUrl = "https://i.giphy.com/gQbVzXQQbGO7C.webp"
-        };
+        DiscordEmbed embed = discordBotService.ErrorInicializacion
+            ? new DiscordEmbedBuilder
+            {
+                Title = "Error al inicializar el bot",
+                Description = "Hubo un error al inicializar el bot. Avisá a un administrador.",
+                Color = DiscordColor.Red
+            }
+            : new DiscordEmbedBuilder
+            {
+                Title = "El bot se está iniciando",
+                Description = "Espera unos segundos para volver a invocar el comando.",
+                Color = DiscordColor.Orange,
+                ImageUrl = "https://i.giphy.com/gQbVzXQQbGO7C.webp"
+            };
 
         if (ctx is SlashCommandContext slashCtx)
         {

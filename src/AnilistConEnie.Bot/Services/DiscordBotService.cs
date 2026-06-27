@@ -12,6 +12,7 @@ public class DiscordBotService(DiscordClient client, BotConfiguration config, IL
     public DiscordClient Client => client;
     public bool Debug { get; } = SetDebug();
     public bool Inicializado { get; private set; } = false;
+    public bool ErrorInicializacion { get; private set; } = false;
 
     private DiscordChannel? _logChannelInfo;
     private DiscordChannel? _logChannelErrors;
@@ -44,6 +45,11 @@ public class DiscordBotService(DiscordClient client, BotConfiguration config, IL
     public void SetInicializado()
     {
         Inicializado = true;
+    }
+
+    public void SetErrorInicializacion()
+    {
+        ErrorInicializacion = true;
     }
 
     private static bool SetDebug()

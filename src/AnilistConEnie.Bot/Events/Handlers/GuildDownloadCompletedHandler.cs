@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
 using AnilistConEnie.Bot.Services.State;
+using AnilistConEnie.Infrastructure.Database;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Enum;
 using AnilistConEnie.Model.Interfaces.Repositories;
@@ -12,13 +14,30 @@ using Microsoft.Extensions.Logging;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, TriggersState triggersState, XpState xpState, ILogger<GuildDownloadCompletedHandler> logger, BotConfiguration config, DiscordLogService logService, GuildMaintenanceService guildMaintenanceService, IXpUsuariosRepository xpUsuariosRepository, ITriggersRepository triggersRepository)
+public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, TriggersState triggersState, XpState xpState, ILogger<GuildDownloadCompletedHandler> logger, BotConfiguration config, DiscordLogService logService, GuildMaintenanceService guildMaintenanceService, IXpUsuariosRepository xpUsuariosRepository, ITriggersRepository triggersRepository, DbConnectionFactory connectionFactory)
 {
     public async Task Handle(DiscordClient client, GuildDownloadCompletedEventArgs args)
     {
+        Stopwatch sw = Stopwatch.StartNew();
         DiscordGuild guild = client.Guilds[config.GuildId];
 
         discordBotService.SetChannels();
+
+        #region Guard de conexión a la base de datos
+        try
+        {
+            await connectionFactory.EnsureConnectionAsync();
+        }
+        catch (Exception ex)
+        {
+            logger.LogCritical(ex, "No se pudo conectar a la base de datos relacional; se aborta la inicialización del bot");
+            discordBotService.SetErrorInicializacion();
+            await discordBotService.Playroom.SendMessageAsync(
+                "⚠️ **No se pudo conectar a la base de datos relacional.** No se cargaron triggers, XP ni se ejecutó el mantenimiento. " +
+                "Revisar la conexión (¿IP del servidor / túnel?).");
+            return;
+        }
+        #endregion
 
         #region Triggers
         List<Trigger> triggers = await triggersRepository.GetLista();
@@ -68,7 +87,33 @@ public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, 
         #endregion
         
         discordBotService.SetInicializado();
+        sw.Stop();
         logger.LogInformation("Bot inicializado correctamente");
-        await discordBotService.Playroom.SendMessageAsync($"Bot inicializado correctamente.\nDebugging: {discordBotService.Debug.ToString()}");
+
+        List<DiscordComponent> componentes =
+        [
+            new DiscordTextDisplayComponent("# ✅ Bot inicializado correctamente"),
+            new DiscordSeparatorComponent(divider: true, spacing: DiscordSeparatorSpacing.Large),
+            new DiscordTextDisplayComponent(
+                $"⏱️ **Tiempo de inicialización:** {sw.Elapsed.TotalSeconds:0.00} s\n" +
+                $"⚡ **Triggers:** {triggers.Count}\n" +
+                $"👥 **Usuarios con XP:** {ranking.Count}\n" +
+                $"🧑‍🤝‍🧑 **Miembros:** {guild.MemberCount}")
+        ];
+
+        if (discordBotService.Debug)
+        {
+            componentes.Add(new DiscordSeparatorComponent(divider: true, spacing: DiscordSeparatorSpacing.Small));
+            componentes.Add(new DiscordTextDisplayComponent("-# 🐛 Modo debug activado"));
+        }
+
+        DiscordContainerComponent container = new(componentes, color: DiscordEmojiHelper.GetColor());
+
+        DiscordMessageBuilder builder = new DiscordMessageBuilder()
+            .EnableV2Components()
+            .AddContainerComponent(container);
+
+        await Task.Delay(500);
+        await discordBotService.Playroom.SendMessageAsync(builder);
     }
 }

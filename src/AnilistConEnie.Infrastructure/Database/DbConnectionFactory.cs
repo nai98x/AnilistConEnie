@@ -38,4 +38,10 @@ public class DbConnectionFactory
     }
 
     public async Task<IDbConnection> OpenConnectionAsync() => await _dataSource.OpenConnectionAsync();
+
+    // Abrir la conexión hace el handshake TCP + auth: si el server es inalcanzable, lanza. Sin SQL.
+    public async Task EnsureConnectionAsync()
+    {
+        using IDbConnection connection = await _dataSource.OpenConnectionAsync();
+    }
 }

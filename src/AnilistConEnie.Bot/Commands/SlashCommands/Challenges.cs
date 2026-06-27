@@ -205,6 +205,17 @@ public class Challenges(
 
         await ctx.DeferResponseAsync();
 
+        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+        {
+            Title = "Procesando...",
+            Description = $"Consultando los challenges de {usuario.Mention}. Esto puede tardar unos segundos.",
+            Color = DiscordColor.Blurple,
+            Footer = new DiscordEmbedBuilder.EmbedFooter
+            {
+                Text = "La demora se debe a los ratelimits de la API de AniList."
+            }
+        }));
+
         try
         {
             UsuarioAnilist? userAnilist = await usuariosRepository.GetPerfil(usuario.Id);

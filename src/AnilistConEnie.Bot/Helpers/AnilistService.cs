@@ -193,9 +193,26 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
             BannerImage = viewer.BannerImage
         };
 
+        List<string> motivosAprobacion = [];
+
+        UsuarioAnilist? multicuenta = (await usuariosRepository.GetVinculados()).Find(x =>
+            (ulong)x.UserId != interaction.User.Id
+            && AnilistProfileUrl.TryGetUserId(x.AnilistURL, out int id) && id == viewer.Id);
+        if (multicuenta is not null)
+        {
+            DiscordMember? otroMiembro = await TryGetMemberAsync(interaction.Guild, (ulong)multicuenta.UserId);
+            string otroNombre = otroMiembro?.DisplayName ?? "desconocido";
+            motivosAprobacion.Add($"su AniList ya está vinculado a otro miembro activo ({Formatter.InlineCode(otroNombre)} | Id: {Formatter.InlineCode(((ulong)multicuenta.UserId).ToString())}), posible multicuenta");
+        }
+
         DateTimeOffset monthBefore = DateTimeOffset.Now.AddMonths(-limpiezaSettings.CuentaNuevaMeses);
         if (interaction.User.CreationTimestamp > monthBefore || viewer.CreatedAt > monthBefore)
+            motivosAprobacion.Add("su cuenta de Discord o AniList es muy reciente");
+
+        if (motivosAprobacion.Count > 0)
         {
+            string motivos = string.Concat(motivosAprobacion.Select(m => $"- {m}\n"));
+
             DiscordButtonComponent aprobar = new(DiscordButtonStyle.Success, $"sync-true-{interaction.User.Id}", "Aprobar");
             DiscordButtonComponent denegar = new(DiscordButtonStyle.Danger, $"sync-false-{interaction.User.Id}", "Denegar");
 
@@ -205,7 +222,7 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
                     Color = DiscordColor.Yellow,
                     Title = "Vinculacion de AniList pendiente de aprobación",
                     Description =
-                        $"El usuario {interaction.User.Mention} | Nombre: {Formatter.InlineCode(member.DisplayName)} | Id: {Formatter.InlineCode(interaction.User.Id.ToString())} ({Formatter.MaskedUrl("Link de su AniList", new Uri(viewer.SiteUrl))}) ha vinculado su cuenta de AniList pero su cuenta de Discord o AniList es muy reciente, por lo que debe ser aprobada manualmente por el staff.\n\n" +
+                        $"El usuario {interaction.User.Mention} | Nombre: {Formatter.InlineCode(member.DisplayName)} | Id: {Formatter.InlineCode(interaction.User.Id.ToString())} ({Formatter.MaskedUrl("Link de su AniList", new Uri(viewer.SiteUrl))}) ha vinculado su cuenta de AniList pero debe ser aprobada manualmente por el staff por los siguientes motivos:\n{motivos}\n" +
                         $"- Discord: {interaction.User.CreationTimestamp:dd/MM/yyyy}\n" +
                         $"- AniList: {viewer.CreatedAt.ToLocalTime():dd/MM/yyyy}",
                 })
@@ -292,6 +309,18 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
         IReadOnlyList<int> replyUserIds = await anilistClient.GetActivityReplyUserIdsAsync(activityId);
         challengePostsState.Set(activityId, replyUserIds);
         return replyUserIds;
+    }
+
+    private static async Task<DiscordMember?> TryGetMemberAsync(DiscordGuild guild, ulong userId)
+    {
+        try
+        {
+            return await guild.GetMemberAsync(userId);
+        }
+        catch (NotFoundException)
+        {
+            return null;
+        }
     }
 
     private static bool TryGetActivityId(string link, out int activityId)

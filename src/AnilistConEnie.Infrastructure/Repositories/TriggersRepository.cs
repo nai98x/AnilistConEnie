@@ -1,49 +1,36 @@
-using AnilistConEnie.Infrastructure.Firebase;
+using System.Data;
+using AnilistConEnie.Infrastructure.Database;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Interfaces.Repositories;
-using Google.Cloud.Firestore;
+using Dapper;
 
 namespace AnilistConEnie.Infrastructure.Repositories;
 
-public class TriggersRepository(FirebaseService firebase) : FirestoreRepository(firebase), ITriggersRepository
+public class TriggersRepository(DbConnectionFactory connectionFactory) : ITriggersRepository
 {
-    public async Task<List<Trigger>> GetTriggers()
+    public async Task<List<Trigger>> GetLista()
     {
-        FirestoreDb db = await GetDbAsync();
-        Query query = db.Collection("Triggers");
-        List<Trigger> ret = await QueryListAsync<Trigger>(query);
-
-        ret.Sort((x, y) => string.Compare(x.Nombre, y.Nombre, StringComparison.Ordinal));
-
-        return ret;
+        using var connection = await connectionFactory.OpenConnectionAsync();
+        return (await connection.QueryAsync<Trigger>(
+            "trigger_lista",
+            commandType: CommandType.StoredProcedure)).AsList();
     }
 
-    public async Task SetTrigger(Trigger trigger)
+    public async Task Upsert(Trigger trigger)
     {
-        FirestoreDb db = await GetDbAsync();
-        DocumentReference doc = db.Collection("Triggers").Document($"{trigger.Nombre}");
-
-        Dictionary<string, object> data = new()
-        {
-            { "Nombre", trigger.Nombre.ToLower() },
-            { "Texto", trigger.Texto },
-            { "ImageUrl", trigger.ImageUrl },
-            { "Tipo", trigger.Tipo },
-        };
-
-        await doc.SetAsync(data);
+        using var connection = await connectionFactory.OpenConnectionAsync();
+        await connection.ExecuteAsync(
+            "trigger_upsert",
+            new { p_nombre = trigger.Nombre, p_texto = trigger.Texto, p_image_url = trigger.ImageUrl, p_tipo = trigger.Tipo },
+            commandType: CommandType.StoredProcedure);
     }
 
-    public async Task<bool> DeleteTrigger(string triggerName)
+    public async Task<bool> Delete(string nombre)
     {
-        FirestoreDb db = await GetDbAsync();
-        DocumentReference doc = db.Collection("Triggers").Document($"{triggerName}");
-        DocumentSnapshot snap = await doc.GetSnapshotAsync();
-
-        if (!snap.Exists) return false;
-
-        await doc.DeleteAsync();
-
-        return true;
+        using var connection = await connectionFactory.OpenConnectionAsync();
+        return await connection.QuerySingleOrDefaultAsync<bool>(
+            "trigger_delete",
+            new { p_nombre = nombre },
+            commandType: CommandType.StoredProcedure);
     }
 }

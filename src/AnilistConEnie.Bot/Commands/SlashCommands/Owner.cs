@@ -6,50 +6,33 @@ using AnilistConEnie.Bot.Extensions;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
 using AnilistConEnie.Bot.Services.State;
-using AnilistConEnie.Infrastructure.Database;
+using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Entities.Anilist;
 using AnilistConEnie.Model.Exceptions;
 using AnilistConEnie.Model.Interfaces;
+using AnilistConEnie.Model.Interfaces.Repositories;
 using DSharpPlus;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Entities;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace AnilistConEnie.Bot.Commands.SlashCommands;
 
 [Command("owner")]
 [TestCommand]
 [RequirePermissions(DiscordPermission.Administrator)]
-public class Owner(XpState xpState, PermanentUsernameState permanentUsernameState, DiscordBotService discordBotService, IAnilistClient anilistClient, IHostApplicationLifetime appLifetime, BotConfiguration config, DbConnectionFactory dbConnectionFactory)
+public class Owner(XpState xpState, PermanentUsernameState permanentUsernameState, DiscordBotService discordBotService, IAnilistClient anilistClient, IHostApplicationLifetime appLifetime, BotConfiguration config, IXpUsuariosRepository xpUsuariosRepository, IXpDiarioRepository xpDiarioRepository, ILogger<Owner> logger)
 {
     [Command("test")]
     [Description("Comando general para testear cosas")]
-    public async Task TestCommand(CommandContext ctx, [Description("Test input 1")]string input)
+    public async Task TestCommand(CommandContext ctx)
     {
         await ctx.DeferEphemeralAsync();
-
-        try
-        {
-            string version = await dbConnectionFactory.TestConnectionAsync();
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Conexión OK",
-                Description = version,
-                Color = DiscordEmojiHelper.GetColor()
-            }));
-        }
-        catch (Exception ex)
-        {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Falló la conexión",
-                Description = $"```\n{ex.Message}\n```",
-                Color = DiscordColor.Red
-            }));
-        }
+        await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Test"));
     }
-    
+
     [Command("testv2")]
     [Description("Showcase de Components V2 (container, section, gallery, separator)")]
     public async Task TestComponentsV2(CommandContext ctx)

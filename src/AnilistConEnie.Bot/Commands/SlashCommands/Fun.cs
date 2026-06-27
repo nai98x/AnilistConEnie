@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 using AnilistConEnie.Application.Charts;
 using AnilistConEnie.Application.Extensions;
 using AnilistConEnie.Application.Helpers;
+using AnilistConEnie.Application.Membership;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
@@ -34,8 +35,8 @@ public class Fun(
     FunService funService,
     BoluditosState boluditosState,
     ConfessionsState confessionsState,
-    IImagenStorageRepository imagenStorageRepository,
-    IUsuariosDiscordRepository usuariosDiscordRepository,
+    IFirebaseRepository firebaseRepository,
+    IUsuariosRepository usuariosRepository,
     IChartClient chartClient,
     IHttpClientFactory httpClientFactory,
     ILogger<Fun> logger)
@@ -213,7 +214,7 @@ public class Fun(
         byte[] bytes = await client.GetByteArrayAsync(imagen.Url);
         using MemoryStream stream = new(bytes);
         string fileName = StringHelper.CreateString(10);
-        string newUrl = await imagenStorageRepository.UploadImageAsync(stream, fileName, ctx.User.Id);
+        string newUrl = await firebaseRepository.UploadImageAsync(stream, fileName, ctx.User.Id);
 
         if (!string.IsNullOrEmpty(newUrl))
         {
@@ -452,7 +453,8 @@ public class Fun(
 
         await ctx.DeferResponseAsync();
 
-        List<UserCumple> birthdays = await usuariosDiscordRepository.GetBirthdays(false);
+        List<Usuario> cumples = await usuariosRepository.GetCumples();
+        List<UserCumple> birthdays = CumpleCalculator.Proximos(cumples, DateTime.UtcNow, false);
         UserCumple? birthday = birthdays.Find(x => x.Id == (long)ctx.Member!.Id);
 
         if (birthday is null)

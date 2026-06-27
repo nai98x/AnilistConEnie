@@ -1,42 +1,38 @@
+using System.Data;
 using AnilistConEnie.Application.Helpers;
-using AnilistConEnie.Infrastructure.Firebase;
+using AnilistConEnie.Infrastructure.Database;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Enum;
 using AnilistConEnie.Model.Interfaces.Repositories;
-using Google.Cloud.Firestore;
+using Dapper;
 
 namespace AnilistConEnie.Infrastructure.Repositories;
 
-public class PremiosRepository(FirebaseService firebase) : FirestoreRepository(firebase), IPremiosRepository
+public class PremiosRepository(DbConnectionFactory connectionFactory) : IPremiosRepository
 {
-    public async Task<List<Premio>> GetListaPremios()
+    public async Task<List<Premio>> GetLista()
     {
-        FirestoreDb db = await GetDbAsync();
-        return await QueryListAsync<Premio>(db.Collection("Premios"));
+        using var connection = await connectionFactory.OpenConnectionAsync();
+        return (await connection.QueryAsync<Premio>(
+            "premio_lista",
+            commandType: CommandType.StoredProcedure)).AsList();
     }
 
-    public async Task SetPremio(int anio, Season season, string link)
+    public async Task Upsert(Premio premio)
     {
-        string nombre = $"{season.GetName()} {anio}";
+        using var connection = await connectionFactory.OpenConnectionAsync();
+        await connection.ExecuteAsync(
+            "premio_upsert",
+            new { p_nombre = premio.Nombre, p_link = premio.Link, p_anio = premio.Year, p_orden = premio.Order },
+            commandType: CommandType.StoredProcedure);
+    }
 
-        FirestoreDb db = await GetDbAsync();
-        DocumentReference doc = db.Collection("Premios").Document(nombre);
-
-        Dictionary<string, object> data = new()
+    public Task SetPremio(int anio, Season season, string link) =>
+        Upsert(new Premio
         {
-            { "Link", link },
-            { "Nombre", nombre },
-            { "Year", anio },
-            { "Order", (int)season }
-        };
-
-        await UpsertAsync(doc, data);
-    }
-
-    public async Task RemovePremio(int anio, Season season)
-    {
-        FirestoreDb db = await GetDbAsync();
-        DocumentReference doc = db.Collection("Premios").Document($"{season.GetName()} {anio}");
-        await DeleteIfExistsAsync(doc);
-    }
+            Nombre = $"{season.GetName()} {anio}",
+            Link = link,
+            Year = anio,
+            Order = (int)season
+        });
 }

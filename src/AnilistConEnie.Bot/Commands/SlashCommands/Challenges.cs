@@ -26,9 +26,9 @@ namespace AnilistConEnie.Bot.Commands.SlashCommands;
 //[TestCommand]
 public class Challenges(
     IChallengesRepository challengesRepository,
-    IUsuariosDiscordRepository usuariosDiscordRepository,
+    IXpUsuariosRepository xpUsuariosRepository,
+    IUsuariosRepository usuariosRepository,
     XpState xpState,
-    AnilistUsersState anilistUsersState,
     AnilistService anilistService,
     DiscordBotService discordBotService,
     BotConfiguration config)
@@ -77,7 +77,7 @@ public class Challenges(
             fechaVencimiento = new DateTime(fchVnc.Year, fchVnc.Month, fchVnc.Day, 5, 0, 0, DateTimeKind.Utc);
         }
 
-        await challengesRepository.Set(nombre, link, disponible, fechaVencimiento);
+        await challengesRepository.Upsert(nombre, link, disponible, fechaVencimiento);
 
         await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
         {
@@ -207,7 +207,7 @@ public class Challenges(
 
         try
         {
-            UsuarioAnilist? userAnilist = anilistUsersState.Usuarios.Find(x => (ulong)x.UserId == usuario.Id);
+            UsuarioAnilist? userAnilist = await usuariosRepository.GetPerfil(usuario.Id);
             if (userAnilist is null || !AnilistProfileUrl.TryGetUserId(userAnilist.AnilistURL, out int anilistUserId))
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
@@ -347,8 +347,8 @@ public class Challenges(
         xpState.UpdateUserXp(usuario.Id, totalXp, TipoXp.Total);
         xpState.UpdateUserXp(usuario.Id, totalChallenges, TipoXp.Challenges);
 
-        await challengesRepository.SetUsuarioChallenge(challenge, (long)usuario.Id, (int)xp, ctx.Interaction.CreationTimestamp);
-        await usuariosDiscordRepository.AddOrRemoveUserXp(usuario.Id, new UserXpDelta { Total = (int)xp, Challenges = (int)xp });
+        await challengesRepository.SetUsuarioChallenge(challenge, usuario.Id, (int)xp, ctx.Interaction.CreationTimestamp);
+        await xpUsuariosRepository.AddRemove(usuario.Id, new UserXpDelta { Total = (int)xp, Challenges = (int)xp });
 
         DiscordEmoji umaPoints = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
 

@@ -12,12 +12,10 @@ public static class BotServiceExtensions
     {
         // Estado en memoria del bot, separado por responsabilidad
         services.AddSingleton<EmoteModeState>();
-        services.AddSingleton<AnilistUsersState>();
         services.AddSingleton<TriggersState>();
         services.AddSingleton<MemberActivityState>();
         services.AddSingleton<InviteLinkState>();
         services.AddSingleton<HackedAccountState>();
-        services.AddSingleton<TeiouCooldownState>();
         services.AddSingleton<XpState>();
         services.AddSingleton<BoluditosState>();
         services.AddSingleton<ConfessionsState>();
@@ -42,7 +40,6 @@ public static class BotServiceExtensions
         services.AddHostedService<MinuteScheduledService>();
         services.AddHostedService<HourlyScheduledService>();
         services.AddHostedService<DailyScheduledService>();
-        services.AddHostedService<AnnualScheduledService>();
 
         return services;
     }

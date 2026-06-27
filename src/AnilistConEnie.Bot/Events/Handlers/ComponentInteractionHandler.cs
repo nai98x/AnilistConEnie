@@ -11,7 +11,7 @@ using DSharpPlus.EventArgs;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class ComponentInteractionHandler(DiscordBotService discordBotService, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, AnilistService anilistService, IUsuariosAnilistRepository usuariosAnilistRepository)
+public class ComponentInteractionHandler(DiscordBotService discordBotService, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, AnilistService anilistService, IAnilistApprovalRepository anilistApprovalRepository)
 {
     public async Task Handle(DiscordClient client, ComponentInteractionCreatedEventArgs args)
     {
@@ -90,7 +90,7 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
             bool aprobado = bool.Parse(parts[1]);
             long discordId = long.Parse(parts[2]);
             
-            UserApprovalAnilist? userApproval = await usuariosAnilistRepository.GetUsuarioApproval(discordId);
+            UserApprovalAnilist? userApproval = await anilistApprovalRepository.Obtener(discordId);
             if (userApproval is null)
             {
                 await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
@@ -141,7 +141,7 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
                     ));
                 }
 
-                await usuariosAnilistRepository.EliminarUsuarioApproval(discordId);
+                await anilistApprovalRepository.Delete(discordId);
                 try
                 {
                     await args.Message.DeleteAsync();

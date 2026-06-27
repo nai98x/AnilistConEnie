@@ -17,7 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AnilistConEnie.Bot.Helpers;
 
-public class AnilistService(XpState xpState, AnilistUsersState anilistUsersState, ChallengePostsState challengePostsState, BotConfiguration config, LimpiezaMiembrosSettings limpiezaSettings, RangoRoles rangoRoles, DiscordLogService logService, AnilistServerScoreService scoreService, IUsuariosAnilistRepository usuariosAnilistRepository, IAnilistClient anilistClient)
+public class AnilistService(XpState xpState, ChallengePostsState challengePostsState, BotConfiguration config, LimpiezaMiembrosSettings limpiezaSettings, RangoRoles rangoRoles, DiscordLogService logService, AnilistServerScoreService scoreService, IFirebaseRepository firebaseRepository, IUsuariosRepository usuariosRepository, IAnilistBaneadosRepository anilistBaneadosRepository, IAnilistApprovalRepository anilistApprovalRepository, IAnilistClient anilistClient)
 {
     public async Task TerminarVinculacion(DiscordClient client, DiscordUser user, DiscordMember member, DiscordGuild guild, AnilistUser anilistUser)
     {
@@ -57,7 +57,7 @@ public class AnilistService(XpState xpState, AnilistUsersState anilistUsersState
 
         DiscordChannel perfiles = guild.Channels[config.Channels.Perfiles];
         DiscordMessage? mensaje = null;
-        UsuarioAnilist? usrPreexistente = await usuariosAnilistRepository.GetPerfil(member.Id);
+        UsuarioAnilist? usrPreexistente = await usuariosRepository.GetPerfil(member.Id);
         
         try
         {
@@ -72,17 +72,8 @@ public class AnilistService(XpState xpState, AnilistUsersState anilistUsersState
         if (usrPreexistente is null)
             mensaje = await perfiles.SendMessageAsync($"**Perfil de {member.Mention}**\n\n{anilistUser.SiteUrl}");
         
-        await usuariosAnilistRepository.SetAnilist(member.Id, anilistUser.SiteUrl, (long)mensaje!.Id);
-        await usuariosAnilistRepository.SetAnilistYumiko(anilistUser.Id, member.Id);
-
-        List<UsuarioAnilist> users = anilistUsersState.Usuarios;
-        if (!users.Where(u => (ulong)u.UserId == user.Id).Any())
-        {
-            List<UsuarioAnilist> newList = await usuariosAnilistRepository.GetListaUsuarios();
-            UsuarioAnilist newUser = newList.First(u => (ulong)u.UserId == user.Id);
-            users.Add(newUser);
-            anilistUsersState.SetUsuarios(users);
-        }
+        await usuariosRepository.Upsert(member.Id, anilistUser.SiteUrl, (long)mensaje!.Id);
+        await firebaseRepository.SetAnilistYumiko(anilistUser.Id, member.Id);
 
         UserXp prevXp = xpState.GetUserXp(user.Id);
 
@@ -124,7 +115,7 @@ public class AnilistService(XpState xpState, AnilistUsersState anilistUsersState
             miembros[miembro.Id] = miembro;
 
         Dictionary<int, string> porAnilistId = [];
-        foreach (UsuarioAnilist usuario in anilistUsersState.Usuarios)
+        foreach (UsuarioAnilist usuario in await usuariosRepository.GetVinculados())
         {
             if (!miembros.TryGetValue((ulong)usuario.UserId, out DiscordMember? miembro)
                 || !rangoRoles.RangoAPartirDe(guild, miembro, RangoEnum.Miembro, true))
@@ -187,7 +178,7 @@ public class AnilistService(XpState xpState, AnilistUsersState anilistUsersState
 
         DiscordMember member = await interaction.Guild!.GetMemberAsync(interaction.User.Id, true);
 
-        if (anilistUsersState.IsAnilistUserBaneado(viewer.Id))
+        if (await anilistBaneadosRepository.Existe(viewer.Id))
         {
             await interaction.Guild.BanMemberAsync(interaction.User.Id, TimeSpan.Zero, "Usuario baneado por AniList baneado");
             return;
@@ -230,7 +221,7 @@ public class AnilistService(XpState xpState, AnilistUsersState anilistUsersState
                 Banner = viewer.BannerImage ?? string.Empty
             };
 
-            await usuariosAnilistRepository.AgregarUsuarioApproval(userApproval);
+            await anilistApprovalRepository.Upsert(userApproval);
             await interaction.Guild.Channels[config.Channels.Moderacion].SendMessageAsync(msgBuilderApproval);
 
             await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
@@ -275,10 +266,11 @@ public class AnilistService(XpState xpState, AnilistUsersState anilistUsersState
         List<UsuarioAnilist> ret = [];
         if (!TryGetActivityId(challenge.Link, out int activityId)) return ret;
 
+        List<UsuarioAnilist> vinculados = await usuariosRepository.GetVinculados();
         IReadOnlyList<int> replyUserIds = await GetActivityReplyUserIdsCachedAsync(activityId);
         foreach (int replyUserId in replyUserIds)
         {
-            UsuarioAnilist? usuario = anilistUsersState.Usuarios.Find(x =>
+            UsuarioAnilist? usuario = vinculados.Find(x =>
                 AnilistProfileUrl.TryGetUserId(x.AnilistURL, out int id) && id == replyUserId);
 
             if (usuario is not null && !ret.Contains(usuario))

@@ -1,161 +1,69 @@
-using AnilistConEnie.Infrastructure.Firebase;
+using System.Data;
+using AnilistConEnie.Infrastructure.Database;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Interfaces.Repositories;
-using Google.Cloud.Firestore;
+using Dapper;
 
 namespace AnilistConEnie.Infrastructure.Repositories;
 
-public class ChallengesRepository(FirebaseService firebase) : FirestoreRepository(firebase), IChallengesRepository
+public class ChallengesRepository(DbConnectionFactory connectionFactory) : IChallengesRepository
 {
     public async Task<List<Challenge>> GetLista()
     {
-        FirestoreDb db = await GetDbAsync();
-        return await QueryListAsync<Challenge>(db.Collection("Challenges"));
+        using var connection = await connectionFactory.OpenConnectionAsync();
+        return (await connection.QueryAsync<Challenge>(
+            "challenge_lista",
+            commandType: CommandType.StoredProcedure)).AsList();
     }
 
-    public async Task<List<ChallengeCompletado>> GetRankingUsuarios()
+    public async Task<long> Upsert(string nombre, string link, bool disponible, DateTime? vencimiento)
     {
-        FirestoreDb db = await GetDbAsync();
-        List<ChallengeCompletado> ret = [];
-
-        CollectionReference col = db.Collection("Challenges");
-        QuerySnapshot snap = await col.GetSnapshotAsync();
-
-        if (snap.Count > 0)
-        {
-            foreach (DocumentSnapshot document in snap.Documents)
-            {
-                Challenge challenge = document.ConvertTo<Challenge>();
-                CollectionReference col2 = db.Collection("Challenges").Document(challenge.Nombre).Collection("Usuarios");
-                QuerySnapshot snap2 = await col2.GetSnapshotAsync();
-
-                if (snap2.Count <= 0) continue;
-                foreach (DocumentSnapshot document2 in snap2.Documents)
-                {
-                    ChallengeCompletado registro = document2.ConvertTo<ChallengeCompletado>();
-
-                    ChallengeCompletado? registroExistente = ret.Find(x => x.UserId == registro.UserId);
-                    if (registroExistente != null)
-                    {
-                        registroExistente.Xp += registro.Xp;
-                    }
-                    else
-                    {
-                        ret.Add(registro);
-                    }
-                }
-            }
-        }
-
-        ret.Sort((x, y) => y.Xp.CompareTo(x.Xp));
-        return ret;
+        using var connection = await connectionFactory.OpenConnectionAsync();
+        return await connection.QuerySingleAsync<long>(
+            "challenge_upsert",
+            new { p_nombre = nombre, p_link = link, p_disponible = disponible, p_vencimiento = vencimiento },
+            commandType: CommandType.StoredProcedure);
     }
 
-    public async Task Set(string nombre, string link, bool disponible, DateTime? vencimiento)
+    public async Task UpsertCompletado(long challengeId, ulong userId, int xp, DateTimeOffset fecha)
     {
-        FirestoreDb db = await GetDbAsync();
-        DocumentReference doc = db.Collection("Challenges").Document($"{nombre}");
-
-        Dictionary<string, object> data = new()
-        {
-            { "Nombre", nombre },
-            { "Link", link },
-            { "Disponible", disponible },
-            { "Vencimiento", vencimiento! }
-        };
-
-        await UpsertAsync(doc, data);
+        using var connection = await connectionFactory.OpenConnectionAsync();
+        await connection.ExecuteAsync(
+            "challenge_usuario_upsert",
+            new { p_challenge_id = challengeId, p_user_id = (long)userId, p_xp = xp, p_fecha = fecha },
+            commandType: CommandType.StoredProcedure);
     }
 
-    public async Task SetUsuarioChallenge(string nombreChallenge, long userId, int xp, DateTimeOffset offset)
+    public async Task SetUsuarioChallenge(string nombre, ulong userId, int xp, DateTimeOffset fecha)
     {
-        FirestoreDb db = await GetDbAsync();
-        DocumentReference doc = db.Collection("Challenges").Document($"{nombreChallenge}").Collection("Usuarios").Document($"{userId}");
-
-        Dictionary<string, object> data = new()
-        {
-            { "UserId", userId },
-            { "Xp", xp },
-            { "Date", offset }
-        };
-
-        await UpsertAsync(doc, data);
+        using var connection = await connectionFactory.OpenConnectionAsync();
+        await connection.ExecuteAsync(
+            "challenge_usuario_completar",
+            new { p_nombre = nombre, p_user_id = (long)userId, p_xp = xp, p_fecha = fecha },
+            commandType: CommandType.StoredProcedure);
     }
 
-    public async Task<List<ChallengeCompletado>> GetListaUsuariosCompletaron(string nombreChallenge)
+    public async Task<List<ChallengeCompletado>> GetListaUsuariosCompletaron(string nombre)
     {
-        FirestoreDb db = await GetDbAsync();
-        CollectionReference col = db.Collection("Challenges").Document($"{nombreChallenge}").Collection("Usuarios");
-        return await QueryListAsync<ChallengeCompletado>(col);
+        using var connection = await connectionFactory.OpenConnectionAsync();
+        return (await connection.QueryAsync<ChallengeCompletado>(
+            "challenge_completados",
+            new { p_nombre = nombre },
+            commandType: CommandType.StoredProcedure)).AsList();
     }
 
     public async Task<List<UsuarioChallenge>> GetChallengesUsuario(ulong userId)
     {
-        FirestoreDb db = await GetDbAsync();
-        List<UsuarioChallenge> ret = [];
-
-        CollectionReference colChallenges = db.Collection("Challenges");
-        IAsyncEnumerable<DocumentReference> subcollectionsChallenges = colChallenges.ListDocumentsAsync();
-        IAsyncEnumerator<DocumentReference> subcollectionsEnumerator = subcollectionsChallenges.GetAsyncEnumerator(default);
-        while (await subcollectionsEnumerator.MoveNextAsync())
-        {
-            DocumentReference subcollectionRef = subcollectionsEnumerator.Current;
-            DocumentSnapshot challengeSnap = await subcollectionRef.GetSnapshotAsync();
-            if (!challengeSnap.Exists) continue;
-
-            Challenge challenge = challengeSnap.ConvertTo<Challenge>();
-            DocumentReference doc = db.Collection("Challenges").Document(subcollectionRef.Id).Collection("Usuarios").Document($"{userId}");
-            DocumentSnapshot snap = await doc.GetSnapshotAsync();
-            if (!snap.Exists) continue;
-
-            ChallengeCompletado registro = snap.ConvertTo<ChallengeCompletado>();
-            ret.Add(new UsuarioChallenge
+        using var connection = await connectionFactory.OpenConnectionAsync();
+        return (await connection.QueryAsync<UsuarioChallenge, Challenge, UsuarioChallenge>(
+            "challenge_usuario_lista",
+            (usuarioChallenge, challenge) =>
             {
-                UserId = registro.UserId,
-                Xp = registro.Xp,
-                Challenge = challenge
-            });
-        }
-
-        return ret;
-    }
-
-    public async Task<List<UsuarioChallenge>> GetChallengesUsuariosNoDelServer(HashSet<ulong> memberIds)
-    {
-        FirestoreDb db = await GetDbAsync();
-        List<UsuarioChallenge> ret = [];
-
-        CollectionReference colChallenges = db.Collection("Challenges");
-        IAsyncEnumerable<DocumentReference> subcollectionsChallenges = colChallenges.ListDocumentsAsync();
-        IAsyncEnumerator<DocumentReference> subcollectionsEnumerator = subcollectionsChallenges.GetAsyncEnumerator(default);
-        while (await subcollectionsEnumerator.MoveNextAsync())
-        {
-            DocumentReference subcollectionRef = subcollectionsEnumerator.Current;
-            DocumentSnapshot challengeSnap = await subcollectionRef.GetSnapshotAsync();
-            if (!challengeSnap.Exists) continue;
-
-            Challenge challenge = challengeSnap.ConvertTo<Challenge>();
-            CollectionReference colChallengesUsr = db.Collection("Challenges").Document(subcollectionRef.Id).Collection("Usuarios");
-            IAsyncEnumerable<DocumentReference> subcollectionsChallengesUsr = colChallengesUsr.ListDocumentsAsync();
-            IAsyncEnumerator<DocumentReference> subcollectionsEnumeratorUsr = subcollectionsChallengesUsr.GetAsyncEnumerator(default);
-            while (await subcollectionsEnumeratorUsr.MoveNextAsync())
-            {
-                DocumentReference subcollectionRefUsr = subcollectionsEnumeratorUsr.Current;
-                if (memberIds.Contains(ulong.Parse(subcollectionRefUsr.Id))) continue;
-
-                DocumentSnapshot snap = await subcollectionRefUsr.GetSnapshotAsync();
-                if (!snap.Exists) continue;
-
-                ChallengeCompletado registro = snap.ConvertTo<ChallengeCompletado>();
-                ret.Add(new UsuarioChallenge
-                {
-                    UserId = registro.UserId,
-                    Xp = registro.Xp,
-                    Challenge = challenge
-                });
-            }
-        }
-
-        return ret;
+                usuarioChallenge.Challenge = challenge;
+                return usuarioChallenge;
+            },
+            new { p_user_id = (long)userId },
+            splitOn: "nombre",
+            commandType: CommandType.StoredProcedure)).AsList();
     }
 }

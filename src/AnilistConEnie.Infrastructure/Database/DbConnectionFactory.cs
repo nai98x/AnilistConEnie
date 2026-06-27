@@ -4,18 +4,38 @@ using Npgsql;
 
 namespace AnilistConEnie.Infrastructure.Database;
 
-public class DbConnectionFactory(string connectionString)
+public class DbConnectionFactory
 {
-    public async Task<IDbConnection> OpenConnectionAsync()
+    private readonly NpgsqlDataSource _dataSource;
+
+    static DbConnectionFactory()
     {
-        NpgsqlConnection connection = new(connectionString);
-        await connection.OpenAsync();
-        return connection;
+        // Las columnas son snake_case y los POCOs PascalCase: que Dapper mapee user_id → UserId, etc.
+        DefaultTypeMap.MatchNamesWithUnderscores = true;
+
+        // CommandType.StoredProcedure invoca las funciones con SELECT * FROM (lo genera el driver), no CALL:
+        // así los repos solo nombran el SP, sin SQL en el código de la app.
+        AppContext.SetSwitch("Npgsql.EnableStoredProcedureCompatMode", true);
+
+        // Dapper (esta versión) no soporta DateOnly como parámetro escalar: lo mapeamos a un date.
+        SqlMapper.AddTypeHandler(new DateOnlyTypeHandler());
     }
 
-    public async Task<string> TestConnectionAsync()
+    private sealed class DateOnlyTypeHandler : SqlMapper.TypeHandler<DateOnly>
     {
-        using IDbConnection connection = await OpenConnectionAsync();
-        return await connection.QuerySingleAsync<string>("SELECT version();");
+        public override DateOnly Parse(object value) => DateOnly.FromDateTime((DateTime)value);
+
+        public override void SetValue(IDbDataParameter parameter, DateOnly value)
+        {
+            parameter.DbType = DbType.Date;
+            parameter.Value = value.ToDateTime(TimeOnly.MinValue);
+        }
     }
+
+    public DbConnectionFactory(string connectionString)
+    {
+        _dataSource = new NpgsqlDataSourceBuilder(connectionString).Build();
+    }
+
+    public async Task<IDbConnection> OpenConnectionAsync() => await _dataSource.OpenConnectionAsync();
 }

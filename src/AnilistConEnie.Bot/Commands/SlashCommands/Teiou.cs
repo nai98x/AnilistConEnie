@@ -1,8 +1,8 @@
 using System.ComponentModel;
 using System.Globalization;
 using AnilistConEnie.Bot.Commands.SlashCommands.Attributes;
+using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
-using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Model.Enum;
 using AnilistConEnie.Model.Interfaces.Repositories;
 using DSharpPlus.Commands;
@@ -16,7 +16,7 @@ namespace AnilistConEnie.Bot.Commands.SlashCommands;
 [Command("teiou")]
 [Description("Comandos para rango teiou")]
 //[TestCommand]
-public class Teiou(TeiouCooldownState teiouCooldownState, RangoRoles rangoRoles, IUsuariosDiscordRepository usuariosDiscordRepository, DiscordBotService discordBotService)
+public class Teiou(CooldownsSettings cooldownsSettings, RangoRoles rangoRoles, ITeiouCooldownRepository teiouCooldownRepository, DiscordBotService discordBotService)
 {
     [Command("nickname")]
     [Description("Cambia el nickname de una persona")]
@@ -38,13 +38,14 @@ public class Teiou(TeiouCooldownState teiouCooldownState, RangoRoles rangoRoles,
             return;
         }
 
-        if (!teiouCooldownState.TeiouInCooldown(ctx.User.Id))
+        DateTime? cooldown = await teiouCooldownRepository.Obtener(ctx.User.Id);
+
+        if (cooldown is null || cooldown.Value <= DateTime.UtcNow)
         {
             DiscordMember member = await ctx.Guild!.GetMemberAsync(user.Id);
             string oldNickname = member.Nickname ?? member.DisplayName;
 
-            teiouCooldownState.AddTeiouCooldown(ctx.User.Id);
-            await usuariosDiscordRepository.SetCooldownTeiou(ctx.User.Id);
+            await teiouCooldownRepository.Upsert(ctx.User.Id, DateTime.UtcNow.AddHours(cooldownsSettings.TeiouApodoHoras));
 
             await member.ModifyAsync(x => x.Nickname = nickname);
 
@@ -60,9 +61,11 @@ public class Teiou(TeiouCooldownState teiouCooldownState, RangoRoles rangoRoles,
             nfi.NumberGroupSeparator = ".";
             nfi.NumberDecimalDigits = 0;
 
+            double horas = (cooldown.Value - DateTime.UtcNow).TotalHours;
+
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 .WithTitle("Error")
-                .WithDescription($"Debes esperar {teiouCooldownState.GetHoursCooldownTeiou(ctx.User.Id).ToString("N", nfi)} horas para volver a utilizar el comando")
+                .WithDescription($"Debes esperar {horas.ToString("N", nfi)} horas para volver a utilizar el comando")
                 .WithColor(DiscordColor.Red)));
         }
     }

@@ -1,39 +1,52 @@
-using AnilistConEnie.Infrastructure.Firebase;
+using System.Data;
+using AnilistConEnie.Infrastructure.Database;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Interfaces.Repositories;
-using Google.Cloud.Firestore;
+using Dapper;
 
 namespace AnilistConEnie.Infrastructure.Repositories;
 
-public class IntercambiosRepostRepository(FirebaseService firebase) : FirestoreRepository(firebase), IIntercambiosRepostRepository
+public class IntercambiosRepostRepository(DbConnectionFactory connectionFactory) : IIntercambiosRepostRepository
 {
     public async Task<MensajeIntercambioRepost?> GetMensaje(ulong idMensajeHiloForo)
     {
-        FirestoreDb db = await GetDbAsync();
-        DocumentReference doc = db.Collection("IntercambiosRepost").Document($"{idMensajeHiloForo}");
-        return await GetDocumentAsync<MensajeIntercambioRepost>(doc);
+        using var connection = await connectionFactory.OpenConnectionAsync();
+        return await connection.QuerySingleOrDefaultAsync<MensajeIntercambioRepost>(
+            "intercambios_repost_obtener",
+            new { p_id_mensaje_hilo_foro = (long)idMensajeHiloForo },
+            commandType: CommandType.StoredProcedure);
     }
 
-    public async Task SetMensaje(ulong idCanalHiloForo, ulong idMensajeHiloForo, ulong idCanalMensajeRepost, ulong idMensajeRepost)
+    public async Task Upsert(MensajeIntercambioRepost mensaje)
     {
-        FirestoreDb db = await GetDbAsync();
-        DocumentReference doc = db.Collection("IntercambiosRepost").Document($"{idMensajeHiloForo}");
-
-        Dictionary<string, object> data = new()
-        {
-            { "IdCanalHiloForo", idCanalHiloForo },
-            { "IdMensajeHiloForo", idMensajeHiloForo },
-            { "IdCanalMensajeRepost", idCanalMensajeRepost },
-            { "IdMensajeRepost", idMensajeRepost }
-        };
-
-        await UpsertAsync(doc, data);
+        using var connection = await connectionFactory.OpenConnectionAsync();
+        await connection.ExecuteAsync(
+            "intercambios_repost_upsert",
+            new
+            {
+                p_id_mensaje_hilo_foro = (long)mensaje.IdMensajeHiloForo,
+                p_id_canal_hilo_foro = (long)mensaje.IdCanalHiloForo,
+                p_id_canal_mensaje_repost = (long)mensaje.IdCanalMensajeRepost,
+                p_id_mensaje_repost = (long)mensaje.IdMensajeRepost
+            },
+            commandType: CommandType.StoredProcedure);
     }
+
+    public Task SetMensaje(ulong idCanalHiloForo, ulong idMensajeHiloForo, ulong idCanalMensajeRepost, ulong idMensajeRepost) =>
+        Upsert(new MensajeIntercambioRepost
+        {
+            IdCanalHiloForo = idCanalHiloForo,
+            IdMensajeHiloForo = idMensajeHiloForo,
+            IdCanalMensajeRepost = idCanalMensajeRepost,
+            IdMensajeRepost = idMensajeRepost
+        });
 
     public async Task DeleteMensaje(ulong idMensajeHiloForo)
     {
-        FirestoreDb db = await GetDbAsync();
-        DocumentReference doc = db.Collection("IntercambiosRepost").Document($"{idMensajeHiloForo}");
-        await DeleteIfExistsAsync(doc);
+        using var connection = await connectionFactory.OpenConnectionAsync();
+        await connection.ExecuteAsync(
+            "intercambios_repost_delete",
+            new { p_id_mensaje_hilo_foro = (long)idMensajeHiloForo },
+            commandType: CommandType.StoredProcedure);
     }
 }

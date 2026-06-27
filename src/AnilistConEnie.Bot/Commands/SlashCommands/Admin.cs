@@ -37,11 +37,11 @@ public class Admin(
     DiscordLogService logService,
     EmoteModeState emoteModeState,
     InviteLinkState inviteLinkState,
-    AnilistUsersState anilistUsersState,
     XpState xpState,
     IAnilistClient anilistClient,
-    IUsuariosActivosRepository usuariosActivosRepository,
-    IUsuariosDiscordRepository usuariosDiscordRepository)
+    IUsuariosRepository usuariosRepository,
+    IAnilistBaneadosRepository anilistBaneadosRepository,
+    IXpUsuariosRepository xpUsuariosRepository)
 {
     private const string PddSuggestionForm = "https://forms.gle/o3V3pgu2hfYRBVtu7";
     private const string PddThumbnail = "https://images-ext-1.discordapp.net/external/2FcgVgNDv60ja04L_9-_3DsxW2wqOd8Byj5rjr8EEvE/%3Fv%3D1/https/cdn.discordapp.com/emojis/846813702434586694.png?format=webp&quality=lossless";
@@ -185,10 +185,10 @@ public class Admin(
         await ctx.DeferResponseAsync();
         if (!await EnsureAdminAsync(ctx)) return;
 
-        List<UsuarioAnilist> vinculadosFirebase = anilistUsersState.Usuarios;
+        List<UsuarioAnilist> vinculadosBd = await usuariosRepository.GetVinculados();
 
         List<DiscordMember> vinculados = ctx.Guild!.Members.Values
-            .Where(member => vinculadosFirebase.Any(x => (ulong)x.UserId == member.Id))
+            .Where(member => vinculadosBd.Any(x => (ulong)x.UserId == member.Id))
             .ToList();
 
         List<DiscordMember> noVinculados = ctx.Guild.Members.Values.Except(vinculados).ToList();
@@ -305,7 +305,7 @@ public class Admin(
                     if (darXp)
                     {
                         xpState.UpdateUserXp(miembro.Id, totalXp, TipoXp.Total);
-                        await usuariosDiscordRepository.AddOrRemoveUserXp(miembro.Id, new UserXpDelta { Total = (int)xp, Challenges = challenges, Eventos = eventos, Intercambios = intercambios, Otros = otros }, operation);
+                        await xpUsuariosRepository.AddRemove(miembro.Id, new UserXpDelta { Total = (int)xp, Challenges = challenges, Eventos = eventos, Intercambios = intercambios, Otros = otros }, operation);
 
                         await channel.SendMessageAsync(new DiscordEmbedBuilder()
                             .WithTitle("Experiencia modificada")
@@ -315,7 +315,7 @@ public class Admin(
                     }
                     else
                     {
-                        await usuariosDiscordRepository.AddOrRemoveUserXp(miembro.Id, new UserXpDelta { Challenges = challenges, Eventos = eventos, Intercambios = intercambios, Otros = otros }, operation);
+                        await xpUsuariosRepository.AddRemove(miembro.Id, new UserXpDelta { Challenges = challenges, Eventos = eventos, Intercambios = intercambios, Otros = otros }, operation);
 
                         await channel.SendMessageAsync(new DiscordEmbedBuilder()
                             .WithTitle("Experiencia modificada sin dar xp")
@@ -491,7 +491,7 @@ public class Admin(
         if (!await EnsureAdminAsync(ctx)) return;
 
         HashSet<ulong> memberIds = ctx.Guild!.Members.Keys.ToHashSet();
-        List<UsuarioActivo> inactivos = await usuariosActivosRepository.GetUsuariosInactivos(memberIds, limpiezaSettings.InactividadMeses);
+        List<UsuarioActivo> inactivos = await usuariosRepository.GetUsuariosInactivos(memberIds, limpiezaSettings.InactividadMeses);
         List<ulong> kickeables = [];
 
         foreach (DiscordMember member in ctx.Guild.Members.Values)
@@ -540,7 +540,7 @@ public class Admin(
             return;
         }
 
-        await anilistUsersState.AddAnilistUserBaneado(perfil.Id);
+        await anilistBaneadosRepository.Upsert(perfil.Id);
 
         await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
         {
@@ -584,7 +584,7 @@ public class Admin(
             return;
         }
 
-        await anilistUsersState.RemoveAnilistUserBaneado(perfil.Id);
+        await anilistBaneadosRepository.Delete(perfil.Id);
 
         await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
         {
@@ -604,7 +604,7 @@ public class Admin(
         if (!await EnsureAdminAsync(ctx)) return;
         if (!await EnsureCanalPermitidoAsync(ctx)) return;
 
-        List<int> listaBaneados = anilistUsersState.GetAnilistUsersBaneados();
+        List<int> listaBaneados = (await anilistBaneadosRepository.GetLista()).Select(x => x.AnilistUserId).ToList();
         string listaBaneadosStr = string.Join("\n", listaBaneados.Select(x => $"- https://anilist.co/user/{x}"));
 
         await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder

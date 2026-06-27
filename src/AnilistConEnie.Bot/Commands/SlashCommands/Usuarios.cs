@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Globalization;
 using AnilistConEnie.Application.Extensions;
 using AnilistConEnie.Application.Helpers;
+using AnilistConEnie.Application.Membership;
 using AnilistConEnie.Application.Xp;
 using AnilistConEnie.Bot.Commands.Enums;
 using AnilistConEnie.Bot.Commands.SlashCommands.Attributes;
@@ -20,9 +21,9 @@ using AnilistConEnie.Bot.Services;
 
 namespace AnilistConEnie.Bot.Commands.SlashCommands;
 
-//[TestCommand]
+[TestCommand]
 public class Usuarios(
-    IUsuariosDiscordRepository usuariosDiscordRepository,
+    IUsuariosRepository usuariosRepository,
     XpState xpState,
     RangoRoles rangoRoles,
     BotConfiguration config,
@@ -45,8 +46,9 @@ public class Usuarios(
         DiscordGuild guild = ctx.Guild!;
         CultureInfo es = CultureInfo.CreateSpecificCulture("es");
 
-        List<UserCumple> lista = await usuariosDiscordRepository.GetBirthdays(month);
-        List<UserCumple> hoy = await usuariosDiscordRepository.GetBirthdaysHoy();
+        List<Usuario> cumples = await usuariosRepository.GetCumples();
+        List<UserCumple> lista = CumpleCalculator.Proximos(cumples, DateTime.UtcNow, month);
+        List<UserCumple> hoy = CumpleCalculator.DelDia(cumples, DateTime.Today);
 
         List<(UserCumple Cumple, DiscordMember Miembro)> proximos = lista
             .OrderBy(x => x.BirthdayActual)
@@ -115,21 +117,7 @@ public class Usuarios(
             return;
         }
 
-        DateTime localDate = new(DateTime.Now.Year, month, day, 0, 0, 0, DateTimeKind.Unspecified);
-        DateTime localDateToUtc;
-        try
-        {
-            TimeZoneInfo tz = TimeZoneInfo.FindSystemTimeZoneById(userTimezone.Timezone);
-            localDateToUtc = TimeZoneInfo.ConvertTimeToUtc(localDate, tz);
-        }
-        catch (TimeZoneNotFoundException)
-        {
-            localDateToUtc = localDate;
-        }
-
-        DateTime fecha = new(year: 2023, month: month, day: day, hour: 3, minute: 0, second: 0);
-
-        await usuariosDiscordRepository.SetBirthday(ctx.Member!.Id, localDateToUtc, false, fecha);
+        await usuariosRepository.SetCumple(ctx.Member!.Id, (short)day, (short)month);
 
         DiscordWebhookBuilder builder = new();
         builder.AddEmbed(new DiscordEmbedBuilder
@@ -162,7 +150,7 @@ public class Usuarios(
 
         await ctx.DeferResponseAsync(true);
 
-        await usuariosDiscordRepository.DeleteBirthday(ctx.Member!.Id);
+        await usuariosRepository.BorrarCumple(ctx.Member!.Id);
 
         await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
         {

@@ -27,7 +27,7 @@ public class Premios(IPremiosRepository premiosRepository, DiscordBotService dis
 
         await ctx.DeferResponseAsync();
 
-        List<Premio> premios = await premiosRepository.GetListaPremios();
+        List<Premio> premios = await premiosRepository.GetLista();
         string desc;
 
         if (premios.Count == 0)

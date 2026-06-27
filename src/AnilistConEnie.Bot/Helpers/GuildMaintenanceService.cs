@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AnilistConEnie.Bot.Helpers;
 
-public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, XpState xpState, XpChartService xpChartService, InviteLinkState inviteLinkState, PermanentUsernameState permanentUsernameState, BotConfiguration config, XpSettings xpSettings, LimpiezaMiembrosSettings limpiezaSettings, RangoRoles rangoRoles, DiscordLogService logService, DiscordBotService discordBotService, IUsuariosActivosRepository usuariosActivosRepository, IUsuariosDiscordRepository usuariosDiscordRepository, IChallengesRepository challengesRepository)
+public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, XpState xpState, InviteLinkState inviteLinkState, PermanentUsernameState permanentUsernameState, BotConfiguration config, XpSettings xpSettings, LimpiezaMiembrosSettings limpiezaSettings, RangoRoles rangoRoles, DiscordLogService logService, DiscordBotService discordBotService, IUsuariosRepository usuariosRepository, IXpUsuariosRepository xpUsuariosRepository, IXpDiarioRepository xpDiarioRepository, IChallengesRepository challengesRepository)
 {
     public async Task ClearInvitesRoleOnStartup(DiscordGuild guild)
     {
@@ -86,14 +86,14 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
 
                 if (accrual.BoosterXp > 0)
                 {
-                    await usuariosDiscordRepository.AddOrRemoveUserXp(userId, new UserXpDelta { Booster = accrual.BoosterXp });
+                    await xpUsuariosRepository.AddRemove(userId, new UserXpDelta { Booster = accrual.BoosterXp });
                     xpState.UpdateUserXp(userId, accrual.NewBoosterTotal, TipoXp.Booster);
                 }
 
                 DiscordRole roleBefore = rangoRoles.GetRoleByXpActual(guild, member);
                 DiscordRole roleAfter = rangoRoles.GetRoleByXp(guild, accrual.NewGrandTotal);
                 xpState.UpdateUserXp(userId, accrual.NewGrandTotal, TipoXp.Total);
-                await usuariosDiscordRepository.AddOrRemoveUserXp(userId, new UserXpDelta { Total = accrual.TotalGranted });
+                await xpUsuariosRepository.AddRemove(userId, new UserXpDelta { Total = accrual.TotalGranted });
 
                 if (debug.habilitado && member.Id == debug.usuarioId)
                 {
@@ -189,7 +189,8 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
             DiscordChannel canal = guild.Channels[config.Channels.General];
             DiscordRole role = guild.Roles[config.Roles.Cumple];
 
-            List<UserCumple> birthdays = await usuariosDiscordRepository.GetBirthdaysAhora();
+            List<Usuario> cumples = await usuariosRepository.GetCumples();
+            List<UserCumple> birthdays = CumpleCalculator.DelDia(cumples, DateTime.Today);
 
             foreach (UserCumple birthday in birthdays)
             {
@@ -286,7 +287,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
         DiscordRole inactivoRole = guild.Roles.First(x => x.Key == config.Roles.Inactivo).Value;
 
         // 1- Obtener inactivos (+90 dias, desde bd)
-        List<UsuarioActivo> usuariosActivos = await usuariosActivosRepository.GetUsuariosActivos(guild.Members.Keys.ToHashSet());
+        List<UsuarioActivo> usuariosActivos = await usuariosRepository.GetUsuariosActivos(guild.Members.Keys.ToHashSet());
         List<KeyValuePair<ulong, DiscordMember>> usuariosInactivos = guild.Members.Where(x => !usuariosActivos.Any(y => y.UserId == (long)x.Key) && !x.Value.IsBot).ToList();
 
         // 2- Si estos usuarios no tienen el rol inactivo, agregarselo
@@ -307,7 +308,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
 
         foreach (Challenge challenge in challengesObsoletos)
         {
-            await challengesRepository.Set(challenge.Nombre, challenge.Link, false, challenge.Vencimiento);
+            await challengesRepository.Upsert(challenge.Nombre, challenge.Link, false, challenge.Vencimiento);
         }
     }
 
@@ -319,8 +320,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
             DateTime date = new DateTime(day: DateTime.Now.Day, month: DateTime.Now.Month, year: DateTime.Now.Year, hour: 5, minute: 0, second: 0, kind: DateTimeKind.Utc);
             foreach (UserXp user in rankings)
             {
-                await usuariosDiscordRepository.AddDailyXp(date, (ulong)user.UserId, user.Total);
-                await xpChartService.AddUserXpToChartHistory((ulong)user.UserId, user.Total, date);
+                await xpDiarioRepository.Upsert((ulong)user.UserId, date, user.Total);
             }
         }
         catch (Exception e)

@@ -55,7 +55,7 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
             Tipo = (int)tipo
         };
 
-        await triggersRepository.SetTrigger(trigger);
+        await triggersRepository.Upsert(trigger);
         triggersState.SetTrigger(trigger);
 
         await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
@@ -77,7 +77,7 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
         await ctx.DeferResponseAsync();
         if (!await EnsureManageGuildAsync(ctx)) return;
 
-        bool exito = await triggersRepository.DeleteTrigger(nombre.ToLower());
+        bool exito = await triggersRepository.Delete(nombre.ToLower());
 
         if (exito)
         {
@@ -138,7 +138,7 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
                 Tipo = (int)tipo
             };
 
-            await triggersRepository.SetTrigger(trigger);
+            await triggersRepository.Upsert(trigger);
             triggersState.SetTrigger(trigger);
 
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder

@@ -44,6 +44,14 @@ inversas.
 
 - **Repositorios**: inyectar SIEMPRE por su interfaz de Model (`IXxxRepository`), nunca la clase
   concreta de Infrastructure. Solo las interfaces están registradas en el contenedor.
+- **Base de datos relacional (Dapper)**: es **database-first** y se accede **solo vía stored
+  procedures** (funciones PostgreSQL). Los repos de Infrastructure las invocan **por nombre** con
+  `commandType: CommandType.StoredProcedure` y parámetros `p_*`; **cero SQL en el código** (ni
+  `SELECT * FROM fn()`). Para que `CommandType.StoredProcedure` resuelva funciones (y no `CALL`),
+  `DbConnectionFactory` activa `AppContext.SetSwitch("Npgsql.EnableStoredProcedureCompatMode", true)`.
+  El esquema y los SPs viven versionados en `db/` (no en código). Los POCOs de Model mapean los
+  resultados (snake_case→PascalCase vía `DefaultTypeMap.MatchNamesWithUnderscores`); la conexión se
+  abre con `DbConnectionFactory` (`Infrastructure/Database/`, único archivo que conoce el motor).
 - **DI de handlers/servicios**: por **constructor** (primary constructors). No usar service locator
   (`IServiceProvider.GetService`) salvo el caso ya establecido de `EventHandlerRegistrar`, donde la
   resolución de cada handler se difiere dentro de un lambda para romper el ciclo

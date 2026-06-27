@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, AnilistUsersState anilistUsersState, TriggersState triggersState, XpState xpState, TeiouCooldownState teiouCooldownState, ILogger<GuildDownloadCompletedHandler> logger, BotConfiguration config, DiscordLogService logService, GuildMaintenanceService guildMaintenanceService, IUsuariosAnilistRepository usuariosAnilistRepository, IUsuariosDiscordRepository usuariosDiscordRepository, ITriggersRepository triggersRepository)
+public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, TriggersState triggersState, XpState xpState, ILogger<GuildDownloadCompletedHandler> logger, BotConfiguration config, DiscordLogService logService, GuildMaintenanceService guildMaintenanceService, IXpUsuariosRepository xpUsuariosRepository, ITriggersRepository triggersRepository)
 {
     public async Task Handle(DiscordClient client, GuildDownloadCompletedEventArgs args)
     {
@@ -20,34 +20,16 @@ public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, 
 
         discordBotService.SetChannels();
 
-        #region Usuarios Anilist
-        List<UsuarioAnilist> usuarios =  await usuariosAnilistRepository.GetListaUsuarios();
-        anilistUsersState.SetUsuarios(usuarios);
-        logger.LogInformation("Usuarios Anilist cargados correctamente");
-        #endregion
-        
         #region Triggers
-        List<Trigger> triggers = await triggersRepository.GetTriggers();
+        List<Trigger> triggers = await triggersRepository.GetLista();
         triggersState.FillTriggers(triggers);
         logger.LogInformation("Triggers cargados correctamente");
         #endregion
 
         #region Usuarios Discord (xp)
-        List<UserXp> ranking = await usuariosDiscordRepository.GetRanking();
+        List<UserXp> ranking = await xpUsuariosRepository.ObtenerRanking();
         xpState.FillGuildXp(ranking.ToDictionary(r => (ulong)r.UserId));
         logger.LogInformation("Xp de usuarios de Discord cargada correctamente");
-        #endregion
-
-        #region Teious
-        List<TeiouCooldownNickname> cooldownTeious = await usuariosDiscordRepository.GetListTeiouNicknameCooldown();
-        teiouCooldownState.FillTeiouFromDb(cooldownTeious);
-        logger.LogInformation("Teious cargados correctamente");
-        #endregion
-
-        #region Cuentas baneadas AniList
-        List<UsuarioAnilistBaneado> usersBaneados = await usuariosAnilistRepository.GetListaUsuariosBaneados();
-        anilistUsersState.FillAnilistBaneados(usersBaneados);
-        logger.LogInformation("Usuarios baneados de Anilist cargados correctamente");
         #endregion
 
         #region Control de roles en startup

@@ -12,7 +12,7 @@ using DSharpPlus.EventArgs;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class GuildMemberRemovedHandler(DiscordBotService discordBotService, XpState xpState, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, IUsuariosAnilistRepository usuariosAnilistRepository)
+public class GuildMemberRemovedHandler(DiscordBotService discordBotService, XpState xpState, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, IUsuariosRepository usuariosRepository)
 {
     public async Task Handle(DiscordClient client, GuildMemberRemovedEventArgs args)
     {
@@ -47,11 +47,11 @@ public class GuildMemberRemovedHandler(DiscordBotService discordBotService, XpSt
             #endregion
 
             #region Mensaje puerta
-            UsuarioAnilist? usuario = await usuariosAnilistRepository.GetPerfil(args.Member.Id);
+            UsuarioAnilist? usuario = await usuariosRepository.GetPerfil(args.Member.Id);
             if (usuario != null)
             {
                 await logService.BorrarMensajeUsuarioAnilist(args.Guild, usuario.MessageId);
-                await usuariosAnilistRepository.DeleteAnilist(args.Member.Id);
+                await usuariosRepository.Desvincular(args.Member.Id);
                 await logService.GrabarLogUsuarioOutAnilist(args.Guild, args.Member, usuario, rank);
             }
             #endregion

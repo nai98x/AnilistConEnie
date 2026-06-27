@@ -5,7 +5,7 @@ namespace AnilistConEnie.Model.Interfaces.Repositories;
 
 public interface IPremiosRepository
 {
-    Task<List<Premio>> GetListaPremios();
+    Task<List<Premio>> GetLista();
+    Task Upsert(Premio premio);
     Task SetPremio(int anio, Season season, string link);
-    Task RemovePremio(int anio, Season season);
 }

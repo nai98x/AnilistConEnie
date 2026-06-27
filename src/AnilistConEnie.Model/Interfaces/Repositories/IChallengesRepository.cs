@@ -5,10 +5,9 @@ namespace AnilistConEnie.Model.Interfaces.Repositories;
 public interface IChallengesRepository
 {
     Task<List<Challenge>> GetLista();
-    Task<List<ChallengeCompletado>> GetRankingUsuarios();
-    Task Set(string nombre, string link, bool disponible, DateTime? vencimiento);
-    Task SetUsuarioChallenge(string nombreChallenge, long userId, int xp, DateTimeOffset offset);
-    Task<List<ChallengeCompletado>> GetListaUsuariosCompletaron(string nombreChallenge);
+    Task<long> Upsert(string nombre, string link, bool disponible, DateTime? vencimiento);
+    Task UpsertCompletado(long challengeId, ulong userId, int xp, DateTimeOffset fecha);
+    Task SetUsuarioChallenge(string nombre, ulong userId, int xp, DateTimeOffset fecha);
+    Task<List<ChallengeCompletado>> GetListaUsuariosCompletaron(string nombre);
     Task<List<UsuarioChallenge>> GetChallengesUsuario(ulong userId);
-    Task<List<UsuarioChallenge>> GetChallengesUsuariosNoDelServer(HashSet<ulong> memberIds);
 }

@@ -9,6 +9,7 @@ using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Entities.Anilist;
 using AnilistConEnie.Model.Exceptions;
 using AnilistConEnie.Model.Interfaces;
+using AnilistConEnie.Model.Interfaces.Repositories;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands;
@@ -23,7 +24,7 @@ using AnilistConEnie.Bot.Services;
 namespace AnilistConEnie.Bot.Commands.SlashCommands;
 
 //[TestCommand]
-public class Anilist(IAnilistClient anilistClient, AnilistService anilistService, AnilistUsersState anilistUsersState, BotConfiguration config, DiscordBotService discordBotService)
+public class Anilist(IAnilistClient anilistClient, AnilistService anilistService, IUsuariosRepository usuariosRepository, BotConfiguration config, DiscordBotService discordBotService)
 {
     // Límite de caracteres de la description de un embed de Discord.
     private const int EmbedDescriptionLimit = 4096;
@@ -155,7 +156,7 @@ public class Anilist(IAnilistClient anilistClient, AnilistService anilistService
 
         if (usuarioAnilist is not null)
         {
-            UsuarioAnilist? vinculado = anilistUsersState.Usuarios.Find(x => x.AnilistURL == usuarioAnilist.SiteUrl);
+            UsuarioAnilist? vinculado = (await usuariosRepository.GetVinculados()).Find(x => x.AnilistURL == usuarioAnilist.SiteUrl);
             if (vinculado is not null && ctx.Guild!.Members.TryGetValue((ulong)vinculado.UserId, out DiscordMember? miembro))
             {
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder

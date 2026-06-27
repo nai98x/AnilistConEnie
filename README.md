@@ -8,7 +8,8 @@ Bot multipropósito para el servidor de Discord **Añilist**, desarrollado en DS
 
 - **.NET 10** — la solución completa.
 - **DSharpPlus** — librería de Discord (se usan paquetes *nightly/preview*).
-- **Firestore (Firebase)** — persistencia (dos bases de datos, cuentas de servicio separadas).
+- **Base de datos relacional (Dapper)** — persistencia principal, *database-first* y accedida **solo vía stored procedures**.
+- **Firebase** — usos residuales: Storage (imágenes de `/subirimagen`) y la base externa *Yumiko* (espejo del vínculo de AniList).
 - **AniList GraphQL API** — datos de animes, mangas y perfiles.
 - **QuickChart** — generación de gráficos (XP, charts varios).
 - **Serilog** — logging a consola y archivo.
@@ -23,7 +24,7 @@ las de adentro.
 |----------|-----------------|
 | **AnilistConEnie.Model** | Entidades, enums, excepciones e interfaces. Define los contratos (`Interfaces/IAnilistClient.cs`, `Interfaces/Repositories/*`) que implementa Infrastructure. Sin dependencias hacia las otras capas. |
 | **AnilistConEnie.Application** | Lógica de negocio **pura**, como clases estáticas sin estado: `Xp/`, `Moderation/`, `Confessions/`, `Challenges/`, `Membership/`, `Charts/`, `Helpers/`. No depende de Discord ni de la infraestructura. |
-| **AnilistConEnie.Infrastructure** | Acceso a datos y servicios externos: `Firebase/FirebaseService.cs`, `Repositories/*` (Firestore), `Anilist/` (cliente GraphQL: `AnilistClient`, `AnilistGraphQLExecutor`, `AnilistQueries`) y `Charts/`. |
+| **AnilistConEnie.Infrastructure** | Acceso a datos y servicios externos: `Database/DbConnectionFactory.cs` + `Repositories/*` (Dapper, stored procedures), `Firebase/FirebaseService.cs` + `FirebaseRepository` (Storage + Yumiko), `Anilist/` (cliente GraphQL: `AnilistClient`, `AnilistGraphQLExecutor`, `AnilistQueries`) y `Charts/`. |
 | **AnilistConEnie.Bot** | Punto de entrada y todo lo relacionado a Discord: comandos, handlers de eventos, tareas programadas, estado en memoria, configuración y cableado de DI. |
 
 **Decisiones de diseño:**
@@ -46,7 +47,7 @@ las de adentro.
 | **Slash commands** | `Bot/Commands/SlashCommands/*.cs` — `Admin`, `Anilist`, `Challenges`, `Fun`, `Owner`, `Premios`, `Teiou`, `Triggers`, `Usuarios`, `Xp`. Se autoregistran vía `AddDiscoveredSlashCommands`. |
 | **Autocomplete** | `Bot/Commands/AutoComplete/`. |
 | **Handlers de eventos** | `Bot/Events/Handlers/*` (`Message*`, `GuildMember*`, `ComponentInteraction`, `MessageReactionAdded`, `Session*`, `GuildDownloadCompleted`, `Zombied`). Se registran y cablean en `Bot/Events/EventHandlerRegistrar.cs` (resolución diferida vía `ServiceProvider` para evitar el ciclo de dependencias en el arranque). |
-| **Tareas programadas** | `Bot/Services/Scheduling/CronBackgroundService.cs` y `Tasks/*` (`Minute`, `Hourly`, `Daily`, `Annual`), como hosted services. |
+| **Tareas programadas** | `Bot/Services/Scheduling/CronBackgroundService.cs` y `Tasks/*` (`Minute`, `Hourly`, `Daily`), como hosted services. |
 | **Estado en memoria** | `Bot/Services/State/*` (`XpState`, `TriggersState`, `ConfessionsState`, `HackedAccountState`, etc.). |
 | **Helpers / servicios del Bot** | `Bot/Helpers/*` (`AnilistService`, `GuildMaintenanceService`, `DiscordLogService`, `RangoRoles`, `DiscordInteractivity`, …). |
 | **Servicio principal** | `Bot/Services/DiscordBotService.cs` — hosted service que conecta y mantiene el cliente. |
@@ -71,13 +72,15 @@ Secrets con la misma clave en desarrollo local. Si falta o es inválido, el bot 
 Dos archivos JSON de cuenta de servicio, ubicados en `src/AnilistConEnie.Bot/` con estos nombres
 exactos (los que carga `Infrastructure/Firebase/FirebaseService.cs`):
 
-- `firebase-anilistconenie.json`
-- `firebase-yumiko.json`
+- `firebase-anilistconenie.json` — solo para **Storage** (subida de imágenes de `/subirimagen`).
+- `firebase-yumiko.json` — base externa **Yumiko**, donde se espeja el vínculo de AniList.
 
 ### Base de datos
 
-Acceso vía **Dapper**, centralizado en `Infrastructure/Database/DbConnectionFactory.cs` (el resto del
-código usa `IDbConnection`). La connection string se provee por fuera con la clave
+Persistencia principal. Acceso vía **Dapper**, centralizado en
+`Infrastructure/Database/DbConnectionFactory.cs` (único archivo que conoce el motor). Es
+*database-first* y se accede **solo vía stored procedures**; el esquema y los procedimientos viven
+versionados en `db/`. La connection string se provee por fuera con la clave
 **`ConnectionStrings:Database`**: variable de entorno en el servidor, o User Secrets en local. Detalle
 de setup en `deploy-setup/README.md`.
 

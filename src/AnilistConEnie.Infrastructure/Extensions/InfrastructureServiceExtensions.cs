@@ -15,16 +15,19 @@ public static class InfrastructureServiceExtensions
     {
         services.AddSingleton(new FirebaseService(firebaseCredentialsDir));
         services.AddSingleton(new DbConnectionFactory(dbConnectionString));
-
+        services.AddSingleton<IUsuariosRepository, UsuariosRepository>();
+        services.AddSingleton<IXpUsuariosRepository, XpUsuariosRepository>();
+        services.AddSingleton<IXpDiarioRepository, XpDiarioRepository>();
         services.AddSingleton<IChallengesRepository, ChallengesRepository>();
-        services.AddSingleton<IUsuariosAnilistRepository, UsuariosAnilistRepository>();
-        services.AddSingleton<IUsuariosDiscordRepository, UsuariosDiscordRepository>();
         services.AddSingleton<ITriggersRepository, TriggersRepository>();
         services.AddSingleton<IPremiosRepository, PremiosRepository>();
-        services.AddSingleton<IImagenesRepository, ImagenesRepository>();
-        services.AddSingleton<IImagenStorageRepository, ImagenStorageRepository>();
+        services.AddSingleton<IAnilistBaneadosRepository, AnilistBaneadosRepository>();
+        services.AddSingleton<IAnilistApprovalRepository, AnilistApprovalRepository>();
         services.AddSingleton<IIntercambiosRepostRepository, IntercambiosRepostRepository>();
-        services.AddSingleton<IUsuariosActivosRepository, UsuariosActivosRepository>();
+        services.AddSingleton<ITeiouCooldownRepository, TeiouCooldownRepository>();
+
+        // Firebase: Yumiko (espejo del vínculo) y Storage (subir imágenes).
+        services.AddSingleton<IFirebaseRepository, FirebaseRepository>();
 
         // Cliente de AniList: el executor (que posee el GraphQLHttpClient) y el cliente de alto
         // nivel son singletons para reutilizar la conexión HTTP entre todas las consultas.

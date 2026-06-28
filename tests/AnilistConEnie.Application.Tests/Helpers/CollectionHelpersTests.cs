@@ -5,7 +5,7 @@ namespace AnilistConEnie.Application.Tests.Helpers;
 public class CollectionHelpersTests
 {
     [Fact]
-    public void Shuffle_conserva_los_mismos_elementos()
+    public void Shuffle_List_PreservesElements()
     {
         List<int> list = [.. Enumerable.Range(1, 100)];
 
@@ -16,7 +16,7 @@ public class CollectionHelpersTests
     }
 
     [Fact]
-    public void Shuffle_lista_de_un_elemento_no_cambia()
+    public void Shuffle_SingleElementList_Unchanged()
     {
         List<string> list = ["solo"];
         list.Shuffle();
@@ -24,7 +24,7 @@ public class CollectionHelpersTests
     }
 
     [Fact]
-    public void ToMemoryStream_envuelve_los_bytes_con_posicion_en_cero()
+    public void ToMemoryStream_Bytes_WrapsWithPositionZero()
     {
         byte[] datos = [1, 2, 3, 4, 5];
 
@@ -35,7 +35,7 @@ public class CollectionHelpersTests
     }
 
     [Fact]
-    public void Shuffle_diccionario_conserva_los_pares()
+    public void Shuffle_Dictionary_PreservesPairs()
     {
         Dictionary<string, int> dict = new() { ["a"] = 1, ["b"] = 2, ["c"] = 3 };
 

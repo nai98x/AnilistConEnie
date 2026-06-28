@@ -193,25 +193,27 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
             BannerImage = viewer.BannerImage
         };
 
-        List<string> motivosAprobacion = [];
-
-        UsuarioAnilist? multicuenta = (await usuariosRepository.GetVinculados()).Find(x =>
-            (ulong)x.UserId != interaction.User.Id
-            && AnilistProfileUrl.TryGetUserId(x.AnilistURL, out int id) && id == viewer.Id);
-        if (multicuenta is not null)
-        {
-            DiscordMember? otroMiembro = await TryGetMemberAsync(interaction.Guild, (ulong)multicuenta.UserId);
-            string otroNombre = otroMiembro?.DisplayName ?? "desconocido";
-            motivosAprobacion.Add($"su AniList ya está vinculado a otro miembro activo ({Formatter.InlineCode(otroNombre)} | Id: {Formatter.InlineCode(((ulong)multicuenta.UserId).ToString())}), posible multicuenta");
-        }
-
-        DateTimeOffset monthBefore = DateTimeOffset.Now.AddMonths(-limpiezaSettings.CuentaNuevaMeses);
-        if (interaction.User.CreationTimestamp > monthBefore || viewer.CreatedAt > monthBefore)
-            motivosAprobacion.Add("su cuenta de Discord o AniList es muy reciente");
+        IReadOnlyList<MotivoAprobacionDetalle> motivosAprobacion = AnilistApprovalPolicy.Evaluar(
+            await usuariosRepository.GetVinculados(),
+            interaction.User.Id, viewer.Id,
+            interaction.User.CreationTimestamp, viewer.CreatedAt,
+            limpiezaSettings.CuentaNuevaMeses, DateTimeOffset.Now);
 
         if (motivosAprobacion.Count > 0)
         {
-            string motivos = string.Concat(motivosAprobacion.Select(m => $"- {m}\n"));
+            List<string> lineas = [];
+            foreach (MotivoAprobacionDetalle r in motivosAprobacion)
+            {
+                if (r.Motivo == MotivoAprobacion.PosibleMulticuenta)
+                {
+                    DiscordMember? otroMiembro = await TryGetMemberAsync(interaction.Guild, (ulong)r.OtroMiembroId!.Value);
+                    string otroNombre = otroMiembro?.DisplayName ?? "desconocido";
+                    lineas.Add($"su AniList ya está vinculado a otro miembro activo ({Formatter.InlineCode(otroNombre)} | Id: {Formatter.InlineCode(((ulong)r.OtroMiembroId.Value).ToString())}), posible multicuenta");
+                }
+                else
+                    lineas.Add("su cuenta de Discord o AniList es muy reciente");
+            }
+            string motivos = string.Concat(lineas.Select(m => $"- {m}\n"));
 
             DiscordButtonComponent aprobar = new(DiscordButtonStyle.Success, $"sync-true-{interaction.User.Id}", "Aprobar");
             DiscordButtonComponent denegar = new(DiscordButtonStyle.Danger, $"sync-false-{interaction.User.Id}", "Denegar");
@@ -264,7 +266,7 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
         List<Challenge> ret = [];
         foreach (Challenge challenge in challenges)
         {
-            if (!TryGetActivityId(challenge.Link, out int activityId)) continue;
+            if (!AnilistActivityUrl.TryGetActivityId(challenge.Link, out int activityId)) continue;
 
             IReadOnlyList<int> replyUserIds = await GetActivityReplyUserIdsCachedAsync(activityId);
             if (replyUserIds.Contains(anilistUserId))
@@ -281,7 +283,7 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
     public async Task<List<UsuarioAnilist>> PostsFromChallengeAsync(Challenge challenge)
     {
         List<UsuarioAnilist> ret = [];
-        if (!TryGetActivityId(challenge.Link, out int activityId)) return ret;
+        if (!AnilistActivityUrl.TryGetActivityId(challenge.Link, out int activityId)) return ret;
 
         List<UsuarioAnilist> vinculados = await usuariosRepository.GetVinculados();
         IReadOnlyList<int> replyUserIds = await GetActivityReplyUserIdsCachedAsync(activityId);
@@ -321,15 +323,6 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
         {
             return null;
         }
-    }
-
-    private static bool TryGetActivityId(string link, out int activityId)
-    {
-        activityId = 0;
-        if (string.IsNullOrEmpty(link)) return false;
-
-        string segment = link.TrimEnd('/').Split('/').Last();
-        return int.TryParse(segment, out activityId);
     }
 
     private static string FormatScores(ServerMediaScores result, AnilistMedia media)

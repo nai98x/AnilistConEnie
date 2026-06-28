@@ -42,7 +42,7 @@ public class AnilistServerScoreServiceTests
     private static readonly AnilistMedia Media = new() { Id = 1 };
 
     [Fact]
-    public async Task AggregateAsync_sin_miembros_devuelve_Empty()
+    public async Task AggregateAsync_NoMembers_ReturnsEmpty()
     {
         FakeAnilistClient client = new([]);
         AnilistServerScoreService service = new(client);
@@ -55,7 +55,7 @@ public class AnilistServerScoreServiceTests
     }
 
     [Fact]
-    public async Task AggregateAsync_promedia_los_scores_y_clasifica()
+    public async Task AggregateAsync_WithScores_AveragesAndClassifies()
     {
         FakeAnilistClient client = new([Score(1, 8, 80), Score(2, 10, 100), Score(3, 0, 0, "CURRENT")]);
         AnilistServerScoreService service = new(client);
@@ -71,7 +71,7 @@ public class AnilistServerScoreServiceTests
     }
 
     [Fact]
-    public async Task AggregateAsync_excluye_sin_score_si_no_se_piden()
+    public async Task AggregateAsync_UnscoredNotRequested_ExcludesThem()
     {
         FakeAnilistClient client = new([Score(1, 8, 80), Score(2, 0, 0, "CURRENT")]);
         AnilistServerScoreService service = new(client);
@@ -84,7 +84,7 @@ public class AnilistServerScoreServiceTests
     }
 
     [Fact]
-    public async Task AggregateAsync_ignora_los_que_estan_en_PLANNING_sin_score()
+    public async Task AggregateAsync_PlanningWithoutScore_Ignored()
     {
         FakeAnilistClient client = new([Score(1, 0, 0, "PLANNING")]);
         AnilistServerScoreService service = new(client);
@@ -99,7 +99,7 @@ public class AnilistServerScoreServiceTests
     }
 
     [Fact]
-    public async Task AggregateAsync_sin_ninguna_puntuacion_deja_el_promedio_en_null()
+    public async Task AggregateAsync_NoScores_LeavesAverageNull()
     {
         FakeAnilistClient client = new([Score(1, 0, 0, "DROPPED")]);
         AnilistServerScoreService service = new(client);
@@ -112,7 +112,7 @@ public class AnilistServerScoreServiceTests
     }
 
     [Fact]
-    public async Task AggregateAsync_trocea_en_lotes_de_50()
+    public async Task AggregateAsync_ManyUsers_BatchesInChunksOf50()
     {
         // 120 usuarios -> 3 lotes (50 + 50 + 20).
         List<AnilistUserScore> scores = [.. Enumerable.Range(1, 120).Select(i => Score(i, 5, 50))];

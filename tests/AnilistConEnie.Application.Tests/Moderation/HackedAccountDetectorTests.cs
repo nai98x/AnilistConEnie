@@ -10,13 +10,13 @@ public class HackedAccountDetectorTests
     private static readonly DateTime Base = new(2026, 6, 25, 12, 0, 0);
 
     [Fact]
-    public void IsHacked_sin_mensajes_es_falso()
+    public void IsHacked_NoMessages_ReturnsFalse()
     {
         Assert.False(HackedAccountDetector.IsHacked([], canalesDistintos: 3, ventanaMinutos: 5));
     }
 
     [Fact]
-    public void IsHacked_mismo_contenido_en_n_canales_dentro_de_la_ventana()
+    public void IsHacked_SameContentInNChannelsWithinWindow_ReturnsTrue()
     {
         List<BasicMessage> mensajes =
         [
@@ -29,7 +29,7 @@ public class HackedAccountDetectorTests
     }
 
     [Fact]
-    public void IsHacked_contenido_distinto_no_es_hackeo()
+    public void IsHacked_DifferentContent_ReturnsFalse()
     {
         List<BasicMessage> mensajes =
         [
@@ -42,7 +42,7 @@ public class HackedAccountDetectorTests
     }
 
     [Fact]
-    public void IsHacked_pocos_canales_distintos_no_es_hackeo()
+    public void IsHacked_FewDistinctChannels_ReturnsFalse()
     {
         // Mismo contenido pero en 2 canales, no los 3 exigidos.
         List<BasicMessage> mensajes =
@@ -56,7 +56,7 @@ public class HackedAccountDetectorTests
     }
 
     [Fact]
-    public void IsHacked_fuera_de_la_ventana_temporal_no_es_hackeo()
+    public void IsHacked_OutsideTimeWindow_ReturnsFalse()
     {
         List<BasicMessage> mensajes =
         [

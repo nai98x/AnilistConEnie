@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using AnilistConEnie.Application.Premios;
 using AnilistConEnie.Bot.Commands.SlashCommands.Attributes;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Model.Entities;
@@ -81,7 +82,7 @@ public class Premios(IPremiosRepository premiosRepository, DiscordBotService dis
             return;
         }
 
-        await premiosRepository.SetPremio(anio, season, link);
+        await premiosRepository.Upsert(PremioFactory.Crear(anio, season, link));
 
         await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
             .WithTitle("Premio agregado correctamente")

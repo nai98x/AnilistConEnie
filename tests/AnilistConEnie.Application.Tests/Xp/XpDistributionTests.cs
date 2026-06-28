@@ -6,7 +6,7 @@ namespace AnilistConEnie.Application.Tests.Xp;
 public class XpDistributionTests
 {
     [Fact]
-    public void Build_reparte_las_cinco_categorias()
+    public void Build_DistributesFiveCategories()
     {
         UserXp rank = new()
         {
@@ -29,7 +29,7 @@ public class XpDistributionTests
     }
 
     [Fact]
-    public void Build_los_porcentajes_suman_cien()
+    public void Build_PercentagesSumTo100()
     {
         UserXp rank = new()
         {
@@ -46,7 +46,7 @@ public class XpDistributionTests
     }
 
     [Fact]
-    public void Build_porcentaje_de_mensajes_absorbe_el_redondeo()
+    public void Build_MessagesPercentage_AbsorbsRounding()
     {
         // Valores que no dividen exacto para forzar el ajuste en Mensajes.
         UserXp rank = new()

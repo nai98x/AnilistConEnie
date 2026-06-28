@@ -6,7 +6,7 @@ namespace AnilistConEnie.Application.Tests.Xp;
 public class XpProgressionTests
 {
     [Fact]
-    public void Describe_calcula_proximo_rango_y_xp_faltante()
+    public void Describe_ComputesNextRankAndMissingXp()
     {
         // 5000 de total: próximo rango Casual (10000), faltan 5000.
         XpProgressionInfo info = XpProgression.Describe(total: 5000, promedioDiario: 0);
@@ -19,7 +19,7 @@ public class XpProgressionTests
     }
 
     [Fact]
-    public void Describe_descuenta_el_promedio_diario_de_los_mensajes_necesarios()
+    public void Describe_DiscountsDailyAverageFromNeededMessages()
     {
         XpProgressionInfo info = XpProgression.Describe(total: 5000, promedioDiario: 1000);
 
@@ -28,7 +28,7 @@ public class XpProgressionTests
     }
 
     [Fact]
-    public void Describe_nunca_devuelve_mensajes_negativos()
+    public void Describe_NeverReturnsNegativeMessages()
     {
         XpProgressionInfo info = XpProgression.Describe(total: 9999, promedioDiario: 100000);
 
@@ -47,13 +47,13 @@ public class XpProgressionTests
     [InlineData(RangoEnum.Teiou, 9999, true)]
     [InlineData(RangoEnum.Teiou, 10000, false)]
     [InlineData(RangoEnum.Miembro, 0, false)]
-    public void EstaProximoASubir_segun_umbral_por_rango(RangoEnum nextRango, long nextXp, bool esperado)
+    public void EstaProximoASubir_PerRankThreshold(RangoEnum nextRango, long nextXp, bool esperado)
     {
         Assert.Equal(esperado, XpProgression.EstaProximoASubir(nextRango, nextXp));
     }
 
     [Fact]
-    public void EstimarTiempo_sin_promedio_no_puede_estimar()
+    public void EstimarTiempo_NoAverage_CannotEstimate()
     {
         string result = XpProgression.EstimarTiempo(nextXp: 5000, promedioXp: 0, "Casual", mensajes: 10);
 
@@ -62,7 +62,7 @@ public class XpProgressionTests
     }
 
     [Fact]
-    public void EstimarTiempo_con_rango_ya_alcanzado_felicita()
+    public void EstimarTiempo_RankAlreadyReached_Congratulates()
     {
         string result = XpProgression.EstimarTiempo(nextXp: 0, promedioXp: 100, "Teiou", mensajes: 0);
 
@@ -71,7 +71,7 @@ public class XpProgressionTests
     }
 
     [Fact]
-    public void EstimarTiempo_en_dias_cuando_falta_menos_de_un_anio()
+    public void EstimarTiempo_LessThanAYearLeft_ReturnsDays()
     {
         // ceil(3000 / 100) = 30 días
         string result = XpProgression.EstimarTiempo(nextXp: 3000, promedioXp: 100, "Casual", mensajes: 200);
@@ -81,7 +81,7 @@ public class XpProgressionTests
     }
 
     [Fact]
-    public void EstimarTiempo_en_anios_exactos_cuando_no_quedan_dias_restantes()
+    public void EstimarTiempo_WholeYears_ReturnsYears()
     {
         // 73000 / 100 = 730 días = 2 años exactos
         string result = XpProgression.EstimarTiempo(nextXp: 73000, promedioXp: 100, "Teiou", mensajes: 5000);
@@ -91,7 +91,7 @@ public class XpProgressionTests
     }
 
     [Fact]
-    public void EstimarTiempo_en_anios_y_dias_cuando_hay_resto()
+    public void EstimarTiempo_YearsAndRemainder_ReturnsYearsAndDays()
     {
         // ceil(40000 / 100) = 400 días = 1 año y 35 días
         string result = XpProgression.EstimarTiempo(nextXp: 40000, promedioXp: 100, "Teiou", mensajes: 5000);

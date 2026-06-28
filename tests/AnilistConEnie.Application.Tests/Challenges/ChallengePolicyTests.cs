@@ -8,7 +8,7 @@ public class ChallengePolicyTests
     private static readonly DateTime Hoy = new(2026, 6, 25);
 
     [Fact]
-    public void EstaVencido_si_el_vencimiento_es_hoy()
+    public void EstaVencido_DueToday_ReturnsTrue()
     {
         Challenge challenge = new() { Disponible = true, Vencimiento = Hoy };
 
@@ -16,7 +16,7 @@ public class ChallengePolicyTests
     }
 
     [Fact]
-    public void EstaVencido_si_el_vencimiento_ya_paso()
+    public void EstaVencido_DuePast_ReturnsTrue()
     {
         Challenge challenge = new() { Disponible = true, Vencimiento = Hoy.AddDays(-3) };
 
@@ -24,7 +24,7 @@ public class ChallengePolicyTests
     }
 
     [Fact]
-    public void No_esta_vencido_si_el_vencimiento_es_futuro()
+    public void EstaVencido_DueFuture_ReturnsFalse()
     {
         Challenge challenge = new() { Disponible = true, Vencimiento = Hoy.AddDays(5) };
 
@@ -32,7 +32,7 @@ public class ChallengePolicyTests
     }
 
     [Fact]
-    public void No_esta_vencido_si_no_esta_disponible()
+    public void EstaVencido_NotAvailable_ReturnsFalse()
     {
         Challenge challenge = new() { Disponible = false, Vencimiento = Hoy.AddDays(-3) };
 
@@ -40,7 +40,7 @@ public class ChallengePolicyTests
     }
 
     [Fact]
-    public void No_esta_vencido_sin_fecha_de_vencimiento()
+    public void EstaVencido_NoDueDate_ReturnsFalse()
     {
         Challenge challenge = new() { Disponible = true, Vencimiento = null };
 

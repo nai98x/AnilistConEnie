@@ -9,7 +9,7 @@ public class ConfessionRevealPolicyTests
     [InlineData(1, 5, 5)]
     [InlineData(10, 5, 50)]
     [InlineData(20, 5, 100)]
-    public void RevealChancePercent_es_reacciones_por_porcentaje(int reacciones, int porcentaje, int esperado)
+    public void RevealChancePercent_ReactionsAndPercent_ReturnsProduct(int reacciones, int porcentaje, int esperado)
     {
         Assert.Equal(esperado, ConfessionRevealPolicy.RevealChancePercent(reacciones, porcentaje));
     }

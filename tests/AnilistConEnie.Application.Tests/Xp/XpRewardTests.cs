@@ -9,7 +9,7 @@ public class XpRewardTests
     private static Random Seeded() => new(12345);
 
     [Fact]
-    public void Accrue_sin_booster_no_otorga_xp_de_booster()
+    public void Accrue_WithoutBooster_GrantsNoBoosterXp()
     {
         UserXp current = new() { Total = 1000, Booster = 50 };
 
@@ -23,7 +23,7 @@ public class XpRewardTests
     }
 
     [Fact]
-    public void Accrue_con_booster_suma_base_mas_extra()
+    public void Accrue_WithBooster_AddsBasePlusExtra()
     {
         UserXp current = new() { Total = 1000, Booster = 50 };
 
@@ -37,7 +37,7 @@ public class XpRewardTests
     }
 
     [Fact]
-    public void Accrue_respeta_los_limites_inclusivos()
+    public void Accrue_RespectsInclusiveBounds()
     {
         // min == max fuerza un valor exacto.
         UserXp current = new() { Total = 0, Booster = 0 };
@@ -52,7 +52,7 @@ public class XpRewardTests
     }
 
     [Fact]
-    public void Accrue_es_determinista_con_la_misma_semilla()
+    public void Accrue_SameSeed_IsDeterministic()
     {
         UserXp current = new() { Total = 500, Booster = 0 };
 

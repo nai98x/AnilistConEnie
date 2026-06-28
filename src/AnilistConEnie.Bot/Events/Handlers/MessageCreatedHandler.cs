@@ -1,3 +1,4 @@
+using AnilistConEnie.Application.Triggers;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
@@ -73,39 +74,19 @@ public class MessageCreatedHandler(
         if ((!args.Author.IsBot && !string.IsNullOrEmpty(args.Message.Content) && args.Channel.Id != config.Channels.ConfigBots && !discordBotService.Debug)
             || (discordBotService.Debug && args.Message.Author?.Id == config.OwnerId))
         {
-            string mensajeOriginal = args.Message.Content.ToLower();
             IReadOnlyDictionary<string, Trigger> triggers = triggersState.GetActiveTriggers();
-            List<KeyValuePair<string, Trigger>> matches = triggers.Where(x => mensajeOriginal.Contains(x.Key)).ToList();
 
-            foreach (KeyValuePair<string, Trigger> trigger in matches)
+            foreach (Trigger trigger in TriggerMatcher.Aplicables(args.Message.Content, triggers))
             {
-                bool validWithType = false;
-                switch ((TipoTrigger)trigger.Value.Tipo)
-                {
-                    case TipoTrigger.TEXTO_EXACTO:
-                        if (mensajeOriginal == trigger.Key) validWithType = true;
-                        break;
-                    case TipoTrigger.TERMINA_EN:
-                        if (mensajeOriginal.EndsWith(trigger.Key)) validWithType = true;
-                        break;
-                    case TipoTrigger.EMPIEZA_CON:
-                        if (mensajeOriginal.StartsWith(trigger.Key)) validWithType = true;
-                        break;
-                    case TipoTrigger.LIBRE:
-                        validWithType = true;
-                        break;
-                }
-                if (!validWithType) continue;
-
                 DiscordMessageBuilder messageBuilder = new();
 
-                if (!string.IsNullOrEmpty(trigger.Value.Texto))
-                    messageBuilder.WithContent(trigger.Value.Texto);
+                if (!string.IsNullOrEmpty(trigger.Texto))
+                    messageBuilder.WithContent(trigger.Texto);
 
-                if (!string.IsNullOrEmpty(trigger.Value.ImageUrl))
+                if (!string.IsNullOrEmpty(trigger.ImageUrl))
                     messageBuilder.AddEmbed(
                         new DiscordEmbedBuilder()
-                            .WithImageUrl(trigger.Value.ImageUrl)
+                            .WithImageUrl(trigger.ImageUrl)
                             .WithColor(DiscordEmojiHelper.GetColor())
                             .Build()
                     );

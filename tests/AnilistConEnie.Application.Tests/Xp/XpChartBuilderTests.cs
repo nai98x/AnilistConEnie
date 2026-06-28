@@ -11,7 +11,7 @@ public class XpChartBuilderTests
         new() { UserId = UserId, Date = new DateTime(year, month, day), Xp = xp };
 
     [Fact]
-    public void Build_sin_relleno_agrega_punto_de_hoy_si_falta()
+    public void Build_NoFill_AddsTodayPointIfMissing()
     {
         DateTime today = new(2026, 6, 25);
         List<UserDailyXp> history = [Day(2026, 6, 20, 1000)];
@@ -26,7 +26,7 @@ public class XpChartBuilderTests
     }
 
     [Fact]
-    public void Build_sin_relleno_no_duplica_el_punto_de_hoy()
+    public void Build_NoFill_DoesNotDuplicateTodayPoint()
     {
         DateTime today = new(2026, 6, 25);
         List<UserDailyXp> history = [Day(2026, 6, 20, 1000), Day(2026, 6, 25, 1500)];
@@ -38,7 +38,7 @@ public class XpChartBuilderTests
     }
 
     [Fact]
-    public void Build_sin_relleno_conserva_los_anios_anteriores()
+    public void Build_NoFill_KeepsPreviousYears()
     {
         DateTime today = new(2026, 6, 25);
         List<UserDailyXp> history = [Day(2025, 12, 31, 800), Day(2026, 6, 25, 1500)];
@@ -50,7 +50,7 @@ public class XpChartBuilderTests
     }
 
     [Fact]
-    public void Build_con_relleno_completa_los_dias_faltantes_arrastrando_xp()
+    public void Build_WithFill_FillsMissingDaysCarryingXp()
     {
         DateTime today = new(2026, 1, 5);
         List<UserDailyXp> history = [Day(2026, 1, 1, 100), Day(2026, 1, 3, 300)];
@@ -63,7 +63,7 @@ public class XpChartBuilderTests
     }
 
     [Fact]
-    public void Build_con_relleno_marca_para_persistir_solo_los_dias_rellenados_con_xp()
+    public void Build_WithFill_MarksOnlyFilledDaysWithXpForPersist()
     {
         DateTime today = new(2026, 1, 5);
         List<UserDailyXp> history = [Day(2026, 1, 1, 100), Day(2026, 1, 3, 300)];
@@ -79,7 +79,7 @@ public class XpChartBuilderTests
     }
 
     [Fact]
-    public void Build_con_relleno_omite_dias_en_cero_si_no_se_incluye_el_cero()
+    public void Build_WithFill_OmitsZeroDaysWhenZeroExcluded()
     {
         DateTime today = new(2026, 1, 4);
         // El primer registro es el día 3: los días 1 y 2 quedan con lastXp = 0.
@@ -92,7 +92,7 @@ public class XpChartBuilderTests
     }
 
     [Fact]
-    public void Build_con_relleno_incluye_dias_en_cero_si_se_pide()
+    public void Build_WithFill_IncludesZeroDaysWhenRequested()
     {
         DateTime today = new(2026, 1, 4);
         List<UserDailyXp> history = [Day(2026, 1, 3, 300)];
@@ -106,7 +106,7 @@ public class XpChartBuilderTests
     }
 
     [Fact]
-    public void Build_con_relleno_sin_registros_del_anio_no_genera_puntos()
+    public void Build_WithFill_NoYearRecords_ProducesNoPoints()
     {
         DateTime today = new(2026, 6, 25);
         List<UserDailyXp> history = [Day(2025, 5, 1, 500)];

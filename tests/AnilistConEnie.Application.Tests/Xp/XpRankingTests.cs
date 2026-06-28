@@ -19,7 +19,7 @@ public class XpRankingTests
         };
 
     [Fact]
-    public void Build_total_ordena_descendente_e_incluye_a_todos()
+    public void Build_Total_SortsDescendingIncludesAll()
     {
         List<UserXp> users = [User(1, total: 100), User(2, total: 300), User(3, total: 0)];
 
@@ -32,7 +32,7 @@ public class XpRankingTests
     }
 
     [Fact]
-    public void Build_categoria_no_total_excluye_puntajes_cero()
+    public void Build_NonTotalCategory_ExcludesZeroScores()
     {
         List<UserXp> users = [User(1, intercambios: 50), User(2, intercambios: 0), User(3, intercambios: 200)];
 
@@ -45,7 +45,7 @@ public class XpRankingTests
     }
 
     [Fact]
-    public void Build_mensajes_es_el_total_menos_las_otras_categorias()
+    public void Build_Messages_IsTotalMinusOtherCategories()
     {
         // Total 1000, con 100 de cada categoría -> mensajes = 1000 - 500 = 500.
         UserXp u = User(1, total: 1000, booster: 100, intercambios: 100, eventos: 100, challenges: 100, otros: 100);
@@ -57,13 +57,13 @@ public class XpRankingTests
     }
 
     [Fact]
-    public void Build_lista_vacia_devuelve_ranking_vacio()
+    public void Build_EmptyList_ReturnsEmptyRanking()
     {
         Assert.Empty(XpRanking.Build([], XpRankingCategory.Total));
     }
 
     [Fact]
-    public void ResolvePosition_usuario_ausente()
+    public void ResolvePosition_AbsentUser_HasNoPosition()
     {
         IReadOnlyList<XpRankEntry> ranking = XpRanking.Build([User(1, total: 100)], XpRankingCategory.Total);
 
@@ -73,7 +73,7 @@ public class XpRankingTests
     }
 
     [Fact]
-    public void ResolvePosition_unico_lider()
+    public void ResolvePosition_SoleLeader_IsFirst()
     {
         IReadOnlyList<XpRankEntry> ranking = XpRanking.Build([User(1, total: 100)], XpRankingCategory.Total);
 
@@ -84,7 +84,7 @@ public class XpRankingTests
     }
 
     [Fact]
-    public void ResolvePosition_lider_con_rival_por_debajo()
+    public void ResolvePosition_LeaderWithRivalBelow()
     {
         List<UserXp> users = [User(1, total: 300), User(2, total: 100)];
         IReadOnlyList<XpRankEntry> ranking = XpRanking.Build(users, XpRankingCategory.Total);
@@ -98,7 +98,7 @@ public class XpRankingTests
     }
 
     [Fact]
-    public void ResolvePosition_por_detras_de_un_rival()
+    public void ResolvePosition_BehindRival()
     {
         List<UserXp> users = [User(1, total: 300), User(2, total: 100)];
         IReadOnlyList<XpRankEntry> ranking = XpRanking.Build(users, XpRankingCategory.Total);

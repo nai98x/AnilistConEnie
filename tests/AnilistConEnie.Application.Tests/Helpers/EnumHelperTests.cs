@@ -9,13 +9,13 @@ public class EnumHelperTests
     [InlineData(Season.Winter, "Winter")]
     [InlineData(Season.Spring, "Spring")]
     [InlineData(Season.Anual, "Anual")]
-    public void GetName_devuelve_el_nombre_del_enum(Season season, string esperado)
+    public void GetName_Season_ReturnsEnumName(Season season, string esperado)
     {
         Assert.Equal(esperado, season.GetName());
     }
 
     [Fact]
-    public void GetName_de_valor_invalido_lanza()
+    public void GetName_InvalidValue_Throws()
     {
         Assert.Throws<Exception>(() => ((Season)999).GetName());
     }

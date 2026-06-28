@@ -5,7 +5,7 @@ namespace AnilistConEnie.Application.Tests.Helpers;
 public class IntercambioHelperTests
 {
     [Fact]
-    public void RepartirGPT_entrega_exactamente_lo_pedido_en_total()
+    public void RepartirGPT_ValidRequests_DeliversExactTotal()
     {
         Dictionary<string, int> pedidos = new() { ["Ana"] = 2, ["Beto"] = 1, ["Cami"] = 3 };
 
@@ -16,7 +16,7 @@ public class IntercambioHelperTests
     }
 
     [Fact]
-    public void RepartirGPT_nadie_se_entrega_a_si_mismo()
+    public void RepartirGPT_ValidRequests_NobodyAssignedToThemselves()
     {
         Dictionary<string, int> pedidos = new() { ["Ana"] = 2, ["Beto"] = 2, ["Cami"] = 2 };
 
@@ -30,7 +30,7 @@ public class IntercambioHelperTests
     }
 
     [Fact]
-    public void RepartirGPT_cada_receptor_recibe_lo_que_pidio()
+    public void RepartirGPT_ValidRequests_EachReceiverGetsRequestedAmount()
     {
         Dictionary<string, int> pedidos = new() { ["Ana"] = 1, ["Beto"] = 2, ["Cami"] = 3 };
 
@@ -46,7 +46,7 @@ public class IntercambioHelperTests
     }
 
     [Fact]
-    public void RepartirGPT_reparte_de_forma_pareja_entre_los_dadores()
+    public void RepartirGPT_MultipleGivers_DistributesEvenly()
     {
         // 3 personas pidiendo 2 cada una: 6 entregas repartidas parejo -> 2 por dador.
         Dictionary<string, int> pedidos = new() { ["Ana"] = 2, ["Beto"] = 2, ["Cami"] = 2 };
@@ -57,7 +57,7 @@ public class IntercambioHelperTests
     }
 
     [Fact]
-    public void RepartirClasico_termina_y_produce_entregas()
+    public void RepartirClasico_ValidRequests_TerminatesAndProducesAssignments()
     {
         // Algoritmo aleatorio (Random.Shared): solo verificamos que termina y reparte algo coherente.
         Dictionary<string, int> pedidos = new() { ["Ana"] = 1, ["Beto"] = 1, ["Cami"] = 1, ["Dani"] = 1 };

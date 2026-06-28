@@ -1,8 +1,6 @@
 using System.Data;
-using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Infrastructure.Database;
 using AnilistConEnie.Model.Entities;
-using AnilistConEnie.Model.Enum;
 using AnilistConEnie.Model.Interfaces.Repositories;
 using Dapper;
 
@@ -26,13 +24,4 @@ public class PremiosRepository(DbConnectionFactory connectionFactory) : IPremios
             new { p_nombre = premio.Nombre, p_link = premio.Link, p_anio = premio.Year, p_orden = premio.Order },
             commandType: CommandType.StoredProcedure);
     }
-
-    public Task SetPremio(int anio, Season season, string link) =>
-        Upsert(new Premio
-        {
-            Nombre = $"{season.GetName()} {anio}",
-            Link = link,
-            Year = anio,
-            Order = (int)season
-        });
 }

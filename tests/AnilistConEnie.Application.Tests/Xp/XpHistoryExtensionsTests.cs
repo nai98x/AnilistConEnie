@@ -9,20 +9,20 @@ public class XpHistoryExtensionsTests
         new() { Date = new DateTime(year, month, day), Xp = xp };
 
     [Fact]
-    public void GetPromedio_lista_vacia_devuelve_cero()
+    public void GetPromedio_EmptyList_ReturnsZero()
     {
         Assert.Equal(0, new List<UserDailyXp>().GetPromedio());
     }
 
     [Fact]
-    public void GetPromedio_un_solo_registro_devuelve_cero()
+    public void GetPromedio_SingleRecord_ReturnsZero()
     {
         // Sin días transcurridos no hay promedio.
         Assert.Equal(0, new List<UserDailyXp> { Day(2026, 1, 1, 500) }.GetPromedio());
     }
 
     [Fact]
-    public void GetPromedio_es_la_xp_ganada_dividida_por_los_dias()
+    public void GetPromedio_XpGainedDividedByDays()
     {
         List<UserDailyXp> registros =
         [
@@ -35,7 +35,7 @@ public class XpHistoryExtensionsTests
     }
 
     [Fact]
-    public void GetPromedio_usa_solo_el_primer_y_ultimo_registro()
+    public void GetPromedio_UsesOnlyFirstAndLastRecord()
     {
         List<UserDailyXp> registros =
         [

@@ -5,7 +5,7 @@ namespace AnilistConEnie.Application.Tests.Helpers;
 public class StringHelperTests
 {
     [Fact]
-    public void CreateString_devuelve_la_longitud_pedida_con_caracteres_permitidos()
+    public void CreateString_GivenLength_ReturnsAllowedChars()
     {
         const string permitidos = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789";
 
@@ -17,27 +17,27 @@ public class StringHelperTests
     }
 
     [Fact]
-    public void CreateString_longitud_cero_devuelve_vacio()
+    public void CreateString_ZeroLength_ReturnsEmpty()
     {
         Assert.Equal(string.Empty, StringHelper.CreateString(0));
     }
 
     [Fact]
-    public void TextAfter_devuelve_lo_que_sigue_a_la_busqueda()
+    public void TextAfter_Match_ReturnsRemainder()
     {
         Assert.Equal("mundo", "hola=mundo".TextAfter("="));
         Assert.Equal("/user/Nai", "https://anilist.co/user/Nai".TextAfter("anilist.co"));
     }
 
     [Fact]
-    public void NormalizarDescription_no_toca_textos_cortos()
+    public void NormalizarDescription_ShortText_Unchanged()
     {
         string s = new('a', 100);
         Assert.Equal(s, StringHelper.NormalizarDescription(s));
     }
 
     [Fact]
-    public void NormalizarDescription_recorta_en_el_ultimo_corchete_si_existe()
+    public void NormalizarDescription_LongText_TruncatesAtLastBracket()
     {
         // Texto largo con un corchete después del límite de recorte.
         string s = new string('a', 2040) + "[link]" + new string('b', 100);
@@ -50,7 +50,7 @@ public class StringHelperTests
     }
 
     [Fact]
-    public void NormalizarDescription_recorta_por_longitud_si_no_hay_corchete()
+    public void NormalizarDescription_LongTextNoBracket_TruncatesByLength()
     {
         string s = new('a', 3000);
 
@@ -61,7 +61,7 @@ public class StringHelperTests
     }
 
     [Fact]
-    public void NormalizarField_recorta_a_1024()
+    public void NormalizarField_LongText_TruncatesTo1024()
     {
         string s = new('x', 2000);
 
@@ -72,7 +72,7 @@ public class StringHelperTests
     }
 
     [Fact]
-    public void NormalizarBoton_recorta_a_80_con_elipsis()
+    public void NormalizarBoton_LongText_TruncatesTo80WithEllipsis()
     {
         string s = new('z', 100);
 
@@ -83,7 +83,7 @@ public class StringHelperTests
     }
 
     [Fact]
-    public void NormalizarBoton_no_toca_textos_de_80_o_menos()
+    public void NormalizarBoton_TextUpTo80_Unchanged()
     {
         string s = new('z', 80);
         Assert.Equal(s, StringHelper.NormalizarBoton(s));
@@ -96,13 +96,13 @@ public class StringHelperTests
     [InlineData("<b>x</b>", "**x**")]
     [InlineData("~!spoiler!~", "||spoiler||")]
     [InlineData("__negrita__", "**negrita**")]
-    public void LimpiarTexto_traduce_etiquetas_anilist_a_markdown(string entrada, string esperado)
+    public void LimpiarTexto_AnilistTags_TranslatesToMarkdown(string entrada, string esperado)
     {
         Assert.Equal(esperado, StringHelper.LimpiarTexto(entrada));
     }
 
     [Fact]
-    public void LimpiarTexto_nulo_o_vacio_devuelve_vacio()
+    public void LimpiarTexto_NullOrEmpty_ReturnsEmpty()
     {
         Assert.Equal(string.Empty, StringHelper.LimpiarTexto(null!));
         Assert.Equal(string.Empty, StringHelper.LimpiarTexto(""));

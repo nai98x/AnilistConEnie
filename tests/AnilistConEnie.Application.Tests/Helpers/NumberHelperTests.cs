@@ -8,19 +8,19 @@ public class NumberHelperTests
     [InlineData(0, "0")]
     [InlineData(1000, "1.000")]
     [InlineData(1234567, "1.234.567")]
-    public void ToSpanish_int_usa_separador_de_miles_de_punto(int value, string esperado)
+    public void ToSpanish_Int_UsesDotThousandsSeparator(int value, string esperado)
     {
         Assert.Equal(esperado, value.ToSpanish());
     }
 
     [Fact]
-    public void ToSpanish_long_usa_separador_de_miles_de_punto()
+    public void ToSpanish_Long_UsesDotThousandsSeparator()
     {
         Assert.Equal("1.000.000", 1_000_000L.ToSpanish());
     }
 
     [Fact]
-    public void ToSpanish_double_redondea_sin_decimales()
+    public void ToSpanish_Double_RoundsWithoutDecimals()
     {
         Assert.Equal("1.235", 1234.6.ToSpanish());
     }
@@ -31,7 +31,7 @@ public class NumberHelperTests
     [InlineData(100, 100, 100)]
     [InlineData(199, 100, 100)]
     [InlineData(200, 100, 200)]
-    public void ObtenerMultiploAnterior_redondea_hacia_abajo(long numero, int multiplo, long esperado)
+    public void ObtenerMultiploAnterior_RoundsDownToMultiple(long numero, int multiplo, long esperado)
     {
         Assert.Equal(esperado, NumberHelper.ObtenerMultiploAnterior(numero, multiplo));
     }
@@ -42,20 +42,20 @@ public class NumberHelperTests
     [InlineData(100, 100, 100)]
     [InlineData(101, 100, 200)]
     [InlineData(250, 100, 300)]
-    public void ObtenerMultiploSiguiente_redondea_hacia_arriba(long numero, int multiplo, long esperado)
+    public void ObtenerMultiploSiguiente_RoundsUpToMultiple(long numero, int multiplo, long esperado)
     {
         Assert.Equal(esperado, NumberHelper.ObtenerMultiploSiguiente(numero, multiplo));
     }
 
     [Fact]
-    public void GetNumeroRandom_con_limites_no_positivos_devuelve_cero()
+    public void GetNumeroRandom_NonPositiveBounds_ReturnsZero()
     {
         Assert.Equal(0, NumberHelper.GetNumeroRandom(-5, 0));
         Assert.Equal(0, NumberHelper.GetNumeroRandom(-5, -1));
     }
 
     [Fact]
-    public void GetNumeroRandom_devuelve_un_valor_en_el_rango()
+    public void GetNumeroRandom_ValidBounds_ReturnsValueInRange()
     {
         for (int i = 0; i < 100; i++)
         {

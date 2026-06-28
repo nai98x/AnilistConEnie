@@ -7,7 +7,7 @@ public class XpCountryRankingTests
     private const ulong OtrosId = 999;
 
     [Fact]
-    public void BuildChartSeries_agrupa_los_que_quedan_fuera_del_top_en_Otros()
+    public void BuildChartSeries_BeyondTop_GroupsIntoOtros()
     {
         // topN = 2: Argentina y Chile entran al top; México queda fuera y se suma a Otros.
         List<CountryXp> perCountry =
@@ -29,7 +29,7 @@ public class XpCountryRankingTests
     }
 
     [Fact]
-    public void BuildChartSeries_ordena_descendente_y_descarta_el_ultimo()
+    public void BuildChartSeries_SortsDescendingAndDropsLast()
     {
         List<CountryXp> perCountry =
         [
@@ -46,7 +46,7 @@ public class XpCountryRankingTests
     }
 
     [Fact]
-    public void BuildChartSeries_Otros_puede_quedar_arriba_si_acumula_mas()
+    public void BuildChartSeries_OtrosAccumulatesMore_MayRankTop()
     {
         List<CountryXp> perCountry =
         [

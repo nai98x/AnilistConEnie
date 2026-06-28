@@ -18,25 +18,25 @@ public class EnumExtensionsTests
     }
 
     [Fact]
-    public void GetDescription_lee_el_atributo_description()
+    public void GetDescription_WithAttribute_ReturnsDescription()
     {
         Assert.Equal("Una descripción", ConDescripcion.Valor.GetDescription());
     }
 
     [Fact]
-    public void GetDescription_sin_atributo_devuelve_el_nombre()
+    public void GetDescription_WithoutAttribute_ReturnsName()
     {
         Assert.Equal("Valor", SinDescripcion.Valor.GetDescription());
     }
 
     [Fact]
-    public void GetDescription_nulo_devuelve_vacio()
+    public void GetDescription_Null_ReturnsEmpty()
     {
         Assert.Equal(string.Empty, ((Enum?)null).GetDescription());
     }
 
     [Fact]
-    public void GetDescription_funciona_con_RangoEnum_del_dominio()
+    public void GetDescription_DomainRangoEnum_ReturnsDescription()
     {
         Assert.Equal("Hikikomori", RangoEnum.Hikikomori.GetDescription());
     }

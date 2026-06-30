@@ -23,11 +23,15 @@ public static class AnilistApprovalPolicy
     {
         List<MotivoAprobacionDetalle> motivos = [];
 
-        UsuarioAnilist? multicuenta = vinculados.FirstOrDefault(x =>
-            (ulong)x.UserId != discordUserId
-            && AnilistProfileUrl.TryGetUserId(x.AnilistURL, out int id) && id == anilistViewerId);
-        if (multicuenta is not null)
-            motivos.Add(new(MotivoAprobacion.PosibleMulticuenta, multicuenta.UserId));
+        if (AnilistMulticuentas.AgruparPorAnilistId(vinculados).TryGetValue(anilistViewerId, out List<long>? mismoPerfil))
+        {
+            long? otroMiembro = mismoPerfil
+                .Where(id => (ulong)id != discordUserId)
+                .Select(id => (long?)id)
+                .FirstOrDefault();
+            if (otroMiembro is not null)
+                motivos.Add(new(MotivoAprobacion.PosibleMulticuenta, otroMiembro));
+        }
 
         DateTimeOffset umbral = ahora.AddMonths(-cuentaNuevaMeses);
         if (discordCreatedAt > umbral || anilistCreatedAt > umbral)

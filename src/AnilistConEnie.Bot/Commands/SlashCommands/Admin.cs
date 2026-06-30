@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Text.RegularExpressions;
+using AnilistConEnie.Application.Anilist;
 using AnilistConEnie.Application.Extensions;
 using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Bot.Commands.Enums;
@@ -28,7 +29,7 @@ namespace AnilistConEnie.Bot.Commands.SlashCommands;
 
 [Command("admin")]
 [Description("Comandos de los admins del servidor")]
-//[TestCommand]
+[TestCommand]
 public class Admin(
     BotConfiguration config,
     CooldownsSettings cooldownsSettings,
@@ -202,6 +203,52 @@ public class Admin(
         {
             Color = DiscordColor.Red,
             Title = "Usuarios sin cuenta vinculada de AniList"
+        };
+
+        InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
+        IEnumerable<Page> pages = InteractivityExtension.GeneratePagesInEmbed(desc, SplitType.Line, embed);
+        await interactivity.SendPaginatedResponseAsync(ctx.Interaction, ephemeral: false, ctx.User, pages);
+    }
+
+    [Command("multicuentas")]
+    [Description("Lista los perfiles de AniList vinculados a más de un Discord")]
+    public async Task Multicuentas(SlashCommandContext ctx)
+    {
+        if (!await ctx.BotInicializadoAsync(discordBotService)) return;
+
+        await ctx.DeferResponseAsync();
+        if (!await EnsureAdminAsync(ctx)) return;
+
+        IReadOnlyList<GrupoMulticuenta> grupos = AnilistMulticuentas.Detectar(await usuariosRepository.GetVinculados());
+
+        if (grupos.Count == 0)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+            {
+                Title = "Multicuentas",
+                Description = "No hay perfiles de AniList vinculados a más de un Discord.",
+                Color = DiscordColor.Green
+            }));
+            return;
+        }
+
+        List<string> bloques = [];
+        foreach (GrupoMulticuenta grupo in grupos)
+        {
+            string miembros = string.Join("\n", grupo.DiscordIds.Select(id =>
+            {
+                string nombre = ctx.Guild!.Members.TryGetValue((ulong)id, out DiscordMember? member) ? member.DisplayName : "ausente";
+                return $"- {Formatter.InlineCode(nombre)} (<@{id}>)";
+            }));
+            bloques.Add($"{Formatter.MaskedUrl($"AniList #{grupo.AnilistId}", new Uri($"https://anilist.co/user/{grupo.AnilistId}"))} — {grupo.DiscordIds.Count} cuentas\n{miembros}");
+        }
+
+        string desc = string.Join("\n\n", bloques) + $"\n\nTotal de perfiles con multicuenta: {grupos.Count}";
+
+        DiscordEmbedBuilder embed = new()
+        {
+            Color = DiscordColor.Orange,
+            Title = "Perfiles de AniList con más de un Discord vinculado"
         };
 
         InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();

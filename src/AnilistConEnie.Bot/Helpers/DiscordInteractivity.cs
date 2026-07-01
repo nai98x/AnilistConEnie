@@ -130,6 +130,122 @@ public static class DiscordInteractivity
         keys.Select(key => new DiscordButtonComponent(DiscordButtonStyle.Primary, key, key, disabled || key == activeTab)).ToList();
 
     /// <summary>
+    /// Parte <paramref name="texto"/> en páginas de a lo sumo <paramref name="lineasPorPagina"/> líneas,
+    /// devolviendo un embed por página construido a partir de <paramref name="plantilla"/> (el mismo
+    /// título/fields/imágenes en todas, description distinta por página, con footer "Página x/x" cuando
+    /// hay más de una). A diferencia de <see cref="InteractivityExtension.GeneratePagesInEmbed"/> (que
+    /// trae 15 líneas por página fijas, sin forma de configurarlo), esto permite elegir el tamaño.
+    /// </summary>
+    public static IReadOnlyList<DiscordEmbed> GenerarPaginasPorLineas(string texto, int lineasPorPagina, DiscordEmbedBuilder plantilla)
+    {
+        string[] lineas = texto.Split('\n');
+        List<string> paginas = [];
+        for (int i = 0; i < lineas.Length; i += lineasPorPagina)
+            paginas.Add(string.Join('\n', lineas.Skip(i).Take(lineasPorPagina)));
+
+        if (paginas.Count == 0) paginas.Add(string.Empty);
+
+        DiscordEmbed baseEmbed = plantilla.Build();
+        return paginas.Select((pagina, i) =>
+        {
+            DiscordEmbedBuilder embed = new DiscordEmbedBuilder(baseEmbed).WithDescription(pagina);
+            if (paginas.Count > 1) embed.WithFooter($"Página {i + 1}/{paginas.Count}");
+            return embed.Build();
+        }).ToList();
+    }
+
+    /// <summary>
+    /// Muestra distintas vistas (una por pestaña) como embed, cada una paginada de forma independiente
+    /// con botones "Anterior"/"Siguiente" si no entra en una sola página (generar las páginas de cada
+    /// pestaña con <see cref="GenerarPaginasPorLineas"/>). Los botones de pestaña solo se muestran si hay
+    /// más de una; los de paginación solo si la pestaña activa tiene más de una página. Si hay una sola
+    /// pestaña con una sola página, se muestra directo sin botones. Admite entre 1 y 3 pestañas (deja
+    /// lugar para los 2 botones de paginación en la misma fila). Los botones se deshabilitan tras 2
+    /// minutos de inactividad o al acercarse al límite de vida de la interacción (15 minutos por regla de
+    /// Discord). Requiere que la respuesta ya haya sido diferida.
+    /// </summary>
+    public static async Task SwitchTabsPaginadoAsync(
+        CommandContext ctx,
+        IReadOnlyList<(string Id, string Label, IReadOnlyList<DiscordEmbed> Paginas)> tabs)
+    {
+        if (tabs.Count is 0 or > 3) return;
+
+        string activeTab = tabs[0].Id;
+        Dictionary<string, int> paginaPorTab = tabs.ToDictionary(t => t.Id, _ => 0);
+
+        DiscordWebhookBuilder Build(bool botonesDeshabilitados)
+        {
+            (string Id, string Label, IReadOnlyList<DiscordEmbed> Paginas) tab = tabs.First(t => t.Id == activeTab);
+            int totalPaginas = tab.Paginas.Count;
+            DiscordEmbed embed = tab.Paginas[paginaPorTab[tab.Id]];
+
+            DiscordWebhookBuilder builder = new DiscordWebhookBuilder().AddEmbed(embed);
+
+            List<DiscordButtonComponent> botones = [];
+            if (tabs.Count > 1)
+                botones.AddRange(tabs.Select(t =>
+                    new DiscordButtonComponent(DiscordButtonStyle.Primary, $"tab-{t.Id}", t.Label, botonesDeshabilitados || t.Id == activeTab)));
+
+            if (totalPaginas > 1)
+            {
+                int pagina = paginaPorTab[tab.Id];
+                botones.Add(new DiscordButtonComponent(DiscordButtonStyle.Secondary, "anterior", "Anterior", botonesDeshabilitados || pagina == 0));
+                botones.Add(new DiscordButtonComponent(DiscordButtonStyle.Secondary, "siguiente", "Siguiente", botonesDeshabilitados || pagina == totalPaginas - 1));
+            }
+
+            if (botones.Count > 0) builder.AddActionRowComponent(botones);
+            return builder;
+        }
+
+        if (tabs.Count == 1 && tabs[0].Paginas.Count == 1)
+        {
+            await ctx.EditResponseAsync(Build(botonesDeshabilitados: false));
+            return;
+        }
+
+        InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
+
+        DateTimeOffset deadline = DateTimeOffset.UtcNow.AddMinutes(14);
+        TimeSpan inactivityTimeout = TimeSpan.FromMinutes(2);
+
+        while (true)
+        {
+            DiscordMessage message = await ctx.EditResponseAsync(Build(botonesDeshabilitados: false));
+
+            TimeSpan remaining = deadline - DateTimeOffset.UtcNow;
+            if (remaining <= TimeSpan.Zero) break;
+
+            TimeSpan waitFor = remaining < inactivityTimeout ? remaining : inactivityTimeout;
+
+            InteractivityResult<ComponentInteractionCreatedEventArgs> response =
+                await interactivity.WaitForButtonAsync(message, ctx.User, waitFor);
+
+            if (response.TimedOut) break;
+
+            await response.Result.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
+
+            string id = response.Result.Id;
+            if (id.StartsWith("tab-", StringComparison.Ordinal))
+            {
+                activeTab = id["tab-".Length..];
+            }
+            else
+            {
+                int totalPaginas = tabs.First(t => t.Id == activeTab).Paginas.Count;
+                int pagina = paginaPorTab[activeTab];
+                paginaPorTab[activeTab] = id switch
+                {
+                    "anterior" => Math.Max(0, pagina - 1),
+                    "siguiente" => Math.Min(totalPaginas - 1, pagina + 1),
+                    _ => pagina
+                };
+            }
+        }
+
+        await ctx.EditResponseAsync(Build(botonesDeshabilitados: true));
+    }
+
+    /// <summary>
     /// Pagina una lista en un container de Components V2 con botones "Anterior"/"Siguiente". Cada item se
     /// renderiza con <paramref name="renderItem"/>; el header recibe una línea "Página x/x" cuando hay más
     /// de una página. "Anterior" se deshabilita en la primera página y "Siguiente" en la última; ambos se

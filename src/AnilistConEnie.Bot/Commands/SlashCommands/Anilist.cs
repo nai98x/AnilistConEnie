@@ -21,7 +21,7 @@ using AnilistConEnie.Bot.Services;
 
 namespace AnilistConEnie.Bot.Commands.SlashCommands;
 
-[TestCommand]
+//[TestCommand]
 public class Anilist(IAnilistClient anilistClient, AnilistService anilistService, IUsuariosRepository usuariosRepository, BotConfiguration config, DiscordBotService discordBotService)
 {
     [Command("statsserver")]
@@ -107,6 +107,8 @@ public class Anilist(IAnilistClient anilistClient, AnilistService anilistService
                 if (!string.IsNullOrEmpty(media.BannerImageUrl)) embed.WithImageUrl(media.BannerImageUrl);
             }
 
+            if (view.Average100 is { } promedio)
+                embed.AddField($"{DiscordEmoji.FromName(ctx.Client, ":star:")} Promedio", $"{Math.Round(promedio, 2)}/100", true);
             if (media.Format is { Length: > 0 })
                 embed.AddField($"{DiscordEmoji.FromName(ctx.Client, ":dividers:")} Formato", StringHelper.NormalizarField(media.Format), true);
             embed.AddField($"{DiscordEmoji.FromName(ctx.Client, ":hourglass_flowing_sand:")} Estado", AnilistMediaFormatter.Status(media), true);
@@ -124,51 +126,27 @@ public class Anilist(IAnilistClient anilistClient, AnilistService anilistService
         }
 
         bool hayAmbasListas = view.ConScore.Count > 0 && view.SinScore.Count > 0;
+        const int lineasPorPagina = 30;
 
-        DiscordEmbed? conScoreEmbed = null;
+        List<(string Id, string Label, IReadOnlyList<DiscordEmbed> Paginas)> tabs = [];
+
         if (view.ConScore.Count > 0)
         {
-            DiscordEmbedBuilder embed = BaseEmbed();
-            string promedio = $"{Formatter.Bold("Promedio:")} {Math.Round(view.Average100 ?? 0, 2)}/100\n\n";
-            embed.Description = TruncarDescripcion(promedio + string.Join('\n', view.ConScore));
-            conScoreEmbed = embed.Build();
+            string descripcion = string.Join('\n', view.ConScore);
+            IReadOnlyList<DiscordEmbed> paginas = DiscordInteractivity.GenerarPaginasPorLineas(descripcion, lineasPorPagina, BaseEmbed());
+            tabs.Add(("con-score", "Con score", paginas));
         }
 
-        DiscordEmbed? sinScoreEmbed = null;
         if (view.SinScore.Count > 0)
         {
-            DiscordEmbedBuilder embed = BaseEmbed();
             // Con las dos listas, el botón de la pestaña ya indica "Sin scores asignados"; evitar repetir la etiqueta.
             string encabezado = hayAmbasListas ? string.Empty : $"{Formatter.Bold("Sin scores asignados:")}\n";
-            embed.Description = TruncarDescripcion(encabezado + string.Join('\n', view.SinScore));
-            sinScoreEmbed = embed.Build();
+            string descripcion = encabezado + string.Join('\n', view.SinScore);
+            IReadOnlyList<DiscordEmbed> paginas = DiscordInteractivity.GenerarPaginasPorLineas(descripcion, lineasPorPagina, BaseEmbed());
+            tabs.Add(("sin-score", "Sin scores asignados", paginas));
         }
 
-        if (hayAmbasListas)
-        {
-            Dictionary<string, DiscordEmbed> tabs = new()
-            {
-                ["Con score"] = conScoreEmbed!,
-                ["Sin scores asignados"] = sinScoreEmbed!
-            };
-            await DiscordInteractivity.SwitchTabsAsync(ctx, tabs);
-            return;
-        }
-
-        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(conScoreEmbed ?? sinScoreEmbed!));
-    }
-
-    private const int EmbedDescriptionLimit = 4096;
-
-    private static string TruncarDescripcion(string texto)
-    {
-        if (texto.Length <= EmbedDescriptionLimit) return texto;
-
-        string cortado = texto[..EmbedDescriptionLimit];
-        int ultimoSalto = cortado.LastIndexOf('\n');
-        if (ultimoSalto > 0) cortado = cortado[..ultimoSalto];
-
-        return cortado + "\n\n*(lista truncada, hay más miembros de los que entran acá)*";
+        await DiscordInteractivity.SwitchTabsPaginadoAsync(ctx, tabs);
     }
     
     [Command("usuarioanilist")]

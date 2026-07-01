@@ -114,7 +114,6 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
             miembros[miembro.Id] = miembro;
 
         Dictionary<int, string> porAnilistId = [];
-        Dictionary<int, ulong> discordIdPorAnilistId = [];
         foreach (UsuarioAnilist usuario in await usuariosRepository.GetVinculados())
         {
             if (!miembros.TryGetValue((ulong)usuario.UserId, out DiscordMember? miembro)
@@ -122,14 +121,11 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
                 continue;
 
             if (AnilistProfileUrl.TryGetUserId(usuario.AnilistURL, out int anilistId))
-            {
                 porAnilistId[anilistId] = miembro.DisplayName;
-                discordIdPorAnilistId[anilistId] = miembro.Id;
-            }
         }
 
         ServerMediaScores result = await scoreService.AggregateAsync(media, porAnilistId, includeUsersWithoutScore);
-        return BuildScoresView(result, media, discordIdPorAnilistId);
+        return BuildScoresView(result, media);
     }
     
     public async Task VincularAniList(DiscordInteraction interaction, DiscordClient client)
@@ -328,13 +324,10 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
         }
     }
 
-    private ServerScoresView BuildScoresView(ServerMediaScores result, AnilistMedia media, IReadOnlyDictionary<int, ulong> discordIdPorAnilistId)
+    private static ServerScoresView BuildScoresView(ServerMediaScores result, AnilistMedia media)
     {
-        long XpDe(MemberMediaScore m) =>
-            discordIdPorAnilistId.TryGetValue(m.Entry.UserId, out ulong discordId) ? xpState.GetUserXp(discordId).Total : 0;
-
         List<string> conScore = result.Scored
-            .OrderByDescending(XpDe)
+            .OrderBy(m => m.DisplayName, StringComparer.OrdinalIgnoreCase)
             .Select(m =>
             {
                 string link = Formatter.MaskedUrl(m.DisplayName, new Uri(m.Entry.UserSiteUrl));
@@ -346,7 +339,7 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
             .ToList();
 
         List<string> sinScore = result.Unscored
-            .OrderByDescending(XpDe)
+            .OrderBy(m => m.DisplayName, StringComparer.OrdinalIgnoreCase)
             .Select(m =>
             {
                 string link = Formatter.MaskedUrl(m.DisplayName, new Uri(m.Entry.UserSiteUrl));

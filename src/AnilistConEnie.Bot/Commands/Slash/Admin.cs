@@ -4,7 +4,7 @@ using AnilistConEnie.Application.Anilist;
 using AnilistConEnie.Application.Extensions;
 using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Bot.Commands.Enums;
-using AnilistConEnie.Bot.Commands.SlashCommands.Attributes;
+using AnilistConEnie.Bot.Commands.Slash.Attributes;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
@@ -25,7 +25,7 @@ using DSharpPlus.Interactivity.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using AnilistConEnie.Bot.Extensions;
 
-namespace AnilistConEnie.Bot.Commands.SlashCommands;
+namespace AnilistConEnie.Bot.Commands.Slash;
 
 [Command("admin")]
 [Description("Comandos de los admins del servidor")]

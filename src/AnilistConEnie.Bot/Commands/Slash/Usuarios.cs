@@ -5,7 +5,7 @@ using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Application.Membership;
 using AnilistConEnie.Application.Xp;
 using AnilistConEnie.Bot.Commands.Enums;
-using AnilistConEnie.Bot.Commands.SlashCommands.Attributes;
+using AnilistConEnie.Bot.Commands.Slash.Attributes;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services.State;
@@ -19,7 +19,7 @@ using DSharpPlus.Entities;
 using AnilistConEnie.Bot.Extensions;
 using AnilistConEnie.Bot.Services;
 
-namespace AnilistConEnie.Bot.Commands.SlashCommands;
+namespace AnilistConEnie.Bot.Commands.Slash;
 
 [TestCommand]
 public class Usuarios(

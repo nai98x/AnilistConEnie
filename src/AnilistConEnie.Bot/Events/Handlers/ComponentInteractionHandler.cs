@@ -11,7 +11,7 @@ using DSharpPlus.EventArgs;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class ComponentInteractionHandler(DiscordBotService discordBotService, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, AnilistService anilistService, IAnilistApprovalRepository anilistApprovalRepository)
+public class ComponentInteractionHandler(DiscordBotService discordBotService, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, AnilistService anilistService, IAnilistApprovalRepository anilistApprovalRepository, IHttpClientFactory httpClientFactory)
 {
     public async Task Handle(DiscordClient client, ComponentInteractionCreatedEventArgs args)
     {
@@ -149,6 +149,65 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
                 catch (Exception ex) { await logService.LogException(args.Guild, ex, "Rechazo de vinculación - borrar mensaje"); }
             }
 
+        }
+        else if (args.Interaction.Data.CustomId.StartsWith("yoink-"))
+        {
+            if (!args.Guild.Members.TryGetValue(args.User.Id, out DiscordMember? clicker) || clicker.Roles.All(r => r.Id != config.Roles.KamiSama))
+            {
+                await args.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource,
+                    new DiscordInteractionResponseBuilder().AsEphemeral().WithContent("Solo los administradores pueden usar este comando."));
+                return;
+            }
+
+            await args.Interaction.DeferAsync(true);
+
+            string[] partes = args.Id.Split('-');
+            ulong emoteId = ulong.Parse(partes[1]);
+            bool animado = partes[2] == "1";
+            string nombreEmote = partes[3];
+
+            DiscordMessageBuilder edicion = new DiscordMessageBuilder().EnableV2Components();
+            foreach (DiscordComponent componente in args.Message!.Components!)
+            {
+                if (componente is DiscordContainerComponent container)
+                {
+                    edicion.AddContainerComponent(container);
+                }
+                else if (componente is DiscordActionRowComponent fila)
+                {
+                    edicion.AddActionRowComponent(fila.Components.OfType<DiscordButtonComponent>().Select(boton =>
+                        boton.CustomId == args.Id
+                            ? new DiscordButtonComponent(boton.Style, boton.CustomId, boton.Label, true, boton.Emoji)
+                            : boton));
+                }
+            }
+            await args.Message.ModifyAsync(edicion);
+
+            try
+            {
+                string extension = animado ? "gif" : "png";
+                HttpClient http = httpClientFactory.CreateClient();
+                byte[] bytes = await http.GetByteArrayAsync($"https://cdn.discordapp.com/emojis/{emoteId}.{extension}");
+                await using MemoryStream imagen = new(bytes);
+                DiscordGuildEmoji nuevo = await args.Guild.CreateEmojiAsync(nombreEmote, imagen);
+
+                await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral().AddEmbed(new DiscordEmbedBuilder
+                {
+                    Title = "Emote robado",
+                    Description = $"Se agregó <{(nuevo.IsAnimated ? "a" : "")}:{nuevo.Name}:{nuevo.Id}> correctamente.",
+                    Color = DiscordColor.Green
+                }));
+            }
+            catch (Exception ex)
+            {
+                await logService.LogException(args.Guild, ex, "Yoink - subir emote");
+                await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral().AddEmbed(new DiscordEmbedBuilder
+                {
+                    Title = "Error al yoinkear",
+                    Description = ex.Message,
+                    Color = DiscordColor.Red
+                }));
+            }
         }
         else if (!args.Interaction.Data.CustomId.StartsWith("modal-"))
         {

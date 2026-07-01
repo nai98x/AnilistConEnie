@@ -1,6 +1,6 @@
 using System.ComponentModel;
 using System.Globalization;
-using AnilistConEnie.Bot.Commands.SlashCommands.Attributes;
+using AnilistConEnie.Bot.Commands.Slash.Attributes;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Model.Enum;
@@ -11,7 +11,7 @@ using DSharpPlus.Entities;
 using AnilistConEnie.Bot.Extensions;
 using AnilistConEnie.Bot.Services;
 
-namespace AnilistConEnie.Bot.Commands.SlashCommands;
+namespace AnilistConEnie.Bot.Commands.Slash;
 
 [Command("teiou")]
 [Description("Comandos para rango teiou")]

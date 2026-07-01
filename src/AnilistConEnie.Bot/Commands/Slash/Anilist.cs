@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using AnilistConEnie.Application.Anilist;
 using AnilistConEnie.Application.Helpers;
-using AnilistConEnie.Bot.Commands.SlashCommands.Attributes;
+using AnilistConEnie.Bot.Commands.Slash.Attributes;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services.State;
@@ -19,7 +19,7 @@ using DSharpPlus.Exceptions;
 using AnilistConEnie.Bot.Extensions;
 using AnilistConEnie.Bot.Services;
 
-namespace AnilistConEnie.Bot.Commands.SlashCommands;
+namespace AnilistConEnie.Bot.Commands.Slash;
 
 //[TestCommand]
 public class Anilist(IAnilistClient anilistClient, AnilistService anilistService, IUsuariosRepository usuariosRepository, BotConfiguration config, DiscordBotService discordBotService)
@@ -151,7 +151,7 @@ public class Anilist(IAnilistClient anilistClient, AnilistService anilistService
     
     [Command("usuarioanilist")]
     [Description("Busca un usuario de AniList para saber si se encuentra en el servidor")]
-    public async Task Busqueda(CommandContext ctx, [Parameter("Nombre")][Description("Nombre de usuario en AniList")] string buscar)
+    public async Task Busqueda(SlashCommandContext ctx, [Parameter("Nombre")][Description("Nombre de usuario en AniList")] string buscar)
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 

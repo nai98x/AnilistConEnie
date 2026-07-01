@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using AnilistConEnie.Application.Extensions;
 using AnilistConEnie.Application.Helpers;
-using AnilistConEnie.Bot.Commands.SlashCommands.Attributes;
+using AnilistConEnie.Bot.Commands.Slash.Attributes;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Model.Entities;
@@ -15,7 +15,7 @@ using DSharpPlus.Entities;
 using AnilistConEnie.Bot.Extensions;
 using AnilistConEnie.Bot.Services;
 
-namespace AnilistConEnie.Bot.Commands.SlashCommands;
+namespace AnilistConEnie.Bot.Commands.Slash;
 
 [Command("trigger")]
 [Description("Comandos para triggers")]

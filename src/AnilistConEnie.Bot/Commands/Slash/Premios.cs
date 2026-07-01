@@ -1,6 +1,6 @@
 using System.ComponentModel;
 using AnilistConEnie.Application.Premios;
-using AnilistConEnie.Bot.Commands.SlashCommands.Attributes;
+using AnilistConEnie.Bot.Commands.Slash.Attributes;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Enum;
@@ -13,7 +13,7 @@ using DSharpPlus.Entities;
 using AnilistConEnie.Bot.Extensions;
 using AnilistConEnie.Bot.Services;
 
-namespace AnilistConEnie.Bot.Commands.SlashCommands;
+namespace AnilistConEnie.Bot.Commands.Slash;
 
 [Command("premios")]
 [Description("Comandos de los premios de temporada del servidor")]

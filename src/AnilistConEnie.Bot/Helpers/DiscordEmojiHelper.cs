@@ -32,4 +32,14 @@ public static class DiscordEmojiHelper
             ? guildEmote
             : null;
     }
+
+    /// <summary>
+    /// Encuentra todos los emotes personalizados (<c>&lt;:nombre:id&gt;</c> / <c>&lt;a:nombre:id&gt;</c>)
+    /// embebidos en un texto largo, sin duplicados por id. No resuelve contra ningún guild: solo
+    /// extrae nombre/id/animado tal como aparecen en el texto.
+    /// </summary>
+    public static IEnumerable<(string Name, ulong Id, bool Animated)> FindAllCustomEmotes(string content) =>
+        Regex.Matches(content, @"<(a)?:(.+?):(\d+)>")
+            .Select(m => (Name: m.Groups[2].Value, Id: ulong.Parse(m.Groups[3].Value), Animated: m.Groups[1].Success))
+            .DistinctBy(e => e.Id);
 }

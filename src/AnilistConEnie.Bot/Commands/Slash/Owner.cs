@@ -1,6 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
-using AnilistConEnie.Bot.Commands.SlashCommands.Attributes;
+using AnilistConEnie.Bot.Commands.Slash.Attributes;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Extensions;
 using AnilistConEnie.Bot.Helpers;
@@ -14,11 +14,12 @@ using AnilistConEnie.Model.Interfaces.Repositories;
 using DSharpPlus;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.ContextChecks;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace AnilistConEnie.Bot.Commands.SlashCommands;
+namespace AnilistConEnie.Bot.Commands.Slash;
 
 [Command("owner")]
 [TestCommand]
@@ -27,7 +28,7 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
 {
     [Command("test")]
     [Description("Comando general para testear cosas")]
-    public async Task TestCommand(CommandContext ctx)
+    public async Task TestCommand(SlashCommandContext ctx)
     {
         await ctx.DeferEphemeralAsync();
         await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Test"));
@@ -35,7 +36,7 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
 
     [Command("testv2")]
     [Description("Showcase de Components V2 (container, section, gallery, separator)")]
-    public async Task TestComponentsV2(CommandContext ctx)
+    public async Task TestComponentsV2(SlashCommandContext ctx)
     {
         await ctx.DeferEphemeralAsync();
 
@@ -91,7 +92,7 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
 
     [Command("reiniciar")]
     [Description("Reinicia el bot")]
-    public async Task Restart(CommandContext ctx)
+    public async Task Restart(SlashCommandContext ctx)
     {
         await ctx.DeferEphemeralAsync();
         await ctx.EditResponseAsync("Reiniciando el bot...");
@@ -101,7 +102,7 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
 
     [Command("test_db")]
     [Description("Prueba la conexión a la base de datos relacional")]
-    public async Task TestDb(CommandContext ctx)
+    public async Task TestDb(SlashCommandContext ctx)
     {
         await ctx.DeferEphemeralAsync();
 
@@ -124,7 +125,7 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
 
     [Command("debugxpenable")]
     [Description("Enable Debug de xp")]
-    public async Task EnableDebugXp(CommandContext ctx, [Parameter("Usuario")] [Description("El usuario del que quieres debuggear su xp")] DiscordUser usuario)
+    public async Task EnableDebugXp(SlashCommandContext ctx, [Parameter("Usuario")] [Description("El usuario del que quieres debuggear su xp")] DiscordUser usuario)
     {
         await ctx.DeferEphemeralAsync();
         
@@ -136,7 +137,7 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
 
     [Command("debugxpdisable")]
     [Description("Disable Debug de xp")]
-    public async Task DisableDebugXp(CommandContext ctx)
+    public async Task DisableDebugXp(SlashCommandContext ctx)
     {
         await ctx.DeferEphemeralAsync();
 
@@ -149,7 +150,7 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
     [Command("setpermanentusername")]
     [Description("Set permanent username")]
     public async Task SetPermanentUsername(
-        CommandContext ctx, 
+        SlashCommandContext ctx, 
         [Parameter("Usuario")] [Description("El usuario del que quieres que tenga el nickname permanente")] DiscordMember member,
         [Parameter("Username")] [Description("El nickname")] string username)
     {
@@ -164,7 +165,7 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
     [Command("removepermanentusername")]
     [Description("Remove permanent username")]
     public async Task RemovePermanentUsername(
-        CommandContext ctx,
+        SlashCommandContext ctx,
         [Parameter("Usuario")] [Description("El usuario del que quieres que tenga el nickname permanente")] DiscordMember member)
     {
         await ctx.DeferEphemeralAsync();
@@ -176,7 +177,7 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
     
     [Command("configurarbienvenida")]
     [Description("Agrega el mensaje de bienvenida")]
-    public async Task ConfigurarBienvenida(CommandContext ctx)
+    public async Task ConfigurarBienvenida(SlashCommandContext ctx)
     {
         await ctx.DeferEphemeralAsync();
 
@@ -205,7 +206,7 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
 
     [Command("configurarcolores")]
     [Description("Agrega el mensaje de colores")]
-    public async Task ConfigurarColores(CommandContext ctx)
+    public async Task ConfigurarColores(SlashCommandContext ctx)
     {
         await ctx.DeferEphemeralAsync();
 
@@ -243,7 +244,7 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
 
     [Command("ratelimits")]
     [Description("Muestra los ratelimits de APIs que interactual con el bot")]
-    public async Task Ratelimits(CommandContext ctx)
+    public async Task Ratelimits(SlashCommandContext ctx)
     {
         await ctx.DeferEphemeralAsync();
 
@@ -272,7 +273,7 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
 
     [Command("logs")]
     [Description("Adjunta los logs del día de hoy como archivo de texto")]
-    public async Task Logs(CommandContext ctx)
+    public async Task Logs(SlashCommandContext ctx)
     {
         await ctx.DeferEphemeralAsync();
 

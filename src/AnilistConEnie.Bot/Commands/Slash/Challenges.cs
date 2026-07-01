@@ -2,7 +2,7 @@ using System.ComponentModel;
 using System.Globalization;
 using AnilistConEnie.Application.Anilist;
 using AnilistConEnie.Bot.Commands.AutoComplete;
-using AnilistConEnie.Bot.Commands.SlashCommands.Attributes;
+using AnilistConEnie.Bot.Commands.Slash.Attributes;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
@@ -19,7 +19,7 @@ using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
 using AnilistConEnie.Bot.Extensions;
 
-namespace AnilistConEnie.Bot.Commands.SlashCommands;
+namespace AnilistConEnie.Bot.Commands.Slash;
 
 [Command("challenges")]
 [Description("Comandos de los challenges del servidor")]

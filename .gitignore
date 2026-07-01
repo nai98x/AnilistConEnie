@@ -345,3 +345,6 @@ healthchecksdb
 # Secrets (credenciales Firebase) - nunca versionar
 firebase-anilistconenie.json
 firebase-yumiko.json
+
+# Notas de trabajo personales, no documentación oficial del repo
+docs/dsharpplus-notes.md

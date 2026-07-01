@@ -1,4 +1,3 @@
-using System.Text;
 using AnilistConEnie.Application.Anilist;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Services.State;
@@ -108,13 +107,14 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
         }
     }
 
-    public async Task<string> GetServerScoresAsync(DiscordGuild guild, AnilistMedia media, bool includeUsersWithoutScore)
+    public async Task<ServerScoresView> GetServerScoresAsync(DiscordGuild guild, AnilistMedia media, bool includeUsersWithoutScore)
     {
         Dictionary<ulong, DiscordMember> miembros = [];
         await foreach (DiscordMember miembro in guild.GetAllMembersAsync())
             miembros[miembro.Id] = miembro;
 
         Dictionary<int, string> porAnilistId = [];
+        Dictionary<int, ulong> discordIdPorAnilistId = [];
         foreach (UsuarioAnilist usuario in await usuariosRepository.GetVinculados())
         {
             if (!miembros.TryGetValue((ulong)usuario.UserId, out DiscordMember? miembro)
@@ -122,11 +122,14 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
                 continue;
 
             if (AnilistProfileUrl.TryGetUserId(usuario.AnilistURL, out int anilistId))
+            {
                 porAnilistId[anilistId] = miembro.DisplayName;
+                discordIdPorAnilistId[anilistId] = miembro.Id;
+            }
         }
 
         ServerMediaScores result = await scoreService.AggregateAsync(media, porAnilistId, includeUsersWithoutScore);
-        return FormatScores(result, media);
+        return BuildScoresView(result, media, discordIdPorAnilistId);
     }
     
     public async Task VincularAniList(DiscordInteraction interaction, DiscordClient client)
@@ -325,51 +328,33 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
         }
     }
 
-    private static string FormatScores(ServerMediaScores result, AnilistMedia media)
+    private ServerScoresView BuildScoresView(ServerMediaScores result, AnilistMedia media, IReadOnlyDictionary<int, ulong> discordIdPorAnilistId)
     {
-        if (result.IsEmpty) return string.Empty;
+        long XpDe(MemberMediaScore m) =>
+            discordIdPorAnilistId.TryGetValue(m.Entry.UserId, out ulong discordId) ? xpState.GetUserXp(discordId).Total : 0;
 
-        List<string> conScore = [];
-        foreach (MemberMediaScore m in result.Scored)
-        {
-            string link = Formatter.MaskedUrl(m.DisplayName, new Uri(m.Entry.UserSiteUrl));
-            string score = AnilistMediaFormatter.UserScore(m.Entry);
-            conScore.Add(m.Entry.Status == "COMPLETED"
-                ? $"{link} - {score}\n"
-                : $"{link} - {score} {Formatter.InlineCode($"{m.Entry.Status} - Progreso: {FormatProgreso(media, m.Entry.Progress)}")}\n");
-        }
-
-        List<string> sinScore = [];
-        foreach (MemberMediaScore m in result.Unscored)
-        {
-            string link = Formatter.MaskedUrl(m.DisplayName, new Uri(m.Entry.UserSiteUrl));
-            sinScore.Add($"{link} - {Formatter.InlineCode($"{m.Entry.Status} - Progreso: {FormatProgreso(media, m.Entry.Progress)}")}\n");
-        }
-
-        StringBuilder sb = new();
-
-        if (conScore.Count > 0)
-        {
-            sb.Append($"{Formatter.Bold("Promedio:")} {Math.Round(result.Average100 ?? 0, 2)}/100\n\n");
-
-            conScore.Sort();
-            sb.Append(string.Concat(conScore));
-
-            if (sinScore.Count > 0)
+        List<string> conScore = result.Scored
+            .OrderByDescending(XpDe)
+            .Select(m =>
             {
-                sinScore.Sort();
-                sb.Append($"\n{Formatter.Bold("Sin scores asignados:")}\n");
-                sb.Append(string.Concat(sinScore));
-            }
-        }
-        else
-        {
-            sinScore.Sort();
-            sb.Append($"{Formatter.Bold("Sin scores asignados:")}\n");
-            sb.Append(string.Concat(sinScore));
-        }
+                string link = Formatter.MaskedUrl(m.DisplayName, new Uri(m.Entry.UserSiteUrl));
+                string score = AnilistMediaFormatter.UserScore(m.Entry);
+                return m.Entry.Status == "COMPLETED"
+                    ? $"{link} - {score}"
+                    : $"{link} - {score} {Formatter.InlineCode($"{m.Entry.Status} - Progreso: {FormatProgreso(media, m.Entry.Progress)}")}";
+            })
+            .ToList();
 
-        return sb.ToString();
+        List<string> sinScore = result.Unscored
+            .OrderByDescending(XpDe)
+            .Select(m =>
+            {
+                string link = Formatter.MaskedUrl(m.DisplayName, new Uri(m.Entry.UserSiteUrl));
+                return $"{link} - {Formatter.InlineCode($"{m.Entry.Status} - Progreso: {FormatProgreso(media, m.Entry.Progress)}")}";
+            })
+            .ToList();
+
+        return new ServerScoresView(conScore.Count > 0 ? result.Average100 : null, conScore, sinScore);
     }
 
     private static string FormatProgreso(AnilistMedia media, int? progress)
@@ -378,4 +363,13 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
         int? total = media.Episodes ?? media.Chapters;
         return total is { } t ? $"{actual}/{t}" : actual;
     }
+}
+
+/// <summary>
+/// Notas de un media ordenadas por XP del servidor (mayor a menor), listas para renderizar. Cada
+/// entrada de <see cref="ConScore"/>/<see cref="SinScore"/> ya es el texto final de esa línea.
+/// </summary>
+public sealed record ServerScoresView(double? Average100, IReadOnlyList<string> ConScore, IReadOnlyList<string> SinScore)
+{
+    public bool IsEmpty => ConScore.Count == 0 && SinScore.Count == 0;
 }

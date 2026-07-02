@@ -38,15 +38,22 @@ internal sealed class ScottPlotChartRenderer : IChartRenderer
 
     private static void RenderBarProgress(Plot plot, ChartSpecs.BarProgressSpec spec)
     {
+        double max = spec.Max > 0 ? spec.Max : 1;
+
         BarPlot bars = plot.Add.Bars([spec.Value]);
         bars.Horizontal = true;
         bars.Bars[0].FillColor = Color.FromHex(ChartTheme.AccentForIndex(0));
         bars.Bars[0].Label = spec.Value.ToSpanish();
+        // Pasado ~85% ya no entra el label a la derecha de la barra (se corta contra el borde), así
+        // que ahí se pasa a centrado adentro; por debajo queda afuera como siempre.
+        bars.Bars[0].CenterLabel = spec.Value >= max * 0.85;
         bars.ValueLabelStyle.Bold = true;
         bars.ValueLabelStyle.FontSize = 22;
         bars.ValueLabelStyle.ForeColor = ChartTheme.TextColor;
 
-        plot.Axes.SetLimitsX(0, spec.Max > 0 ? spec.Max : 1);
+        // Un poco de margen a los costados: si el eje termina justo en 0/max, esos ticks quedan
+        // centrados sobre el borde del canvas y se cortan a la mitad.
+        plot.Axes.SetLimitsX(-max * 0.01, max * 1.09);
         plot.Axes.Left.IsVisible = false;
         plot.HideGrid();
     }
@@ -180,5 +187,7 @@ internal sealed class ScottPlotChartRenderer : IChartRenderer
         Tick[] ticks = [.. xs.Select((x, i) => new Tick(x, labels[i]))];
         plot.Axes.Bottom.TickGenerator = new NumericManual(ticks);
         plot.Axes.Bottom.TickLabelStyle.Rotation = -45;
+        // Con rotación, ScottPlot subestima el alto necesario para las etiquetas y las corta.
+        plot.Axes.Bottom.MinimumSize = 60;
     }
 }

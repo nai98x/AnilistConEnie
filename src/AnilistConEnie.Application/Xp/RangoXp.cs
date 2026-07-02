@@ -54,4 +54,17 @@ public static class RangoXp
             if (umbral < xp) anterior = rango;
         return anterior;
     }
+
+    private const long HitoFicticio = 100_000;
+
+    /// <summary>
+    /// Meta a usar como tope de la barra de progreso de XP: el umbral del próximo rango, o si ya no
+    /// hay siguiente rango (Teiou superado), el próximo hito ficticio de <see cref="HitoFicticio"/> XP
+    /// por delante, para que la barra no quede desbordada.
+    /// </summary>
+    public static long MetaProgreso(long xp)
+    {
+        long nextRangeXp = XpRequerida(RangoSiguiente(xp));
+        return nextRangeXp > xp ? nextRangeXp : (xp / HitoFicticio + 1) * HitoFicticio;
+    }
 }

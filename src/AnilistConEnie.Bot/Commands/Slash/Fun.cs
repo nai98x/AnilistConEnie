@@ -28,7 +28,7 @@ using AnilistConEnie.Bot.Extensions;
 
 namespace AnilistConEnie.Bot.Commands.Slash;
 
-[TestCommand]
+//[TestCommand]
 public class Fun(
     BotConfiguration config,
     DiscordBotService discordBotService,

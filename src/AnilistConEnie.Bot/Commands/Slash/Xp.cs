@@ -25,7 +25,7 @@ using AnilistConEnie.Bot.Extensions;
 
 namespace AnilistConEnie.Bot.Commands.Slash;
 
-[TestCommand]
+//[TestCommand]
 public class Xp(
     BotConfiguration config,
     RangoRoles rangoRoles,
@@ -152,7 +152,7 @@ public class Xp(
         desc += $"- Estas obteniendo en promedio **{promedioXp.ToSpanish()}** de xp por día\n";
         if (nextXp > 0) desc += XpProgression.EstimarTiempo(nextXp, promedioXp, ((Enum)nextRango).GetDescription(), mensajesNecesarios);
 
-        byte[] progressBarImage = await chartRenderer.RenderAsync(XpCharts.ProgressBar(rank.Total, nextRangeXp));
+        byte[] progressBarImage = await chartRenderer.RenderAsync(XpCharts.ProgressBar(rank.Total, RangoXp.MetaProgreso(rank.Total)));
         const string progressBarFile = "xpchartprogress.png";
 
         embeds.Add("Resumen", new DiscordInteractivity.TabContent(

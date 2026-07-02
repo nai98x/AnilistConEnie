@@ -34,8 +34,8 @@ public static class InfrastructureServiceExtensions
         services.AddSingleton<AnilistGraphQLExecutor>();
         services.AddSingleton<IAnilistClient, AnilistClient>();
 
-        // Cliente de charts (QuickChart) centralizado, vía typed HttpClient.
-        services.AddHttpClient<IChartClient, QuickChartClient>();
+        // Renderer de charts local (ScottPlot/SkiaSharp).
+        services.AddSingleton<IChartRenderer, ScottPlotChartRenderer>();
 
         return services;
     }

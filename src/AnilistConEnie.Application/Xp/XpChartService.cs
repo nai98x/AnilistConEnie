@@ -23,4 +23,15 @@ public class XpChartService(IXpDiarioRepository xpDiarioRepository)
 
         return [..chart.Points];
     }
+
+    /// <summary>
+    /// Historial semanal (1 punto cada 7 días) de los últimos 365 días, para el comparativo de
+    /// "/topchart". No rellena/persiste días individuales (a diferencia de <see cref="GetUserChartHistory"/>):
+    /// las fechas de muestreo son las mismas para todos los usuarios comparados.
+    /// </summary>
+    public async Task<List<UserDailyXp>> GetUserWeeklyHistory(ulong userId, long currentXp)
+    {
+        List<UserDailyXp> historial = await xpDiarioRepository.ObtenerChart(userId);
+        return XpTopChartHistory.Build((long)userId, historial, DateTime.Today, currentXp);
+    }
 }

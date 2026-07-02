@@ -11,6 +11,7 @@ using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
 using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Model.Entities;
+using AnilistConEnie.Model.Entities.Charts;
 using AnilistConEnie.Model.Enum;
 using AnilistConEnie.Model.Interfaces;
 using DSharpPlus;
@@ -24,13 +25,13 @@ using AnilistConEnie.Bot.Extensions;
 
 namespace AnilistConEnie.Bot.Commands.Slash;
 
-//[TestCommand]
+[TestCommand]
 public class Xp(
     BotConfiguration config,
     RangoRoles rangoRoles,
     XpState xpState,
     XpChartService xpChartService,
-    IChartClient chartClient,
+    IChartRenderer chartRenderer,
     DiscordBotService discordBotService)
 {
     private const string RankThumbnail = "https://media.discordapp.net/attachments/862568630365323264/990747470508204032/unknown.png";
@@ -132,7 +133,7 @@ public class Xp(
         List<UserDailyXp> chartHistory = await xpChartService.GetUserChartHistory(member.Id);
         chartHistory.Add(new UserDailyXp { Xp = rank.Total, Date = DateTime.Now, UserId = (long)member.Id });
 
-        Dictionary<string, DiscordEmbed> embeds = new();
+        Dictionary<string, DiscordInteractivity.TabContent> embeds = new();
 
         #region Resumen
         double promedioXp = chartHistory.GetPromedio();
@@ -151,45 +152,46 @@ public class Xp(
         desc += $"- Estas obteniendo en promedio **{promedioXp.ToSpanish()}** de xp por día\n";
         if (nextXp > 0) desc += XpProgression.EstimarTiempo(nextXp, promedioXp, ((Enum)nextRango).GetDescription(), mensajesNecesarios);
 
-        string progressBarUrl = await chartClient.CreateUrlAsync(XpCharts.ProgressBar(rank.Total, nextRangeXp));
+        byte[] progressBarImage = await chartRenderer.RenderAsync(XpCharts.ProgressBar(rank.Total, nextRangeXp));
+        const string progressBarFile = "xpchartprogress.png";
 
-        embeds.Add("Resumen", new DiscordEmbedBuilder()
-            .WithTitle($"Experiencia de {member.DisplayName}")
-            .WithThumbnail(member.GuildAvatarUrl ?? member.AvatarUrl)
-            .WithDescription(desc)
-            .WithImageUrl(progressBarUrl)
-            .Build());
+        embeds.Add("Resumen", new DiscordInteractivity.TabContent(
+            new DiscordEmbedBuilder()
+                .WithTitle($"Experiencia de {member.DisplayName}")
+                .WithThumbnail(member.GuildAvatarUrl ?? member.AvatarUrl)
+                .WithDescription(desc)
+                .WithImageUrl($"attachment://{progressBarFile}")
+                .Build(),
+            progressBarImage,
+            progressBarFile));
         #endregion
 
         #region Detalle (distribución)
-        List<XpCharts.PieSlice> valores = [];
+        List<PieSlice> valores = [];
         List<(long Valor, string Detalle)> detalles = [];
 
         foreach (XpCategoryShare share in XpDistribution.Build(rank))
         {
             if (share.Value <= 0) continue;
 
-            (string label, string color, string motivo) = share.Category switch
-            {
-                XpCategory.Mensajes => ("Mensajes", "#FF6384", "mensajes"),
-                XpCategory.Challenges => ("Challenges", "#36A2EB", "challenges"),
-                XpCategory.Eventos => ("Eventos y actividades", "#23C46C", "eventos y actividades"),
-                XpCategory.Intercambios => ("Intercambios", "#C4BA23", "intercambios"),
-                _ => ("Otros", "#8C23C4", "otros motivos")
-            };
+            (string label, string color, string motivo) = ChartColors.ForXpCategory(share.Category);
 
-            valores.Add(new XpCharts.PieSlice(label, share.Value, color));
+            valores.Add(new PieSlice(label, share.Value, color));
             detalles.Add((share.Value, $"- {share.Value.ToSpanish()} {umaPoints} ({share.Percentage}%) fueron obtenidos por {motivo}"));
         }
 
-        string pieUrl = await chartClient.CreateUrlAsync(XpCharts.Distribution(valores));
+        byte[] pieImage = await chartRenderer.RenderAsync(XpCharts.Distribution(valores));
+        const string pieFile = "xpchartdistribution.png";
 
-        embeds.Add("Detalle", new DiscordEmbedBuilder()
-            .WithTitle($"Experiencia de {member.DisplayName}")
-            .WithThumbnail(member.GuildAvatarUrl ?? member.AvatarUrl)
-            .WithDescription($"### Total: {rank.Total.ToSpanish()} {umaPoints}\n" + string.Join("\n", detalles.OrderByDescending(x => x.Valor).Select(x => x.Detalle)))
-            .WithImageUrl(pieUrl)
-            .Build());
+        embeds.Add("Detalle", new DiscordInteractivity.TabContent(
+            new DiscordEmbedBuilder()
+                .WithTitle($"Experiencia de {member.DisplayName}")
+                .WithThumbnail(member.GuildAvatarUrl ?? member.AvatarUrl)
+                .WithDescription($"### Total: {rank.Total.ToSpanish()} {umaPoints}\n" + string.Join("\n", detalles.OrderByDescending(x => x.Valor).Select(x => x.Detalle)))
+                .WithImageUrl($"attachment://{pieFile}")
+                .Build(),
+            pieImage,
+            pieFile));
         #endregion
 
         #region Historial
@@ -250,14 +252,18 @@ public class Xp(
         if (nextRango != prevRango && nextRango != RangoXp.RangoAnterior(rank.Total))
             descHistorial += $"\n- El siguiente rango es **{((Enum)nextRango).GetDescription()}** llegando a **{nextRangeXp.ToSpanish()} {umaPoints}**";
 
-        string lineUrl = await chartClient.CreateUrlAsync(XpCharts.History([.. resultado.Select(x => (x.Xp, x.Date))], prevRangeXp, maxXpChart));
+        byte[] lineImage = await chartRenderer.RenderAsync(XpCharts.History([.. resultado.Select(x => (x.Xp, x.Date))], prevRangeXp, maxXpChart));
+        const string lineFile = "xpcharthistory.png";
 
-        embeds.Add("Historial", new DiscordEmbedBuilder()
-            .WithTitle($"Experiencia de {member.DisplayName}")
-            .WithDescription(descHistorial)
-            .WithThumbnail(member.GuildAvatarUrl ?? member.AvatarUrl)
-            .WithImageUrl(lineUrl)
-            .Build());
+        embeds.Add("Historial", new DiscordInteractivity.TabContent(
+            new DiscordEmbedBuilder()
+                .WithTitle($"Experiencia de {member.DisplayName}")
+                .WithDescription(descHistorial)
+                .WithThumbnail(member.GuildAvatarUrl ?? member.AvatarUrl)
+                .WithImageUrl($"attachment://{lineFile}")
+                .Build(),
+            lineImage,
+            lineFile));
         #endregion
 
         await DiscordInteractivity.SwitchTabsAsync(ctx, embeds);
@@ -274,10 +280,7 @@ public class Xp(
         InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
         List<UserXp> serverRanking = xpState.GetGuildXp(ctx.Guild!).OrderByDescending(x => x.Total).ToList();
 
-        List<string> colors =
-        [
-            "rgb(230, 124, 115)", "rgb(247, 203, 77)", "rgb(65, 179, 117)", "rgb(123, 170, 247)", "rgb(186, 103, 200)"
-        ];
+        List<string> colors = [.. Enumerable.Range(0, 5).Select(ChartColors.ForIndex)];
 
         int start = 0;
         UserXp? self = serverRanking.FirstOrDefault(x => x.UserId == (long)ctx.User.Id);
@@ -296,7 +299,7 @@ public class Xp(
 
             List<UserDailyXp> chartTmp = [];
             foreach (UserXp rnk in rankings)
-                chartTmp.AddRange(await xpChartService.GetUserChartHistory((ulong)rnk.UserId, true));
+                chartTmp.AddRange(await xpChartService.GetUserWeeklyHistory((ulong)rnk.UserId, rnk.Total));
 
             if (chartTmp.Count == 0)
             {
@@ -307,7 +310,7 @@ public class Xp(
             long minXpValue = NumberHelper.ObtenerMultiploAnterior(chartTmp.Min(x => x.Xp), 1000);
             long maxXpValue = NumberHelper.ObtenerMultiploSiguiente(chartTmp.Max(x => x.Xp), 1000);
 
-            List<XpCharts.LineSeries> series = [];
+            List<LineSeries> series = [];
             int it = 0;
             colors.Shuffle();
             foreach (UserXp ranking in rankings)
@@ -315,8 +318,7 @@ public class Xp(
                 if (!ctx.Guild!.Members.TryGetValue((ulong)ranking.UserId, out DiscordMember? member))
                     continue;
 
-                List<UserDailyXp> chartHistory = await xpChartService.GetUserChartHistory(member.Id, true);
-                chartHistory.Add(new UserDailyXp { Xp = ranking.Total });
+                List<UserDailyXp> chartHistory = await xpChartService.GetUserWeeklyHistory(member.Id, ranking.Total);
 
                 if (first)
                 {
@@ -324,11 +326,11 @@ public class Xp(
                     first = false;
                 }
 
-                series.Add(new XpCharts.LineSeries(member.DisplayName, [.. chartHistory.Select(x => x.Xp)], colors[it]));
+                series.Add(new LineSeries(member.DisplayName, [.. chartHistory.Select(x => (double)x.Xp)], colors[it]));
                 it++;
             }
 
-            byte[] image = await chartClient.RenderAsync(
+            byte[] image = await chartRenderer.RenderAsync(
                 XpCharts.TopMultiLine(series, [.. chartHistoryLabels.Select(x => x.Date)], minXpValue, maxXpValue));
             string fileName = $"{StringHelper.CreateString(10)}.png";
 
@@ -390,11 +392,11 @@ public class Xp(
 
         IReadOnlyList<CountryXp> res = XpCountryRanking.BuildChartSeries([.. xpPerCountry.Values], config.Roles.OtrosPais);
 
-        List<XpCharts.PieSlice> slices = res
-            .Select(x => new XpCharts.PieSlice(x.Name, x.Xp, $"#{Random.Shared.Next(0x1000000):X6}"))
+        List<PieSlice> slices = res
+            .Select((x, i) => new PieSlice(x.Name, x.Xp, ChartColors.ForIndex(i)))
             .ToList();
 
-        byte[] image = await chartClient.RenderAsync(XpCharts.CountryPie(slices));
+        byte[] image = await chartRenderer.RenderAsync(XpCharts.CountryPie(slices));
 
         await ctx.EditResponseAsync(new DiscordWebhookBuilder()
             .AddEmbed(new DiscordEmbedBuilder()

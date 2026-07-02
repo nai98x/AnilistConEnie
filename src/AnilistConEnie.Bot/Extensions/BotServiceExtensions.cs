@@ -29,7 +29,7 @@ public static class BotServiceExtensions
         services.AddSingleton<GuildMaintenanceService>();
         services.AddSingleton<FunService>();
 
-        // HttpClient para descargas de imágenes y APIs externas (horóscopo, traducción, QuickChart)
+        // HttpClient para descargas de imágenes y APIs externas (horóscopo, traducción)
         services.AddHttpClient();
 
         // Servicio principal (hosted service)

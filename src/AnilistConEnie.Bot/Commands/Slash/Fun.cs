@@ -6,6 +6,7 @@ using AnilistConEnie.Application.Charts;
 using AnilistConEnie.Application.Extensions;
 using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Application.Membership;
+using AnilistConEnie.Bot.Commands.Slash.Attributes;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
@@ -27,7 +28,7 @@ using AnilistConEnie.Bot.Extensions;
 
 namespace AnilistConEnie.Bot.Commands.Slash;
 
-//[TestCommand]
+[TestCommand]
 public class Fun(
     BotConfiguration config,
     DiscordBotService discordBotService,
@@ -37,7 +38,7 @@ public class Fun(
     ConfessionsState confessionsState,
     IFirebaseRepository firebaseRepository,
     IUsuariosRepository usuariosRepository,
-    IChartClient chartClient,
+    IChartRenderer chartRenderer,
     IHttpClientFactory httpClientFactory,
     ILogger<Fun> logger)
 {
@@ -412,8 +413,10 @@ public class Fun(
         KeyValuePair<int, int> max = puntosPorDia.MaxBy(x => x.Value);
         KeyValuePair<int, int> min = puntosPorDia.MinBy(x => x.Value);
 
-        string gaugeUrl = await chartClient.CreateUrlAsync(FunCharts.BoludoGauge(value));
-        string lineUrl = await chartClient.CreateUrlAsync(FunCharts.BoludoLine(member.DisplayName, puntosPorDia.Keys, puntosPorDia.Values));
+        byte[] gaugeImage = await chartRenderer.RenderAsync(FunCharts.BoludoGauge(value));
+        byte[] lineImage = await chartRenderer.RenderAsync(FunCharts.BoludoLine(member.DisplayName, puntosPorDia.Keys, puntosPorDia.Values));
+        const string gaugeFile = "boludometrogauge.png";
+        const string lineFile = "boludometrohistorial.png";
 
         char genero = funService.GetGenero(member);
         DiscordEmoji loreaEste = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.LoreaEste.Get(discordBotService.Debug));
@@ -422,7 +425,7 @@ public class Fun(
             .WithTitle("Boludómetro")
             .WithDescription(funService.BoluditoLevel(loreaEste, member, value))
             .WithThumbnail(member.GuildAvatarUrl ?? member.AvatarUrl)
-            .WithImageUrl(gaugeUrl)
+            .WithImageUrl($"attachment://{gaugeFile}")
             .Build();
 
         DiscordEmbed embedHistorial = new DiscordEmbedBuilder()
@@ -433,13 +436,13 @@ public class Fun(
                 $"- Su día de mayor boludez fue el **{max.Key}/{DateTime.Now.Month}** siendo un **{max.Value:0}% bolud{genero}**")
             .WithThumbnail(member.GuildAvatarUrl ?? member.AvatarUrl)
             .WithFooter("La gráfica se resetea mensualmente.")
-            .WithImageUrl(lineUrl)
+            .WithImageUrl($"attachment://{lineFile}")
             .Build();
 
-        Dictionary<string, DiscordEmbed> tabs = new()
+        Dictionary<string, DiscordInteractivity.TabContent> tabs = new()
         {
-            { "Diario", embedDiario },
-            { "Historial", embedHistorial }
+            { "Diario", new DiscordInteractivity.TabContent(embedDiario, gaugeImage, gaugeFile) },
+            { "Historial", new DiscordInteractivity.TabContent(embedHistorial, lineImage, lineFile) }
         };
 
         await DiscordInteractivity.SwitchTabsAsync(ctx, tabs);

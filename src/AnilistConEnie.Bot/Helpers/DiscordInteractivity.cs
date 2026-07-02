@@ -85,7 +85,18 @@ public static class DiscordInteractivity
     /// pestañas. Los botones se deshabilitan tras 2 minutos de inactividad o al acercarse al límite
     /// de vida de la interacción (15 minutos por regla de Discord), lo que ocurra primero.
     /// </summary>
-    public static async Task SwitchTabsAsync(CommandContext ctx, Dictionary<string, DiscordEmbed> tabs)
+    public static Task SwitchTabsAsync(CommandContext ctx, Dictionary<string, DiscordEmbed> tabs) =>
+        SwitchTabsAsync(ctx, tabs.ToDictionary(kv => kv.Key, kv => new TabContent(kv.Value)));
+
+    /// <summary>Contenido de una pestaña: el embed y, opcionalmente, una imagen para adjuntar como archivo.</summary>
+    public readonly record struct TabContent(DiscordEmbed Embed, byte[]? Image = null, string? FileName = null);
+
+    /// <summary>
+    /// Igual que <see cref="SwitchTabsAsync(CommandContext, Dictionary{string, DiscordEmbed})"/> pero
+    /// permite que cada pestaña adjunte además una imagen (ej: gráficos generados localmente), que se
+    /// re-adjunta en cada edición del mensaje al cambiar de pestaña.
+    /// </summary>
+    public static async Task SwitchTabsAsync(CommandContext ctx, Dictionary<string, TabContent> tabs)
     {
         if (tabs.Count is 0 or > 5) return;
 
@@ -99,11 +110,20 @@ public static class DiscordInteractivity
 
         string activeTab = tabs.First().Key;
 
+        DiscordWebhookBuilder BuildTab(bool disabled)
+        {
+            TabContent tab = tabs[activeTab];
+            DiscordWebhookBuilder builder = new DiscordWebhookBuilder()
+                .AddEmbed(tab.Embed)
+                .AddActionRowComponent(BuildTabButtons(tabs.Keys, activeTab, disabled));
+
+            if (tab.Image is not null) builder.AddFile(tab.FileName!, tab.Image.ToMemoryStream());
+            return builder;
+        }
+
         while (true)
         {
-            DiscordMessage message = await ctx.EditResponseAsync(new DiscordWebhookBuilder()
-                .AddEmbed(tabs[activeTab])
-                .AddActionRowComponent(BuildTabButtons(tabs.Keys, activeTab, disabled: false)));
+            DiscordMessage message = await ctx.EditResponseAsync(BuildTab(disabled: false));
 
             TimeSpan remaining = deadline - DateTimeOffset.UtcNow;
             if (remaining <= TimeSpan.Zero) break;
@@ -121,9 +141,7 @@ public static class DiscordInteractivity
 
         // Inactividad o límite de vida de la interacción alcanzado: dejamos la última pestaña con
         // todos los botones deshabilitados.
-        await ctx.EditResponseAsync(new DiscordWebhookBuilder()
-            .AddEmbed(tabs[activeTab])
-            .AddActionRowComponent(BuildTabButtons(tabs.Keys, activeTab, disabled: true)));
+        await ctx.EditResponseAsync(BuildTab(disabled: true));
     }
 
     private static IEnumerable<DiscordButtonComponent> BuildTabButtons(IEnumerable<string> keys, string activeTab, bool disabled) =>

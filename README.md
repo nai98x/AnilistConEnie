@@ -11,7 +11,7 @@ Bot multipropósito para el servidor de Discord **Añilist**, desarrollado en DS
 - **Base de datos relacional (Dapper)** — persistencia principal, *database-first* y accedida **solo vía stored procedures**.
 - **Firebase** — usos residuales: Storage (imágenes de `/subirimagen`) y la base externa *Yumiko* (espejo del vínculo de AniList).
 - **AniList GraphQL API** — datos de animes, mangas y perfiles.
-- **QuickChart** — generación de gráficos (XP, charts varios).
+- **ScottPlot / SkiaSharp** — generación local de gráficos (XP, charts varios).
 - **Serilog** — logging a consola y archivo.
 
 ## Arquitectura

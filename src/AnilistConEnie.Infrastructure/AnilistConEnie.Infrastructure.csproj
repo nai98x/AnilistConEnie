@@ -18,6 +18,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />
     <PackageReference Include="Npgsql" Version="10.0.3" />
     <PackageReference Include="Polly.Core" Version="8.7.0" />
+    <PackageReference Include="ScottPlot" Version="5.1.59" />
   </ItemGroup>
 
   <ItemGroup>

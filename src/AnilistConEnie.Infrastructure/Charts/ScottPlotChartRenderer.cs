@@ -122,7 +122,9 @@ internal sealed class ScottPlotChartRenderer : IChartRenderer
         }
 
         plot.Axes.SetLimitsY(spec.Min, spec.Max);
-        plot.Axes.Bottom.IsVisible = false;
+        // Ocultar solo las etiquetas: Bottom.IsVisible = false esconde el eje entero, incluyendo el
+        // borde inferior del recuadro, y el gráfico queda "abierto" abajo.
+        plot.Axes.Bottom.TickLabelStyle.IsVisible = false;
         plot.ShowLegend();
     }
 

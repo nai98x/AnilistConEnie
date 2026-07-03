@@ -77,4 +77,27 @@ public class XpTopChartHistoryTests
         Assert.Equal(today, points[^1].Date);
         Assert.Equal(750, points[^1].Xp);
     }
+
+    [Fact]
+    public void AlignToGrid_ShorterHistory_PadsLeadingWeeksWithNaNInsteadOfShiftingData()
+    {
+        DateTime today = new(2026, 6, 25);
+        List<UserDailyXp> history = [Day(today.AddDays(-14), 100), Day(today.AddDays(-7), 200), Day(today, 300)];
+
+        double[] aligned = XpTopChartHistory.AlignToGrid(history, gridLength: 5);
+
+        // Un usuario con menos semanas de historial que el resto del grupo comparado debe quedar
+        // alineado "a la derecha" (su fecha real), no arrancar desde el índice 0 del gráfico.
+        Assert.Equal([double.NaN, double.NaN, 100, 200, 300], aligned);
+    }
+
+    [Fact]
+    public void AlignToGrid_SameLength_ReturnsDataUnchanged()
+    {
+        List<UserDailyXp> history = [Day(DateTime.Today.AddDays(-7), 100), Day(DateTime.Today, 200)];
+
+        double[] aligned = XpTopChartHistory.AlignToGrid(history, gridLength: 2);
+
+        Assert.Equal([100, 200], aligned);
+    }
 }

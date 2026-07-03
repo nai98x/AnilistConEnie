@@ -50,4 +50,22 @@ public static class XpTopChartHistory
 
         return points;
     }
+
+    /// <summary>
+    /// Alinea el historial de un usuario a una grilla de <paramref name="gridLength"/> puntos,
+    /// rellenando con <see cref="double.NaN"/> las semanas anteriores a su primer registro. Como
+    /// <see cref="Build"/> siempre arranca la cuenta regresiva desde el mismo "hoy" en pasos de
+    /// <see cref="StepDays"/>, un historial más corto es exactamente la cola (más reciente) de uno
+    /// más largo, así que alinear "a la derecha" reconstruye la fecha real de cada punto.
+    /// </summary>
+    public static double[] AlignToGrid(IReadOnlyList<UserDailyXp> points, int gridLength)
+    {
+        double[] result = new double[gridLength];
+        int offset = gridLength - points.Count;
+
+        for (int i = 0; i < gridLength; i++)
+            result[i] = i < offset ? double.NaN : points[i - offset].Xp;
+
+        return result;
+    }
 }

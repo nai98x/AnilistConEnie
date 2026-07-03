@@ -290,43 +290,41 @@ public class Xp(
             start = indexOf % 10 <= 5 ? indexOf / 10 * 10 : (indexOf / 10 + 1) * 10;
         }
 
-        bool first = true;
-        List<UserDailyXp> chartHistoryLabels = [];
-
         while (true)
         {
             List<UserXp> rankings = serverRanking.Skip(start).Take(5).ToList();
 
-            List<UserDailyXp> chartTmp = [];
-            foreach (UserXp rnk in rankings)
-                chartTmp.AddRange(await xpChartService.GetUserWeeklyHistory((ulong)rnk.UserId, rnk.Total));
-
-            if (chartTmp.Count == 0)
-            {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("No hay datos de experiencia para mostrar."));
-                return;
-            }
-
-            long minXpValue = NumberHelper.ObtenerMultiploAnterior(chartTmp.Min(x => x.Xp), 1000);
-            long maxXpValue = NumberHelper.ObtenerMultiploSiguiente(chartTmp.Max(x => x.Xp), 1000);
-
-            List<LineSeries> series = [];
-            int it = 0;
-            colors.Shuffle();
+            List<(DiscordMember Member, List<UserDailyXp> History)> memberHistories = [];
             foreach (UserXp ranking in rankings)
             {
                 if (!ctx.Guild!.Members.TryGetValue((ulong)ranking.UserId, out DiscordMember? member))
                     continue;
 
                 List<UserDailyXp> chartHistory = await xpChartService.GetUserWeeklyHistory(member.Id, ranking.Total);
+                memberHistories.Add((member, chartHistory));
+            }
 
-                if (first)
-                {
-                    chartHistoryLabels = chartHistory;
-                    first = false;
-                }
+            if (memberHistories.Count == 0)
+            {
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("No hay datos de experiencia para mostrar."));
+                return;
+            }
 
-                series.Add(new LineSeries(member.DisplayName, [.. chartHistory.Select(x => (double)x.Xp)], colors[it]));
+            long minXpValue = NumberHelper.ObtenerMultiploAnterior(memberHistories.SelectMany(x => x.History).Min(x => x.Xp), 1000);
+            long maxXpValue = NumberHelper.ObtenerMultiploSiguiente(memberHistories.SelectMany(x => x.History).Max(x => x.Xp), 1000);
+
+            // La grilla de fechas es la del historial más largo: como todos arrancan la cuenta desde
+            // "hoy" en pasos semanales, un historial más corto (usuario más nuevo) es la cola de uno
+            // más largo, así que alinearlo "a la derecha" reconstruye su fecha real de ingreso.
+            List<UserDailyXp> chartHistoryLabels = memberHistories.MaxBy(x => x.History.Count).History;
+
+            List<LineSeries> series = [];
+            int it = 0;
+            colors.Shuffle();
+            foreach ((DiscordMember member, List<UserDailyXp> history) in memberHistories)
+            {
+                double[] alignedData = XpTopChartHistory.AlignToGrid(history, chartHistoryLabels.Count);
+                series.Add(new LineSeries(member.DisplayName, alignedData, colors[it]));
                 it++;
             }
 

@@ -48,5 +48,9 @@ internal static class ChartTheme
         plot.Legend.FontColor = TextColor;
         plot.Legend.BackgroundColor = Background;
         plot.Legend.OutlineColor = GridColor;
+        // La leyenda se alinea abajo a la derecha por default; con el margen inferior default (7px)
+        // el último ítem queda pegado/cortado contra el borde del canvas.
+        PixelPadding legendMargin = plot.Legend.Margin;
+        plot.Legend.Margin = new PixelPadding(legendMargin.Left, legendMargin.Right, 20f, legendMargin.Top);
     }
 }

@@ -2,6 +2,11 @@ using System.Globalization;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Model.Entities;
 using DSharpPlus;
+using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.MessageCommands;
+using DSharpPlus.Commands.Processors.SlashCommands;
+using DSharpPlus.Commands.Processors.TextCommands;
+using DSharpPlus.Commands.Processors.UserCommands;
 using DSharpPlus.Entities;
 using DSharpPlus.Exceptions;
 using Microsoft.Extensions.Logging;
@@ -78,6 +83,53 @@ public class DiscordLogService(BotConfiguration config, ILogger<DiscordLogServic
         catch (Exception ex)
         {
             logger.LogError(ex, "No se pudo escribir en el canal de errores");
+        }
+    }
+
+    public async Task GrabarLogComandoEjecutado(CommandContext ctx)
+    {
+        if (ctx.Guild is null) return;
+
+        try
+        {
+            string tipo = ctx switch
+            {
+                TextCommandContext => "Texto",
+                UserCommandContext => "Menú de usuario",
+                MessageCommandContext => "Menú de mensaje",
+                SlashCommandContext => "Slash",
+                _ => "Desconocido"
+            };
+
+            string argumentos = ctx.Arguments.Count == 0
+                ? "Ninguno"
+                : string.Join("\n", ctx.Arguments.Select(kv => $"- **{kv.Key.Name}**: {kv.Value}"));
+
+            DiscordChannel channelInfo = ctx.Guild.Channels[config.Channels.LogChannelInfo];
+            await channelInfo.SendMessageAsync(new DiscordEmbedBuilder
+            {
+                Title = "Comando ejecutado",
+                Author = new DiscordEmbedBuilder.EmbedAuthor()
+                {
+                    IconUrl = ctx.User.AvatarUrl,
+                    Name = ctx.User.Username
+                },
+                Description =
+                    $"- Usuario: {ctx.User.Mention}\n" +
+                    $"- Canal: {ctx.Channel.Mention}\n" +
+                    $"- Tipo: {tipo}\n" +
+                    $"- Comando: `{ctx.Command.FullName}`\n" +
+                    $"- Argumentos: {argumentos}",
+                Footer = new DiscordEmbedBuilder.EmbedFooter()
+                {
+                    Text = $"ID: {ctx.User.Id}"
+                },
+                Color = DiscordColor.Blurple
+            });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "No se pudo escribir el log de comando ejecutado");
         }
     }
 

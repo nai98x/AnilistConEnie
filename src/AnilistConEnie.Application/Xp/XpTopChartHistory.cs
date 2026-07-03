@@ -31,17 +31,15 @@ public static class XpTopChartHistory
 
         List<UserDailyXp> points = [];
         int idx = 0;
-        long lastXp = 0;
 
         foreach (DateTime checkpoint in checkpoints)
         {
-            while (idx < sorted.Count && sorted[idx].Date.Date <= checkpoint)
-            {
-                lastXp = sorted[idx].Xp;
+            // Avanza hasta el último registro real que no supera el checkpoint, dejando siempre uno
+            // "siguiente" disponible en sorted[idx + 1] si existe (para interpolar contra él).
+            while (idx < sorted.Count - 1 && sorted[idx + 1].Date.Date <= checkpoint)
                 idx++;
-            }
 
-            points.Add(new UserDailyXp { UserId = userId, Date = checkpoint, Xp = lastXp });
+            points.Add(new UserDailyXp { UserId = userId, Date = checkpoint, Xp = InterpolatedXp(sorted, idx, checkpoint) });
         }
 
         // El último punto siempre refleja el total actual en vivo, más preciso que el último
@@ -49,6 +47,26 @@ public static class XpTopChartHistory
         points[^1] = new UserDailyXp { UserId = userId, Date = todayDate, Xp = currentXp };
 
         return points;
+    }
+
+    /// <summary>
+    /// Valor de XP en <paramref name="checkpoint"/> interpolado linealmente entre el registro real en
+    /// <paramref name="index"/> y el siguiente (si existe); evita los "escalones" de mantener el
+    /// último valor conocido plano cuando pasan varias semanas sin un registro nuevo. Si no hay
+    /// registro siguiente (checkpoint en el tramo más reciente, aún sin dato posterior) se sostiene
+    /// el último valor conocido, que es lo único que se puede inferir.
+    /// </summary>
+    private static long InterpolatedXp(IReadOnlyList<UserDailyXp> sorted, int index, DateTime checkpoint)
+    {
+        UserDailyXp current = sorted[index];
+        if (index + 1 >= sorted.Count) return current.Xp;
+
+        UserDailyXp next = sorted[index + 1];
+        double totalDays = (next.Date.Date - current.Date.Date).TotalDays;
+        if (totalDays <= 0) return current.Xp;
+
+        double t = Math.Clamp((checkpoint - current.Date.Date).TotalDays / totalDays, 0, 1);
+        return current.Xp + (long)Math.Round((next.Xp - current.Xp) * t);
     }
 
     /// <summary>

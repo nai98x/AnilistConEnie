@@ -22,6 +22,7 @@ using AnilistConEnie.Bot.Services;
 namespace AnilistConEnie.Bot.Commands.Slash;
 
 //[TestCommand]
+[Command("anilist")]
 public class Anilist(IAnilistClient anilistClient, AnilistService anilistService, IUsuariosRepository usuariosRepository, BotConfiguration config, DiscordBotService discordBotService)
 {
     [Command("statsserver")]

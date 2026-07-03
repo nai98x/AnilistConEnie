@@ -22,6 +22,7 @@ using AnilistConEnie.Bot.Services;
 namespace AnilistConEnie.Bot.Commands.Slash;
 
 //[TestCommand]
+[Command("usuarios")]
 public class Usuarios(
     IUsuariosRepository usuariosRepository,
     XpState xpState,

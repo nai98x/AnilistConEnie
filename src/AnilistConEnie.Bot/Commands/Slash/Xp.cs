@@ -26,6 +26,7 @@ using AnilistConEnie.Bot.Extensions;
 namespace AnilistConEnie.Bot.Commands.Slash;
 
 //[TestCommand]
+[Command("xp")]
 public class Xp(
     BotConfiguration config,
     RangoRoles rangoRoles,

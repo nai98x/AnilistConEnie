@@ -1,5 +1,6 @@
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Events;
+using AnilistConEnie.Bot.Helpers;
 using DSharpPlus;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
@@ -47,6 +48,9 @@ public static class ServiceCollectionExtensions
                 PrefixResolver = ResolveMentionPrefixAsync
             });
             extension.AddProcessor(textCommandProcessor);
+
+            DiscordLogService logService = provider.GetRequiredService<DiscordLogService>();
+            extension.CommandExecuted += (_, args) => logService.GrabarLogComandoEjecutado(args.Context);
         }, new CommandsConfiguration
         {
             RegisterDefaultCommandProcessors = true,

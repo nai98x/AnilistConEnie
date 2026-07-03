@@ -53,7 +53,7 @@ public class XpTopChartHistoryTests
     }
 
     [Fact]
-    public void Build_CarriesLastKnownXpForwardBetweenCheckpoints()
+    public void Build_InterpolatesLinearlyBetweenCheckpointsInsteadOfSteppingFlat()
     {
         DateTime today = new(2026, 1, 22); // 3 semanas después del ingreso
         DateTime joined = today.AddDays(-21);
@@ -61,9 +61,10 @@ public class XpTopChartHistoryTests
 
         List<UserDailyXp> points = XpTopChartHistory.Build(UserId, history, today, currentXp: 900);
 
-        // Checkpoints: joined(100), +7d(100, todavía no llega el registro del día 10),
-        // +14d(400, ya pasó el registro del día 10), today/+21d(900, total en vivo).
-        Assert.Equal([100, 100, 400, 900], points.Select(p => p.Xp));
+        // Checkpoints: joined(100), +7d (70% del camino entre el registro de joined y el día 10:
+        // 100 + (400-100)*7/10 = 310), +14d (ya pasó el registro del día 10, se sostiene en 400
+        // porque todavía no hay un registro posterior), today/+21d (900, total en vivo).
+        Assert.Equal([100, 310, 400, 900], points.Select(p => p.Xp));
     }
 
     [Fact]

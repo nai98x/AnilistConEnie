@@ -15,8 +15,11 @@ public abstract record ChartSpec(int Width, int Height);
 /// <summary>Barra de progreso horizontal (ej: xp actual hacia el siguiente rango).</summary>
 public sealed record BarProgressSpec(double Value, double Max) : ChartSpec(500, 150);
 
-/// <summary>Gráfico de torta/donut a partir de porciones ya calculadas.</summary>
-public sealed record DonutChartSpec(IReadOnlyList<PieSlice> Slices) : ChartSpec(500, 300);
+/// <summary>
+/// Gráfico de torta/donut a partir de porciones ya calculadas. <paramref name="DonutFraction"/> es
+/// el tamaño del agujero central (0 = torta completa, 1 = anillo fino).
+/// </summary>
+public sealed record DonutChartSpec(IReadOnlyList<PieSlice> Slices, double DonutFraction = 0.55) : ChartSpec(500, 300);
 
 /// <summary>
 /// Gráfico de línea simple (con o sin relleno bajo la curva). Si <paramref name="Label"/> no es

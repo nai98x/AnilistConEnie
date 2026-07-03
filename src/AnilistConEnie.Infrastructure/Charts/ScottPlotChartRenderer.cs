@@ -73,7 +73,7 @@ internal sealed class ScottPlotChartRenderer : IChartRenderer
         ];
 
         Pie pie = plot.Add.Pie(slices);
-        pie.DonutFraction = 0.55;
+        pie.DonutFraction = spec.DonutFraction;
 
         plot.Axes.Frameless();
         plot.HideGrid();

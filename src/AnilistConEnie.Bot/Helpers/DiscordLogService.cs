@@ -104,6 +104,9 @@ public class DiscordLogService(BotConfiguration config, ILogger<DiscordLogServic
             string argumentos = ctx.Arguments.Count == 0
                 ? "Ninguno"
                 : string.Join("\n", ctx.Arguments.Select(kv => $"- **{kv.Key.Name}**: {kv.Value}"));
+            
+            logger.LogInformation("Comando ejecutado [{Tipo}]: {Comando} - Usuario: {Usuario} - Canal: {Canal}",
+                tipo, ctx.Command.FullName, ctx.User.Username, ctx.Channel.Name);
 
             DiscordChannel channelInfo = ctx.Guild.Channels[config.Channels.LogChannelInfo];
             await channelInfo.SendMessageAsync(new DiscordEmbedBuilder

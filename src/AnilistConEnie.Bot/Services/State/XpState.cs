@@ -20,8 +20,15 @@ public class XpState
 
     #region Xp por minuto
     public void AddMemberToObtainXp(ulong userId) => _usersXp.TryAdd(userId, true);
-    public void ResetMembersToObtainXp() => _usersXp.Clear();
-    public List<ulong> GetMembersToObtainXp() => [.._usersXp.Keys];
+
+    /// <summary>Toma y quita los usuarios pendientes; los que escriben durante el procesamiento quedan para el próximo tick.</summary>
+    public List<ulong> DrainMembersToObtainXp()
+    {
+        List<ulong> ids = [.._usersXp.Keys];
+        foreach (ulong id in ids)
+            _usersXp.TryRemove(id, out _);
+        return ids;
+    }
     #endregion
 
     #region Cache de xp del servidor
@@ -36,8 +43,8 @@ public class XpState
     {
         if (!_generalXp.TryGetValue(userId, out var value))
         {
-            _generalXp[userId] = new UserXp { Total = xp, UserId = (long)userId };
-            return;
+            value = new UserXp { UserId = (long)userId };
+            _generalXp[userId] = value;
         }
 
         switch (tipo)

@@ -87,7 +87,7 @@ public class Admin(
         if (member.Roles.All(y => y.Id != role.Id))
         {
             await member.GrantRoleAsync(role);
-            inviteLinkState.AddLinkRoleUser(member.Id, DateTime.Now.AddMinutes(cooldownsSettings.InvitePermisoMinutos));
+            inviteLinkState.AddLinkRoleUser(member.Id, RelojServidor.Ahora.AddMinutes(cooldownsSettings.InvitePermisoMinutos));
 
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
             {
@@ -505,7 +505,7 @@ public class Admin(
             .AddEmbed(embed)
             .WithAllowedMention(new RoleMention(rol.Id)));
 
-        string hoyString = DateTime.Today.ToString("yy MM dd");
+        string hoyString = RelojServidor.Hoy.ToString("yy MM dd");
 
         await channel.CreateThreadAsync(msg, hoyString, DiscordAutoArchiveDuration.Week);
 

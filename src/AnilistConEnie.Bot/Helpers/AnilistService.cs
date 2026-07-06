@@ -67,11 +67,10 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
             }
         }
         catch (NotFoundException ex) { await logService.LogException(guild, ex, "TerminarVinculacion - perfil preexistente"); }
-        
-        if (usrPreexistente is null)
-            mensaje = await perfiles.SendMessageAsync($"**Perfil de {member.Mention}**\n\n{anilistUser.SiteUrl}");
-        
-        await usuariosRepository.Upsert(member.Id, anilistUser.SiteUrl, (long)mensaje!.Id);
+
+        mensaje ??= await perfiles.SendMessageAsync($"**Perfil de {member.Mention}**\n\n{anilistUser.SiteUrl}");
+
+        await usuariosRepository.Upsert(member.Id, anilistUser.SiteUrl, (long)mensaje.Id);
         await firebaseRepository.SetAnilistYumiko(anilistUser.Id, member.Id);
 
         UserXp prevXp = xpState.GetUserXp(user.Id);
@@ -196,7 +195,7 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
             await usuariosRepository.GetVinculados(),
             interaction.User.Id, viewer.Id,
             interaction.User.CreationTimestamp, viewer.CreatedAt,
-            limpiezaSettings.CuentaNuevaMeses, DateTimeOffset.Now);
+            limpiezaSettings.CuentaNuevaMeses, DateTimeOffset.UtcNow);
 
         if (motivosAprobacion.Count > 0)
         {

@@ -8,13 +8,13 @@ namespace AnilistConEnie.Infrastructure.Repositories;
 
 public class IntercambiosRepostRepository(DbConnectionFactory connectionFactory) : IIntercambiosRepostRepository
 {
-    public async Task<MensajeIntercambioRepost?> GetMensaje(ulong idMensajeHiloForo)
+    public async Task<List<MensajeIntercambioRepost>> GetMensajes(ulong idMensajeHiloForo)
     {
         using var connection = await connectionFactory.OpenConnectionAsync();
-        return await connection.QuerySingleOrDefaultAsync<MensajeIntercambioRepost>(
+        return (await connection.QueryAsync<MensajeIntercambioRepost>(
             "intercambios_repost_obtener",
             new { p_id_mensaje_hilo_foro = (long)idMensajeHiloForo },
-            commandType: CommandType.StoredProcedure);
+            commandType: CommandType.StoredProcedure)).AsList();
     }
 
     public async Task Upsert(MensajeIntercambioRepost mensaje)

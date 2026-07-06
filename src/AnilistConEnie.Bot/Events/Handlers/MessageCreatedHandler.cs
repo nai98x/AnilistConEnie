@@ -20,6 +20,7 @@ public class MessageCreatedHandler(
     HackedAccountState hackedAccountState,
     TriggersState triggersState,
     BotConfiguration config,
+    DiscordLogService logService,
     IIntercambiosRepostRepository intercambiosRepostRepository)
 {
     public async Task Handle(DiscordClient client, MessageCreatedEventArgs args)
@@ -29,7 +30,11 @@ public class MessageCreatedHandler(
         #region Deteccion de usuarios activos en el servidor
         if (!args.Author.IsBot && !discordBotService.Debug)
         {
-            _ = memberActivityState.AddDailyActiveUser(args.Author.Id, client.Guilds[config.GuildId]);
+            try
+            {
+                await memberActivityState.AddDailyActiveUser(args.Author.Id, client.Guilds[config.GuildId]);
+            }
+            catch (Exception ex) { await logService.LogException(args.Guild, ex, "Registro de actividad diaria"); }
         }
         #endregion
 
@@ -60,12 +65,11 @@ public class MessageCreatedHandler(
         {
             hackedAccountState.AddRecentUserMessage(args.Author.Id, args.Channel.Id, args.Message.Content);
 
-            if (hackedAccountState.IsHackedAccount(args.Author.Id))
+            if (hackedAccountState.IsHackedAccount(args.Author.Id)
+                && args.Guild.Members.TryGetValue(args.Author.Id, out DiscordMember? member)
+                && member.Roles.All(x => x.Id != config.Roles.KamiSama))
             {
-                DiscordMember member = args.Guild.Members[args.Author.Id];
-
-                if (member.Roles.All(x => x.Id != config.Roles.KamiSama))
-                    await member.RemoveAsync("Autoban por cuenta hackeada");
+                await member.RemoveAsync("Autoban por cuenta hackeada");
             }
         }
         #endregion

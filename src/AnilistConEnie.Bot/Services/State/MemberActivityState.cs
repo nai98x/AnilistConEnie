@@ -1,3 +1,4 @@
+using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Model.Interfaces.Repositories;
 using DSharpPlus.Entities;
@@ -8,6 +9,8 @@ namespace AnilistConEnie.Bot.Services.State;
 public class MemberActivityState(IUsuariosRepository usuariosRepository, BotConfiguration config)
 {
     private readonly ConcurrentDictionary<long, bool> _dailyActiveUsers = new();
+
+    public void ResetDailyActiveUsers() => _dailyActiveUsers.Clear();
 
     public async Task AddDailyActiveUser(ulong id, DiscordGuild guild)
     {
@@ -20,6 +23,7 @@ public class MemberActivityState(IUsuariosRepository usuariosRepository, BotConf
             await member.RevokeRoleAsync(inactivoRole);
     }
 
+    // Fecha del día en hora argentina, con Kind Utc solo para el mapeo a timestamptz de Npgsql.
     private static DateTime FechaActividad() =>
-        new(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 5, 0, 0, DateTimeKind.Utc);
+        new(RelojServidor.Hoy.Year, RelojServidor.Hoy.Month, RelojServidor.Hoy.Day, 5, 0, 0, DateTimeKind.Utc);
 }

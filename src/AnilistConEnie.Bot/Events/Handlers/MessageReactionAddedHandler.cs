@@ -33,15 +33,17 @@ public class MessageReactionAddedHandler(
             && args.Emoji.Id == config.Emotes.ConfessionReaction)
         {
             (bool guessed, ulong? messageId, ulong? userId) = confessionsState.AddConfessionReaction(args.Message.Id, args.User.Id);
-            if (guessed)
+            if (guessed && args.Guild!.Members.TryGetValue(userId!.Value, out DiscordMember? confessionUser))
             {
                 DiscordEmoji emote = DiscordEmoji.FromGuildEmote(client, config.Emotes.ConfessionReaction);
-                DiscordMember confessionUser = args.Guild!.Members[userId!.Value];
+                string reactorName = args.Guild.Members.TryGetValue(args.User.Id, out DiscordMember? reactor)
+                    ? reactor.DisplayName
+                    : args.User.Username;
                 DiscordMessage message = await args.Channel.GetMessageAsync(messageId!.Value);
                 await message.RespondAsync(new DiscordEmbedBuilder()
                     .WithTitle("Confesión revelada")
                     .WithColor(DiscordColor.Green)
-                    .WithDescription($"**{args.Guild.Members[args.User.Id].DisplayName}** te sacó la ficha **{confessionUser.DisplayName}** {emote}")
+                    .WithDescription($"**{reactorName}** te sacó la ficha **{confessionUser.DisplayName}** {emote}")
                     .WithAuthor(name: confessionUser.DisplayName, iconUrl: confessionUser.AvatarUrl)
                 );
             }

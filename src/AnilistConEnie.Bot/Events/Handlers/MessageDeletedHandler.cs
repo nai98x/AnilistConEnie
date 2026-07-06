@@ -22,18 +22,20 @@ public class MessageDeletedHandler(
         #region Intercambios Repost
         if (!discordBotService.Debug && args.Channel.ParentId == config.Channels.Intercambios.Reviews)
         {
-            MensajeIntercambioRepost? mensaje = await intercambiosRepostRepository.GetMensaje(args.Message.Id);
-            if (mensaje != null)
+            List<MensajeIntercambioRepost> mensajes = await intercambiosRepostRepository.GetMensajes(args.Message.Id);
+            foreach (MensajeIntercambioRepost mensaje in mensajes)
             {
-                DiscordChannel repostChannel = args.Guild.Channels[mensaje.IdCanalMensajeRepost];
                 try
                 {
+                    DiscordChannel repostChannel = args.Guild.Channels[mensaje.IdCanalMensajeRepost];
                     DiscordMessage repostMessage = await repostChannel.GetMessageAsync(mensaje.IdMensajeRepost, true);
                     await repostChannel.DeleteMessageAsync(repostMessage);
-                    await intercambiosRepostRepository.DeleteMensaje(args.Message.Id);
                 }
                 catch (Exception ex) { await logService.LogException(args.Guild, ex, "Intercambios repost - borrar mensaje"); }
             }
+
+            if (mensajes.Count > 0)
+                await intercambiosRepostRepository.DeleteMensaje(args.Message.Id);
         }
         #endregion
     }

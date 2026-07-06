@@ -22,12 +22,11 @@ public class MessageUpdatedHandler(
         #region Intercambios Repost
         if (!discordBotService.Debug && args.Channel.ParentId == config.Channels.Intercambios.Reviews)
         {
-            MensajeIntercambioRepost? mensaje = await intercambiosRepostRepository.GetMensaje(args.Message.Id);
-            if (mensaje != null)
+            foreach (MensajeIntercambioRepost mensaje in await intercambiosRepostRepository.GetMensajes(args.Message.Id))
             {
-                DiscordChannel repostChannel = args.Guild.Channels[mensaje.IdCanalMensajeRepost];
                 try
                 {
+                    DiscordChannel repostChannel = args.Guild.Channels[mensaje.IdCanalMensajeRepost];
                     DiscordMessage repostMessage = await repostChannel.GetMessageAsync(mensaje.IdMensajeRepost, true);
                     DiscordEmbed embed = repostMessage.Embeds[0];
 

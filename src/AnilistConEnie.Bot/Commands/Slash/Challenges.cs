@@ -352,6 +352,18 @@ public class Challenges(
             return;
         }
 
+        List<UsuarioChallenge> yaCompletados = await challengesRepository.GetChallengesUsuario(usuario.Id);
+        if (yaCompletados.Any(x => x.Challenge.Nombre == challenge))
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+            {
+                Title = "Error",
+                Description = $"{usuario.Mention} ya tiene completado el challenge `{challenge}`, no se vuelve a dar XP.",
+                Color = DiscordColor.Red
+            }));
+            return;
+        }
+
         UserXp memberXp = xpState.GetUserXp(usuario.Id);
         long totalXp = memberXp.Total + (long)xp;
         long totalChallenges = memberXp.Challenges + (long)xp;

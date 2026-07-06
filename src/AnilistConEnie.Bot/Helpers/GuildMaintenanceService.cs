@@ -1,4 +1,5 @@
 using AnilistConEnie.Application.Challenges;
+using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Application.Membership;
 using AnilistConEnie.Application.Xp;
 using AnilistConEnie.Bot.Configuration;
@@ -39,7 +40,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
             IEnumerable<KeyValuePair<ulong, DiscordMember>> usersWithInvitesRole = guild.Members.Where(x => x.Value.Roles.Any(y => y.Id == role.Id));
             foreach (KeyValuePair<ulong, DiscordMember> userPair in usersWithInvitesRole)
             {
-                if (linkRoleUsersCache.TryGetValue(userPair.Key, out DateTime expiration) && DateTime.Now > expiration)
+                if (linkRoleUsersCache.TryGetValue(userPair.Key, out DateTime expiration) && RelojServidor.Ahora > expiration)
                 {
                     await userPair.Value.RevokeRoleAsync(role);
                     inviteLinkState.RemoveLinkRoleUser(userPair.Key);
@@ -69,12 +70,11 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
     public async Task ManageMemberXp(DiscordGuild guild)
     {
         (bool habilitado, ulong usuarioId) debug = xpState.GetDebugXp();
-        DiscordChannel playroom = guild.Channels[config.Channels.Playroom];
+        List<ulong> membersToAddXp = xpState.DrainMembersToObtainXp();
 
         try
         {
-
-            List<ulong> membersToAddXp = xpState.GetMembersToObtainXp();
+            DiscordChannel playroom = guild.Channels[config.Channels.Playroom];
 
             foreach (ulong userId in membersToAddXp)
             {
@@ -127,8 +127,6 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
         {
             await logService.GrabarLogGeneralError(guild, $"Error al dar XP\n{ex.Message}: {ex.StackTrace}");
         }
-
-        xpState.ResetMembersToObtainXp();
     }
 
     private async Task SubirRango(DiscordGuild guild, DiscordMember member, DiscordRole oldRango, DiscordRole newRango)
@@ -190,7 +188,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
             DiscordRole role = guild.Roles[config.Roles.Cumple];
 
             List<Usuario> cumples = await usuariosRepository.GetCumples();
-            List<UserCumple> birthdays = CumpleCalculator.DelDia(cumples, DateTime.Today);
+            List<UserCumple> birthdays = CumpleCalculator.DelDia(cumples, RelojServidor.Hoy);
 
             foreach (UserCumple birthday in birthdays)
             {
@@ -230,7 +228,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
     {
         try
         {
-            DateTime now = DateTime.Now;
+            DateTime now = RelojServidor.Ahora;
             int guildCreationYear = guild.CreationTimestamp.Year;
 
             List<KeyValuePair<ulong, DiscordMember>> membersAniversaries = guild.Members
@@ -303,7 +301,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
     public async Task ManageChallenges()
     {
         List<Challenge> challenges = await challengesRepository.GetLista();
-        DateTime hoy = DateTime.Today;
+        DateTime hoy = RelojServidor.Hoy;
         IEnumerable<Challenge> challengesObsoletos = challenges.Where(x => ChallengePolicy.EstaVencido(x, hoy));
 
         foreach (Challenge challenge in challengesObsoletos)
@@ -317,7 +315,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
         try
         {
             List<UserXp> rankings = xpState.GetGuildXp(guild);
-            DateTime date = new DateTime(day: DateTime.Now.Day, month: DateTime.Now.Month, year: DateTime.Now.Year, hour: 5, minute: 0, second: 0, kind: DateTimeKind.Utc);
+            DateTime date = new DateTime(day: RelojServidor.Hoy.Day, month: RelojServidor.Hoy.Month, year: RelojServidor.Hoy.Year, hour: 5, minute: 0, second: 0, kind: DateTimeKind.Utc);
             foreach (UserXp user in rankings)
             {
                 await xpDiarioRepository.Upsert((ulong)user.UserId, date, user.Total);
@@ -340,7 +338,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
         {
             try
             {
-                if (member.Value.JoinedAt.AddDays(limpiezaSettings.GraciaNoVinculadoDias) >= System.DateTime.Now) continue;
+                if (member.Value.JoinedAt.AddDays(limpiezaSettings.GraciaNoVinculadoDias) >= DateTimeOffset.UtcNow) continue;
                 
                 DiscordMember memberNew = await guild.GetMemberAsync(member.Key, true);
                 if (memberNew.Roles.Contains(noVerificadoRole) && !memberNew.Roles.Contains(miembroRole))

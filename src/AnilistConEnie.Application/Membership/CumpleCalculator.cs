@@ -11,10 +11,14 @@ public static class CumpleCalculator
 {
     private const int AnioDisplay = 2023;
 
+    /// <summary>Día/mes registrable como cumpleaños. El 29/2 se acepta usando un año bisiesto de referencia.</summary>
+    public static bool EsFechaValida(int dia, int mes) =>
+        mes is >= 1 and <= 12 && dia >= 1 && dia <= DateTime.DaysInMonth(2024, mes);
+
     public static List<UserCumple> DelDia(IReadOnlyList<Usuario> cumples, DateTime dia) =>
         cumples
             .Where(x => x.CumpleDia == dia.Day && x.CumpleMes == dia.Month)
-            .Select(x => Build(x, dia.Year))
+            .Select(x => Build(x, dia))
             .ToList();
 
     public static List<UserCumple> Proximos(IReadOnlyList<Usuario> cumples, DateTime now, bool soloMes)
@@ -24,26 +28,26 @@ public static class CumpleCalculator
         {
             int dia = x.CumpleDia!.Value;
             int mes = x.CumpleMes!.Value;
-            DateTime esteAnio = new(now.Year, mes, dia);
+            if (!EsFechaValida(dia, mes)) continue;
+
+            DateTime esteAnio = Fecha(now.Year, mes, dia);
 
             if (soloMes && (esteAnio < now || esteAnio > now.AddMonths(1)))
                 continue;
 
-            lista.Add(Build(x, now.Year));
+            lista.Add(Build(x, now));
         }
 
         lista.Sort((a, b) => a.BirthdayActual.CompareTo(b.BirthdayActual));
         return lista;
     }
 
-    private static UserCumple Build(Usuario x, int anioReferencia)
+    private static UserCumple Build(Usuario x, DateTime referencia)
     {
         int dia = x.CumpleDia!.Value;
         int mes = x.CumpleMes!.Value;
-        DateTime esteAnio = new(anioReferencia, mes, dia);
-        DateTime proximo = DateTime.UtcNow > new DateTime(DateTime.UtcNow.Year, mes, dia)
-            ? new DateTime(DateTime.UtcNow.Year + 1, mes, dia)
-            : new DateTime(DateTime.UtcNow.Year, mes, dia);
+        DateTime esteAnio = Fecha(referencia.Year, mes, dia);
+        DateTime proximo = referencia > esteAnio ? Fecha(referencia.Year + 1, mes, dia) : esteAnio;
 
         return new UserCumple
         {
@@ -51,7 +55,11 @@ public static class CumpleCalculator
             Birthday = esteAnio,
             BirthdayActual = proximo,
             MostrarYear = false,
-            FechaOriginal = new DateTime(AnioDisplay, mes, dia)
+            FechaOriginal = Fecha(AnioDisplay, mes, dia)
         };
     }
+
+    /// <summary>El 29/2 en años no bisiestos se corre al 28/2.</summary>
+    private static DateTime Fecha(int anio, int mes, int dia) =>
+        new(anio, mes, Math.Min(dia, DateTime.DaysInMonth(anio, mes)));
 }

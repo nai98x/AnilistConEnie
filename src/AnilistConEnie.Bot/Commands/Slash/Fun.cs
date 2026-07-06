@@ -187,7 +187,7 @@ public class Fun(
         await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
         {
             Title = "True love",
-            Description = $"El amor verdadero de {ctx.Guild.Members[usuario.Id].DisplayName} es **{match.DisplayName}** con un **{maxPorcentaje}%** 💘\n\n{amoriosStr}\n\n{odiadosStr}",
+            Description = $"El amor verdadero de {(ctx.Guild.Members.TryGetValue(usuario.Id, out DiscordMember? enamorado) ? enamorado.DisplayName : usuario.Username)} es **{match.DisplayName}** con un **{maxPorcentaje}%** 💘\n\n{amoriosStr}\n\n{odiadosStr}",
             ImageUrl = "attachment://imagen.png",
             Color = DiscordColor.HotPink
         }).AddFile("imagen.png", imagen.ToMemoryStream()));
@@ -358,11 +358,12 @@ public class Fun(
 
         DiscordMember member = ctx.Member!;
 
-        int seed = ctx.User.Id.GetHashCode() ^ (DateTime.Now.Year * 100 + DateTime.Now.Month);
+        DateTime hoy = RelojServidor.Hoy;
+        int seed = ctx.User.Id.GetHashCode() ^ (hoy.Year * 100 + hoy.Month);
         Random rnd = new(seed);
 
-        int diaHoy = DateTime.Now.Day;
-        int totalDiasDelMes = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
+        int diaHoy = hoy.Day;
+        int totalDiasDelMes = DateTime.DaysInMonth(hoy.Year, hoy.Month);
 
         int cambiosTendencia = rnd.Next(2, 6);
         Dictionary<int, int> puntosPorDia = new();
@@ -433,8 +434,8 @@ public class Fun(
             .WithTitle("Boludómetro")
             .WithDescription(
                 $"**{member.DisplayName}** este mes fue un {promedio:0}% bolud{genero}\n\n" +
-                $"- Su día de menor boludez fue el **{min.Key}/{DateTime.Now.Month}** siendo un **{min.Value:0}% bolud{genero}**\n" +
-                $"- Su día de mayor boludez fue el **{max.Key}/{DateTime.Now.Month}** siendo un **{max.Value:0}% bolud{genero}**")
+                $"- Su día de menor boludez fue el **{min.Key}/{hoy.Month}** siendo un **{min.Value:0}% bolud{genero}**\n" +
+                $"- Su día de mayor boludez fue el **{max.Key}/{hoy.Month}** siendo un **{max.Value:0}% bolud{genero}**")
             .WithThumbnail(member.GuildAvatarUrl ?? member.AvatarUrl)
             .WithFooter("La gráfica se resetea mensualmente.")
             .WithImageUrl($"attachment://{lineFile}")
@@ -458,7 +459,7 @@ public class Fun(
         await ctx.DeferResponseAsync();
 
         List<Usuario> cumples = await usuariosRepository.GetCumples();
-        List<UserCumple> birthdays = CumpleCalculator.Proximos(cumples, DateTime.UtcNow, false);
+        List<UserCumple> birthdays = CumpleCalculator.Proximos(cumples, RelojServidor.Ahora, false);
         UserCumple? birthday = birthdays.Find(x => x.Id == (long)ctx.Member!.Id);
 
         if (birthday is null)
@@ -475,7 +476,7 @@ public class Fun(
         string signoStr = ((Enum)signo).GetDescription();
         DiscordEmoji emote = FunService.EmoteOfSignoZodiacal(signo);
 
-        string diaString = DateTime.Today.ToString("yyyy-MM-dd");
+        string diaString = RelojServidor.Hoy.ToString("yyyy-MM-dd");
         HttpClient client = httpClientFactory.CreateClient();
 
         HttpResponseMessage response = await client.GetAsync(

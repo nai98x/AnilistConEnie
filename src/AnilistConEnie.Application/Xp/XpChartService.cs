@@ -1,3 +1,4 @@
+using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Interfaces.Repositories;
 
@@ -16,10 +17,10 @@ public class XpChartService(IXpDiarioRepository xpDiarioRepository)
     {
         List<UserDailyXp> historial = await xpDiarioRepository.ObtenerChart(userId);
 
-        XpChartResult chart = XpChartBuilder.Build((long)userId, historial, DateTime.Today, includeZeroXp, rellenarDiasFaltantes);
+        XpChartResult chart = XpChartBuilder.Build((long)userId, historial, RelojServidor.Hoy, includeZeroXp, rellenarDiasFaltantes);
 
-        foreach (UserDailyXp day in chart.MissingDaysToPersist)
-            _ = xpDiarioRepository.Upsert(userId, day.Date, day.Xp);
+        if (chart.MissingDaysToPersist.Count > 0)
+            await xpDiarioRepository.InsertBulk(userId, chart.MissingDaysToPersist);
 
         return [..chart.Points];
     }
@@ -32,6 +33,6 @@ public class XpChartService(IXpDiarioRepository xpDiarioRepository)
     public async Task<List<UserDailyXp>> GetUserWeeklyHistory(ulong userId, long currentXp)
     {
         List<UserDailyXp> historial = await xpDiarioRepository.ObtenerChart(userId);
-        return XpTopChartHistory.Build((long)userId, historial, DateTime.Today, currentXp);
+        return XpTopChartHistory.Build((long)userId, historial, RelojServidor.Hoy, currentXp);
     }
 }

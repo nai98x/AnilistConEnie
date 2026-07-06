@@ -60,7 +60,7 @@ public class NumberHelperTests
         for (int i = 0; i < 100; i++)
         {
             int value = NumberHelper.GetNumeroRandom(10, 20);
-            Assert.InRange(value, 10, 19); // Random.Next es exclusivo en el máximo
+            Assert.InRange(value, 10, 20); // ambos límites inclusive
         }
     }
 }

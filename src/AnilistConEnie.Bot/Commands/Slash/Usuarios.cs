@@ -48,8 +48,8 @@ public class Usuarios(
         CultureInfo es = CultureInfo.CreateSpecificCulture("es");
 
         List<Usuario> cumples = await usuariosRepository.GetCumples();
-        List<UserCumple> lista = CumpleCalculator.Proximos(cumples, DateTime.UtcNow, month);
-        List<UserCumple> hoy = CumpleCalculator.DelDia(cumples, DateTime.Today);
+        List<UserCumple> lista = CumpleCalculator.Proximos(cumples, RelojServidor.Ahora, month);
+        List<UserCumple> hoy = CumpleCalculator.DelDia(cumples, RelojServidor.Hoy);
 
         List<(UserCumple Cumple, DiscordMember Miembro)> proximos = lista
             .OrderBy(x => x.BirthdayActual)
@@ -103,6 +103,17 @@ public class Usuarios(
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
         await ctx.DeferResponseAsync();
+
+        if (!CumpleCalculator.EsFechaValida(day, month))
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+            {
+                Title = "Error",
+                Description = $"La fecha `{day}/{month}` no es válida. Ingresa un día y mes reales (ej: 29/2 solo si naciste un año bisiesto).",
+                Color = DiscordColor.Red
+            }));
+            return;
+        }
 
         BotConfiguration.PaisTimezoneConfiguration? userTimezone =
             config.PaisTimezones.FirstOrDefault(x => ctx.Member!.Roles.Any(y => y.Id == x.RoleId));

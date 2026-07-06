@@ -2,6 +2,7 @@ using System.Data;
 using AnilistConEnie.Infrastructure.Database;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Interfaces.Repositories;
+using AnilistConEnie.Application.Helpers;
 using Dapper;
 
 namespace AnilistConEnie.Infrastructure.Repositories;
@@ -118,8 +119,9 @@ public class UsuariosRepository(DbConnectionFactory connectionFactory) : IUsuari
         return usuarios.Where(x => memberIds.Contains((ulong)x.UserId)).ToList();
     }
 
+    // Fecha del día en hora argentina; el Kind Utc es solo para que Npgsql lo escriba en timestamptz sin convertir.
     private static DateTime FechaCorte() =>
-        new(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 5, 0, 0, DateTimeKind.Utc);
+        new(RelojServidor.Hoy.Year, RelojServidor.Hoy.Month, RelojServidor.Hoy.Day, 5, 0, 0, DateTimeKind.Utc);
 
     public async Task Desactivar(ulong userId)
     {

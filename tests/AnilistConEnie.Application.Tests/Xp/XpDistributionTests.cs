@@ -60,9 +60,9 @@ public class XpDistributionTests
 
         IReadOnlyList<XpCategoryShare> shares = XpDistribution.Build(rank);
 
-        // 1/3 truncado a entero = 33% cada una; mensajes = 100 - 33 - 33 = 34.
-        Assert.Equal(33m, shares.Single(s => s.Category == XpCategory.Challenges).Percentage);
-        Assert.Equal(34m, shares.Single(s => s.Category == XpCategory.Mensajes).Percentage);
+        // 1/3 redondeado a 2 decimales = 33,33% cada una; mensajes = 100 - 33,33 - 33,33 = 33,34.
+        Assert.Equal(33.33m, shares.Single(s => s.Category == XpCategory.Challenges).Percentage);
+        Assert.Equal(33.34m, shares.Single(s => s.Category == XpCategory.Mensajes).Percentage);
         Assert.Equal(100m, shares.Sum(s => s.Percentage));
     }
 }

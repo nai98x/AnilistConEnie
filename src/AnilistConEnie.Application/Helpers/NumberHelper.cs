@@ -20,11 +20,12 @@ public static class NumberHelper
 
     public static string ToSpanish(this double value) => value.ToString("N", SpanishFormat);
 
+    /// <summary>Número aleatorio entre <paramref name="min"/> y <paramref name="max"/>, ambos inclusive.</summary>
     public static int GetNumeroRandom(int min, int max)
     {
         if (min <= 0 && max <= 0)
             return 0;
-        return Random.Shared.Next(minValue: min, maxValue: max);
+        return Random.Shared.Next(minValue: min, maxValue: max + 1);
     }
 
     public static long ObtenerMultiploAnterior(long numero, int multiplo) => numero / multiplo * multiplo;

@@ -14,7 +14,8 @@ public static class StringHelper
 
     public static string TextAfter(this string value, string search)
     {
-        return value[(value.IndexOf(search, StringComparison.Ordinal) + search.Length)..];
+        int index = value.IndexOf(search, StringComparison.Ordinal);
+        return index < 0 ? value : value[(index + search.Length)..];
     }
     
     public static string NormalizarDescription(string s)

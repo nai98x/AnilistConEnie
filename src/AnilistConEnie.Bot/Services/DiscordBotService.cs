@@ -25,10 +25,15 @@ public class DiscordBotService(DiscordClient client, BotConfiguration config, IL
     public void SetChannels()
     {
         DiscordGuild guild = client.Guilds[config.GuildId];
-        _logChannelInfo   = guild.Channels[config.Channels.LogChannelInfo]  ?? throw new InvalidOperationException($"Canal LogChannelInfo ({config.Channels.LogChannelInfo}) no encontrado en el guild.");
-        _logChannelErrors = guild.Channels[config.Channels.LogChannelError] ?? throw new InvalidOperationException($"Canal LogChannelError ({config.Channels.LogChannelError}) no encontrado en el guild.");
-        _playroom         = guild.Channels[config.Channels.Playroom]        ?? throw new InvalidOperationException($"Canal Playroom ({config.Channels.Playroom}) no encontrado en el guild.");
+        _logChannelInfo   = GetChannel(guild, config.Channels.LogChannelInfo, "LogChannelInfo");
+        _logChannelErrors = GetChannel(guild, config.Channels.LogChannelError, "LogChannelError");
+        _playroom         = GetChannel(guild, config.Channels.Playroom, "Playroom");
     }
+
+    private static DiscordChannel GetChannel(DiscordGuild guild, ulong id, string nombre) =>
+        guild.Channels.TryGetValue(id, out DiscordChannel? channel)
+            ? channel
+            : throw new InvalidOperationException($"Canal {nombre} ({id}) no encontrado en el guild.");
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {

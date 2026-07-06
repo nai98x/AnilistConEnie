@@ -74,6 +74,7 @@ internal sealed class AnilistClient(AnilistGraphQLExecutor executor) : IAnilistC
         }
         // AniList responde con un error GraphQL ("Not Found") cuando ningún usuario coincide.
         catch (AnilistRateLimitException) { throw; }
+        catch (AnilistServerErrorException) { throw; }
         catch (AnilistApiException) { return null; }
     }
 

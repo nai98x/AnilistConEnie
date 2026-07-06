@@ -136,7 +136,7 @@ public static class IntercambioHelper
                     {
                         if (!valuePo.TryAdd(personaRecibir, 1))
                             valuePo[personaRecibir] += 1;
-                        pelisDadas[personaDa.Key] = valuePo;
+                        pelisDadas[newPersonaDa] = valuePo;
                     }
                     else
                     {
@@ -190,7 +190,10 @@ public static class IntercambioHelper
 
                         pelisPorRecibir[personaRecibir.Key] -= 1;
                         if (pelisPorRecibir[personaRecibir.Key] == 0)
+                        {
                             pelisPorRecibir.Remove(personaRecibir.Key);
+                            break;
+                        }
                     }
                 }
             }

@@ -29,10 +29,10 @@ public static class XpDistribution
         long intercambios = rank.Intercambios;
         long otros = rank.Otros;
 
-        decimal challengesPct = Math.Round((decimal)(challenges * 100 / total), 2);
-        decimal eventosPct = Math.Round((decimal)(eventos * 100 / total), 2);
-        decimal intercambiosPct = Math.Round((decimal)(intercambios * 100 / total), 2);
-        decimal otrosPct = Math.Round((decimal)(otros * 100 / total), 2);
+        decimal challengesPct = Math.Round(challenges * 100m / total, 2);
+        decimal eventosPct = Math.Round(eventos * 100m / total, 2);
+        decimal intercambiosPct = Math.Round(intercambios * 100m / total, 2);
+        decimal otrosPct = Math.Round(otros * 100m / total, 2);
 
         long mensajes = total - challenges - eventos - intercambios - otros;
         decimal mensajesPct = 100 - challengesPct - eventosPct - intercambiosPct - otrosPct;

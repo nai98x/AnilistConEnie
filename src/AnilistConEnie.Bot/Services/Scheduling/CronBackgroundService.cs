@@ -1,3 +1,4 @@
+using AnilistConEnie.Application.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -28,7 +29,7 @@ public abstract class CronBackgroundService(IServiceScopeFactory scopeFactory, D
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            DateTime now = DateTime.Now;
+            DateTime now = RelojServidor.Ahora;
             TimeSpan delay = schedule.GetNextOccurrence(now) - now;
 
             while (delay > maxDelay)

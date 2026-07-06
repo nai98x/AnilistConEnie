@@ -116,7 +116,16 @@ public class Xp(
 
         await ctx.DeferResponseAsync();
 
-        DiscordMember member = user != null ? ctx.Guild!.Members[user.Id] : ctx.Member!;
+        DiscordMember? member = user != null ? ctx.Guild!.Members.GetValueOrDefault(user.Id) : ctx.Member!;
+        if (member is null)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                .WithTitle("Error")
+                .WithDescription($"{user!.Mention} no se encuentra en el servidor")
+                .WithColor(DiscordColor.Red)));
+            return;
+        }
+
         UserXp rank = member.IsBot ? new UserXp() : xpState.GetUserXp(member.Id);
 
         if (rank.Total <= 0)
@@ -132,7 +141,7 @@ public class Xp(
         DiscordRole role = rangoRoles.GetRoleByXp(ctx.Guild!, rank.Total);
 
         List<UserDailyXp> chartHistory = await xpChartService.GetUserChartHistory(member.Id);
-        chartHistory.Add(new UserDailyXp { Xp = rank.Total, Date = DateTime.Now, UserId = (long)member.Id });
+        chartHistory.Add(new UserDailyXp { Xp = rank.Total, Date = RelojServidor.Ahora, UserId = (long)member.Id });
 
         Dictionary<string, DiscordInteractivity.TabContent> embeds = new();
 
@@ -197,8 +206,8 @@ public class Xp(
 
         #region Historial
         const int registrosMaximos = 60;
-        int yearActual = DateTime.Now.Year;
-        DateTime hoy = DateTime.Today;
+        DateTime hoy = RelojServidor.Hoy;
+        int yearActual = hoy.Year;
         DateTime primerDiaUltimoMes = new(hoy.Year, hoy.Month, 1);
 
         List<UserDailyXp> registrosTrimestrales = chartHistory
@@ -242,7 +251,7 @@ public class Xp(
         RangoEnum prevRango = RangoXp.RangoAnterior(minXpValue.Xp);
         long prevRangeXp = RangoXp.XpRequerida(prevRango);
         long xpSubida = rank.Total - minXpValue.Xp;
-        double days = (DateTime.Today - minXpValue.Date).TotalDays;
+        double days = (RelojServidor.Hoy - minXpValue.Date).TotalDays;
         long maxXpChart = (long)(resultado.Max(x => x.Xp) * 1.1);
 
         string descHistorial =
@@ -340,7 +349,7 @@ public class Xp(
                     new DiscordButtonComponent(DiscordButtonStyle.Secondary, "siguiente", "Siguiente"))
                 .AddEmbed(new DiscordEmbedBuilder()
                     .WithTitle("Top 10 de experiencia")
-                    .WithDescription($"Puestos del {start} al {end}")
+                    .WithDescription($"Puestos del {start + 1} al {end}")
                     .WithThumbnail(RankThumbnail)
                     .WithImageUrl($"attachment://{fileName}"))
                 .AddFile(fileName, image.ToMemoryStream()));
@@ -413,7 +422,7 @@ public class Xp(
 
         await ctx.DeferResponseAsync();
 
-        if (DateTime.Today is { Day: 1, Month: 1 } && ctx.User.Id != config.OwnerId)
+        if (RelojServidor.Hoy is { Day: 1, Month: 1 } && ctx.User.Id != config.OwnerId)
         {
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 .WithTitle("Error")
@@ -509,7 +518,7 @@ public class Xp(
         if (rangoRoles.RangoAPartirDe(ctx.Guild!, member, RangoEnum.Kouhai, false))
             desc += "### 🍙 Kouhai:\n- Entrada garantizada a eventos del servidor\n\n";
 
-        if (rangoRoles.RangoAPartirDe(ctx.Guild!, member, RangoEnum.Sensei, false))
+        if (rangoRoles.RangoAPartirDe(ctx.Guild!, member, RangoEnum.Senpai, false))
             desc += "### 🍜 Senpai:\n- Elegir entre 45 colores para tu usuario\n\n";
 
         if (rangoRoles.RangoAPartirDe(ctx.Guild!, member, RangoEnum.Ousama, false))

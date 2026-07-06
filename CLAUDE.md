@@ -11,7 +11,7 @@ archivos, correr builds/tests y preparar cambios, pero el versionado lo controla
 
 ## Qué es
 
-Bot de Discord (DSharpPlus, .NET 10) para el servidor **Anilist ESP**. Persistencia en Firestore.
+Bot de Discord (DSharpPlus, .NET 10) para el servidor **Añilist**. Persistencia en base de datos relacional con PostgreSQL.
 Idioma del código, commits y comunicación: **español**.
 
 ## Arquitectura (Clean Architecture, 4 proyectos en `src/`)

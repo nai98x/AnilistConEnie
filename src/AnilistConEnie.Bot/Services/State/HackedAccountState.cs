@@ -16,11 +16,11 @@ public class HackedAccountState(AntiSpamSettings settings)
     {
         _lastMessagesUsers.AddOrUpdate(
             userId,
-            _ => [new(content, channelId, DateTime.Now)],
+            _ => [new(content, channelId, DateTime.UtcNow)],
             (_, existing) =>
             {
                 var source = existing.Count == settings.CanalesDistintos ? existing.Skip(1) : existing.AsEnumerable();
-                return [..source, new(content, channelId, DateTime.Now)];
+                return [..source, new(content, channelId, DateTime.UtcNow)];
             });
     }
 }

@@ -1,4 +1,4 @@
--- Mapeo de un mensaje de intercambio a su repost, por el id del mensaje del hilo/foro (0 o 1 fila).
+-- Reposts de un mensaje de intercambio, por el id del mensaje del hilo/foro (una fila por canal).
 CREATE OR REPLACE FUNCTION intercambios_repost_obtener(p_id_mensaje_hilo_foro bigint)
 RETURNS SETOF intercambios_repost
 LANGUAGE sql

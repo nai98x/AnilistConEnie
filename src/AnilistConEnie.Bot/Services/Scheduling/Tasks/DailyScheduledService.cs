@@ -16,7 +16,8 @@ public class DailyScheduledService(
     DiscordBotService discordBotService,
     GuildMaintenanceService guildMaintenanceService,
     ConfessionsState confessionsState,
-    BoluditosState boluditosState)
+    BoluditosState boluditosState,
+    MemberActivityState memberActivityState)
     : CronBackgroundService(scopeFactory, discordBotService, logger)
 {
     protected override string CronExpression => "0 0 * * *";
@@ -32,5 +33,6 @@ public class DailyScheduledService(
         await guildMaintenanceService.ManageXpUserHistory(guild);
         confessionsState.ResetDailyConfessions();
         boluditosState.ResetBoluditos();
+        memberActivityState.ResetDailyActiveUsers();
     }
 }

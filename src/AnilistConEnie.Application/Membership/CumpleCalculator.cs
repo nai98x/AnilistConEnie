@@ -15,11 +15,8 @@ public static class CumpleCalculator
     public static bool EsFechaValida(int dia, int mes) =>
         mes is >= 1 and <= 12 && dia >= 1 && dia <= DateTime.DaysInMonth(2024, mes);
 
-    public static List<UserCumple> DelDia(IReadOnlyList<Usuario> cumples, DateTime dia) =>
-        cumples
-            .Where(x => x.CumpleDia == dia.Day && x.CumpleMes == dia.Month)
-            .Select(x => Build(x, dia))
-            .ToList();
+    public static bool EsDelDia(Usuario usuario, DateTime dia) =>
+        usuario.CumpleDia == dia.Day && usuario.CumpleMes == dia.Month;
 
     public static List<UserCumple> Proximos(IReadOnlyList<Usuario> cumples, DateTime now, bool soloMes)
     {

@@ -86,6 +86,25 @@ public class DiscordLogService(BotConfiguration config, ILogger<DiscordLogServic
         }
     }
 
+    public async Task GrabarLogGeneralWarning(DiscordGuild guild, string descripcion)
+    {
+        logger.LogWarning("Advertencia: {Descripcion}", descripcion);
+        try
+        {
+            DiscordChannel channelErrores = guild.Channels[config.Channels.LogChannelError];
+            await channelErrores.SendMessageAsync(new DiscordEmbedBuilder
+            {
+                Title = "Advertencia",
+                Description = descripcion,
+                Color = DiscordColor.Yellow,
+            });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "No se pudo escribir en el canal de errores");
+        }
+    }
+
     public async Task GrabarLogComandoEjecutado(CommandContext ctx)
     {
         if (ctx.Guild is null) return;

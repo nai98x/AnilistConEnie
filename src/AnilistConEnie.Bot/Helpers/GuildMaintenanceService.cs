@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AnilistConEnie.Bot.Helpers;
 
-public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, XpState xpState, InviteLinkState inviteLinkState, PermanentUsernameState permanentUsernameState, BotConfiguration config, XpSettings xpSettings, LimpiezaMiembrosSettings limpiezaSettings, RangoRoles rangoRoles, DiscordLogService logService, DiscordBotService discordBotService, IUsuariosRepository usuariosRepository, IXpUsuariosRepository xpUsuariosRepository, IXpDiarioRepository xpDiarioRepository, IChallengesRepository challengesRepository)
+public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, XpState xpState, InviteLinkState inviteLinkState, PermanentUsernameState permanentUsernameState, BotConfiguration config, XpSettings xpSettings, LimpiezaMiembrosSettings limpiezaSettings, RangoRoles rangoRoles, RelojPais relojPais, DiscordLogService logService, DiscordBotService discordBotService, IUsuariosRepository usuariosRepository, IXpUsuariosRepository xpUsuariosRepository, IXpDiarioRepository xpDiarioRepository, IChallengesRepository challengesRepository)
 {
     public async Task ClearInvitesRoleOnStartup(DiscordGuild guild)
     {
@@ -188,13 +188,17 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
             DiscordRole role = guild.Roles[config.Roles.Cumple];
 
             List<Usuario> cumples = await usuariosRepository.GetCumples();
-            List<UserCumple> birthdays = CumpleCalculator.DelDia(cumples, RelojServidor.Hoy);
 
-            foreach (UserCumple birthday in birthdays)
+            HashSet<ulong> cumpleaneros = [];
+            foreach (Usuario usuario in cumples)
             {
                 try
                 {
-                    DiscordMember userBday = guild.Members[(ulong)birthday.Id];
+                    DiscordMember userBday = await guild.GetMemberAsync((ulong)usuario.UserId);
+                    if (!CumpleCalculator.EsDelDia(usuario, await relojPais.HoyDe(guild, userBday))) continue;
+
+                    cumpleaneros.Add(userBday.Id);
+
                     if (userBday.Roles.All(x => x.Id != role.Id) && rangoRoles.RangoAPartirDe(guild, userBday, RangoEnum.Casual, true))
                     {
                         await userBday.GrantRoleAsync(role);
@@ -215,7 +219,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
             IEnumerable<KeyValuePair<ulong, DiscordMember>> usersWithBirthdayRole = guild.Members.Where(x => x.Value.Roles.Any(y => y.Id == role.Id));
             foreach (KeyValuePair<ulong, DiscordMember> userPair in usersWithBirthdayRole)
             {
-                if (birthdays.All(x => (ulong)x.Id != userPair.Key))
+                if (!cumpleaneros.Contains(userPair.Key))
                 {
                     await userPair.Value.RevokeRoleAsync(role);
                 }
@@ -233,6 +237,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
 
             List<KeyValuePair<ulong, DiscordMember>> membersAniversaries = guild.Members
                 .Where(x => AniversarioCalculator.EsAniversarioAhora(config.GetFechaEntrada(x.Key, x.Value.JoinedAt), now, guildCreationYear))
+                .OrderBy(x => config.GetFechaEntrada(x.Key, x.Value.JoinedAt))
                 .ToList();
 
             DiscordChannel canal = guild.Channels[config.Channels.General];

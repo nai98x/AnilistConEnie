@@ -32,15 +32,13 @@ public class CumpleCalculatorTests
         Assert.False(CumpleCalculator.EsFechaValida(dia, mes));
     }
 
-    [Fact]
-    public void DelDia_MatcheaSoloLosDelDia()
+    [Theory]
+    [InlineData(5, 7, true)]
+    [InlineData(6, 7, false)]
+    [InlineData(5, 8, false)]
+    public void EsDelDia_ComparaDiaYMes(int dia, int mes, bool esperado)
     {
-        List<Usuario> cumples = [Cumple(1, 5, 7), Cumple(2, 6, 7), Cumple(3, 5, 8)];
-
-        List<UserCumple> hoy = CumpleCalculator.DelDia(cumples, new DateTime(2026, 7, 5));
-
-        Assert.Single(hoy);
-        Assert.Equal(1, hoy[0].Id);
+        Assert.Equal(esperado, CumpleCalculator.EsDelDia(Cumple(1, dia, mes), new DateTime(2026, 7, 5)));
     }
 
     [Fact]

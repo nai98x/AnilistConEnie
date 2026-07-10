@@ -24,6 +24,7 @@ public static class BotServiceExtensions
 
         // Helpers
         services.AddSingleton<RangoRoles>();
+        services.AddSingleton<RelojPais>();
         services.AddSingleton<DiscordLogService>();
         services.AddSingleton<AnilistService>();
         services.AddSingleton<GuildMaintenanceService>();

@@ -27,6 +27,7 @@ public class Usuarios(
     IUsuariosRepository usuariosRepository,
     XpState xpState,
     RangoRoles rangoRoles,
+    RelojPais relojPais,
     BotConfiguration config,
     DiscordLogService logService,
     IHttpClientFactory httpClientFactory,
@@ -49,7 +50,6 @@ public class Usuarios(
 
         List<Usuario> cumples = await usuariosRepository.GetCumples();
         List<UserCumple> lista = CumpleCalculator.Proximos(cumples, RelojServidor.Ahora, month);
-        List<UserCumple> hoy = CumpleCalculator.DelDia(cumples, RelojServidor.Hoy);
 
         List<(UserCumple Cumple, DiscordMember Miembro)> proximos = lista
             .OrderBy(x => x.BirthdayActual)
@@ -60,10 +60,14 @@ public class Usuarios(
 
         string header = "# Cumpleaños\n";
 
-        List<string> festejanHoy = hoy
-            .Where(u => guild.Members.ContainsKey((ulong)u.Id))
-            .Select(u => guild.Members[(ulong)u.Id].DisplayName)
-            .ToList();
+        List<string> festejanHoy = [];
+        foreach (Usuario u in cumples)
+        {
+            DiscordMember? miembro = guild.Members.GetValueOrDefault((ulong)u.UserId);
+            if (miembro is null) continue;
+            if (CumpleCalculator.EsDelDia(u, await relojPais.HoyDe(guild, miembro)))
+                festejanHoy.Add(miembro.DisplayName);
+        }
 
         if (festejanHoy.Count > 0)
         {

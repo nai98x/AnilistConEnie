@@ -1,5 +1,5 @@
+using AnilistConEnie.Bot.Commands.Checks;
 using AnilistConEnie.Bot.Commands.Slash.Attributes;
-using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.TextCommands;
@@ -8,25 +8,15 @@ using DSharpPlus.Entities;
 namespace AnilistConEnie.Bot.Commands.Text;
 
 [TestCommand]
-public class Admin(BotConfiguration config)
+public class Admin
 {
     private const int MaxBotonesPorFila = 5;
     private const int MaxFilas = 5;
 
     [Command("yoink")]
+    [RequireKamiSama]
     public async Task Yoink(TextCommandContext ctx)
     {
-        if (ctx.Member is null || ctx.Member.Roles.All(r => r.Id != config.Roles.KamiSama))
-        {
-            await ctx.RespondAsync(new DiscordEmbedBuilder
-            {
-                Title = "Sin permiso",
-                Description = "Solo los administradores pueden usar este comando.",
-                Color = DiscordColor.Red
-            });
-            return;
-        }
-
         DiscordMessage? referenciado = ctx.Message.ReferencedMessage;
         if (referenciado is null)
         {

@@ -33,7 +33,10 @@ internal sealed class AnilistGraphQLExecutor : IDisposable
     public AnilistGraphQLExecutor(ILogger<AnilistGraphQLExecutor> logger)
     {
         _logger = logger;
-        _client = new GraphQLHttpClient(Endpoint, new NewtonsoftJsonSerializer());
+        _client = new GraphQLHttpClient(
+            new GraphQLHttpClientOptions { EndPoint = new Uri(Endpoint) },
+            new NewtonsoftJsonSerializer(),
+            new HttpClient { Timeout = TimeSpan.FromSeconds(30) });
         _pipeline = BuildPipeline();
     }
     

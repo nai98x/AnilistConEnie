@@ -1,3 +1,4 @@
+using AnilistConEnie.Bot.Commands.Checks;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Events;
 using AnilistConEnie.Bot.Helpers;
@@ -24,7 +25,12 @@ public static class ServiceCollectionExtensions
         string token = configuration.GetValue<string>("discordToken")
             ?? throw new InvalidOperationException("'discordToken' es obligatorio: configuralo via User Secrets (local) o variable de entorno 'discordToken' (servidor)");
 
-        services.AddDiscordClient(token, DiscordIntents.All);
+        services.AddDiscordClient(token,
+            DiscordIntents.Guilds
+            | DiscordIntents.GuildMembers
+            | DiscordIntents.GuildMessages
+            | DiscordIntents.GuildMessageReactions
+            | DiscordIntents.MessageContents);
 
         services.AddInteractivityExtension(new InteractivityConfiguration
         {
@@ -39,6 +45,8 @@ public static class ServiceCollectionExtensions
             BotConfiguration config = provider.GetRequiredService<BotConfiguration>();
             extension.AddDiscoveredSlashCommands(config.GuildId);
             extension.AddDiscoveredTextCommands();
+
+            extension.AddCheck<RequireKamiSamaCheck>();
 
             SlashCommandProcessor slashCommandProcessor = new(new SlashCommandConfiguration());
             extension.AddProcessor(slashCommandProcessor);

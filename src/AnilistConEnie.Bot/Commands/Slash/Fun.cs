@@ -37,6 +37,8 @@ public class Fun(
     FunService funService,
     BoluditosState boluditosState,
     ConfessionsState confessionsState,
+    SubirImagenState subirImagenState,
+    SubirImagenSettings subirImagenSettings,
     IFirebaseRepository firebaseRepository,
     IUsuariosRepository usuariosRepository,
     IChartRenderer chartRenderer,
@@ -203,17 +205,38 @@ public class Fun(
 
         await ctx.DeferResponseAsync(true);
 
-        if (imagen.MediaType is null || !imagen.MediaType.StartsWith("image"))
+        if (subirImagenState.EnCooldown(ctx.User.Id, DateTime.UtcNow))
         {
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 .WithTitle("Error")
-                .WithDescription("El archivo debe ser una imagen")
+                .WithDescription($"Debes esperar {subirImagenSettings.CooldownMinutos} minutos entre subidas de imágenes")
+                .WithColor(DiscordColor.Red)));
+            return;
+        }
+
+        if (imagen.MediaType is null || !imagen.MediaType.StartsWith("image") || imagen.FileSize > subirImagenSettings.MaxTamanoBytes)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                .WithTitle("Error")
+                .WithDescription($"El archivo debe ser una imagen de hasta {subirImagenSettings.MaxTamanoBytes / (1024 * 1024)} MB")
                 .WithColor(DiscordColor.Red)));
             return;
         }
 
         HttpClient client = httpClientFactory.CreateClient();
+        client.MaxResponseContentBufferSize = subirImagenSettings.MaxTamanoBytes;
         byte[] bytes = await client.GetByteArrayAsync(imagen.Url);
+
+        if (!ImageHelper.EsImagenValida(bytes))
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                .WithTitle("Error")
+                .WithDescription("El archivo no es una imagen válida")
+                .WithColor(DiscordColor.Red)));
+            return;
+        }
+
+        subirImagenState.RegistrarSubida(ctx.User.Id, DateTime.UtcNow.AddMinutes(subirImagenSettings.CooldownMinutos));
         using MemoryStream stream = new(bytes);
         string fileName = StringHelper.CreateString(10);
         string newUrl = await firebaseRepository.UploadImageAsync(stream, fileName, ctx.User.Id);

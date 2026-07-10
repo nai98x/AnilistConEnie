@@ -1,4 +1,5 @@
 using System.Globalization;
+using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Model.Entities;
 using DSharpPlus;
@@ -122,7 +123,7 @@ public class DiscordLogService(BotConfiguration config, ILogger<DiscordLogServic
 
             string argumentos = ctx.Arguments.Count == 0
                 ? "Ninguno"
-                : string.Join("\n", ctx.Arguments.Select(kv => $"- **{kv.Key.Name}**: {kv.Value}"));
+                : string.Join("\n", ctx.Arguments.Select(kv => $"- **{kv.Key.Name}**: {LogRedactor.RedactarValor(kv.Key.Name, kv.Value?.ToString())}"));
             
             logger.LogInformation("Comando ejecutado [{Tipo}]: {Comando} - Usuario: {Usuario} - Canal: {Canal}",
                 tipo, ctx.Command.FullName, ctx.User.Username, ctx.Channel.Name);

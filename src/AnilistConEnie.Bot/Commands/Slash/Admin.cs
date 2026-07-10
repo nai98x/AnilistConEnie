@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using AnilistConEnie.Application.Anilist;
 using AnilistConEnie.Application.Extensions;
 using AnilistConEnie.Application.Helpers;
+using AnilistConEnie.Bot.Commands.Checks;
 using AnilistConEnie.Bot.Commands.Enums;
 using AnilistConEnie.Bot.Commands.Slash.Attributes;
 using AnilistConEnie.Bot.Configuration;
@@ -29,6 +30,7 @@ namespace AnilistConEnie.Bot.Commands.Slash;
 
 [Command("admin")]
 [Description("Comandos de los admins del servidor")]
+[RequireKamiSama]
 //[TestCommand]
 public class Admin(
     BotConfiguration config,
@@ -55,7 +57,6 @@ public class Admin(
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
         await ctx.DeferResponseAsync(true);
-        if (!await EnsureAdminAsync(ctx)) return;
 
         DiscordRole noVerificadoRole = ctx.Guild!.Roles[config.Roles.NoVinculado];
         int kickeados = 0;
@@ -79,7 +80,6 @@ public class Admin(
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
         await ctx.DeferResponseAsync();
-        if (!await EnsureAdminAsync(ctx)) return;
 
         DiscordMember member = await ctx.Guild!.GetMemberAsync(user.Id);
         DiscordRole role = ctx.Guild.Roles[config.Roles.Invite];
@@ -116,7 +116,6 @@ public class Admin(
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
         await ctx.DeferResponseAsync();
-        if (!await EnsureAdminAsync(ctx)) return;
 
         DiscordEmoji? emote = DiscordEmojiHelper.ToEmoji(ctx.Client, emojiStr);
         if (emote is null)
@@ -158,7 +157,6 @@ public class Admin(
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
         await ctx.DeferResponseAsync();
-        if (!await EnsureAdminAsync(ctx)) return;
 
         if (emoteModeState is { YepMode: true, Emote: not null })
         {
@@ -184,7 +182,6 @@ public class Admin(
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
         await ctx.DeferResponseAsync();
-        if (!await EnsureAdminAsync(ctx)) return;
 
         List<UsuarioAnilist> vinculadosBd = await usuariosRepository.GetVinculados();
 
@@ -217,7 +214,6 @@ public class Admin(
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
         await ctx.DeferResponseAsync();
-        if (!await EnsureAdminAsync(ctx)) return;
 
         IReadOnlyList<GrupoMulticuenta> grupos = AnilistMulticuentas.Detectar(await usuariosRepository.GetVinculados());
 
@@ -269,7 +265,6 @@ public class Admin(
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
         await ctx.DeferResponseAsync(true);
-        if (!await EnsureAdminAsync(ctx)) return;
 
         DiscordChannel channel = ctx.Guild!.Channels[config.Channels.ConfigBots];
 
@@ -394,13 +389,6 @@ public class Admin(
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
-        if (ctx.Member is null || ctx.Member.Roles.All(r => r.Id != config.Roles.KamiSama))
-        {
-            await ctx.DeferResponseAsync(true);
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(SinPermisoEmbed()));
-            return;
-        }
-
         const string placeholder = "Eli 1, Nai 1, Pepe 3, Gaby 2, etc";
         string modalId = $"modal-{ctx.Interaction.Id}";
         string customId = $"{ctx.User.Id}";
@@ -475,7 +463,6 @@ public class Admin(
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
         await ctx.DeferResponseAsync(true);
-        if (!await EnsureAdminAsync(ctx)) return;
 
         DiscordChannel channel = ctx.Guild!.Channels[config.Channels.Pdd];
         DiscordEmoji emote = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.GatoVanguard.Get(discordBotService.Debug));
@@ -535,7 +522,6 @@ public class Admin(
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
         await ctx.DeferResponseAsync();
-        if (!await EnsureAdminAsync(ctx)) return;
 
         HashSet<ulong> memberIds = ctx.Guild!.Members.Keys.ToHashSet();
         List<UsuarioActivo> inactivos = await usuariosRepository.GetUsuariosInactivos(memberIds, limpiezaSettings.InactividadMeses);
@@ -562,7 +548,6 @@ public class Admin(
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
         await ctx.DeferResponseAsync();
-        if (!await EnsureAdminAsync(ctx)) return;
         if (!await EnsureCanalPermitidoAsync(ctx)) return;
 
         AnilistUser? perfil;
@@ -606,7 +591,6 @@ public class Admin(
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
         await ctx.DeferResponseAsync();
-        if (!await EnsureAdminAsync(ctx)) return;
         if (!await EnsureCanalPermitidoAsync(ctx)) return;
 
         AnilistUser? perfil;
@@ -648,7 +632,6 @@ public class Admin(
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
         await ctx.DeferResponseAsync();
-        if (!await EnsureAdminAsync(ctx)) return;
         if (!await EnsureCanalPermitidoAsync(ctx)) return;
 
         List<int> listaBaneados = (await anilistBaneadosRepository.GetLista()).Select(x => x.AnilistUserId).ToList();
@@ -674,7 +657,6 @@ public class Admin(
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
         await ctx.DeferResponseAsync();
-        if (!await EnsureAdminAsync(ctx)) return;
 
         try
         {
@@ -721,15 +703,6 @@ public class Admin(
         }
     }
 
-    private async Task<bool> EnsureAdminAsync(SlashCommandContext ctx)
-    {
-        if (ctx.Member is not null && ctx.Member.Roles.Any(r => r.Id == config.Roles.KamiSama))
-            return true;
-
-        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(SinPermisoEmbed()));
-        return false;
-    }
-
     private async Task<bool> EnsureCanalPermitidoAsync(SlashCommandContext ctx)
     {
         if (ctx.Channel.Id == config.Channels.Moderacion
@@ -746,10 +719,4 @@ public class Admin(
         return false;
     }
 
-    private static DiscordEmbedBuilder SinPermisoEmbed() => new()
-    {
-        Title = "Sin permiso",
-        Description = "Solo los administradores pueden usar este comando.",
-        Color = DiscordColor.Red
-    };
 }

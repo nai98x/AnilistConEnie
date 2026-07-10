@@ -90,6 +90,22 @@ public record ConfesionesSettings
     }
 }
 
+public record SubirImagenSettings
+{
+    public required long MaxTamanoBytes { get; init; }
+    public required int CooldownMinutos { get; init; }
+
+    public static SubirImagenSettings FromConfiguration(IConfiguration configuration)
+    {
+        IConfigurationSection section = configuration.GetSection("SubirImagen");
+        return new SubirImagenSettings
+        {
+            MaxTamanoBytes = section.RequireLong("MaxTamanoBytes"),
+            CooldownMinutos = section.RequireInt("CooldownMinutos"),
+        };
+    }
+}
+
 public record LogsSettings
 {
     public required long TamanoArchivoBytes { get; init; }
@@ -141,5 +157,6 @@ public static class BehaviorSettingsExtensions
             .AddSingleton(LimpiezaMiembrosSettings.FromConfiguration(configuration))
             .AddSingleton(CooldownsSettings.FromConfiguration(configuration))
             .AddSingleton(XpSettings.FromConfiguration(configuration))
-            .AddSingleton(ConfesionesSettings.FromConfiguration(configuration));
+            .AddSingleton(ConfesionesSettings.FromConfiguration(configuration))
+            .AddSingleton(SubirImagenSettings.FromConfiguration(configuration));
 }

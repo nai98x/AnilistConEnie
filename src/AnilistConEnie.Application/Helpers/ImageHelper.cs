@@ -65,6 +65,15 @@ public static class ImageHelper
         return Encode(surface);
     }
 
+    /// <summary>Verifica que los bytes correspondan a una imagen decodificable (no alcanza con el content-type declarado).</summary>
+    public static bool EsImagenValida(byte[] bytes)
+    {
+        if (bytes.Length == 0) return false;
+        using SKData data = SKData.CreateCopy(bytes);
+        using SKCodec? codec = SKCodec.Create(data);
+        return codec is not null;
+    }
+
     private static byte[] Encode(SKSurface surface)
     {
         using SKImage snapshot = surface.Snapshot();

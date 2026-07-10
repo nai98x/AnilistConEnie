@@ -23,3 +23,11 @@ db/
 
 Conectado a la base (por DBeaver o `psql`), correr primero los de `schema/` y después los de
 `procedures/`. Como son idempotentes, reaplicarlos sincroniza la base con lo versionado.
+
+## Seguridad del rol del bot
+
+El usuario con el que se conecta el bot no debe ser superuser ni dueño del schema: alcanza con
+`CONNECT` a la base, `USAGE` del schema y `EXECUTE` sobre las funciones de `procedures/` (más los
+permisos de tabla que esas funciones necesiten). La BD vive en el mismo server que el bot y debe
+escuchar solo en localhost (ver `deploy-setup/README.md`); TLS solo haría falta si se mudara a
+otra máquina.

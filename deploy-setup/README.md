@@ -51,8 +51,20 @@ dotnet user-secrets --project src/AnilistConEnie.Bot \
 
      ```
      discordToken=...
-     ConnectionStrings__Database=Host=...;Port=...;Database=...;Username=...;Password=...
+     ConnectionStrings__Database=Host=localhost;Port=...;Database=...;Username=...;Password=...
      ```
+
+   Seguridad de estos archivos y de la conexión:
+   - `chmod 700 ~/bots/secrets && chmod 600 ~/bots/secrets/*` — solo el usuario del servicio debe
+     poder leerlos.
+   - La BD corre en el mismo server y el bot se conecta por localhost: no hace falta TLS (el
+     tráfico no sale de la máquina), pero PostgreSQL debe escuchar **solo** en localhost
+     (`listen_addresses = 'localhost'`, verificable con `ss -tlnp | grep 5432`) y `pg_hba.conf`
+     debe exigir `scram-sha-256` para conexiones locales. Si la BD se mudara a otra máquina,
+     ahí sí agregar `SSL Mode=Require` (o `VerifyFull`) a la connection string.
+   - El usuario de la BD no debe ser superuser: alcanza con `CONNECT` a la base, `USAGE` del schema
+     y `EXECUTE` sobre las funciones de `db/procedures/` (más los permisos de tabla que esas
+     funciones necesiten si no son `SECURITY DEFINER`).
 
 3. Instalar el servicio (`anilistconenie.service` de este directorio):
 

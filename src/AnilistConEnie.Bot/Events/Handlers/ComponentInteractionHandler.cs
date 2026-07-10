@@ -26,11 +26,19 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
             await args.Interaction.DeferAsync(true);
 
             bool ok = false;
-            DiscordMember member = args.Guild.Members[args.User.Id];
-            ulong chosenColorId = ulong.Parse(args.Interaction.Data.Values.First());
             Dictionary<ulong, RangoEnum> coloresPorRango = config.Roles.ColoresRango.ToDictionary(c => c.RoleId, c => Enum.Parse<RangoEnum>(c.Rango));
+            if (!args.Guild.Members.TryGetValue(args.User.Id, out DiscordMember? member)
+                || !ulong.TryParse(args.Interaction.Data.Values.FirstOrDefault(), out ulong chosenColorId)
+                || !coloresPorRango.ContainsKey(chosenColorId)
+                || !args.Guild.Roles.TryGetValue(chosenColorId, out DiscordRole? newColor))
+            {
+                await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
+                    .WithTitle("Error")
+                    .WithDescription("El color elegido no es válido")
+                    .WithColor(DiscordColor.Red)));
+                return;
+            }
             KeyValuePair<ulong, RangoEnum> chosenColor = coloresPorRango.FirstOrDefault(x => x.Key == chosenColorId);
-            DiscordRole newColor = args.Guild.Roles[chosenColorId];
 
             if (rangoRoles.RangoAPartirDe(args.Guild, member, chosenColor.Value, false))
             {
@@ -84,12 +92,14 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
         }
         else if (args.Interaction.Data.CustomId.StartsWith("sync-"))
         {
-            await args.Interaction.DeferAsync(false);
+            if (!await EsStaffAsync(args)) return;
 
             string[] parts = args.Id.Split('-');
-            bool aprobado = bool.Parse(parts[1]);
-            long discordId = long.Parse(parts[2]);
-            
+            if (parts.Length < 3 || !bool.TryParse(parts[1], out bool aprobado) || !long.TryParse(parts[2], out long discordId)) return;
+
+            await args.Interaction.DeferAsync(false);
+
+
             UserApprovalAnilist? userApproval = await anilistApprovalRepository.Obtener(discordId);
             if (userApproval is null)
             {
@@ -152,19 +162,14 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
         }
         else if (args.Interaction.Data.CustomId.StartsWith("yoink-"))
         {
-            if (!args.Guild.Members.TryGetValue(args.User.Id, out DiscordMember? clicker) || clicker.Roles.All(r => r.Id != config.Roles.KamiSama))
-            {
-                await args.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource,
-                    new DiscordInteractionResponseBuilder().AsEphemeral().WithContent("Solo los administradores pueden usar este comando."));
-                return;
-            }
-
-            await args.Interaction.DeferAsync(true);
+            if (!await EsStaffAsync(args)) return;
 
             string[] partes = args.Id.Split('-');
-            ulong emoteId = ulong.Parse(partes[1]);
+            if (partes.Length < 4 || !ulong.TryParse(partes[1], out ulong emoteId)) return;
             bool animado = partes[2] == "1";
             string nombreEmote = partes[3];
+
+            await args.Interaction.DeferAsync(true);
 
             DiscordMessageBuilder edicion = new DiscordMessageBuilder().EnableV2Components();
             foreach (DiscordComponent componente in args.Message!.Components!)
@@ -187,6 +192,7 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
             {
                 string extension = animado ? "gif" : "png";
                 HttpClient http = httpClientFactory.CreateClient();
+                http.MaxResponseContentBufferSize = 8 * 1024 * 1024;
                 byte[] bytes = await http.GetByteArrayAsync($"https://cdn.discordapp.com/emojis/{emoteId}.{extension}");
                 await using MemoryStream imagen = new(bytes);
                 DiscordGuildEmoji nuevo = await args.Guild.CreateEmojiAsync(nombreEmote, imagen);
@@ -214,5 +220,15 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
             if (args.Interaction.Data.ComponentType is not DiscordComponentType.Button)
                 await args.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
         }
+    }
+
+    private async Task<bool> EsStaffAsync(ComponentInteractionCreatedEventArgs args)
+    {
+        if (args.Guild.Members.TryGetValue(args.User.Id, out DiscordMember? clicker) && clicker.Roles.Any(r => r.Id == config.Roles.KamiSama))
+            return true;
+
+        await args.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource,
+            new DiscordInteractionResponseBuilder().AsEphemeral().WithContent("Solo los administradores pueden usar este comando."));
+        return false;
     }
 }

@@ -82,7 +82,7 @@ public class MessageCreatedHandler(
 
             foreach (Trigger trigger in TriggerMatcher.Aplicables(args.Message.Content, triggers))
             {
-                DiscordMessageBuilder messageBuilder = new();
+                DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder().WithAllowedMentions(Mentions.None);
 
                 if (!string.IsNullOrEmpty(trigger.Texto))
                     messageBuilder.WithContent(trigger.Texto);

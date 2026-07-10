@@ -21,6 +21,7 @@ public static class BotServiceExtensions
         services.AddSingleton<ConfessionsState>();
         services.AddSingleton<PermanentUsernameState>();
         services.AddSingleton<ChallengePostsState>();
+        services.AddSingleton<SubirImagenState>();
 
         // Helpers
         services.AddSingleton<RangoRoles>();

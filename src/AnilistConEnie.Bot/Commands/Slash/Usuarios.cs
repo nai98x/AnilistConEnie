@@ -26,6 +26,7 @@ namespace AnilistConEnie.Bot.Commands.Slash;
 public class Usuarios(
     IUsuariosRepository usuariosRepository,
     XpState xpState,
+    FechaEntradaState fechaEntradaState,
     RangoRoles rangoRoles,
     RelojPais relojPais,
     BotConfiguration config,
@@ -197,8 +198,8 @@ public class Usuarios(
         DiscordRole noVerificadoRole = guild.Roles[config.Roles.NoVinculado];
 
         List<DiscordMember> miembrosFundadores = guild.Members.Values
-            .Where(x => config.GetFechaEntrada(x.Id, x.JoinedAt).Date == guildCreation && !x.Roles.Contains(noVerificadoRole) && !x.IsBot)
-            .OrderBy(x => config.GetFechaEntrada(x.Id, x.JoinedAt))
+            .Where(x => fechaEntradaState.GetFechaEntrada(x.Id, x.JoinedAt).Date == guildCreation && !x.Roles.Contains(noVerificadoRole) && !x.IsBot)
+            .OrderBy(x => fechaEntradaState.GetFechaEntrada(x.Id, x.JoinedAt))
             .ToList();
 
         DiscordEmoji umaPoints = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
@@ -212,7 +213,7 @@ public class Usuarios(
                     "-# Horarios en hora de Argentina (UTC-3).",
             renderItem: miembro =>
             {
-                DateTimeOffset entrada = config.GetFechaEntrada(miembro.Id, miembro.JoinedAt).ToOffset(TimeSpan.FromHours(-3));
+                DateTimeOffset entrada = fechaEntradaState.GetFechaEntrada(miembro.Id, miembro.JoinedAt).ToOffset(TimeSpan.FromHours(-3));
                 long xp = xpState.GetUserXp(miembro.Id).Total;
                 DiscordRole rango = rangoRoles.GetRoleByXp(guild, xp);
                 return new DiscordSectionComponent(

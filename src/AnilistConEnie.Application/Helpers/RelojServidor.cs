@@ -12,4 +12,8 @@ public static class RelojServidor
     public static DateTime Ahora => TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, Zona);
 
     public static DateTime Hoy => Ahora.Date;
+
+    /// <summary>Convierte un instante UTC a la hora de Argentina, con su offset.</summary>
+    public static DateTimeOffset EnHoraLocal(DateTime utc) =>
+        TimeZoneInfo.ConvertTime(new DateTimeOffset(DateTime.SpecifyKind(utc, DateTimeKind.Utc)), Zona);
 }

@@ -88,6 +88,14 @@ public class UsuariosRepository(DbConnectionFactory connectionFactory) : IUsuari
             commandType: CommandType.StoredProcedure)).AsList();
     }
 
+    public async Task<List<Usuario>> GetFechasEntrada()
+    {
+        using var connection = await connectionFactory.OpenConnectionAsync();
+        return (await connection.QueryAsync<Usuario>(
+            "usuario_fechas_entrada",
+            commandType: CommandType.StoredProcedure)).AsList();
+    }
+
     public async Task SetLastActivity(ulong userId, DateTime lastActivity)
     {
         using var connection = await connectionFactory.OpenConnectionAsync();

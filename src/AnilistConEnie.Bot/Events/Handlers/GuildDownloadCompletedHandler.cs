@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, TriggersState triggersState, XpState xpState, ILogger<GuildDownloadCompletedHandler> logger, BotConfiguration config, DiscordLogService logService, GuildMaintenanceService guildMaintenanceService, IXpUsuariosRepository xpUsuariosRepository, ITriggersRepository triggersRepository, DbConnectionFactory connectionFactory)
+public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, TriggersState triggersState, XpState xpState, FechaEntradaState fechaEntradaState, ILogger<GuildDownloadCompletedHandler> logger, BotConfiguration config, DiscordLogService logService, GuildMaintenanceService guildMaintenanceService, IXpUsuariosRepository xpUsuariosRepository, IUsuariosRepository usuariosRepository, ITriggersRepository triggersRepository, DbConnectionFactory connectionFactory)
 {
     public async Task Handle(DiscordClient client, GuildDownloadCompletedEventArgs args)
     {
@@ -49,6 +49,11 @@ public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, 
         List<UserXp> ranking = await xpUsuariosRepository.ObtenerRanking();
         xpState.FillGuildXp(ranking.ToDictionary(r => (ulong)r.UserId));
         logger.LogInformation("Xp de usuarios de Discord cargada correctamente");
+        #endregion
+
+        #region Fechas de entrada reales
+        fechaEntradaState.FillFechasEntrada(await usuariosRepository.GetFechasEntrada());
+        logger.LogInformation("Fechas de entrada reales cargadas correctamente");
         #endregion
 
         #region Control de roles en startup

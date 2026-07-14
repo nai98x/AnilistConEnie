@@ -13,6 +13,7 @@ public interface IUsuariosRepository
     Task SetCumple(ulong userId, short? cumpleDia, short? cumpleMes);
     Task BorrarCumple(ulong userId);
     Task<List<Usuario>> GetCumples();
+    Task<List<Usuario>> GetFechasEntrada();
     Task SetLastActivity(ulong userId, DateTime lastActivity);
     Task<List<UsuarioActivo>> GetUsuariosActivos(HashSet<ulong> memberIds);
     Task<List<UsuarioActivo>> GetUsuariosInactivos(HashSet<ulong> memberIds, int months);

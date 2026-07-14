@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AnilistConEnie.Bot.Helpers;
 
-public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, XpState xpState, InviteLinkState inviteLinkState, PermanentUsernameState permanentUsernameState, BotConfiguration config, XpSettings xpSettings, LimpiezaMiembrosSettings limpiezaSettings, RangoRoles rangoRoles, RelojPais relojPais, DiscordLogService logService, DiscordBotService discordBotService, IUsuariosRepository usuariosRepository, IXpUsuariosRepository xpUsuariosRepository, IXpDiarioRepository xpDiarioRepository, IChallengesRepository challengesRepository)
+public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, XpState xpState, InviteLinkState inviteLinkState, PermanentUsernameState permanentUsernameState, FechaEntradaState fechaEntradaState, BotConfiguration config, XpSettings xpSettings, LimpiezaMiembrosSettings limpiezaSettings, RangoRoles rangoRoles, RelojPais relojPais, DiscordLogService logService, DiscordBotService discordBotService, IUsuariosRepository usuariosRepository, IXpUsuariosRepository xpUsuariosRepository, IXpDiarioRepository xpDiarioRepository, IChallengesRepository challengesRepository)
 {
     public async Task ClearInvitesRoleOnStartup(DiscordGuild guild)
     {
@@ -78,6 +78,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
                 return;
 
             UserXp memberXp = xpState.GetUserXp(userId);
+            long xpAntes = memberXp.Total;
             XpAccrual accrual = XpReward.Accrue(memberXp, member.PremiumSince != null, Random.Shared, xpSettings.MinPorMensaje, xpSettings.MaxPorMensaje, xpSettings.MinBooster, xpSettings.MaxBooster);
 
             if (accrual.BoosterXp > 0)
@@ -94,7 +95,6 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
             (bool habilitado, ulong usuarioId) debug = xpState.GetDebugXp();
             if (debug.habilitado && member.Id == debug.usuarioId)
             {
-                long xpAntes = memberXp.Total;
                 bool subioRango = roleBefore.Id != roleAfter.Id;
                 bool esBooster = member.PremiumSince != null;
 
@@ -239,8 +239,8 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
             int guildCreationYear = guild.CreationTimestamp.Year;
 
             List<KeyValuePair<ulong, DiscordMember>> membersAniversaries = guild.Members
-                .Where(x => AniversarioCalculator.EsAniversarioAhora(config.GetFechaEntrada(x.Key, x.Value.JoinedAt), now, guildCreationYear))
-                .OrderBy(x => config.GetFechaEntrada(x.Key, x.Value.JoinedAt))
+                .Where(x => AniversarioCalculator.EsAniversarioAhora(fechaEntradaState.GetFechaEntrada(x.Key, x.Value.JoinedAt), now, guildCreationYear))
+                .OrderBy(x => fechaEntradaState.GetFechaEntrada(x.Key, x.Value.JoinedAt))
                 .ToList();
 
             DiscordChannel canal = guild.Channels[config.Channels.General];
@@ -254,7 +254,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
                     if (!rangoRoles.RangoAPartirDe(guild, member, RangoEnum.Kouhai, true))
                         continue;
 
-                    DateTimeOffset joinedAt = config.GetFechaEntrada(member.Id, member.JoinedAt);
+                    DateTimeOffset joinedAt = fechaEntradaState.GetFechaEntrada(member.Id, member.JoinedAt);
                     int yearsInServer = AniversarioCalculator.AniosEnServidor(joinedAt, now);
 
                     await canal.SendMessageAsync(new DiscordEmbedBuilder()
@@ -364,7 +364,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
             DiscordRole fundadorRole = guild.Roles[config.Roles.Fundador];
             DiscordRole noVerificadoRole = guild.Roles[config.Roles.NoVinculado];
 
-            List<KeyValuePair<ulong, DiscordMember>> miembrosNoFundadores = guild.Members.Where(x => config.GetFechaEntrada(x.Key, x.Value.JoinedAt).Date == guildCreation && !x.Value.Roles.Contains(fundadorRole) && !x.Value.Roles.Contains(noVerificadoRole) && !x.Value.IsBot).ToList();
+            List<KeyValuePair<ulong, DiscordMember>> miembrosNoFundadores = guild.Members.Where(x => fechaEntradaState.GetFechaEntrada(x.Key, x.Value.JoinedAt).Date == guildCreation && !x.Value.Roles.Contains(fundadorRole) && !x.Value.Roles.Contains(noVerificadoRole) && !x.Value.IsBot).ToList();
 
             foreach (KeyValuePair<ulong, DiscordMember> member in miembrosNoFundadores)
             {

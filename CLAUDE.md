@@ -52,6 +52,11 @@ inversas.
   El esquema y los SPs viven versionados en `db/` (no en código). Los POCOs de Model mapean los
   resultados (snake_case→PascalCase vía `DefaultTypeMap.MatchNamesWithUnderscores`); la conexión se
   abre con `DbConnectionFactory` (`Infrastructure/Database/`, único archivo que conoce el motor).
+- **Migraciones de BD: NO se versionan**. `db/schema/` refleja siempre el **estado actual** de cada
+  tabla (el `CREATE` limpio): nada de `ALTER`, bloques `DO $$` de migración ni scripts de datos
+  (`INSERT`/`UPDATE` con IDs reales). Cuando un cambio de esquema o una carga de datos requiera SQL
+  de migración, **pasarlo en la respuesta del chat** para que el dueño lo corra a mano, y versionar
+  solo el estado final.
 - **DI de handlers/servicios**: por **constructor** (primary constructors). No usar service locator
   (`IServiceProvider.GetService`) salvo el caso ya establecido de `EventHandlerRegistrar`, donde la
   resolución de cada handler se difiere dentro de un lambda para romper el ciclo

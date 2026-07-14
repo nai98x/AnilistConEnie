@@ -1,4 +1,3 @@
-using System.Globalization;
 using Microsoft.Extensions.Configuration;
 
 namespace AnilistConEnie.Bot.Configuration;
@@ -11,10 +10,6 @@ public class BotConfiguration
     public required RolesConfiguration Roles { get; init; }
     public required EmotesConfiguration Emotes { get; init; }
     public required IReadOnlyList<PaisTimezoneConfiguration> PaisTimezones { get; init; }
-    public required IReadOnlyList<FechaEntradaExcepcion> FechasEntradaExcepciones { get; init; }
-
-    public DateTimeOffset GetFechaEntrada(ulong userId, DateTimeOffset joinedAt)
-        => FechasEntradaExcepciones.FirstOrDefault(x => x.UserId == userId)?.FechaEntrada ?? joinedAt;
 
     public class ChannelConfiguration
     {
@@ -94,7 +89,6 @@ public class BotConfiguration
         }
     }
 
-    public record FechaEntradaExcepcion(string Nombre, ulong UserId, DateTimeOffset FechaEntrada);
     public record PaisTimezoneConfiguration(ulong RoleId, string Timezone);
     public record ColorRangoConfiguration(ulong RoleId, string Nombre, string Rango);
 
@@ -177,8 +171,7 @@ public class BotConfiguration
                 ConfessionReaction = RequireUlong(emotes, "ConfessionReaction"),
                 Tenshi = RequireUlong(emotes, "Tenshi"),
             },
-            PaisTimezones = RequirePaisTimezones(ids),
-            FechasEntradaExcepciones = ReadFechasEntradaExcepciones(configuration)
+            PaisTimezones = RequirePaisTimezones(ids)
         };
     }
 
@@ -222,25 +215,6 @@ public class BotConfiguration
         }).ToList().AsReadOnly();
     }
 
-    private static IReadOnlyList<FechaEntradaExcepcion> ReadFechasEntradaExcepciones(IConfiguration configuration)
-    {
-        var raw = configuration.GetSection("FechasEntradaExcepciones").Get<FechaEntradaExcepcionRaw[]>();
-        if (raw is null)
-            return Array.Empty<FechaEntradaExcepcion>();
-        return raw
-            .Where(r => ulong.TryParse(r.UserId, out ulong userId) && userId != 0)
-            .Select(r =>
-            {
-                ulong userId = ulong.Parse(r.UserId);
-                if (!DateTimeOffset.TryParseExact(r.FechaEntrada, "yyyy/MM/dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out DateTimeOffset fecha))
-                    throw new InvalidOperationException($"FechaEntrada inválida en FechasEntradaExcepciones (formato esperado yyyy/MM/dd HH:mm:ss): {r.FechaEntrada}");
-                return new FechaEntradaExcepcion(r.Nombre ?? string.Empty, userId, fecha);
-            })
-            .ToList()
-            .AsReadOnly();
-    }
-
     private record ColorRangoRaw(string RoleId, string Nombre, string Rango);
     private record PaisTimezoneRaw(string RoleId, string Timezone);
-    private record FechaEntradaExcepcionRaw(string? Nombre, string UserId, string FechaEntrada);
 }

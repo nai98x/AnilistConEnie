@@ -23,7 +23,6 @@ public class MinuteScheduledService(
         if (!Inicializado || !client.Guilds.TryGetValue(config.GuildId, out DiscordGuild? guild))
             return;
 
-        await guildMaintenanceService.ManageMemberXp(guild);
         await guildMaintenanceService.ManageInvitesRole(guild);
         await guildMaintenanceService.ManagePermanentUsernames(guild);
     }

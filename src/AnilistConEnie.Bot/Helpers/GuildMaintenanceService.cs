@@ -67,60 +67,57 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
         }
     }
 
-    public async Task ManageMemberXp(DiscordGuild guild)
+    public async Task GrantXpPorMensaje(DiscordGuild guild, ulong userId)
     {
-        (bool habilitado, ulong usuarioId) debug = xpState.GetDebugXp();
-        List<ulong> membersToAddXp = xpState.DrainMembersToObtainXp();
+        if (!xpState.TryClaimXp(userId, TimeSpan.FromSeconds(xpSettings.CooldownSegundos)))
+            return;
 
         try
         {
-            DiscordChannel playroom = guild.Channels[config.Channels.Playroom];
+            if (!guild.Members.TryGetValue(userId, out DiscordMember? member) || member.IsBot)
+                return;
 
-            foreach (ulong userId in membersToAddXp)
+            UserXp memberXp = xpState.GetUserXp(userId);
+            XpAccrual accrual = XpReward.Accrue(memberXp, member.PremiumSince != null, Random.Shared, xpSettings.MinPorMensaje, xpSettings.MaxPorMensaje, xpSettings.MinBooster, xpSettings.MaxBooster);
+
+            if (accrual.BoosterXp > 0)
             {
-                if (!guild.Members.TryGetValue(userId, out DiscordMember? member) || member.IsBot)
-                    continue;
+                await xpUsuariosRepository.AddRemove(userId, new UserXpDelta { Booster = accrual.BoosterXp });
+                xpState.UpdateUserXp(userId, accrual.NewBoosterTotal, TipoXp.Booster);
+            }
 
-                UserXp memberXp = xpState.GetUserXp(userId);
-                XpAccrual accrual = XpReward.Accrue(memberXp, member.PremiumSince != null, Random.Shared, xpSettings.MinPorMensaje, xpSettings.MaxPorMensaje, xpSettings.MinBooster, xpSettings.MaxBooster);
+            DiscordRole roleBefore = rangoRoles.GetRoleByXpActual(guild, member);
+            DiscordRole roleAfter = rangoRoles.GetRoleByXp(guild, accrual.NewGrandTotal);
+            xpState.UpdateUserXp(userId, accrual.NewGrandTotal, TipoXp.Total);
+            await xpUsuariosRepository.AddRemove(userId, new UserXpDelta { Total = accrual.TotalGranted });
 
-                if (accrual.BoosterXp > 0)
-                {
-                    await xpUsuariosRepository.AddRemove(userId, new UserXpDelta { Booster = accrual.BoosterXp });
-                    xpState.UpdateUserXp(userId, accrual.NewBoosterTotal, TipoXp.Booster);
-                }
+            (bool habilitado, ulong usuarioId) debug = xpState.GetDebugXp();
+            if (debug.habilitado && member.Id == debug.usuarioId)
+            {
+                long xpAntes = memberXp.Total;
+                bool subioRango = roleBefore.Id != roleAfter.Id;
+                bool esBooster = member.PremiumSince != null;
 
-                DiscordRole roleBefore = rangoRoles.GetRoleByXpActual(guild, member);
-                DiscordRole roleAfter = rangoRoles.GetRoleByXp(guild, accrual.NewGrandTotal);
-                xpState.UpdateUserXp(userId, accrual.NewGrandTotal, TipoXp.Total);
-                await xpUsuariosRepository.AddRemove(userId, new UserXpDelta { Total = accrual.TotalGranted });
+                DiscordEmbedBuilder debugEmbed = new DiscordEmbedBuilder()
+                    .WithAuthor(member.DisplayName, iconUrl: member.GuildAvatarUrl ?? member.AvatarUrl)
+                    .WithTitle("🐛 Debug XP · por mensaje")
+                    .WithColor(subioRango ? DiscordColor.Gold : new DiscordColor("#5865F2"))
+                    .AddField("XP ganada", $"**+{accrual.TotalGranted}** XP", true)
+                    .AddField("XP base", $"+{accrual.BaseXp}", true)
+                    .AddField("XP booster", esBooster ? $"+{accrual.BoosterXp} 🚀" : "—", true)
+                    .AddField("XP total", $"{xpAntes:N0} → **{accrual.NewGrandTotal:N0}**", true)
+                    .AddField("Booster acumulado", $"{accrual.NewBoosterTotal:N0}", true)
+                    .AddField("¿Boostea?", esBooster ? "Sí 💎" : "No", true)
+                    .AddField("Rango", subioRango ? $"{roleBefore.Mention} → {roleAfter.Mention}  ⬆️" : roleAfter.Mention)
+                    .WithTimestamp(DateTimeOffset.Now);
 
-                if (debug.habilitado && member.Id == debug.usuarioId)
-                {
-                    long xpAntes = memberXp.Total;
-                    bool subioRango = roleBefore.Id != roleAfter.Id;
-                    bool esBooster = member.PremiumSince != null;
+                DiscordChannel playroom = guild.Channels[config.Channels.Playroom];
+                _ = playroom.SendMessageAsync(debugEmbed);
+            }
 
-                    DiscordEmbedBuilder debugEmbed = new DiscordEmbedBuilder()
-                        .WithAuthor(member.DisplayName, iconUrl: member.GuildAvatarUrl ?? member.AvatarUrl)
-                        .WithTitle("🐛 Debug XP · tick por minuto")
-                        .WithColor(subioRango ? DiscordColor.Gold : new DiscordColor("#5865F2"))
-                        .AddField("XP ganada", $"**+{accrual.TotalGranted}** XP", true)
-                        .AddField("XP base", $"+{accrual.BaseXp}", true)
-                        .AddField("XP booster", esBooster ? $"+{accrual.BoosterXp} 🚀" : "—", true)
-                        .AddField("XP total", $"{xpAntes:N0} → **{accrual.NewGrandTotal:N0}**", true)
-                        .AddField("Booster acumulado", $"{accrual.NewBoosterTotal:N0}", true)
-                        .AddField("¿Boostea?", esBooster ? "Sí 💎" : "No", true)
-                        .AddField("Rango", subioRango ? $"{roleBefore.Mention} → {roleAfter.Mention}  ⬆️" : roleAfter.Mention)
-                        .WithTimestamp(DateTimeOffset.Now);
-
-                    _ = playroom.SendMessageAsync(debugEmbed);
-                }
-
-                if (roleBefore != roleAfter || member.Roles.All(x => x.Id != roleAfter.Id))
-                {
-                    await SubirRango(guild, member, roleBefore, roleAfter);
-                }
+            if (roleBefore != roleAfter || member.Roles.All(x => x.Id != roleAfter.Id))
+            {
+                await SubirRango(guild, member, roleBefore, roleAfter);
             }
         }
         catch (Exception ex)
@@ -149,12 +146,18 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
 
         if (!yaTieneNuevoRango)
         {
+            string descripcion = $"Tu spam en el server dio frutos y subiste al rango {newRango.Mention} {emote}";
+
+            string? beneficios = RangoBeneficios.Items(rangoRoles.RangoForRole(newRango.Id), guild, config);
+            if (beneficios != null)
+                descripcion += $"\n\n**Beneficios desbloqueados:**\n{beneficios}";
+
             DiscordMessageBuilder builder = new();
 
             builder.WithContent(member.Mention);
             builder.AddEmbed(new DiscordEmbedBuilder()
                 .WithTitle($"¡Felicitaciones {member.DisplayName}!")
-                .WithDescription($"Tu spam en el server dio frutos y subiste al rango {newRango.Mention} {emote}")
+                .WithDescription(descripcion)
                 .WithImageUrl("https://media.discordapp.net/attachments/862410361595625522/864343455798919188/Omake_Gif_Anime.gif?ex=66d7d012&is=66d67e92&hm=02039c7a1566df59f6486bd013e38b8f1205e21b9c9b474f24727aad96a68d53&=")
                 .WithThumbnail("https://media.discordapp.net/attachments/879612956848062514/879628082921762826/imagen_2021-07-15_150953_1.png"));
             builder.AddMention(new UserMention(member.Id));

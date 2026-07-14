@@ -512,20 +512,13 @@ public class Xp(
         DiscordEmoji tenshiEmote = DiscordEmoji.FromGuildEmote(ctx.Client, config.Emotes.Tenshi);
         string desc = string.Empty;
 
-        if (rangoRoles.RangoAPartirDe(ctx.Guild!, member, RangoEnum.Tama, false))
-            desc += "### 🥚 Tama:\n- Participar en los intercambios\n- Adjuntar archivos\n\n";
+        foreach (RangoEnum rango in Enum.GetValues<RangoEnum>())
+        {
+            string? items = RangoBeneficios.Items(rango, ctx.Guild!, config);
+            if (items == null || !rangoRoles.RangoAPartirDe(ctx.Guild!, member, rango, false)) continue;
 
-        if (rangoRoles.RangoAPartirDe(ctx.Guild!, member, RangoEnum.Kouhai, false))
-            desc += "### 🍙 Kouhai:\n- Entrada garantizada a eventos del servidor\n\n";
-
-        if (rangoRoles.RangoAPartirDe(ctx.Guild!, member, RangoEnum.Senpai, false))
-            desc += "### 🍜 Senpai:\n- Elegir entre 45 colores para tu usuario\n\n";
-
-        if (rangoRoles.RangoAPartirDe(ctx.Guild!, member, RangoEnum.Ousama, false))
-            desc += "### 👑 Ousama:\n- Canal de voz propio\n\n";
-
-        if (rangoRoles.RangoAPartirDe(ctx.Guild!, member, RangoEnum.Teiou, false))
-            desc += $"### 🥕 Teiou:\n- Escribir en {ctx.Guild!.Channels[config.Channels.Teiou].Mention}\n- Comando {Formatter.InlineCode("/teiou nickname")}\n\n";
+            desc += $"### {RangoBeneficios.Emoji(rango)} {((Enum)rango).GetDescription()}:\n{items}\n\n";
+        }
 
         if (member.PremiumSince != null)
             desc += $"### 😇 Tenshi:\n- Emotes exclusivos `{tenshiEmote}`\n- 1 a 3 de XP extra por mensaje\n\n";

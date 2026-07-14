@@ -15,12 +15,12 @@ namespace AnilistConEnie.Bot.Events.Handlers;
 public class MessageCreatedHandler(
     DiscordBotService discordBotService,
     MemberActivityState memberActivityState,
-    XpState xpState,
     EmoteModeState emoteModeState,
     HackedAccountState hackedAccountState,
     TriggersState triggersState,
     BotConfiguration config,
     DiscordLogService logService,
+    GuildMaintenanceService guildMaintenanceService,
     IIntercambiosRepostRepository intercambiosRepostRepository)
 {
     public async Task Handle(DiscordClient client, MessageCreatedEventArgs args)
@@ -49,10 +49,11 @@ public class MessageCreatedHandler(
         ];
 
         if (!args.Author.IsBot
+            && !discordBotService.Debug
             && ((args.Channel is DiscordThreadChannel && !canalesSinXp.Contains(args.Channel.Parent.Id))
                 || (args.Channel is not DiscordThreadChannel && !canalesSinXp.Contains(args.Channel.Id)))
             && !(args.Message.Content.StartsWith('<') && args.Message.Content.EndsWith('>') && args.Message.Content.Split(' ').Length == 1))
-            xpState.AddMemberToObtainXp(args.Author.Id);
+            await guildMaintenanceService.GrantXpPorMensaje(args.Guild, args.Author.Id);
         #endregion
 
         #region YepMode

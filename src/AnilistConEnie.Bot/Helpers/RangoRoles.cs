@@ -28,6 +28,9 @@ public class RangoRoles(BotConfiguration config)
 
     public DiscordRole GetRoleByXp(DiscordGuild guild, long xp) => guild.Roles[RoleIdForRango(RangoXp.RangoActual(xp))];
 
+    public RangoEnum RangoForRole(ulong roleId) =>
+        System.Enum.GetValues<RangoEnum>().FirstOrDefault(x => x != RangoEnum.Miembro && RoleIdForRango(x) == roleId);
+
     private ulong RoleIdForRango(RangoEnum rango) => rango switch
     {
         RangoEnum.Tama => config.Roles.Rangos.Tama,

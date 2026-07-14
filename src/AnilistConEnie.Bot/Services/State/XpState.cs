@@ -10,7 +10,7 @@ public class XpState
     private List<ulong> _boosters = [];
     private (bool, ulong) _debugXp = (false, 0);
 
-    private readonly ConcurrentDictionary<ulong, bool> _usersXp = new();
+    private readonly ConcurrentDictionary<ulong, DateTime> _xpCooldowns = new();
     private readonly ConcurrentDictionary<ulong, UserXp> _generalXp = new();
 
     #region Boosters extra xp
@@ -18,16 +18,19 @@ public class XpState
     public List<ulong> GetBoosters() => _boosters;
     #endregion
 
-    #region Xp por minuto
-    public void AddMemberToObtainXp(ulong userId) => _usersXp.TryAdd(userId, true);
-
-    /// <summary>Toma y quita los usuarios pendientes; los que escriben durante el procesamiento quedan para el próximo tick.</summary>
-    public List<ulong> DrainMembersToObtainXp()
+    #region Cooldown de xp por mensaje
+    public bool TryClaimXp(ulong userId, TimeSpan cooldown)
     {
-        List<ulong> ids = [.._usersXp.Keys];
-        foreach (ulong id in ids)
-            _usersXp.TryRemove(id, out _);
-        return ids;
+        DateTime ahora = DateTime.UtcNow;
+        while (true)
+        {
+            if (_xpCooldowns.TryGetValue(userId, out DateTime ultimo))
+            {
+                if (ahora - ultimo < cooldown) return false;
+                if (_xpCooldowns.TryUpdate(userId, ahora, ultimo)) return true;
+            }
+            else if (_xpCooldowns.TryAdd(userId, ahora)) return true;
+        }
     }
     #endregion
 

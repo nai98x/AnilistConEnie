@@ -62,6 +62,7 @@ public record XpSettings
     public required int MaxPorMensaje { get; init; }
     public required int MinBooster { get; init; }
     public required int MaxBooster { get; init; }
+    public required int CooldownSegundos { get; init; }
 
     public static XpSettings FromConfiguration(IConfiguration configuration)
     {
@@ -72,6 +73,7 @@ public record XpSettings
             MaxPorMensaje = section.RequireInt("MaxPorMensaje"),
             MinBooster = section.RequireInt("MinBooster"),
             MaxBooster = section.RequireInt("MaxBooster"),
+            CooldownSegundos = section.RequireInt("CooldownSegundos"),
         };
     }
 }

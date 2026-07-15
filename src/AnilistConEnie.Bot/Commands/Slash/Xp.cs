@@ -14,6 +14,7 @@ using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Entities.Charts;
 using AnilistConEnie.Model.Enum;
 using AnilistConEnie.Model.Interfaces;
+using AnilistConEnie.Model.Interfaces.Repositories;
 using DSharpPlus;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
@@ -25,7 +26,7 @@ using AnilistConEnie.Bot.Extensions;
 
 namespace AnilistConEnie.Bot.Commands.Slash;
 
-//[TestCommand]
+[TestCommand]
 [Command("xp")]
 public class Xp(
     BotConfiguration config,
@@ -33,6 +34,7 @@ public class Xp(
     XpState xpState,
     XpChartService xpChartService,
     IChartRenderer chartRenderer,
+    IXpDiarioRepository xpDiarioRepository,
     DiscordBotService discordBotService)
 {
     private const string RankThumbnail = "https://media.discordapp.net/attachments/862568630365323264/990747470508204032/unknown.png";
@@ -50,7 +52,6 @@ public class Xp(
 
         await ctx.DeferResponseAsync();
 
-        DiscordEmoji ghost = DiscordEmoji.FromUnicode("👻");
         List<UserXp> xp = xpState.GetGuildXp(ctx.Guild!);
 
         XpRankingCategory category = tipo switch
@@ -77,8 +78,7 @@ public class Xp(
 
         DiscordEmoji umaPoints = await UmaPointsAsync(ctx);
 
-        string RivalName(ulong rivalId) =>
-            ctx.Guild!.Members.TryGetValue(rivalId, out DiscordMember? r) ? r.DisplayName : "un fantasma";
+        string RivalName(ulong rivalId) => ctx.Guild!.Members[rivalId].DisplayName;
 
         RankPosition pos = XpRanking.ResolvePosition(rankings, ctx.User.Id);
         string positionDesc = pos.Kind switch
@@ -90,10 +90,7 @@ public class Xp(
         };
 
         string fullText = string.Join("\n", rankings.Select(rk =>
-        {
-            string name = ctx.Guild!.Members.TryGetValue(rk.UserId, out DiscordMember? member) ? member.DisplayName : ghost.ToString();
-            return $"**#{rk.Rank}** {name} - **{rk.Score.ToSpanish()} {umaPoints}**";
-        }));
+            $"**#{rk.Rank}** {ctx.Guild!.Members[rk.UserId].DisplayName} - **{rk.Score.ToSpanish()} {umaPoints}**"));
 
         DiscordEmbedBuilder embed = new DiscordEmbedBuilder()
             .WithColor(DiscordEmojiHelper.GetColor())
@@ -279,7 +276,7 @@ public class Xp(
         await DiscordInteractivity.SwitchTabsAsync(ctx, embeds);
     }
 
-    [Command("topchart")]
+    [Command("top_chart")]
     [Description("Muestra el ranking de experiencia del top en forma de chart")]
     public async Task TopChart(SlashCommandContext ctx)
     {
@@ -369,7 +366,7 @@ public class Xp(
         }
     }
 
-    [Command("toppaises")]
+    [Command("top_paises")]
     [Description("Muestra el ranking de experiencia del servidor por pais")]
     public async Task TopPaises(SlashCommandContext ctx)
     {
@@ -414,22 +411,13 @@ public class Xp(
             .AddFile("xpchartcountries.png", image.ToMemoryStream()));
     }
 
-    [Command("topcotorreo")]
+    [Command("top_cotorreo")]
     [Description("Muestra el ranking de experiencia por dia")]
     public async Task TopCotorreo(SlashCommandContext ctx)
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
         await ctx.DeferResponseAsync();
-
-        if (RelojServidor.Hoy is { Day: 1, Month: 1 } && ctx.User.Id != config.OwnerId)
-        {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-                .WithTitle("Error")
-                .WithDescription("Este comando no está disponible el 1 de enero de cada año ya que no hay registros para hacer el top de cotorreo")
-                .WithColor(DiscordColor.Red)));
-            return;
-        }
 
         DiscordEmoji umaPoints = await UmaPointsAsync(ctx);
         Dictionary<DiscordMember, double> promediosByUser = [];
@@ -452,6 +440,68 @@ public class Xp(
             .WithTitle("Top de cotorreo")
             .WithFooter("El cotorreo es el promedio de xp ganado diariamente del usuario")
             .WithColor(DiscordColor.Blurple);
+
+        InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
+        IEnumerable<Page> pages = InteractivityExtension.GeneratePagesInEmbed(fullText, SplitType.Line, embed);
+        await interactivity.SendPaginatedResponseAsync(ctx.Interaction, ephemeral: false, ctx.User, pages);
+    }
+
+    [Command("top_parcial")]
+    [Description("Muestra el ranking de experiencia ganada en el período en curso")]
+    public async Task TopPorFecha(
+        SlashCommandContext ctx,
+        [Parameter("Rango")] [Description("Período calendario a contabilizar")] TipoXpTopParcialCommand rango)
+    {
+        if (!await ctx.BotInicializadoAsync(discordBotService)) return;
+
+        await ctx.DeferResponseAsync();
+
+        XpRangoParcial rangoParcial = rango switch
+        {
+            TipoXpTopParcialCommand.Anual => XpRangoParcial.Anual,
+            TipoXpTopParcialCommand.Mensual => XpRangoParcial.Mensual,
+            TipoXpTopParcialCommand.Semanal => XpRangoParcial.Semanal,
+            _ => XpRangoParcial.Diario
+        };
+
+        DateOnly inicio = XpRankingParcial.InicioRango(rangoParcial, DateOnly.FromDateTime(RelojServidor.Hoy));
+
+        List<UserXp> xp = xpState.GetGuildXp(ctx.Guild!);
+        Dictionary<long, long> baselines = (await xpDiarioRepository.ObtenerBaseline(inicio))
+            .ToDictionary(x => x.UserId, x => x.Xp);
+
+        IReadOnlyList<XpRankEntry> rankings = XpRankingParcial.Build(xp, baselines);
+
+        if (rankings.Count == 0)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                .WithTitle("Error")
+                .WithDescription($"Todavía no hay experiencia ganada en el rango `{((Enum)rango).GetDescription()}`")
+                .WithColor(DiscordColor.Red)));
+            return;
+        }
+
+        DiscordEmoji umaPoints = await UmaPointsAsync(ctx);
+
+        string RivalName(ulong rivalId) => ctx.Guild!.Members[rivalId].DisplayName;
+
+        RankPosition pos = XpRanking.ResolvePosition(rankings, ctx.User.Id);
+        string positionDesc = pos.Kind switch
+        {
+            RankPositionKind.Absent => "No participas en este ranking",
+            RankPositionKind.SoloLeader => "Tu posición es #1",
+            RankPositionKind.Behind => $"Tu posición es #{pos.PositionNumber} y te faltan {pos.Diff.ToSpanish()} de xp para alcanzar a {RivalName(pos.RivalUserId)}",
+            _ => $"Tu posición es #1 y a {RivalName(pos.RivalUserId)} le faltan {pos.Diff.ToSpanish()} de xp para alcanzarte"
+        };
+
+        string fullText = string.Join("\n", rankings.Select(rk =>
+            $"**#{rk.Rank}** {ctx.Guild!.Members[rk.UserId].DisplayName} - **{rk.Score.ToSpanish()} {umaPoints}**"));
+
+        DiscordEmbedBuilder embed = new DiscordEmbedBuilder()
+            .WithColor(DiscordEmojiHelper.GetColor())
+            .WithTitle($"Ranking de experiencia [{((Enum)rango).GetDescription().ToUpper()}]")
+            .WithThumbnail(RankThumbnail)
+            .WithFooter(positionDesc, ctx.User.AvatarUrl);
 
         InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
         IEnumerable<Page> pages = InteractivityExtension.GeneratePagesInEmbed(fullText, SplitType.Line, embed);

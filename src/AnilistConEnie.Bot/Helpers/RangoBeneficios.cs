@@ -22,9 +22,12 @@ public static class RangoBeneficios
     {
         RangoEnum.Tama => "- Participar en los intercambios\n- Adjuntar archivos",
         RangoEnum.Kouhai => "- Entrada garantizada a eventos del servidor",
-        RangoEnum.Senpai => "- Elegir entre 45 colores para tu usuario",
-        RangoEnum.Ousama => "- Canal de voz propio",
-        RangoEnum.Teiou => $"- Escribir en {guild.Channels[config.Channels.Teiou].Mention}\n- Comando {Formatter.InlineCode("/teiou nickname")}",
+        RangoEnum.Senpai => $"- Elegir entre {CantidadColores(config, RangoEnum.Senpai)} colores para tu usuario",
+        RangoEnum.Ousama => $"- Canal de voz propio\n- Elegir entre {CantidadColores(config, RangoEnum.Ousama)} colores con degradado",
+        RangoEnum.Teiou => $"- Escribir en {guild.Channels[config.Channels.Teiou].Mention}\n- Comando {Formatter.InlineCode("/teiou nickname")}\n- Color holográfico",
         _ => null,
     };
+
+    private static int CantidadColores(BotConfiguration config, RangoEnum rango) =>
+        config.Roles.ColoresRango.Count(c => c.Rango == rango.ToString());
 }

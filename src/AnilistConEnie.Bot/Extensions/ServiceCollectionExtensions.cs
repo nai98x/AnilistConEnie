@@ -28,6 +28,7 @@ public static class ServiceCollectionExtensions
         services.AddDiscordClient(token,
             DiscordIntents.Guilds
             | DiscordIntents.GuildMembers
+            | DiscordIntents.GuildPresences
             | DiscordIntents.GuildMessages
             | DiscordIntents.GuildMessageReactions
             | DiscordIntents.MessageContents);

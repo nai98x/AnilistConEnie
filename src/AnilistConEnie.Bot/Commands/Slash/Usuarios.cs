@@ -98,6 +98,32 @@ public class Usuarios(
             separarItems: true);
     }
 
+    [Command("color")]
+    [Description("Elige el color de tu usuario entre los que desbloqueó tu rango")]
+    public async Task Color(SlashCommandContext ctx)
+    {
+        if (!await ctx.BotInicializadoAsync(discordBotService)) return;
+
+        await ctx.DeferResponseAsync(true);
+
+        DiscordGuild guild = ctx.Guild!;
+        List<BotConfiguration.ColorRangoConfiguration> disponibles = config.Roles.ColoresRango
+            .Where(x => rangoRoles.RangoAPartirDe(guild, ctx.Member!, Enum.Parse<RangoEnum>(x.Rango), false))
+            .ToList();
+
+        DiscordWebhookBuilder builder = new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+        {
+            Title = "Colores disponibles",
+            Description = $"Tienes {disponibles.Count} colores desbloqueados por tu rango. Elige uno de las listas de abajo; reemplaza al que tengas puesto.",
+            Color = DiscordColor.Blurple
+        });
+
+        foreach (DiscordSelectComponent select in ColoresRangoMenu.Selects(disponibles, "colores-usuario-"))
+            builder.AddActionRowComponent(select);
+
+        await ctx.EditResponseAsync(builder);
+    }
+
     [Command("setbirthday")]
     [Description("Agrega o modifica tu cumpleaños")]
     public async Task SetBirthday(

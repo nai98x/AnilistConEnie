@@ -100,7 +100,7 @@ public class BotConfiguration
     }
 
     public record PaisTimezoneConfiguration(ulong RoleId, string Timezone);
-    public record ColorRangoConfiguration(ulong RoleId, string Nombre, string Rango);
+    public record ColorRangoConfiguration(ulong RoleId, string Nombre, string Rango, string Categoria);
 
     public static BotConfiguration FromConfiguration(IConfiguration configuration)
     {
@@ -215,7 +215,9 @@ public class BotConfiguration
         {
             if (!ulong.TryParse(r.RoleId, out ulong roleId))
                 throw new InvalidOperationException($"RoleId inválido en Ids:Roles:ColoresRango: {r.RoleId}");
-            return new ColorRangoConfiguration(roleId, r.Nombre, r.Rango);
+            if (string.IsNullOrWhiteSpace(r.Categoria))
+                throw new InvalidOperationException($"Categoria faltante en Ids:Roles:ColoresRango: {r.Nombre}");
+            return new ColorRangoConfiguration(roleId, r.Nombre, r.Rango, r.Categoria);
         }).ToList().AsReadOnly();
     }
 
@@ -232,6 +234,6 @@ public class BotConfiguration
         }).ToList().AsReadOnly();
     }
 
-    private record ColorRangoRaw(string RoleId, string Nombre, string Rango);
+    private record ColorRangoRaw(string RoleId, string Nombre, string Rango, string Categoria);
     private record PaisTimezoneRaw(string RoleId, string Timezone);
 }

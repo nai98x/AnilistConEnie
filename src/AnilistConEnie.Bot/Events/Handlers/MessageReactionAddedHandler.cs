@@ -30,12 +30,12 @@ public class MessageReactionAddedHandler(
         #region Confesiones
         if (args.Channel.Id == config.Channels.General
             && confessionsState.IsConfession(args.Message.Id)
-            && args.Emoji.Id == config.Emotes.ConfessionReaction)
+            && args.Emoji.Id == config.Emotes.Guild.ConfessionReaction)
         {
             (bool guessed, ulong? messageId, ulong? userId) = confessionsState.AddConfessionReaction(args.Message.Id, args.User.Id);
             if (guessed && args.Guild!.Members.TryGetValue(userId!.Value, out DiscordMember? confessionUser))
             {
-                DiscordEmoji emote = DiscordEmoji.FromGuildEmote(client, config.Emotes.ConfessionReaction);
+                DiscordEmoji emote = DiscordEmoji.FromGuildEmote(client, config.Emotes.Guild.ConfessionReaction);
                 string reactorName = args.Guild.Members.TryGetValue(args.User.Id, out DiscordMember? reactor)
                     ? reactor.DisplayName
                     : args.User.Username;

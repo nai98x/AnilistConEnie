@@ -465,7 +465,7 @@ public class Admin(
         await ctx.DeferResponseAsync(true);
 
         DiscordChannel channel = ctx.Guild!.Channels[config.Channels.Pdd];
-        DiscordEmoji emote = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.GatoVanguard.Get(discordBotService.Debug));
+        DiscordEmoji emote = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.Bot.GatoVanguard);
         DiscordRole rol = ctx.Guild.Roles[config.Roles.Pdd];
 
         DiscordEmbedBuilder embed = new DiscordEmbedBuilder()

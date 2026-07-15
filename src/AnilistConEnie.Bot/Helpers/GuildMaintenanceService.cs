@@ -129,7 +129,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
     private async Task SubirRango(DiscordGuild guild, DiscordMember member, DiscordRole oldRango, DiscordRole newRango)
     {
         DiscordChannel channel = guild.Channels[config.Channels.General];
-        DiscordEmoji emote = await DiscordEmojiHelper.GetApplicationEmojiAsync(discordBotService.Client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
+        DiscordEmoji emote = await DiscordEmojiHelper.GetApplicationEmojiAsync(discordBotService.Client, config.Emotes.Bot.UmaPoints);
         bool yaTieneNuevoRango = false;
 
         try
@@ -291,18 +291,21 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
     public async Task ManageUsuariosActivos(DiscordGuild guild)
     {
         DiscordRole inactivoRole = guild.Roles.First(x => x.Key == config.Roles.Inactivo).Value;
+        DateTimeOffset ahora = DateTimeOffset.UtcNow;
 
-        // 1- Obtener inactivos (+90 dias, desde bd)
-        List<UsuarioActivo> usuariosActivos = await usuariosRepository.GetUsuariosActivos(guild.Members.Keys.ToHashSet());
-        List<KeyValuePair<ulong, DiscordMember>> usuariosInactivos = guild.Members.Where(x => !usuariosActivos.Any(y => y.UserId == (long)x.Key) && !x.Value.IsBot).ToList();
+        List<UsuarioActivo> usuariosActivos = await usuariosRepository.GetUsuariosActivos(guild.Members.Keys.ToHashSet(), limpiezaSettings.RolInactivoMeses);
+        HashSet<long> activosIds = usuariosActivos.Select(x => x.UserId).ToHashSet();
 
-        // 2- Si estos usuarios no tienen el rol inactivo, agregarselo
-        foreach (KeyValuePair<ulong, DiscordMember> user in usuariosInactivos)
+        foreach (KeyValuePair<ulong, DiscordMember> user in guild.Members.Where(x => !x.Value.IsBot))
         {
-            if (!user.Value.Roles.Any(x => x.Id == inactivoRole.Id))
-            {
+            DateTimeOffset fechaEntrada = fechaEntradaState.GetFechaEntrada(user.Key, user.Value.JoinedAt);
+            bool corresponde = InactividadCalculator.CorrespondeRolInactivo(fechaEntrada, activosIds.Contains((long)user.Key), ahora, limpiezaSettings.RolInactivoMeses);
+            bool loTiene = user.Value.Roles.Any(x => x.Id == inactivoRole.Id);
+
+            if (corresponde && !loTiene)
                 await user.Value.GrantRoleAsync(inactivoRole);
-            }
+            else if (!corresponde && loTiene)
+                await user.Value.RevokeRoleAsync(inactivoRole);
         }
     }
     

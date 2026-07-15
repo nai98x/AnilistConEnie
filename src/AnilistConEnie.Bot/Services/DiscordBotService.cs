@@ -10,7 +10,7 @@ public class DiscordBotService(DiscordClient client, BotConfiguration config, IL
     : IHostedService
 {
     public DiscordClient Client => client;
-    public bool Debug { get; } = SetDebug();
+    public bool Debug => BotEnvironment.EsDebug;
     public bool Inicializado { get; private set; } = false;
     public bool ErrorInicializacion { get; private set; } = false;
 
@@ -55,14 +55,5 @@ public class DiscordBotService(DiscordClient client, BotConfiguration config, IL
     public void SetErrorInicializacion()
     {
         ErrorInicializacion = true;
-    }
-
-    private static bool SetDebug()
-    {
-#if DEBUG
-        return true;
-#else
-        return false;
-#endif
     }
 }

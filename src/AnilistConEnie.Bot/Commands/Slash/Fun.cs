@@ -444,7 +444,7 @@ public class Fun(
         const string lineFile = "boludometrohistorial.png";
 
         char genero = funService.GetGenero(member);
-        DiscordEmoji loreaEste = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.LoreaEste.Get(discordBotService.Debug));
+        DiscordEmoji loreaEste = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.Bot.LoreaEste);
 
         DiscordEmbed embedDiario = new DiscordEmbedBuilder()
             .WithTitle("Boludómetro")

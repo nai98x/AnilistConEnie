@@ -23,6 +23,7 @@ public record AntiSpamSettings
 public record LimpiezaMiembrosSettings
 {
     public required int InactividadMeses { get; init; }
+    public required int RolInactivoMeses { get; init; }
     public required long XpMinimoInactivo { get; init; }
     public required int GraciaNoVinculadoDias { get; init; }
     public required int CuentaNuevaMeses { get; init; }
@@ -33,6 +34,7 @@ public record LimpiezaMiembrosSettings
         return new LimpiezaMiembrosSettings
         {
             InactividadMeses = section.RequireInt("InactividadMeses"),
+            RolInactivoMeses = section.RequireInt("RolInactivoMeses"),
             XpMinimoInactivo = section.RequireLong("XpMinimoInactivo"),
             GraciaNoVinculadoDias = section.RequireInt("GraciaNoVinculadoDias"),
             CuentaNuevaMeses = section.RequireInt("CuentaNuevaMeses"),

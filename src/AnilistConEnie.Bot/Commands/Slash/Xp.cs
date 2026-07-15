@@ -40,7 +40,7 @@ public class Xp(
     private const string RankThumbnail = "https://media.discordapp.net/attachments/862568630365323264/990747470508204032/unknown.png";
 
     private ValueTask<DiscordEmoji> UmaPointsAsync(SlashCommandContext ctx) =>
-        DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
+        DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.Bot.UmaPoints);
 
     [Command("top")]
     [Description("Muestra el ranking de experiencia del servidor")]
@@ -559,7 +559,7 @@ public class Xp(
         await ctx.DeferResponseAsync();
 
         DiscordMember member = ctx.Member!;
-        DiscordEmoji tenshiEmote = DiscordEmoji.FromGuildEmote(ctx.Client, config.Emotes.Tenshi);
+        DiscordEmoji tenshiEmote = DiscordEmoji.FromGuildEmote(ctx.Client, config.Emotes.Guild.Tenshi);
         string desc = string.Empty;
 
         foreach (RangoEnum rango in Enum.GetValues<RangoEnum>())

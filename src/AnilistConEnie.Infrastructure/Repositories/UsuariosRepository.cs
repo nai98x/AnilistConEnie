@@ -105,9 +105,9 @@ public class UsuariosRepository(DbConnectionFactory connectionFactory) : IUsuari
             commandType: CommandType.StoredProcedure);
     }
 
-    public async Task<List<UsuarioActivo>> GetUsuariosActivos(HashSet<ulong> memberIds)
+    public async Task<List<UsuarioActivo>> GetUsuariosActivos(HashSet<ulong> memberIds, int months)
     {
-        DateTime desde = FechaCorte().AddMonths(-3);
+        DateTime desde = FechaCorte().AddMonths(-months);
         using var connection = await connectionFactory.OpenConnectionAsync();
         List<UsuarioActivo> usuarios = (await connection.QueryAsync<UsuarioActivo>(
             "usuario_activos",

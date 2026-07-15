@@ -15,7 +15,7 @@ public interface IUsuariosRepository
     Task<List<Usuario>> GetCumples();
     Task<List<Usuario>> GetFechasEntrada();
     Task SetLastActivity(ulong userId, DateTime lastActivity);
-    Task<List<UsuarioActivo>> GetUsuariosActivos(HashSet<ulong> memberIds);
+    Task<List<UsuarioActivo>> GetUsuariosActivos(HashSet<ulong> memberIds, int months);
     Task<List<UsuarioActivo>> GetUsuariosInactivos(HashSet<ulong> memberIds, int months);
     Task Desactivar(ulong userId);
 }

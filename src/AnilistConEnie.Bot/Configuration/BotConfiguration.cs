@@ -74,18 +74,28 @@ public class BotConfiguration
         }
     }
 
+    /// <summary>
+    /// Emotes del bot (subidos a nivel de aplicación, se resuelven con
+    /// <c>DiscordEmojiHelper.GetApplicationEmojiAsync</c>) y del guild (<c>DiscordEmoji.FromGuildEmote</c>).
+    /// </summary>
     public class EmotesConfiguration
     {
-        public required EmoteIds UmaPoints { get; init; }
-        public required EmoteIds Worrysad { get; init; }
-        public required EmoteIds GatoVanguard { get; init; }
-        public required EmoteIds LoreaEste { get; init; }
-        public required ulong ConfessionReaction { get; init; }
-        public required ulong Tenshi { get; init; }
+        public required BotEmotesConfiguration Bot { get; init; }
+        public required GuildEmotesConfiguration Guild { get; init; }
 
-        public record EmoteIds(ulong Prod, ulong Test)
+        /// <summary>Cada emote tiene un id distinto por aplicación: el de prod y el del bot de test.</summary>
+        public class BotEmotesConfiguration
         {
-            public ulong Get(bool isDebug) => isDebug ? Test : Prod;
+            public required ulong UmaPoints { get; init; }
+            public required ulong Worrysad { get; init; }
+            public required ulong GatoVanguard { get; init; }
+            public required ulong LoreaEste { get; init; }
+        }
+
+        public class GuildEmotesConfiguration
+        {
+            public required ulong ConfessionReaction { get; init; }
+            public required ulong Tenshi { get; init; }
         }
     }
 
@@ -99,7 +109,8 @@ public class BotConfiguration
         IConfigurationSection intercambios = channels.GetSection("Intercambios");
         IConfigurationSection roles = ids.GetSection("Roles");
         IConfigurationSection rangos = roles.GetSection("Rangos");
-        IConfigurationSection emotes = ids.GetSection("Emotes");
+        IConfigurationSection emotesBot = ids.GetSection("Emotes").GetSection("Bot");
+        IConfigurationSection emotesGuild = ids.GetSection("Emotes").GetSection("Guild");
 
         return new BotConfiguration
         {
@@ -164,12 +175,18 @@ public class BotConfiguration
             },
             Emotes = new EmotesConfiguration
             {
-                UmaPoints = RequireEmoteIds(emotes, "UmaPoints"),
-                Worrysad = RequireEmoteIds(emotes, "Worrysad"),
-                GatoVanguard = RequireEmoteIds(emotes, "Gatovanguard"),
-                LoreaEste = RequireEmoteIds(emotes, "LoreaEste"),
-                ConfessionReaction = RequireUlong(emotes, "ConfessionReaction"),
-                Tenshi = RequireUlong(emotes, "Tenshi"),
+                Bot = new EmotesConfiguration.BotEmotesConfiguration
+                {
+                    UmaPoints = RequireEmoteBot(emotesBot, "UmaPoints"),
+                    Worrysad = RequireEmoteBot(emotesBot, "Worrysad"),
+                    GatoVanguard = RequireEmoteBot(emotesBot, "GatoVanguard"),
+                    LoreaEste = RequireEmoteBot(emotesBot, "LoreaEste"),
+                },
+                Guild = new EmotesConfiguration.GuildEmotesConfiguration
+                {
+                    ConfessionReaction = RequireUlong(emotesGuild, "ConfessionReaction"),
+                    Tenshi = RequireUlong(emotesGuild, "Tenshi"),
+                }
             },
             PaisTimezones = RequirePaisTimezones(ids)
         };
@@ -183,10 +200,10 @@ public class BotConfiguration
         return value;
     }
 
-    private static EmotesConfiguration.EmoteIds RequireEmoteIds(IConfigurationSection emotes, string key)
+    private static ulong RequireEmoteBot(IConfigurationSection emotesBot, string key)
     {
-        IConfigurationSection section = emotes.GetSection(key);
-        return new EmotesConfiguration.EmoteIds(RequireUlong(section, "Prod"), RequireUlong(section, "Test"));
+        IConfigurationSection section = emotesBot.GetSection(key);
+        return RequireUlong(section, BotEnvironment.EsDebug ? "Test" : "Prod");
     }
 
     private static IReadOnlyList<ColorRangoConfiguration> RequireColoresRango(IConfigurationSection roles)

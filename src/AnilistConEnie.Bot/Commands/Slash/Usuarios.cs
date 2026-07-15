@@ -202,7 +202,7 @@ public class Usuarios(
             .OrderBy(x => fechaEntradaState.GetFechaEntrada(x.Id, x.JoinedAt))
             .ToList();
 
-        DiscordEmoji umaPoints = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.UmaPoints.Get(discordBotService.Debug));
+        DiscordEmoji umaPoints = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.Bot.UmaPoints);
 
         await DiscordInteractivity.PaginarContainerV2Async(
             ctx,

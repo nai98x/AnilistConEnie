@@ -26,7 +26,7 @@ using AnilistConEnie.Bot.Extensions;
 
 namespace AnilistConEnie.Bot.Commands.Slash;
 
-[TestCommand]
+//[TestCommand]
 [Command("xp")]
 public class Xp(
     BotConfiguration config,

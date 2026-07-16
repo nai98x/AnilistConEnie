@@ -25,6 +25,7 @@ using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using AnilistConEnie.Bot.Extensions;
+using DSharpPlus.Exceptions;
 
 namespace AnilistConEnie.Bot.Commands.Slash;
 
@@ -39,6 +40,7 @@ public class Admin(
     DiscordBotService discordBotService,
     DiscordLogService logService,
     EmoteModeState emoteModeState,
+    AnilistService anilistService,
     InviteLinkState inviteLinkState,
     XpState xpState,
     IAnilistClient anilistClient,
@@ -50,7 +52,7 @@ public class Admin(
     private const string PddThumbnail = "https://images-ext-1.discordapp.net/external/2FcgVgNDv60ja04L_9-_3DsxW2wqOd8Byj5rjr8EEvE/%3Fv%3D1/https/cdn.discordapp.com/emojis/846813702434586694.png?format=webp&quality=lossless";
     private const string PddFooterIcon = "https://media.discordapp.net/attachments/858877547336957986/865309515367841812/imagen_2021-07-15_150953_1.png";
 
-    [Command("kickearnoverificados")]
+    [Command("kick_no_verificados")]
     [Description("Expulsa del servidor a los miembros no verificados")]
     public async Task KickNoVerificados(SlashCommandContext ctx)
     {
@@ -71,7 +73,7 @@ public class Admin(
         await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent($"Miembros expulsados por no verificarse: {kickeados}"));
     }
 
-    [Command("permitirinvite")]
+    [Command("permitir_invite")]
     [Description("Permite que el miembro pase links de invitacion")]
     public async Task PermitirInvite(
         SlashCommandContext ctx,
@@ -107,7 +109,7 @@ public class Admin(
         }
     }
 
-    [Command("emotemodeenable")]
+    [Command("emotemode_enable")]
     [Description("Activa el emote mode (Staff)")]
     public async Task EmoteModeEnable(
         SlashCommandContext ctx,
@@ -150,7 +152,7 @@ public class Admin(
         }
     }
 
-    [Command("emotemodedisable")]
+    [Command("emotemode_disable")]
     [Description("Desactiva el emote mode (Staff)")]
     public async Task EmoteModeDisable(SlashCommandContext ctx)
     {
@@ -175,7 +177,7 @@ public class Admin(
         }
     }
 
-    [Command("desvinculados")]
+    [Command("anilist_desvinculados")]
     [Description("Muestra los perfiles que no tienen cuenta de AniList vinculada")]
     public async Task Desvinculados(SlashCommandContext ctx)
     {
@@ -624,7 +626,7 @@ public class Admin(
             .WithColor(DiscordColor.Green)));
     }
 
-    [Command("kickinactivos")]
+    [Command("kick_inactivos")]
     [Description("Kick de miembros inactivos")]
     public async Task KickInactivos(SlashCommandContext ctx)
     {
@@ -648,7 +650,7 @@ public class Admin(
             .WithDescription(membersStr)));
     }
 
-    [Command("banearanilist")]
+    [Command("anilist_banear")]
     [Description("Banea un perfil de AniList")]
     public async Task BanearAnilist(
         SlashCommandContext ctx,
@@ -691,7 +693,7 @@ public class Admin(
         }));
     }
 
-    [Command("desbanearanilist")]
+    [Command("anilist_desbanear")]
     [Description("Desbanea un perfil de AniList")]
     public async Task DesbanearAnilist(
         SlashCommandContext ctx,
@@ -734,7 +736,7 @@ public class Admin(
         }));
     }
 
-    [Command("baneadosanilist")]
+    [Command("baneados_anilist")]
     [Description("Lista de perfiles baneados de AniList")]
     public async Task BaneadosAnilist(SlashCommandContext ctx)
     {
@@ -754,7 +756,7 @@ public class Admin(
         }));
     }
 
-    [Command("rolreaccion")]
+    [Command("rol_reaccion")]
     [Description("Agrega un rol a los que hayas reaccionado a un mensaje con un emoji")]
     public async Task RolReaccion(
         SlashCommandContext ctx,
@@ -810,6 +812,78 @@ public class Admin(
         {
             await logService.GrabarLogGeneralError(ctx.Guild!, $"{ex.Message}\n\n{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
         }
+    }
+    
+    [Command("anilist_vincular_force")]
+    [Description("Registra un AniList en el servidor para otro usuario")]
+    public async Task SetAnilistMod(
+        SlashCommandContext ctx,
+        [Parameter("Usuario")] [Description("Usuario de Discord para asignarle el AniList")] DiscordUser user,
+        [Parameter("Perfil")] [Description("URL o nombre de usuario del perfil de AniList")] string perfil)
+    {
+        if (!await ctx.BotInicializadoAsync(discordBotService)) return;
+
+        await ctx.DeferResponseAsync();
+
+        if (ctx.Member is null || ctx.Member.Roles.All(r => r.Id != config.Roles.KamiSama))
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+            {
+                Color = DiscordColor.Red,
+                Title = "Sin permiso",
+                Description = "Solo un Kami Sama puede usar este comando."
+            }));
+            return;
+        }
+
+        string nombre = AnilistProfileUrl.ExtractUserName(perfil);
+
+        AnilistUser? anilistUser;
+        try
+        {
+            anilistUser = await anilistClient.SearchUserAsync(nombre);
+        }
+        catch (AnilistServerErrorException)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(AnilistErrorEmbed.NoDisponible()));
+            return;
+        }
+
+        if (anilistUser is null)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+            {
+                Color = DiscordColor.Red,
+                Title = "Error",
+                Description = $"No se encontró el usuario de AniList `{nombre}`"
+            }));
+            return;
+        }
+
+        DiscordMember miembro;
+        try
+        {
+            miembro = await ctx.Guild!.GetMemberAsync(user.Id);
+        }
+        catch (NotFoundException)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+            {
+                Color = DiscordColor.Red,
+                Title = "Error",
+                Description = $"{user.Mention} no se encuentra en el servidor"
+            }));
+            return;
+        }
+
+        await anilistService.TerminarVinculacion(ctx.Client, user, miembro, ctx.Guild!, anilistUser);
+
+        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+        {
+            Color = DiscordColor.Green,
+            Title = "Perfil guardado",
+            Description = $"Se vinculó el perfil de AniList de {miembro.Mention} correctamente"
+        }));
     }
 
     private async Task<bool> EnsureCanalPermitidoAsync(SlashCommandContext ctx)

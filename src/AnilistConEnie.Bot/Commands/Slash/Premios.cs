@@ -1,6 +1,6 @@
 using System.ComponentModel;
 using AnilistConEnie.Application.Premios;
-using AnilistConEnie.Bot.Commands.Slash.Attributes;
+using AnilistConEnie.Bot.Commands.Framework.Attributes;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Enum;

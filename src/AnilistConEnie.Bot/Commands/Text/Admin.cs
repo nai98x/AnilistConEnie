@@ -1,5 +1,5 @@
-using AnilistConEnie.Bot.Commands.Checks;
-using AnilistConEnie.Bot.Commands.Slash.Attributes;
+using AnilistConEnie.Bot.Commands.Framework.Checks;
+using AnilistConEnie.Bot.Commands.Framework.Attributes;
 using AnilistConEnie.Bot.Helpers;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.TextCommands;

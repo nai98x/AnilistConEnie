@@ -17,7 +17,7 @@ public static class DiscordInteractivity
     /// usuario. Devuelve <c>false</c> si se agota el tiempo de espera. Requiere que la interacción ya
     /// haya sido diferida.
     /// </summary>
-    public static async Task<bool> GetSiNoInteractivity(CommandContext ctx, string titulo, string descripcion, DiscordEmbed? embed = null)
+    public static async Task<bool> GetSiNoInteractivity(CommandContext ctx, string titulo, string descripcion, DiscordEmbed? embed = null, bool borrarMensaje = false)
     {
         InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
 
@@ -35,9 +35,16 @@ public static class DiscordInteractivity
         InteractivityResult<ComponentInteractionCreatedEventArgs> result =
             await interactivity.WaitForButtonAsync(msg, ctx.User, TimeSpan.FromMinutes(2));
 
-        if (result.TimedOut) return false;
+        if (result.TimedOut)
+        {
+            if (borrarMensaje) await msg.DeleteAsync();
+            return false;
+        }
 
         await result.Result.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
+
+        if (borrarMensaje) await msg.DeleteAsync();
+
         return bool.Parse(result.Result.Id);
     }
 

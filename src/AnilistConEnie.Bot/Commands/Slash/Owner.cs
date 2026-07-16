@@ -1,6 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
-using AnilistConEnie.Bot.Commands.Slash.Attributes;
+using AnilistConEnie.Bot.Commands.Framework.Attributes;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Extensions;
 using AnilistConEnie.Bot.Helpers;

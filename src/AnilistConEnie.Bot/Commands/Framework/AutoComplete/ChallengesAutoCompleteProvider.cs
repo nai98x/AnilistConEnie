@@ -5,7 +5,7 @@ using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace AnilistConEnie.Bot.Commands.AutoComplete;
+namespace AnilistConEnie.Bot.Commands.Framework.AutoComplete;
 
 public class ChallengesAutoCompleteProvider : IAutoCompleteProvider
 {

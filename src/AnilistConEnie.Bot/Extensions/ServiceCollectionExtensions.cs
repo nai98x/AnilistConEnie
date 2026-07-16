@@ -1,4 +1,4 @@
-using AnilistConEnie.Bot.Commands.Checks;
+using AnilistConEnie.Bot.Commands.Framework.Checks;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Events;
 using AnilistConEnie.Bot.Helpers;
@@ -45,6 +45,7 @@ public static class ServiceCollectionExtensions
         {
             BotConfiguration config = provider.GetRequiredService<BotConfiguration>();
             extension.AddDiscoveredSlashCommands(config.GuildId);
+            extension.AddDiscoveredContextMenuCommands(config.GuildId);
             extension.AddDiscoveredTextCommands();
 
             extension.AddCheck<RequireKamiSamaCheck>();

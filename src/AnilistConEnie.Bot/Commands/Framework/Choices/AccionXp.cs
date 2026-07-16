@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 
-namespace AnilistConEnie.Bot.Commands.Enums;
+namespace AnilistConEnie.Bot.Commands.Framework.Choices;
 
 public enum AccionXp
 {

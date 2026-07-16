@@ -1,4 +1,4 @@
-namespace AnilistConEnie.Bot.Commands.Slash.Attributes;
+namespace AnilistConEnie.Bot.Commands.Framework.Attributes;
 
 /// <summary>
 /// Marca una clase de slash command para que se registre en compilaciones de DEBUG (bot de test).

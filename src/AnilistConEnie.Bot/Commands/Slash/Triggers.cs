@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using AnilistConEnie.Application.Extensions;
 using AnilistConEnie.Application.Helpers;
-using AnilistConEnie.Bot.Commands.Slash.Attributes;
+using AnilistConEnie.Bot.Commands.Framework.Attributes;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Model.Entities;

@@ -3,9 +3,9 @@ using System.Text.RegularExpressions;
 using AnilistConEnie.Application.Anilist;
 using AnilistConEnie.Application.Extensions;
 using AnilistConEnie.Application.Helpers;
-using AnilistConEnie.Bot.Commands.Checks;
-using AnilistConEnie.Bot.Commands.Enums;
-using AnilistConEnie.Bot.Commands.Slash.Attributes;
+using AnilistConEnie.Bot.Commands.Framework.Checks;
+using AnilistConEnie.Bot.Commands.Framework.Choices;
+using AnilistConEnie.Bot.Commands.Framework.Attributes;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
@@ -391,7 +391,16 @@ public class Admin(
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
-        await ctx.DeferResponseAsync(true);
+        await ctx.DeferResponseAsync();
+
+        if (ctx.Channel.Id != config.Channels.ConfigBots)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                .WithTitle("Error")
+                .WithColor(DiscordColor.Red)
+                .WithDescription($"Este comando solo se puede usar en {ctx.Guild!.Channels[config.Channels.ConfigBots].Mention}.")));
+            return;
+        }
 
         if (origen.Id == destino.Id)
         {
@@ -399,6 +408,31 @@ public class Admin(
                 .WithTitle("Error")
                 .WithColor(DiscordColor.Red)
                 .WithDescription("El origen y el destino son el mismo usuario.")));
+            return;
+        }
+
+        UsuarioAnilist? perfilOrigen = await usuariosRepository.GetPerfil(origen.Id);
+        UsuarioAnilist? perfilDestino = await usuariosRepository.GetPerfil(destino.Id);
+
+        if (!AnilistProfileUrl.TryGetUserId(perfilOrigen?.AnilistURL, out int anilistOrigen) ||
+            !AnilistProfileUrl.TryGetUserId(perfilDestino?.AnilistURL, out int anilistDestino))
+        {
+            DiscordUser sinVincular = anilistOrigen == 0 ? origen : destino;
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                .WithTitle("Error")
+                .WithColor(DiscordColor.Red)
+                .WithDescription($"{sinVincular.Mention} no tiene una cuenta de AniList vinculada.")));
+            return;
+        }
+
+        if (anilistOrigen != anilistDestino)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                .WithTitle("Error")
+                .WithColor(DiscordColor.Red)
+                .WithDescription($"Solo se puede transferir xp entre cuentas del mismo perfil de AniList.\n" +
+                                 $"- {origen.Mention}: {Formatter.MaskedUrl($"AniList #{anilistOrigen}", new Uri($"https://anilist.co/user/{anilistOrigen}"))}\n" +
+                                 $"- {destino.Mention}: {Formatter.MaskedUrl($"AniList #{anilistDestino}", new Uri($"https://anilist.co/user/{anilistDestino}"))}")));
             return;
         }
 
@@ -423,34 +457,37 @@ public class Admin(
                       $"- Destino: {destino.Mention} ({xpDestino?.Total ?? 0} xp)\n\n" +
                       $"{detalle}\nLa xp de {origen.Mention} no se modifica.";
 
-        bool confirmed = await DiscordInteractivity.GetSiNoInteractivity(ctx, "Transferir xp?", desc);
+        bool confirmed = await DiscordInteractivity.GetSiNoInteractivity(ctx, "Transferir xp?", desc, borrarMensaje: true);
 
-        if (confirmed)
+        if (!confirmed)
         {
-            DiscordChannel channel = ctx.Guild!.Channels[config.Channels.ConfigBots];
-            try
-            {
-                UserXp resultado = await xpUsuariosRepository.Transferir(origen.Id, destino.Id, reemplazar);
-                xpState.SetUserXp(destino.Id, resultado);
-
-                await channel.SendMessageAsync(new DiscordEmbedBuilder()
-                    .WithTitle("Experiencia transferida")
-                    .WithColor(DiscordColor.Green)
-                    .WithDescription($"{desc}\n\n### {destino.Mention} queda con {resultado.Total} xp.")
-                    .WithThumbnail(destino.AvatarUrl));
-            }
-            catch (Exception ex)
-            {
-                await logService.GrabarLogGeneralError(ctx.Guild, $"Error transfiriendo xp\n{ex.Message}\n{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
-
-                await channel.SendMessageAsync(new DiscordEmbedBuilder()
-                    .WithTitle("Experiencia no transferida")
-                    .WithColor(DiscordColor.Red)
-                    .WithDescription($"Ocurrió un error transfiriendo la experiencia de {origen.Mention} a {destino.Mention}."));
-            }
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                .WithTitle("Transferencia cancelada")
+                .WithColor(DiscordColor.Red)
+                .WithDescription($"No se transfirió la xp de {origen.Mention} a {destino.Mention}.")));
+            return;
         }
 
-        await ctx.DeleteResponseAsync();
+        try
+        {
+            UserXp resultado = await xpUsuariosRepository.Transferir(origen.Id, destino.Id, reemplazar);
+            xpState.SetUserXp(destino.Id, resultado);
+
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                .WithTitle("Experiencia transferida")
+                .WithColor(DiscordColor.Green)
+                .WithDescription($"{desc}\n\n### {destino.Mention} queda con {resultado.Total} xp.")
+                .WithThumbnail(destino.AvatarUrl)));
+        }
+        catch (Exception ex)
+        {
+            await logService.GrabarLogGeneralError(ctx.Guild!, $"Error transfiriendo xp\n{ex.Message}\n{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
+
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                .WithTitle("Experiencia no transferida")
+                .WithColor(DiscordColor.Red)
+                .WithDescription($"Ocurrió un error transfiriendo la experiencia de {origen.Mention} a {destino.Mention}.")));
+        }
     }
 
     [Command("repartir_intercambio")]

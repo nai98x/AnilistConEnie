@@ -2,7 +2,7 @@ using AnilistConEnie.Bot.Configuration;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.ContextChecks;
 
-namespace AnilistConEnie.Bot.Commands.Checks;
+namespace AnilistConEnie.Bot.Commands.Framework.Checks;
 
 public sealed class RequireKamiSamaCheck(BotConfiguration config) : IContextCheck<RequireKamiSamaAttribute>
 {

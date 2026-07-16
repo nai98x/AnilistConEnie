@@ -1,5 +1,5 @@
 using System.Reflection;
-using AnilistConEnie.Bot.Commands.Slash.Attributes;
+using AnilistConEnie.Bot.Commands.Framework.Attributes;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Trees.Metadata;
 
@@ -9,6 +9,7 @@ public static class CommandsExtensionExtensions
 {
     private const string SlashCommandsNamespace = "AnilistConEnie.Bot.Commands.Slash";
     private const string TextCommandsNamespace = "AnilistConEnie.Bot.Commands.Text";
+    private const string ContextMenuCommandsNamespace = "AnilistConEnie.Bot.Commands.ContextMenu";
 
     /// <summary>
     /// Descubre por reflexión todas las clases de slash command del namespace
@@ -32,6 +33,19 @@ public static class CommandsExtensionExtensions
     {
         IEnumerable<Type> commandTypes = DiscoverCommandTypes(TextCommandsNamespace);
         extension.AddCommands(commandTypes.ToArray());
+    }
+
+    /// <summary>
+    /// Descubre por reflexión todas las clases de context menu (menús de usuario/mensaje) del
+    /// namespace <see cref="ContextMenuCommandsNamespace"/> y las registra en el guild indicado.
+    /// Cada método necesita su <c>[SlashCommandTypes(...)]</c> para que el processor correspondiente
+    /// lo tome; si no, el <c>SlashCommandProcessor</c> lo registraría como slash.
+    /// Misma convención DEBUG/RELEASE que <see cref="AddDiscoveredSlashCommands"/>.
+    /// </summary>
+    public static void AddDiscoveredContextMenuCommands(this CommandsExtension extension, ulong guildId)
+    {
+        IEnumerable<Type> commandTypes = DiscoverCommandTypes(ContextMenuCommandsNamespace);
+        extension.AddCommands(commandTypes.ToArray(), guildId);
     }
 
     private static IEnumerable<Type> DiscoverCommandTypes(string ns)

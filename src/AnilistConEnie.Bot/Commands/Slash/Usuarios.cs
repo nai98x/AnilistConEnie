@@ -4,8 +4,8 @@ using AnilistConEnie.Application.Extensions;
 using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Application.Membership;
 using AnilistConEnie.Application.Xp;
-using AnilistConEnie.Bot.Commands.Enums;
-using AnilistConEnie.Bot.Commands.Slash.Attributes;
+using AnilistConEnie.Bot.Commands.Framework.Choices;
+using AnilistConEnie.Bot.Commands.Framework.Attributes;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services.State;
@@ -13,7 +13,6 @@ using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Enum;
 using AnilistConEnie.Model.Interfaces.Repositories;
 using DSharpPlus.Commands;
-using DSharpPlus.Commands.Processors.MessageCommands;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
 using AnilistConEnie.Bot.Extensions;
@@ -31,7 +30,6 @@ public class Usuarios(
     RelojPais relojPais,
     BotConfiguration config,
     DiscordLogService logService,
-    IHttpClientFactory httpClientFactory,
     DiscordBotService discordBotService)
 {
     [Command("birthdays")]
@@ -249,28 +247,5 @@ public class Usuarios(
                     accessory: new DiscordThumbnailComponent(miembro.GuildAvatarUrl ?? miembro.AvatarUrl));
             },
             separarItems: true);
-    }
-
-    [Command("Traducir")]
-    public async Task Traducir(MessageCommandContext ctx, DiscordMessage targetMessage)
-    {
-        if (!await ctx.BotInicializadoAsync(discordBotService)) return;
-
-        await ctx.DeferResponseAsync(true);
-
-        DiscordMember member = await ctx.Guild!.GetMemberAsync(targetMessage.Author!.Id);
-
-        HttpClient client = httpClientFactory.CreateClient();
-        string translated = await TranslationHelper.TranslateAsync(client, targetMessage.Content, "auto", "es");
-
-        await ctx.EditResponseAsync(new DiscordWebhookBuilder()
-            .AddEmbed(new DiscordEmbedBuilder()
-                .WithTitle("Mensaje Original")
-                .WithDescription(targetMessage.Content)
-                .WithAuthor(member.DisplayName, null, member.GuildAvatarUrl ?? member.AvatarUrl))
-            .AddEmbed(new DiscordEmbedBuilder()
-                .WithTitle("Traduccion")
-                .WithDescription(translated)
-                .WithColor(DiscordColor.Green)));
     }
 }

@@ -63,6 +63,12 @@ public class XpState
         _generalXp[userId] = value;
     }
 
+    public void SetUserXp(ulong userId, UserXp xp)
+    {
+        xp.UserId = (long)userId;
+        _generalXp[userId] = xp;
+    }
+
     public List<UserXp> GetGuildXp(DiscordGuild guild) =>
         _generalXp.Where(x => guild.Members.ContainsKey(x.Key)).Select(x => x.Value).ToList();
 

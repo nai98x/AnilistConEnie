@@ -381,6 +381,78 @@ public class Admin(
         await ctx.DeleteResponseAsync();
     }
 
+    [Command("transferir_xp")]
+    [Description("Copia la xp de un usuario a otro, con todo su historial")]
+    public async Task TransferirXp(
+        SlashCommandContext ctx,
+        [Parameter("Origen")] [Description("Usuario del que se copia la xp")] DiscordUser origen,
+        [Parameter("Destino")] [Description("Usuario que recibe la xp")] DiscordUser destino,
+        [Parameter("Modo")] [Description("Reemplazar la xp del destino por la del origen, o sumarla a la que ya tiene")] ModoTransferenciaXp modo = ModoTransferenciaXp.Reemplazar)
+    {
+        if (!await ctx.BotInicializadoAsync(discordBotService)) return;
+
+        await ctx.DeferResponseAsync(true);
+
+        if (origen.Id == destino.Id)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                .WithTitle("Error")
+                .WithColor(DiscordColor.Red)
+                .WithDescription("El origen y el destino son el mismo usuario.")));
+            return;
+        }
+
+        UserXp? xpOrigen = await xpUsuariosRepository.Obtener(origen.Id);
+        if (xpOrigen is null)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+                .WithTitle("Error")
+                .WithColor(DiscordColor.Red)
+                .WithDescription($"{origen.Mention} no tiene xp registrada.")));
+            return;
+        }
+
+        UserXp? xpDestino = await xpUsuariosRepository.Obtener(destino.Id);
+        bool reemplazar = modo == ModoTransferenciaXp.Reemplazar;
+
+        string detalle = reemplazar
+            ? $"La xp y el historial de {destino.Mention} se **reemplazan** por los de {origen.Mention}."
+            : $"La xp de {origen.Mention} se **suma** a la de {destino.Mention}, y los días que coinciden se suman en el historial.";
+
+        string desc = $"- Origen: {origen.Mention} ({xpOrigen.Total} xp)\n" +
+                      $"- Destino: {destino.Mention} ({xpDestino?.Total ?? 0} xp)\n\n" +
+                      $"{detalle}\nLa xp de {origen.Mention} no se modifica.";
+
+        bool confirmed = await DiscordInteractivity.GetSiNoInteractivity(ctx, "Transferir xp?", desc);
+
+        if (confirmed)
+        {
+            DiscordChannel channel = ctx.Guild!.Channels[config.Channels.ConfigBots];
+            try
+            {
+                UserXp resultado = await xpUsuariosRepository.Transferir(origen.Id, destino.Id, reemplazar);
+                xpState.SetUserXp(destino.Id, resultado);
+
+                await channel.SendMessageAsync(new DiscordEmbedBuilder()
+                    .WithTitle("Experiencia transferida")
+                    .WithColor(DiscordColor.Green)
+                    .WithDescription($"{desc}\n\n### {destino.Mention} queda con {resultado.Total} xp.")
+                    .WithThumbnail(destino.AvatarUrl));
+            }
+            catch (Exception ex)
+            {
+                await logService.GrabarLogGeneralError(ctx.Guild, $"Error transfiriendo xp\n{ex.Message}\n{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
+
+                await channel.SendMessageAsync(new DiscordEmbedBuilder()
+                    .WithTitle("Experiencia no transferida")
+                    .WithColor(DiscordColor.Red)
+                    .WithDescription($"Ocurrió un error transfiriendo la experiencia de {origen.Mention} a {destino.Mention}."));
+            }
+        }
+
+        await ctx.DeleteResponseAsync();
+    }
+
     [Command("repartir_intercambio")]
     [Description("Reparte los intercambios")]
     public async Task RepartirIntercambio(

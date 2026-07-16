@@ -46,6 +46,15 @@ public class XpUsuariosRepository(DbConnectionFactory connectionFactory) : IXpUs
             commandType: CommandType.StoredProcedure);
     }
 
+    public async Task<UserXp> Transferir(ulong origen, ulong destino, bool reemplazar)
+    {
+        using var connection = await connectionFactory.OpenConnectionAsync();
+        return await connection.QuerySingleAsync<UserXp>(
+            "xp_transferir",
+            new { p_origen = (long)origen, p_destino = (long)destino, p_reemplazar = reemplazar },
+            commandType: CommandType.StoredProcedure);
+    }
+
     public async Task Insert(UserXp xp)
     {
         using var connection = await connectionFactory.OpenConnectionAsync();

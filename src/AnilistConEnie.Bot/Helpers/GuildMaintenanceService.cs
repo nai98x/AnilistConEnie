@@ -69,6 +69,10 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
 
     public async Task GrantXpPorMensaje(DiscordGuild guild, ulong userId)
     {
+        // Sin la XP cargada en memoria, el rango calculado sería el de 0 XP y degradaría al usuario
+        if (!discordBotService.Inicializado)
+            return;
+
         if (!xpState.TryClaimXp(userId, TimeSpan.FromSeconds(xpSettings.CooldownSegundos)))
             return;
 

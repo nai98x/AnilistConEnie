@@ -5,5 +5,6 @@ CREATE TABLE IF NOT EXISTS anilist_approval (
     avatar     text    NOT NULL,
     site_url   text    NOT NULL,
     name       text    NOT NULL,
-    banner     text    NOT NULL
+    banner     text    NOT NULL,
+    message_id bigint  NOT NULL DEFAULT 0
 );

@@ -13,4 +13,6 @@ public class UserApprovalAnilist
     public string Name { get; set; } = string.Empty;
 
     public string Banner { get; set; } = string.Empty;
+
+    public long MessageId { get; set; }
 }

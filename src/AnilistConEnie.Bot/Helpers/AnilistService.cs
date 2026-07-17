@@ -209,7 +209,9 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
                     lineas.Add($"su AniList ya está vinculado a otro miembro activo ({Formatter.InlineCode(otroNombre)} | Id: {Formatter.InlineCode(((ulong)r.OtroMiembroId.Value).ToString())}), posible multicuenta");
                 }
                 else
-                    lineas.Add("su cuenta de Discord o AniList es muy reciente");
+                    lineas.Add("su cuenta de Discord o AniList es muy reciente:\n" +
+                               $"  - Discord: {interaction.User.CreationTimestamp:dd/MM/yyyy}\n" +
+                               $"  - AniList: {viewer.CreatedAt.ToLocalTime():dd/MM/yyyy}");
             }
             string motivos = string.Concat(lineas.Select(m => $"- {m}\n"));
 
@@ -222,11 +224,11 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
                     Color = DiscordColor.Yellow,
                     Title = "Vinculacion de AniList pendiente de aprobación",
                     Description =
-                        $"El usuario {interaction.User.Mention} | Nombre: {Formatter.InlineCode(member.DisplayName)} | Id: {Formatter.InlineCode(interaction.User.Id.ToString())} ({Formatter.MaskedUrl("Link de su AniList", new Uri(viewer.SiteUrl))}) ha vinculado su cuenta de AniList pero debe ser aprobada manualmente por el staff por los siguientes motivos:\n{motivos}\n" +
-                        $"- Discord: {interaction.User.CreationTimestamp:dd/MM/yyyy}\n" +
-                        $"- AniList: {viewer.CreatedAt.ToLocalTime():dd/MM/yyyy}",
+                        $"El usuario {interaction.User.Mention} | Nombre: {Formatter.InlineCode(member.DisplayName)} | Id: {Formatter.InlineCode(interaction.User.Id.ToString())} ({Formatter.MaskedUrl("Link de su AniList", new Uri(viewer.SiteUrl))}) ha vinculado su cuenta de AniList pero debe ser aprobada manualmente por el staff por los siguientes motivos:\n{motivos}",
                 })
                 .AddActionRowComponent(aprobar, denegar);
+
+            DiscordMessage mensajeAprobacion = await interaction.Guild.Channels[config.Channels.Moderacion].SendMessageAsync(msgBuilderApproval);
 
             UserApprovalAnilist userApproval = new()
             {
@@ -235,11 +237,11 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
                 Name = viewer.Name,
                 SiteUrl = viewer.SiteUrl,
                 Avatar = viewer.AvatarMedium ?? string.Empty,
-                Banner = viewer.BannerImage ?? string.Empty
+                Banner = viewer.BannerImage ?? string.Empty,
+                MessageId = (long)mensajeAprobacion.Id
             };
 
             await anilistApprovalRepository.Upsert(userApproval);
-            await interaction.Guild.Channels[config.Channels.Moderacion].SendMessageAsync(msgBuilderApproval);
 
             await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
             {
@@ -253,6 +255,36 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
 
         await TerminarVinculacion(client, interaction.User, member, interaction.Guild, anilistUser);
         await modalInteraction.DeleteOriginalResponseAsync();
+    }
+
+    /// <summary>
+    /// Cancela la aprobación pendiente de un usuario que ya no está en el servidor: marca el mensaje
+    /// de moderación como caduco (sin botones) y saca la entrada de la cola.
+    /// </summary>
+    public async Task CancelarAprobacionPendiente(DiscordGuild guild, DiscordMember member)
+    {
+        UserApprovalAnilist? approval = await anilistApprovalRepository.Obtener((long)member.Id);
+        if (approval is null) return;
+
+        await anilistApprovalRepository.Delete((long)member.Id);
+
+        if (approval.MessageId == 0) return;
+
+        try
+        {
+            DiscordChannel canalModeracion = guild.Channels[config.Channels.Moderacion];
+            DiscordMessage mensaje = await canalModeracion.GetMessageAsync((ulong)approval.MessageId);
+
+            DiscordEmbed original = mensaje.Embeds[0];
+            DiscordEmbedBuilder actualizado = new DiscordEmbedBuilder(original)
+                .WithColor(DiscordColor.Gray)
+                .WithTitle("Vinculacion de AniList cancelada")
+                .WithDescription($"{original.Description}\n\n{Formatter.Bold("El usuario se fue del servidor")}, la solicitud ya no puede ser revisada.");
+
+            await mensaje.ModifyAsync(new DiscordMessageBuilder().AddEmbed(actualizado.Build()));
+        }
+        catch (NotFoundException) { }
+        catch (Exception ex) { await logService.LogException(guild, ex, "Cancelar aprobación pendiente - editar mensaje"); }
     }
 
     /// <summary>

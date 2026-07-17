@@ -29,7 +29,8 @@ public class AnilistApprovalRepository(DbConnectionFactory connectionFactory) : 
                 p_avatar = approval.Avatar,
                 p_site_url = approval.SiteUrl,
                 p_name = approval.Name,
-                p_banner = approval.Banner
+                p_banner = approval.Banner,
+                p_message_id = approval.MessageId
             },
             commandType: CommandType.StoredProcedure);
     }

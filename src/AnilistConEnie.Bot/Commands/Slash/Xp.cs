@@ -70,10 +70,7 @@ public class Xp(
 
         if (rankings.Count == 0 && tipo is not (TipoXpTopCommand.Total or TipoXpTopCommand.Mensajes))
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-                .WithTitle("Error")
-                .WithDescription($"No hay registros para la categoria `{((Enum)tipo).GetDescription()}`")
-                .WithColor(DiscordColor.Red)));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"No hay registros para la categoria `{((Enum)tipo).GetDescription()}`")));
             return;
         }
 
@@ -116,10 +113,7 @@ public class Xp(
         DiscordMember? member = user != null ? ctx.Guild!.Members.GetValueOrDefault(user.Id) : ctx.Member!;
         if (member is null)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-                .WithTitle("Error")
-                .WithDescription($"{user!.Mention} no se encuentra en el servidor")
-                .WithColor(DiscordColor.Red)));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"{user!.Mention} no se encuentra en el servidor")));
             return;
         }
 
@@ -127,10 +121,7 @@ public class Xp(
 
         if (rank.Total <= 0)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-                .WithTitle("Error")
-                .WithDescription($"No se encontro experiencia para el usuario {member.DisplayName}\n\nEs muy probable que sea debido a un error temporal, intenta ejecutar nuevamente el comando")
-                .WithColor(DiscordColor.Red)));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"No se encontro experiencia para el usuario {member.DisplayName}\n\nEs muy probable que sea debido a un error temporal, intenta ejecutar nuevamente el comando")));
             return;
         }
 
@@ -472,10 +463,7 @@ public class Xp(
 
         if (rankings.Count == 0)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-                .WithTitle("Error")
-                .WithDescription($"Todavía no hay experiencia ganada en el rango `{((Enum)rango).GetDescription()}`")
-                .WithColor(DiscordColor.Red)));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"Todavía no hay experiencia ganada en el rango `{((Enum)rango).GetDescription()}`")));
             return;
         }
 

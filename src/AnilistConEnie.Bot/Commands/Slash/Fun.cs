@@ -195,19 +195,13 @@ public class Fun(
 
         if (subirImagenState.EnCooldown(ctx.User.Id, DateTime.UtcNow))
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-                .WithTitle("Error")
-                .WithDescription($"Debes esperar {subirImagenSettings.CooldownMinutos} minutos entre subidas de imágenes")
-                .WithColor(DiscordColor.Red)));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"Debes esperar {subirImagenSettings.CooldownMinutos} minutos entre subidas de imágenes")));
             return;
         }
 
         if (imagen.MediaType is null || !imagen.MediaType.StartsWith("image") || imagen.FileSize > subirImagenSettings.MaxTamanoBytes)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-                .WithTitle("Error")
-                .WithDescription($"El archivo debe ser una imagen de hasta {subirImagenSettings.MaxTamanoBytes / (1024 * 1024)} MB")
-                .WithColor(DiscordColor.Red)));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"El archivo debe ser una imagen de hasta {subirImagenSettings.MaxTamanoBytes / (1024 * 1024)} MB")));
             return;
         }
 
@@ -217,10 +211,7 @@ public class Fun(
 
         if (!ImageHelper.EsImagenValida(bytes))
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-                .WithTitle("Error")
-                .WithDescription("El archivo no es una imagen válida")
-                .WithColor(DiscordColor.Red)));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("El archivo no es una imagen válida")));
             return;
         }
 
@@ -239,10 +230,7 @@ public class Fun(
         }
         else
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-                .WithTitle("Error")
-                .WithDescription("No se pudo subir la imagen")
-                .WithColor(DiscordColor.Red)));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("No se pudo subir la imagen")));
         }
     }
 
@@ -437,10 +425,7 @@ public class Fun(
 
         if (birthday is null)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-                .WithColor(DiscordColor.Red)
-                .WithTitle("Error")
-                .WithDescription("No tienes registrado tu cumpleaños en el servidor.")));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("No tienes registrado tu cumpleaños en el servidor.")));
             return;
         }
 
@@ -457,10 +442,7 @@ public class Fun(
 
         if (!response.IsSuccessStatusCode)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-                .WithColor(DiscordColor.Red)
-                .WithTitle("Error")
-                .WithDescription("Hubo un error tratando de obtener el horoscopo.")));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("Hubo un error tratando de obtener el horoscopo.")));
             return;
         }
 
@@ -468,10 +450,7 @@ public class Fun(
         HoroscopoResponse? horoscopeData = JsonSerializer.Deserialize<HoroscopoResponse>(content, JsonOptions);
         if (horoscopeData?.Data is null)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-                .WithColor(DiscordColor.Red)
-                .WithTitle("Error")
-                .WithDescription("Hubo un error tratando de obtener el horoscopo.")));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("Hubo un error tratando de obtener el horoscopo.")));
             return;
         }
 
@@ -527,10 +506,7 @@ public class Fun(
 
         if (confessionsState.UserConfessed(ctx.User.Id))
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-                .WithColor(DiscordColor.Red)
-                .WithTitle("Error")
-                .WithDescription("Ya confesaste hoy!")));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("Ya confesaste hoy!")));
             return;
         }
 

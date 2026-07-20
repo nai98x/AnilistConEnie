@@ -61,12 +61,7 @@ public class Challenges(
         {
             if (!DateTime.TryParseExact(vencimiento, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime fchVnc))
             {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-                {
-                    Title = "Error",
-                    Description = $"Fecha `{vencimiento}` invalida (debe ser dd/MM/yyyy)",
-                    Color = DiscordColor.Red
-                }));
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"Fecha `{vencimiento}` invalida (debe ser dd/MM/yyyy)")));
                 return;
             }
 
@@ -118,12 +113,7 @@ public class Challenges(
         Challenge? challengeData = challenges.Find(x => x.Nombre == challenge);
         if (challengeData is null)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Error",
-                Description = $"No existe el challenge `{challenge}`",
-                Color = DiscordColor.Red
-            }));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"No existe el challenge `{challenge}`")));
             return;
         }
 
@@ -217,12 +207,7 @@ public class Challenges(
             UsuarioAnilist? userAnilist = await usuariosRepository.GetPerfil(usuario.Id);
             if (userAnilist is null || !AnilistProfileUrl.TryGetUserId(userAnilist.AnilistURL, out int anilistUserId))
             {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-                {
-                    Title = "Error",
-                    Description = $"{usuario.Mention} no tiene un AniList vinculado",
-                    Color = DiscordColor.Red
-                }));
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"{usuario.Mention} no tiene un AniList vinculado")));
                 return;
             }
 
@@ -347,12 +332,7 @@ public class Challenges(
         List<UsuarioChallenge> yaCompletados = await challengesRepository.GetChallengesUsuario(usuario.Id);
         if (yaCompletados.Any(x => x.Challenge.Nombre == challenge))
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Error",
-                Description = $"{usuario.Mention} ya tiene completado el challenge `{challenge}`, no se vuelve a dar XP.",
-                Color = DiscordColor.Red
-            }));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"{usuario.Mention} ya tiene completado el challenge `{challenge}`, no se vuelve a dar XP.")));
             return;
         }
 

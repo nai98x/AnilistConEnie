@@ -101,12 +101,7 @@ public class Admin(
         }
         else
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Error",
-                Description = $"{member.Mention} ya tiene permiso para mandar invitaciones a otros servidores.",
-                Color = DiscordColor.Red
-            }));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"{member.Mention} ya tiene permiso para mandar invitaciones a otros servidores.")));
         }
     }
 
@@ -123,12 +118,7 @@ public class Admin(
         DiscordEmoji? emote = DiscordEmojiHelper.ToEmoji(ctx.Client, emojiStr);
         if (emote is null)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Error",
-                Description = "Debes pasar un emoji",
-                Color = DiscordColor.Red
-            }));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("Debes pasar un emoji")));
             return;
         }
 
@@ -170,11 +160,7 @@ public class Admin(
         }
         else
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Error",
-                Description = "El emote mode no estaba activado"
-            }));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("El emote mode no estaba activado")));
         }
     }
 
@@ -280,10 +266,7 @@ public class Admin(
 
         if (members.Count == 0)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-                .WithTitle("Error")
-                .WithDescription("No se encontró ningún usuario en el parámetro. Menciona a los usuarios.")
-                .WithColor(DiscordColor.Red)));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("No se encontró ningún usuario en el parámetro. Menciona a los usuarios.")));
             return;
         }
 
@@ -396,19 +379,13 @@ public class Admin(
 
         if (ctx.Channel.Id != config.Channels.ConfigBots)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-                .WithTitle("Error")
-                .WithColor(DiscordColor.Red)
-                .WithDescription($"Este comando solo se puede usar en {ctx.Guild!.Channels[config.Channels.ConfigBots].Mention}.")));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"Este comando solo se puede usar en {ctx.Guild!.Channels[config.Channels.ConfigBots].Mention}.")));
             return;
         }
 
         if (origen.Id == destino.Id)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-                .WithTitle("Error")
-                .WithColor(DiscordColor.Red)
-                .WithDescription("El origen y el destino son el mismo usuario.")));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("El origen y el destino son el mismo usuario.")));
             return;
         }
 
@@ -419,31 +396,23 @@ public class Admin(
             !AnilistProfileUrl.TryGetUserId(perfilDestino?.AnilistURL, out int anilistDestino))
         {
             DiscordUser sinVincular = anilistOrigen == 0 ? origen : destino;
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-                .WithTitle("Error")
-                .WithColor(DiscordColor.Red)
-                .WithDescription($"{sinVincular.Mention} no tiene una cuenta de AniList vinculada.")));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"{sinVincular.Mention} no tiene una cuenta de AniList vinculada.")));
             return;
         }
 
         if (anilistOrigen != anilistDestino)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-                .WithTitle("Error")
-                .WithColor(DiscordColor.Red)
-                .WithDescription($"Solo se puede transferir xp entre cuentas del mismo perfil de AniList.\n" +
-                                 $"- {origen.Mention}: {Formatter.MaskedUrl($"AniList #{anilistOrigen}", new Uri($"https://anilist.co/user/{anilistOrigen}"))}\n" +
-                                 $"- {destino.Mention}: {Formatter.MaskedUrl($"AniList #{anilistDestino}", new Uri($"https://anilist.co/user/{anilistDestino}"))}")));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De(
+                $"Solo se puede transferir xp entre cuentas del mismo perfil de AniList.\n" +
+                $"- {origen.Mention}: {Formatter.MaskedUrl($"AniList #{anilistOrigen}", new Uri($"https://anilist.co/user/{anilistOrigen}"))}\n" +
+                $"- {destino.Mention}: {Formatter.MaskedUrl($"AniList #{anilistDestino}", new Uri($"https://anilist.co/user/{anilistDestino}"))}")));
             return;
         }
 
         UserXp? xpOrigen = await xpUsuariosRepository.Obtener(origen.Id);
         if (xpOrigen is null)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-                .WithTitle("Error")
-                .WithColor(DiscordColor.Red)
-                .WithDescription($"{origen.Mention} no tiene xp registrada.")));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"{origen.Mention} no tiene xp registrada.")));
             return;
         }
 
@@ -672,12 +641,7 @@ public class Admin(
 
         if (perfil is null)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Error",
-                Description = "No se encontró el perfil de AniList con ese nombre de usuario.",
-                Color = DiscordColor.Red
-            }));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("No se encontró el perfil de AniList con ese nombre de usuario.")));
             return;
         }
 
@@ -715,12 +679,7 @@ public class Admin(
 
         if (perfil is null)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Error",
-                Description = "No se encontró el perfil de AniList con ese nombre de usuario.",
-                Color = DiscordColor.Red
-            }));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("No se encontró el perfil de AniList con ese nombre de usuario.")));
             return;
         }
 
@@ -844,12 +803,7 @@ public class Admin(
 
         if (anilistUser is null)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-            {
-                Color = DiscordColor.Red,
-                Title = "Error",
-                Description = $"No se encontró el usuario de AniList `{nombre}`"
-            }));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"No se encontró el usuario de AniList `{nombre}`")));
             return;
         }
 
@@ -860,12 +814,7 @@ public class Admin(
         }
         catch (NotFoundException)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-            {
-                Color = DiscordColor.Red,
-                Title = "Error",
-                Description = $"{user.Mention} no se encuentra en el servidor"
-            }));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"{user.Mention} no se encuentra en el servidor")));
             return;
         }
 
@@ -886,12 +835,7 @@ public class Admin(
             || ctx.Channel.Id == config.Channels.Playroom)
             return true;
 
-        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-        {
-            Title = "Error",
-            Description = "Este comando solo se puede usar en el canal de administración o en el canal de config bots.",
-            Color = DiscordColor.Red
-        }));
+        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("Este comando solo se puede usar en el canal de administración o en el canal de config bots.")));
         return false;
     }
 

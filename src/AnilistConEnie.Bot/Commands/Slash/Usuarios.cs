@@ -135,12 +135,7 @@ public class Usuarios(
 
         if (!CumpleCalculator.EsFechaValida(day, month))
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Error",
-                Description = $"La fecha `{day}/{month}` no es válida. Ingresa un día y mes reales (ej: 29/2 solo si naciste un año bisiesto).",
-                Color = DiscordColor.Red
-            }));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"La fecha `{day}/{month}` no es válida. Ingresa un día y mes reales (ej: 29/2 solo si naciste un año bisiesto).")));
             return;
         }
 
@@ -149,12 +144,7 @@ public class Usuarios(
 
         if (userTimezone is null)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Error",
-                Description = "Debes tener asignado un rol de país antes de registrar tu cumpleaños.",
-                Color = DiscordColor.Red
-            }));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("Debes tener asignado un rol de país antes de registrar tu cumpleaños.")));
             return;
         }
 

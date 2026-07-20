@@ -38,12 +38,7 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
 
         if (string.IsNullOrEmpty(texto) && string.IsNullOrEmpty(imagen))
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Error",
-                Description = $"El trigger {Formatter.InlineCode(nombre)} debe tener un texto o una imagen (o ambos)",
-                Color = DiscordColor.Red
-            }));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"El trigger {Formatter.InlineCode(nombre)} debe tener un texto o una imagen (o ambos)")));
             return;
         }
 
@@ -92,12 +87,7 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
         }
         else
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Error",
-                Description = $"Trigger {Formatter.InlineCode(nombre)} no pudo desactivarse.",
-                Color = DiscordColor.Red
-            }));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"Trigger {Formatter.InlineCode(nombre)} no pudo desactivarse.")));
         }
     }
 
@@ -117,12 +107,7 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
 
         if (!ulong.TryParse(messageId, out ulong messageIdUlong))
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Error",
-                Description = $"Formato de idMensaje referenciado incorrecto: {Formatter.InlineCode(messageId)}",
-                Color = DiscordColor.Red
-            }));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"Formato de idMensaje referenciado incorrecto: {Formatter.InlineCode(messageId)}")));
             return;
         }
 
@@ -152,12 +137,7 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
         {
             await logService.GrabarLogGeneralError(ctx.Guild!, $"Error en SetFromMessageText:\n\n{ex.Message}:\n{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
 
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Error",
-                Description = $"Trigger {Formatter.InlineCode(nombre)} no pudo crearse.",
-                Color = DiscordColor.Red
-            }));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"Trigger {Formatter.InlineCode(nombre)} no pudo crearse.")));
         }
     }
 

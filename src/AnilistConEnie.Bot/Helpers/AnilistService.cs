@@ -154,23 +154,13 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
         }
         catch (AnilistApiException ex)
         {
-            await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Error",
-                Description = ex.Message,
-                Color = DiscordColor.Red
-            }));
+            await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(ErrorEmbed.De(ex.Message)));
             return;
         }
 
         if (viewer is null)
         {
-            await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Error",
-                Description = "Error desconocido",
-                Color = DiscordColor.Red
-            }));
+            await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(ErrorEmbed.De("Error desconocido")));
             return;
         }
 

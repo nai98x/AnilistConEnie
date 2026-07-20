@@ -63,10 +63,7 @@ public class Teiou(CooldownsSettings cooldownsSettings, RangoRoles rangoRoles, I
 
             double horas = (cooldown.Value - DateTime.UtcNow).TotalHours;
 
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-                .WithTitle("Error")
-                .WithDescription($"Debes esperar {horas.ToString("N", nfi)} horas para volver a utilizar el comando")
-                .WithColor(DiscordColor.Red)));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"Debes esperar {horas.ToString("N", nfi)} horas para volver a utilizar el comando")));
         }
     }
 }

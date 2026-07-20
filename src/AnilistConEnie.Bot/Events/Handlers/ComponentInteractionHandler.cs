@@ -32,10 +32,7 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
                 || !coloresPorRango.ContainsKey(chosenColorId)
                 || !args.Guild.Roles.TryGetValue(chosenColorId, out DiscordRole? newColor))
             {
-                await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
-                    .WithTitle("Error")
-                    .WithDescription("El color elegido no es válido")
-                    .WithColor(DiscordColor.Red)));
+                await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(ErrorEmbed.De("El color elegido no es válido")));
                 return;
             }
             KeyValuePair<ulong, RangoEnum> chosenColor = coloresPorRango.FirstOrDefault(x => x.Key == chosenColorId);
@@ -84,10 +81,7 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
             }
             else
             {
-                await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
-                    .WithTitle("Error")
-                    .WithDescription($"No tienes el rango necesario para elegir este color. Para poder utilizarlo debes subir a {Enum.GetName(chosenColor.Value)}")
-                    .WithColor(DiscordColor.Red)));
+                await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(ErrorEmbed.De($"No tienes el rango necesario para elegir este color. Para poder utilizarlo debes subir a {Enum.GetName(chosenColor.Value)}")));
             }
         }
         else if (args.Interaction.Data.CustomId.StartsWith("sync-"))
@@ -103,22 +97,14 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
             UserApprovalAnilist? userApproval = await anilistApprovalRepository.Obtener(discordId);
             if (userApproval is null)
             {
-                await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
-                    .WithTitle("Error")
-                    .WithDescription("No se encontró la solicitud de vinculación o la misma ya fue revisada")
-                    .WithColor(DiscordColor.Red)
-                ));
+                await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(ErrorEmbed.De("No se encontró la solicitud de vinculación o la misma ya fue revisada")));
             }
             else
             {
                 DiscordMember? member = args.Guild.Members.Values.FirstOrDefault(x => x.Id == (ulong)discordId);
                 if (member is null)
                 {
-                    await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
-                        .WithTitle("Error")
-                        .WithDescription("No se encontró al usuario en el servidor")
-                        .WithColor(DiscordColor.Red)
-                    ));
+                    await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(ErrorEmbed.De("No se encontró al usuario en el servidor")));
                     return;
                 }
 

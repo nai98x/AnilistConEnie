@@ -10,6 +10,6 @@ public sealed class RequireKamiSamaCheck(BotConfiguration config) : IContextChec
     {
         return context.Member is not null && context.Member.Roles.Any(r => r.Id == config.Roles.KamiSama)
             ? ValueTask.FromResult<string?>(null)
-            : ValueTask.FromResult<string?>("Solo los administradores pueden usar este comando.");
+            : ValueTask.FromResult<string?>("Solo un Kami Sama puede usar este comando.");
     }
 }

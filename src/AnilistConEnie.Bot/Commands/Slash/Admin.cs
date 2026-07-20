@@ -776,12 +776,6 @@ public class Admin(
 
         await ctx.DeferResponseAsync();
 
-        if (ctx.Member is null || ctx.Member.Roles.All(r => r.Id != config.Roles.KamiSama))
-        {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.SinPermiso("Solo un Kami Sama puede usar este comando.")));
-            return;
-        }
-
         string nombre = AnilistProfileUrl.ExtractUserName(perfil);
 
         AnilistUser? anilistUser;

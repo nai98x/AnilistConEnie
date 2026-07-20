@@ -91,22 +91,24 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
             string[] parts = args.Id.Split('-');
             if (parts.Length < 3 || !bool.TryParse(parts[1], out bool aprobado) || !long.TryParse(parts[2], out long discordId)) return;
 
-            await args.Interaction.DeferAsync(false);
-
+            await args.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
 
             UserApprovalAnilist? userApproval = await anilistApprovalRepository.Obtener(discordId);
             if (userApproval is null)
             {
-                await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(ErrorEmbed.De("No se encontró la solicitud de vinculación o la misma ya fue revisada")));
+                await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral().AddEmbed(ErrorEmbed.De("No se encontró la solicitud de vinculación o la misma ya fue revisada")));
             }
             else
             {
                 DiscordMember? member = args.Guild.Members.Values.FirstOrDefault(x => x.Id == (ulong)discordId);
                 if (member is null)
                 {
-                    await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(ErrorEmbed.De("No se encontró al usuario en el servidor")));
+                    await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral().AddEmbed(ErrorEmbed.De("No se encontró al usuario en el servidor")));
                     return;
                 }
+
+                DiscordEmbed original = args.Message.Embeds[0];
+                DiscordEmbedBuilder resuelto = new DiscordEmbedBuilder(original);
 
                 if (aprobado)
                 {
@@ -121,28 +123,27 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
                     };
                     await anilistService.TerminarVinculacion(client, user, member, args.Guild, anilistUser);
 
-                    await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
-                        .WithTitle("Solicitud Aprobada")
-                        .WithDescription($"El usuario {member.Mention} | Nombre: {Formatter.InlineCode(member.DisplayName)} | Id: {Formatter.InlineCode(member.Id.ToString())} ({Formatter.MaskedUrl("Link de su AniList", new Uri(userApproval.SiteUrl))}) ha sido vinculado correctamente por {args.User.Mention}")
+                    resuelto
                         .WithColor(DiscordColor.Green)
-                    ));
+                        .WithTitle("Vinculacion de AniList aprobada")
+                        .WithDescription($"{original.Description}\n\n{Formatter.Bold("Aprobada")} por {args.User.Mention}, el usuario fue vinculado correctamente.");
                 }
                 else
                 {
                     await args.Guild.RemoveMemberAsync((ulong)discordId, "Solicitud de vinculación rechazada por el staff");
-                    await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
-                        .WithTitle("Solicitud Rechazada")
-                        .WithDescription($"El usuario {member.Mention} | Nombre: {Formatter.InlineCode(member.DisplayName)} | Id: {Formatter.InlineCode(member.Id.ToString())} ({Formatter.MaskedUrl("Link de su AniList", new Uri(userApproval.SiteUrl))}) ha sido expulsado del servidor por {args.User.Mention}")
+
+                    resuelto
                         .WithColor(DiscordColor.Red)
-                    ));
+                        .WithTitle("Vinculacion de AniList rechazada")
+                        .WithDescription($"{original.Description}\n\n{Formatter.Bold("Rechazada")} por {args.User.Mention}, el usuario fue expulsado del servidor.");
                 }
 
                 await anilistApprovalRepository.Delete(discordId);
                 try
                 {
-                    await args.Message.DeleteAsync();
+                    await args.Message.ModifyAsync(new DiscordMessageBuilder().AddEmbed(resuelto.Build()));
                 }
-                catch (Exception ex) { await logService.LogException(args.Guild, ex, "Rechazo de vinculación - borrar mensaje"); }
+                catch (Exception ex) { await logService.LogException(args.Guild, ex, "Resolución de vinculación - editar mensaje"); }
             }
 
         }

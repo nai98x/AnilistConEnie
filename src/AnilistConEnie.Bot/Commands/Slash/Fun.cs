@@ -8,6 +8,7 @@ using AnilistConEnie.Application.Fun;
 using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Application.Membership;
 using AnilistConEnie.Bot.Commands.Framework.Attributes;
+using AnilistConEnie.Bot.Commands.Framework.Checks;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
@@ -55,6 +56,7 @@ public class Fun(
 
     [Command("fakesay")]
     [Description("Usurpa la identidad de un usuario y di algo en su nombre")]
+    [RequireKamiSama]
     public async Task FakeSay(
         SlashCommandContext ctx,
         [Parameter("Usuario")] [Description("El usuario del que quieres usurpar su identidad")] DiscordUser usuario,
@@ -63,12 +65,6 @@ public class Fun(
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
         await ctx.DeferResponseAsync(true);
-
-        if (ctx.Member is null || !ctx.Member.Permissions.HasPermission(DiscordPermission.ManageGuild))
-        {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.SinPermiso()));
-            return;
-        }
 
         DiscordMember member = await ctx.Guild!.GetMemberAsync(usuario.Id);
 

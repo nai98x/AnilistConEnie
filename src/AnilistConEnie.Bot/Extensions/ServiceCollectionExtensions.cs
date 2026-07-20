@@ -1,3 +1,4 @@
+using AnilistConEnie.Bot.Commands.Framework;
 using AnilistConEnie.Bot.Commands.Framework.Checks;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Events;
@@ -61,10 +62,13 @@ public static class ServiceCollectionExtensions
 
             DiscordLogService logService = provider.GetRequiredService<DiscordLogService>();
             extension.CommandExecuted += (_, args) => logService.GrabarLogComandoEjecutado(args.Context);
+
+            CommandErrorHandler errorHandler = new(logService);
+            extension.CommandErrored += errorHandler.HandleAsync;
         }, new CommandsConfiguration
         {
             RegisterDefaultCommandProcessors = true,
-            UseDefaultCommandErrorHandler = true
+            UseDefaultCommandErrorHandler = false
         });
 
         return services;

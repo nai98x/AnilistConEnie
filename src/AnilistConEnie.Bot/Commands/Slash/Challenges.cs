@@ -3,6 +3,7 @@ using System.Globalization;
 using AnilistConEnie.Application.Anilist;
 using AnilistConEnie.Bot.Commands.Framework.AutoComplete;
 using AnilistConEnie.Bot.Commands.Framework.Attributes;
+using AnilistConEnie.Bot.Commands.Framework.Checks;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
@@ -36,7 +37,7 @@ public class Challenges(
 {
     [Command("set")]
     [Description("Agrega o modifica un challenge (Staff)")]
-    [RequirePermissions(DiscordPermission.ManageGuild)]
+    [RequireKamiSama]
     public async Task Set(
         SlashCommandContext ctx,
         [Parameter("Nombre")] [Description("Nombre del challenge")] string nombre,
@@ -45,12 +46,6 @@ public class Challenges(
         [Parameter("Vencimiento")] [Description("Vencimiento del challenge (dd/MM/yyyy)")] string? vencimiento = null)
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
-
-        if (ctx.Member is null || !ctx.Member.Permissions.HasPermission(DiscordPermission.ManageGuild))
-        {
-            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(ErrorEmbed.SinPermiso()));
-            return;
-        }
 
         string dispStr = disponible ? "Disponible" : "No disponible";
         DateTime? fechaVencimiento = null;

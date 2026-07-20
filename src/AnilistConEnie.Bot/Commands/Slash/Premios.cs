@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using AnilistConEnie.Application.Premios;
 using AnilistConEnie.Bot.Commands.Framework.Attributes;
+using AnilistConEnie.Bot.Commands.Framework.Checks;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Enum;
@@ -59,6 +60,7 @@ public class Premios(IPremiosRepository premiosRepository, DiscordBotService dis
 
     [Command("agregar")]
     [Description("Agrega un nuevo premio de temporada (Staff)")]
+    [RequireKamiSama]
     public async Task Agregar(
         SlashCommandContext ctx,
         [Parameter("Anio")] [Description("Año del premio de temporada")] int anio,
@@ -66,12 +68,6 @@ public class Premios(IPremiosRepository premiosRepository, DiscordBotService dis
         [Parameter("Link")] [Description("Link del premio de temporada")] string link)
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
-
-        if (ctx.Member is null || !ctx.Member.Permissions.HasPermission(DiscordPermission.ManageGuild))
-        {
-            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(ErrorEmbed.SinPermiso()));
-            return;
-        }
 
         await premiosRepository.Upsert(PremioFactory.Crear(anio, season, link));
 

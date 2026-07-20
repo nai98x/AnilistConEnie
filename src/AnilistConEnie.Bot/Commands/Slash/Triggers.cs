@@ -2,6 +2,7 @@ using System.ComponentModel;
 using AnilistConEnie.Application.Extensions;
 using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Bot.Commands.Framework.Attributes;
+using AnilistConEnie.Bot.Commands.Framework.Checks;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Model.Entities;
@@ -24,6 +25,7 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
 {
     [Command("set")]
     [Description("Agrega o modifica un trigger (staff)")]
+    [RequireKamiSama]
     public async Task Set(
         SlashCommandContext ctx,
         [Parameter("Nombre")] [Description("Nombre para identificar al trigger")] string nombre,
@@ -32,8 +34,6 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
         [Parameter("Imagen")] [Description("Url de la imagen a mostrar")] string? imagen = null)
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
-
-        if (!await EnsureManageGuildAsync(ctx)) return;
 
         if (string.IsNullOrEmpty(texto) && string.IsNullOrEmpty(imagen))
         {
@@ -62,13 +62,12 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
 
     [Command("eliminar")]
     [Description("Desactiva un trigger (staff)")]
+    [RequireKamiSama]
     public async Task Eliminar(
         SlashCommandContext ctx,
         [Parameter("Nombre")] [Description("Trigger a desactivar")] string nombre)
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
-
-        if (!await EnsureManageGuildAsync(ctx)) return;
 
         bool exito = await triggersRepository.Delete(nombre.ToLower());
 
@@ -91,6 +90,7 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
 
     [Command("setfrommessagetext")]
     [Description("Crea o modifica un trigger segun el texto de un mensaje (staff)")]
+    [RequireKamiSama]
     public async Task SetFromMessageText(
         SlashCommandContext ctx,
         [Parameter("Nombre")] [Description("Nombre del trigger")] string nombre,
@@ -99,8 +99,6 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
         [Parameter("IdMensaje")] [Description("Id del mensaje referenciado")] string messageId)
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
-
-        if (!await EnsureManageGuildAsync(ctx)) return;
 
         if (!ulong.TryParse(messageId, out ulong messageIdUlong))
         {
@@ -172,14 +170,5 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
             Description = StringHelper.NormalizarDescription(desc),
             Color = DiscordColor.Green
         }));
-    }
-
-    private static async Task<bool> EnsureManageGuildAsync(SlashCommandContext ctx)
-    {
-        if (ctx.Member is not null && ctx.Member.Permissions.HasPermission(DiscordPermission.ManageGuild))
-            return true;
-
-        await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(ErrorEmbed.SinPermiso()));
-        return false;
     }
 }

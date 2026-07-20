@@ -75,7 +75,7 @@ public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, 
         await guildMaintenanceService.ClearInvitesRoleOnStartup(guild);
         logger.LogInformation("Roles de invitacion limpiados correctamente");
         
-        await guildMaintenanceService.ManageBoosters(guild);
+        guildMaintenanceService.ManageBoosters(guild);
         logger.LogInformation("Boosters cargados correctamente");
         
         await guildMaintenanceService.ManageNewUsuarios(guild);

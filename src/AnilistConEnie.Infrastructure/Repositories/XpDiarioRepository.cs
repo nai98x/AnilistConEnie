@@ -51,4 +51,23 @@ public class XpDiarioRepository(DbConnectionFactory connectionFactory) : IXpDiar
             new { p_user_id = (long)userId, p_fecha = DateOnly.FromDateTime(fecha), p_xp = xp },
             commandType: CommandType.StoredProcedure);
     }
+
+    public async Task Snapshot(DateOnly fecha, IReadOnlyList<UserXp> usuarios)
+    {
+        if (usuarios.Count == 0) return;
+
+        long[] userIds = new long[usuarios.Count];
+        long[] xps = new long[usuarios.Count];
+        for (int i = 0; i < usuarios.Count; i++)
+        {
+            userIds[i] = usuarios[i].UserId;
+            xps[i] = usuarios[i].Total;
+        }
+
+        using var connection = await connectionFactory.OpenConnectionAsync();
+        await connection.ExecuteAsync(
+            "xp_diario_snapshot",
+            new { p_fecha = fecha, p_user_ids = userIds, p_xps = xps },
+            commandType: CommandType.StoredProcedure);
+    }
 }

@@ -58,7 +58,9 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
         {
             try
             {
-                DiscordMember member = await guild.GetMemberAsync(username.Key);
+                if (!guild.Members.TryGetValue(username.Key, out DiscordMember? member))
+                    continue;
+
                 if (member.DisplayName != username.Value)
                 {
                     await member.ModifyAsync(x => x.Nickname = username.Value);
@@ -175,16 +177,15 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
         }
     }
 
-    public async Task ManageBoosters(DiscordGuild guild)
+    public void ManageBoosters(DiscordGuild guild)
     {
         List<ulong> boostersIds = [];
-        List<DiscordMember> members = await guild.GetAllMembersAsync().ToListAsync();
-        foreach (DiscordMember member in members)
+        foreach (DiscordMember member in guild.Members.Values)
         {
             if (member.PremiumSince != null)
                 boostersIds.Add(member.Id);
         }
-        
+
         xpState.FillBoosters(boostersIds);
     }
 
@@ -202,7 +203,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
             {
                 try
                 {
-                    DiscordMember userBday = await guild.GetMemberAsync((ulong)usuario.UserId);
+                    if (!guild.Members.TryGetValue((ulong)usuario.UserId, out DiscordMember? userBday)) continue;
                     if (!CumpleCalculator.EsDelDia(usuario, await relojPais.HoyDe(guild, userBday))) continue;
 
                     cumpleaneros.Add(userBday.Id);
@@ -331,11 +332,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
         try
         {
             List<UserXp> rankings = xpState.GetGuildXp(guild);
-            DateTime date = new DateTime(day: RelojServidor.Hoy.Day, month: RelojServidor.Hoy.Month, year: RelojServidor.Hoy.Year, hour: 5, minute: 0, second: 0, kind: DateTimeKind.Utc);
-            foreach (UserXp user in rankings)
-            {
-                await xpDiarioRepository.Upsert((ulong)user.UserId, date, user.Total);
-            }
+            await xpDiarioRepository.Snapshot(DateOnly.FromDateTime(RelojServidor.Hoy), rankings);
         }
         catch (Exception e)
         {

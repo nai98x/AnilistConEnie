@@ -35,7 +35,8 @@ public class Xp(
     XpChartService xpChartService,
     IChartRenderer chartRenderer,
     IXpDiarioRepository xpDiarioRepository,
-    DiscordBotService discordBotService)
+    DiscordBotService discordBotService,
+    InteractivityExtension interactivity)
 {
     private const string RankThumbnail = "https://media.discordapp.net/attachments/862568630365323264/990747470508204032/unknown.png";
 
@@ -98,7 +99,6 @@ public class Xp(
             .WithThumbnail(RankThumbnail)
             .WithFooter(positionDesc, ctx.User.AvatarUrl);
 
-        InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
         IEnumerable<Page> pages = InteractivityExtension.GeneratePagesInEmbed(fullText, SplitType.Line, embed);
         await interactivity.SendPaginatedResponseAsync(ctx.Interaction, ephemeral: false, ctx.User, pages);
     }
@@ -284,7 +284,6 @@ public class Xp(
 
         await ctx.DeferResponseAsync();
 
-        InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
         List<UserXp> serverRanking = xpState.GetGuildXp(ctx.Guild!).OrderByDescending(x => x.Total).ToList();
 
         List<string> colors = [.. Enumerable.Range(0, 5).Select(ChartColors.ForIndex)];
@@ -441,7 +440,6 @@ public class Xp(
             .WithFooter("El cotorreo es el promedio de xp ganado diariamente del usuario")
             .WithColor(DiscordColor.Blurple);
 
-        InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
         IEnumerable<Page> pages = InteractivityExtension.GeneratePagesInEmbed(fullText, SplitType.Line, embed);
         await interactivity.SendPaginatedResponseAsync(ctx.Interaction, ephemeral: false, ctx.User, pages);
     }
@@ -503,7 +501,6 @@ public class Xp(
             .WithThumbnail(RankThumbnail)
             .WithFooter(positionDesc, ctx.User.AvatarUrl);
 
-        InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
         IEnumerable<Page> pages = InteractivityExtension.GeneratePagesInEmbed(fullText, SplitType.Line, embed);
         await interactivity.SendPaginatedResponseAsync(ctx.Interaction, ephemeral: false, ctx.User, pages);
     }

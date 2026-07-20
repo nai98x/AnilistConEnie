@@ -46,7 +46,8 @@ public class Admin(
     IAnilistClient anilistClient,
     IUsuariosRepository usuariosRepository,
     IAnilistBaneadosRepository anilistBaneadosRepository,
-    IXpUsuariosRepository xpUsuariosRepository)
+    IXpUsuariosRepository xpUsuariosRepository,
+    InteractivityExtension interactivity)
 {
     private const string PddSuggestionForm = "https://forms.gle/o3V3pgu2hfYRBVtu7";
     private const string PddThumbnail = "https://images-ext-1.discordapp.net/external/2FcgVgNDv60ja04L_9-_3DsxW2wqOd8Byj5rjr8EEvE/%3Fv%3D1/https/cdn.discordapp.com/emojis/846813702434586694.png?format=webp&quality=lossless";
@@ -204,7 +205,6 @@ public class Admin(
             Title = "Usuarios sin cuenta vinculada de AniList"
         };
 
-        InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
         IEnumerable<Page> pages = InteractivityExtension.GeneratePagesInEmbed(desc, SplitType.Line, embed);
         await interactivity.SendPaginatedResponseAsync(ctx.Interaction, ephemeral: false, ctx.User, pages);
     }
@@ -249,7 +249,6 @@ public class Admin(
             Title = "Perfiles de AniList con más de un Discord vinculado"
         };
 
-        InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
         IEnumerable<Page> pages = InteractivityExtension.GeneratePagesInEmbed(desc, SplitType.Line, embed);
         await interactivity.SendPaginatedResponseAsync(ctx.Interaction, ephemeral: false, ctx.User, pages);
     }
@@ -511,7 +510,6 @@ public class Admin(
 
         await ctx.Interaction.CreateResponseAsync(DiscordInteractionResponseType.Modal, modal);
 
-        InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
         InteractivityResult<ModalSubmittedEventArgs> modalInteraction = await interactivity.WaitForModalAsync(modalId, ctx.User, TimeSpan.FromMinutes(5));
 
         if (modalInteraction.TimedOut) return;

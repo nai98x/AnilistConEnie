@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using AnilistConEnie.Application.Charts;
 using AnilistConEnie.Application.Extensions;
+using AnilistConEnie.Application.Fun;
 using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Application.Membership;
 using AnilistConEnie.Bot.Commands.Framework.Attributes;
@@ -43,7 +44,8 @@ public class Fun(
     IUsuariosRepository usuariosRepository,
     IChartRenderer chartRenderer,
     IHttpClientFactory httpClientFactory,
-    ILogger<Fun> logger)
+    ILogger<Fun> logger,
+    InteractivityExtension interactivity)
 {
     private const string FrameLove = "frame-love.png";
     private const string FuckMarryKillTemplate = "fuckmarrykill.png";
@@ -153,31 +155,22 @@ public class Fun(
 
         await ctx.DeferResponseAsync();
 
-        int maxPorcentaje = 0;
-        DiscordMember match = ctx.Member!;
-        List<(DiscordMember Miembro, int Porcentaje)> amorios = [];
+        List<DiscordMember> candidatos = ctx.Guild!.Members.Values
+            .Where(m => !m.IsBot && m.Id != usuario.Id && rangoRoles.RangoAPartirDe(ctx.Guild, m, RangoEnum.Tama, true))
+            .ToList();
 
-        foreach (KeyValuePair<ulong, DiscordMember> member in ctx.Guild!.Members)
-        {
-            if (member.Value.IsBot || member.Value.Id == usuario.Id || !rangoRoles.RangoAPartirDe(ctx.Guild, member.Value, RangoEnum.Tama, true))
-                continue;
+        TrueLoveResult resultado = TrueLoveCalculator.Calcular(usuario.Id, candidatos.Select(m => m.Id));
 
-            Random rnd = new((int)(usuario.Id + member.Key));
-            int porcentajeAmor = rnd.Next(0, 101);
-            amorios.Add((member.Value, porcentajeAmor));
+        Dictionary<ulong, DiscordMember> porId = candidatos.ToDictionary(m => m.Id);
+        string NombreDe(ulong id) => porId.TryGetValue(id, out DiscordMember? m) ? m.DisplayName : id.ToString();
 
-            if (porcentajeAmor > maxPorcentaje)
-            {
-                maxPorcentaje = porcentajeAmor;
-                match = member.Value;
-            }
-        }
+        DiscordMember match = resultado.MatchId is { } matchId && porId.TryGetValue(matchId, out DiscordMember? matchMember)
+            ? matchMember
+            : ctx.Member!;
+        int maxPorcentaje = resultado.MaxPorcentaje;
 
-        List<(DiscordMember Miembro, int Porcentaje)> amores = amorios.OrderByDescending(x => x.Porcentaje).Take(5).ToList();
-        string amoriosStr = $"**Top 5 pretendientes:**\n{string.Join("\n", amores.Select(x => $"- **{x.Miembro.DisplayName}** con un **{x.Porcentaje}%**"))}";
-
-        List<(DiscordMember Miembro, int Porcentaje)> odiados = amorios.OrderBy(x => x.Porcentaje).Take(5).ToList();
-        string odiadosStr = $"**Top 5 odiados:**\n{string.Join("\n", odiados.Select(x => $"- **{x.Miembro.DisplayName}** con un **{x.Porcentaje}%**"))}";
+        string amoriosStr = $"**Top 5 pretendientes:**\n{string.Join("\n", resultado.Pretendientes.Select(x => $"- **{NombreDe(x.Id)}** con un **{x.Porcentaje}%**"))}";
+        string odiadosStr = $"**Top 5 odiados:**\n{string.Join("\n", resultado.Odiados.Select(x => $"- **{NombreDe(x.Id)}** con un **{x.Porcentaje}%**"))}";
 
         byte[] imagen = await GenerarImagenShipAsync(usuario.GetAvatarUrl(MediaFormat.Png, 512), match.GetAvatarUrl(MediaFormat.Png, 512));
 
@@ -263,7 +256,6 @@ public class Fun(
 
         await ctx.DeferResponseAsync();
 
-        InteractivityExtension interactivity = ctx.ServiceProvider.GetRequiredService<InteractivityExtension>();
         Random rnd = Random.Shared;
 
         List<DiscordMember> miembros = ctx.Guild!.Members.Values
@@ -377,46 +369,9 @@ public class Fun(
         DiscordMember member = ctx.Member!;
 
         DateTime hoy = RelojServidor.Hoy;
-        int seed = ctx.User.Id.GetHashCode() ^ (hoy.Year * 100 + hoy.Month);
-        Random rnd = new(seed);
-
-        int diaHoy = hoy.Day;
-        int totalDiasDelMes = DateTime.DaysInMonth(hoy.Year, hoy.Month);
-
-        int cambiosTendencia = rnd.Next(2, 6);
-        Dictionary<int, int> puntosPorDia = new();
-
-        List<int> segmentos = [];
-        int puntosRestantes = totalDiasDelMes - 1;
-        for (int i = 0; i < cambiosTendencia && puntosRestantes > 0; i++)
-        {
-            int maxPermitido = puntosRestantes - (cambiosTendencia - i - 1) * 3;
-            if (maxPermitido < 3) break;
-            int seg = rnd.Next(3, maxPermitido + 1);
-            segmentos.Add(seg);
-            puntosRestantes -= seg;
-        }
-        if (puntosRestantes > 0) segmentos.Add(puntosRestantes);
-
-        int actual = rnd.Next(0, 101);
-        int dia = 1;
-        puntosPorDia[dia++] = actual;
-        bool subiendo = rnd.Next(2) == 0;
-
-        foreach (int seg in segmentos)
-        {
-            int objetivo = subiendo ? rnd.Next(actual + 1, 101) : rnd.Next(0, actual);
-            for (int i = 1; i <= seg; i++)
-            {
-                if (dia > diaHoy) break;
-                float t = (float)i / seg;
-                int valor = (int)(actual + (objetivo - actual) * t + rnd.Next(-3, 4));
-                puntosPorDia[dia++] = Math.Clamp(valor, 0, 100);
-            }
-            if (dia > diaHoy) break;
-            actual = puntosPorDia[dia - 1];
-            subiendo = !subiendo;
-        }
+        Random rnd = new(BoludometroCalculator.Seed(ctx.User.Id, hoy.Year, hoy.Month));
+        Dictionary<int, int> puntosPorDia = BoludometroCalculator.GenerarHistorial(
+            rnd, hoy.Day, DateTime.DaysInMonth(hoy.Year, hoy.Month));
 
         int value = puntosPorDia.Last().Value;
 
@@ -523,13 +478,10 @@ public class Fun(
         string horoscopo = horoscopeData.Data.HoroscopeData;
         DateTime date = DateTime.Parse(horoscopeData.Data.Date, CultureInfo.InvariantCulture);
 
-        Random rndSignoDay = new((int)signo + date.DayOfYear + date.Year);
-        Random rndMember = new((int)ctx.Member!.Id);
-        Random endMemberSignoDay = new((int)signo + date.DayOfYear + date.Year + (int)ctx.Member.Id);
+        Random endMemberSignoDay = new((int)signo + date.DayOfYear + date.Year + (int)ctx.Member!.Id);
 
-        double rndAmor = Math.Round(0.7 * rndSignoDay.Next(0, 101) + 0.3 * rndMember.Next(0, 101), 0);
-        double rndSalud = Math.Round(0.7 * rndSignoDay.Next(0, 101) + 0.3 * rndMember.Next(0, 101), 0);
-        double rndDinero = Math.Round(0.7 * rndSignoDay.Next(0, 101) + 0.3 * rndMember.Next(0, 101), 0);
+        (double rndAmor, double rndSalud, double rndDinero) =
+            HoroscopoCalculator.Puntajes((int)signo, date.DayOfYear, date.Year, ctx.Member.Id);
 
         try
         {

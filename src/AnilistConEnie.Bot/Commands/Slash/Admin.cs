@@ -82,8 +82,6 @@ public class Admin(
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
-        await ctx.DeferResponseAsync();
-
         DiscordMember member = await ctx.Guild!.GetMemberAsync(user.Id);
         DiscordRole role = ctx.Guild.Roles[config.Roles.Invite];
 
@@ -92,7 +90,7 @@ public class Admin(
             await member.GrantRoleAsync(role);
             inviteLinkState.AddLinkRoleUser(member.Id, RelojServidor.Ahora.AddMinutes(cooldownsSettings.InvitePermisoMinutos));
 
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(new DiscordEmbedBuilder
             {
                 Title = "Invitaciones permitidas",
                 Description = $"{member.Mention}, puedes mandar invitaciones a otros servidores por los próximos {cooldownsSettings.InvitePermisoMinutos} minutos.",
@@ -101,7 +99,7 @@ public class Admin(
         }
         else
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"{member.Mention} ya tiene permiso para mandar invitaciones a otros servidores.")));
+            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(ErrorEmbed.De($"{member.Mention} ya tiene permiso para mandar invitaciones a otros servidores.")));
         }
     }
 
@@ -113,12 +111,10 @@ public class Admin(
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
-        await ctx.DeferResponseAsync();
-
         DiscordEmoji? emote = DiscordEmojiHelper.ToEmoji(ctx.Client, emojiStr);
         if (emote is null)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("Debes pasar un emoji")));
+            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(ErrorEmbed.De("Debes pasar un emoji")));
             return;
         }
 
@@ -130,12 +126,12 @@ public class Admin(
             DiscordEmbedBuilder embed = new() { Title = $"{name} activado" };
             if (emote.Id != 0) embed.WithImageUrl(emote.Url);
 
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embed));
+            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(embed));
         }
         else
         {
             emoteModeState.ActivarYepMode(emote);
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(new DiscordEmbedBuilder
             {
                 Title = "Emote cambiado",
                 Description = $"El {name} ahora tiene asignado otro emote"
@@ -149,18 +145,16 @@ public class Admin(
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
-        await ctx.DeferResponseAsync();
-
         if (emoteModeState is { YepMode: true, Emote: not null })
         {
             string name = emoteModeState.Emote.Name + "mode";
             emoteModeState.DesactivarYepMode();
 
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder { Title = $"{name} desactivado" }));
+            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(new DiscordEmbedBuilder { Title = $"{name} desactivado" }));
         }
         else
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("El emote mode no estaba activado")));
+            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(ErrorEmbed.De("El emote mode no estaba activado")));
         }
     }
 

@@ -33,12 +33,11 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
-        await ctx.DeferResponseAsync();
         if (!await EnsureManageGuildAsync(ctx)) return;
 
         if (string.IsNullOrEmpty(texto) && string.IsNullOrEmpty(imagen))
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"El trigger {Formatter.InlineCode(nombre)} debe tener un texto o una imagen (o ambos)")));
+            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(ErrorEmbed.De($"El trigger {Formatter.InlineCode(nombre)} debe tener un texto o una imagen (o ambos)")));
             return;
         }
 
@@ -53,7 +52,7 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
         await triggersRepository.Upsert(trigger);
         triggersState.SetTrigger(trigger);
 
-        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+        await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(new DiscordEmbedBuilder
         {
             Title = "Trigger agregado",
             Description = $"Trigger {Formatter.InlineCode(nombre)} agregado correctamente.",
@@ -69,7 +68,6 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
-        await ctx.DeferResponseAsync();
         if (!await EnsureManageGuildAsync(ctx)) return;
 
         bool exito = await triggersRepository.Delete(nombre.ToLower());
@@ -78,7 +76,7 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
         {
             triggersState.RemoveTriggerFromActiveList(nombre.ToLower());
 
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(new DiscordEmbedBuilder
             {
                 Title = "Trigger eliminado",
                 Description = $"Trigger {Formatter.InlineCode(nombre)} fue eliminado correctamente.",
@@ -87,7 +85,7 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
         }
         else
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"Trigger {Formatter.InlineCode(nombre)} no pudo desactivarse.")));
+            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(ErrorEmbed.De($"Trigger {Formatter.InlineCode(nombre)} no pudo desactivarse.")));
         }
     }
 
@@ -102,12 +100,11 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
-        await ctx.DeferResponseAsync();
         if (!await EnsureManageGuildAsync(ctx)) return;
 
         if (!ulong.TryParse(messageId, out ulong messageIdUlong))
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"Formato de idMensaje referenciado incorrecto: {Formatter.InlineCode(messageId)}")));
+            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(ErrorEmbed.De($"Formato de idMensaje referenciado incorrecto: {Formatter.InlineCode(messageId)}")));
             return;
         }
 
@@ -126,7 +123,7 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
             await triggersRepository.Upsert(trigger);
             triggersState.SetTrigger(trigger);
 
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(new DiscordEmbedBuilder
             {
                 Title = "Trigger agregado",
                 Description = $"Trigger {Formatter.InlineCode(nombre)} agregado correctamente.",
@@ -137,7 +134,7 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
         {
             await logService.GrabarLogGeneralError(ctx.Guild!, $"Error en SetFromMessageText:\n\n{ex.Message}:\n{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
 
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"Trigger {Formatter.InlineCode(nombre)} no pudo crearse.")));
+            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(ErrorEmbed.De($"Trigger {Formatter.InlineCode(nombre)} no pudo crearse.")));
         }
     }
 
@@ -147,13 +144,11 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
-        await ctx.DeferResponseAsync();
-
         IReadOnlyDictionary<string, Trigger> activeTriggers = triggersState.GetActiveTriggers();
 
         if (activeTriggers.Count == 0)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(new DiscordEmbedBuilder
             {
                 Title = "Sin registros",
                 Description = "No hay ningun trigger registrado!",
@@ -171,7 +166,7 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
             desc += "\n\n";
         }
 
-        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+        await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(new DiscordEmbedBuilder
         {
             Title = "Triggers del server",
             Description = StringHelper.NormalizarDescription(desc),
@@ -184,7 +179,7 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
         if (ctx.Member is not null && ctx.Member.Permissions.HasPermission(DiscordPermission.ManageGuild))
             return true;
 
-        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.SinPermiso()));
+        await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(ErrorEmbed.SinPermiso()));
         return false;
     }
 }

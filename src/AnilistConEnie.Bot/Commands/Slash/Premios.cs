@@ -26,8 +26,6 @@ public class Premios(IPremiosRepository premiosRepository, DiscordBotService dis
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
-        await ctx.DeferResponseAsync();
-
         List<Premio> premios = await premiosRepository.GetLista();
         string desc;
 
@@ -47,7 +45,7 @@ public class Premios(IPremiosRepository premiosRepository, DiscordBotService dis
             }
         }
 
-        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+        await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(new DiscordEmbedBuilder
         {
             Title = "Premios de temporada del servidor",
             Description = desc,
@@ -69,17 +67,15 @@ public class Premios(IPremiosRepository premiosRepository, DiscordBotService dis
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
-        await ctx.DeferResponseAsync();
-
         if (ctx.Member is null || !ctx.Member.Permissions.HasPermission(DiscordPermission.ManageGuild))
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.SinPermiso()));
+            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(ErrorEmbed.SinPermiso()));
             return;
         }
 
         await premiosRepository.Upsert(PremioFactory.Crear(anio, season, link));
 
-        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+        await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
             .WithTitle("Premio agregado correctamente")
             .WithDescription($"{season} {anio}")
             .WithColor(DiscordColor.Green)));

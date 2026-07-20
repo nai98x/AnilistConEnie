@@ -46,11 +46,9 @@ public class Challenges(
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
-        await ctx.DeferResponseAsync();
-
         if (ctx.Member is null || !ctx.Member.Permissions.HasPermission(DiscordPermission.ManageGuild))
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.SinPermiso()));
+            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(ErrorEmbed.SinPermiso()));
             return;
         }
 
@@ -61,7 +59,7 @@ public class Challenges(
         {
             if (!DateTime.TryParseExact(vencimiento, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime fchVnc))
             {
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"Fecha `{vencimiento}` invalida (debe ser dd/MM/yyyy)")));
+                await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(ErrorEmbed.De($"Fecha `{vencimiento}` invalida (debe ser dd/MM/yyyy)")));
                 return;
             }
 
@@ -70,7 +68,7 @@ public class Challenges(
 
         await challengesRepository.Upsert(nombre, link, disponible, fechaVencimiento);
 
-        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+        await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(new DiscordEmbedBuilder
         {
             Title = "Nuevo challenge creado",
             Description = $"[{nombre}]({link}) ({dispStr})",
@@ -84,14 +82,12 @@ public class Challenges(
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
-        await ctx.DeferResponseAsync();
-
         List<Challenge> challenges = await challengesRepository.GetLista();
         string desc = challenges.Count == 0
             ? "(Sin challenges disponibles)"
             : ChallengeFormatter.ChunkByDisponibilidad(challenges);
 
-        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+        await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(new DiscordEmbedBuilder
         {
             Title = "Challenges del servidor",
             Description = desc,

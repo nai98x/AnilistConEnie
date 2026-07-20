@@ -131,11 +131,9 @@ public class Usuarios(
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
-        await ctx.DeferResponseAsync();
-
         if (!CumpleCalculator.EsFechaValida(day, month))
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"La fecha `{day}/{month}` no es válida. Ingresa un día y mes reales (ej: 29/2 solo si naciste un año bisiesto).")));
+            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(ErrorEmbed.De($"La fecha `{day}/{month}` no es válida. Ingresa un día y mes reales (ej: 29/2 solo si naciste un año bisiesto).")));
             return;
         }
 
@@ -144,13 +142,13 @@ public class Usuarios(
 
         if (userTimezone is null)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("Debes tener asignado un rol de país antes de registrar tu cumpleaños.")));
+            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(ErrorEmbed.De("Debes tener asignado un rol de país antes de registrar tu cumpleaños.")));
             return;
         }
 
         await usuariosRepository.SetCumple(ctx.Member!.Id, (short)day, (short)month);
 
-        DiscordWebhookBuilder builder = new();
+        DiscordMessageBuilder builder = new();
         builder.AddEmbed(new DiscordEmbedBuilder
         {
             Title = "Cumpleaños registrado con éxito",
@@ -170,7 +168,7 @@ public class Usuarios(
             });
         }
 
-        await ctx.EditResponseAsync(builder);
+        await ctx.RespondAsync(builder);
     }
 
     [Command("deletebirthday")]

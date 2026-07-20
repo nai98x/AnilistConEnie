@@ -17,7 +17,8 @@ public class DailyScheduledService(
     GuildMaintenanceService guildMaintenanceService,
     ConfessionsState confessionsState,
     BoluditosState boluditosState,
-    MemberActivityState memberActivityState)
+    MemberActivityState memberActivityState,
+    HackedAccountState hackedAccountState)
     : CronBackgroundService(scopeFactory, discordBotService, logger)
 {
     protected override string CronExpression => "0 0 * * *";
@@ -34,5 +35,6 @@ public class DailyScheduledService(
         confessionsState.ResetDailyConfessions();
         boluditosState.ResetBoluditos();
         memberActivityState.ResetDailyActiveUsers();
+        hackedAccountState.PruneStale();
     }
 }

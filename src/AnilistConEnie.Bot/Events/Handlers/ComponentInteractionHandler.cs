@@ -210,7 +210,7 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
                 await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral().AddEmbed(new DiscordEmbedBuilder
                 {
                     Title = "Error al yoinkear",
-                    Description = ex.Message,
+                    Description = "No se pudo robar el emote.",
                     Color = DiscordColor.Red
                 }));
             }

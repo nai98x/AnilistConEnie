@@ -73,12 +73,7 @@ public class Premios(IPremiosRepository premiosRepository, DiscordBotService dis
 
         if (ctx.Member is null || !ctx.Member.Permissions.HasPermission(DiscordPermission.ManageGuild))
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Sin permiso",
-                Description = "Necesitas el permiso de `Gestionar servidor` para usar este comando.",
-                Color = DiscordColor.Red
-            }));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.SinPermiso()));
             return;
         }
 

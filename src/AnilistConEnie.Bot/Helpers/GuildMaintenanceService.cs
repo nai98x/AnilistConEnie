@@ -3,6 +3,7 @@ using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Application.Membership;
 using AnilistConEnie.Application.Xp;
 using AnilistConEnie.Bot.Configuration;
+using AnilistConEnie.Bot.Extensions;
 using AnilistConEnie.Bot.Services;
 using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Model.Enum;
@@ -103,7 +104,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
                 bool esBooster = member.PremiumSince != null;
 
                 DiscordEmbedBuilder debugEmbed = new DiscordEmbedBuilder()
-                    .WithAuthor(member.DisplayName, iconUrl: member.GuildAvatarUrl ?? member.AvatarUrl)
+                    .WithAuthor(member.DisplayName, iconUrl: member.AvatarUrlPreferido())
                     .WithTitle("🐛 Debug XP · por mensaje")
                     .WithColor(subioRango ? DiscordColor.Gold : new DiscordColor("#5865F2"))
                     .AddField("XP ganada", $"**+{accrual.TotalGranted}** XP", true)

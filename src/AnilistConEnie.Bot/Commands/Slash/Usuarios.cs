@@ -91,7 +91,7 @@ public class Usuarios(
                 return new DiscordSectionComponent(
                     text: $"### {x.Miembro.DisplayName}\n" +
                           $"Cumple el {dia} {x.Cumple.FechaOriginal.Day} de {mes}",
-                    accessory: new DiscordThumbnailComponent(x.Miembro.GuildAvatarUrl ?? x.Miembro.AvatarUrl));
+                    accessory: new DiscordThumbnailComponent(x.Miembro.AvatarUrlPreferido()));
             },
             separarItems: true);
     }
@@ -244,7 +244,7 @@ public class Usuarios(
                     text: $"### {miembro.DisplayName}\n" +
                           $"Entró a las {entrada:HH:mm}\n" +
                           $"{xp.ToSpanish()} {umaPoints} - {rango.Mention}",
-                    accessory: new DiscordThumbnailComponent(miembro.GuildAvatarUrl ?? miembro.AvatarUrl));
+                    accessory: new DiscordThumbnailComponent(miembro.AvatarUrlPreferido()));
             },
             separarItems: true);
     }

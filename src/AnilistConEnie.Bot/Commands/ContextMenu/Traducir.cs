@@ -29,7 +29,7 @@ public class Traducir(
             .AddEmbed(new DiscordEmbedBuilder()
                 .WithTitle("Mensaje Original")
                 .WithDescription(targetMessage.Content)
-                .WithAuthor(member.DisplayName, null, member.GuildAvatarUrl ?? member.AvatarUrl))
+                .WithAuthor(member.DisplayName, null, member.AvatarUrlPreferido()))
             .AddEmbed(new DiscordEmbedBuilder()
                 .WithTitle("Traduccion")
                 .WithDescription(translated)

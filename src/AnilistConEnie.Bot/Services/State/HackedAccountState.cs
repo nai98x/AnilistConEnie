@@ -23,4 +23,16 @@ public class HackedAccountState(AntiSpamSettings settings)
                 return [..source, new(content, channelId, DateTime.UtcNow)];
             });
     }
+
+    // El diccionario suma una entrada por cada usuario que escribe; sin esto crecería sin cota. Una
+    // entrada cuyo último mensaje quedó fuera de la ventana ya no puede disparar la detección.
+    public void PruneStale()
+    {
+        DateTime corte = DateTime.UtcNow.AddMinutes(-settings.VentanaMinutos);
+        foreach (var (userId, mensajes) in _lastMessagesUsers)
+        {
+            if (mensajes.Count == 0 || mensajes[^1].CreatedAt < corte)
+                _lastMessagesUsers.TryRemove(userId, out _);
+        }
+    }
 }

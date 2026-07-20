@@ -355,7 +355,7 @@ public class Admin(
                             .WithTitle("Experiencia modificada")
                             .WithColor(DiscordColor.Green)
                             .WithDescription($"## - {miembro.DisplayName} ({miembro.Mention})\n{desc2}")
-                            .WithThumbnail(miembro.GuildAvatarUrl ?? miembro.AvatarUrl));
+                            .WithThumbnail(miembro.AvatarUrlPreferido()));
                     }
                     else
                     {
@@ -365,7 +365,7 @@ public class Admin(
                             .WithTitle("Experiencia modificada sin dar xp")
                             .WithColor(DiscordColor.Green)
                             .WithDescription(desc)
-                            .WithThumbnail(miembro.GuildAvatarUrl ?? miembro.AvatarUrl));
+                            .WithThumbnail(miembro.AvatarUrlPreferido()));
                     }
                 }
                 catch (Exception ex)
@@ -827,12 +827,7 @@ public class Admin(
 
         if (ctx.Member is null || ctx.Member.Roles.All(r => r.Id != config.Roles.KamiSama))
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-            {
-                Color = DiscordColor.Red,
-                Title = "Sin permiso",
-                Description = "Solo un Kami Sama puede usar este comando."
-            }));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.SinPermiso("Solo un Kami Sama puede usar este comando.")));
             return;
         }
 

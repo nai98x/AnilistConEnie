@@ -1,5 +1,6 @@
 using AnilistConEnie.Application.Xp;
 using AnilistConEnie.Bot.Configuration;
+using AnilistConEnie.Bot.Extensions;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
 using AnilistConEnie.Bot.Services.State;
@@ -35,7 +36,7 @@ public class GuildMemberRemovedHandler(DiscordBotService discordBotService, XpSt
                     embedBuilder.WithTitle($"Tenemos una baja");
                     embedBuilder.WithColor(DiscordColor.Red);
                     embedBuilder.WithDescription($"**{args.Member.DisplayName}** se fue del servidor {worrysad}, tenía {rank.Total} {umaPoints} y era rango {role.Mention}");
-                    embedBuilder.WithThumbnail(args.Member.GuildAvatarUrl ?? args.Member.AvatarUrl);
+                    embedBuilder.WithThumbnail(args.Member.AvatarUrlPreferido());
                     embedBuilder.WithImageUrl("https://i.imgur.com/qMLynhU.jpeg");
 
                     DiscordGuild guild = client.Guilds[config.GuildId];

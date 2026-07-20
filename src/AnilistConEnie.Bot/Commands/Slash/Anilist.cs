@@ -175,7 +175,7 @@ public class Anilist(IAnilistClient anilistClient, AnilistService anilistService
                     Title = "Usuario encontrado",
                     Description = $"El usuario de AniList `{buscar}` se encuentra en el servidor y es `{miembro.DisplayName}` ({miembro.Mention})",
                     Color = DiscordColor.Green
-                }.WithThumbnail(miembro.GuildAvatarUrl ?? miembro.AvatarUrl)));
+                }.WithThumbnail(miembro.AvatarUrlPreferido())));
 
                 return;
             }

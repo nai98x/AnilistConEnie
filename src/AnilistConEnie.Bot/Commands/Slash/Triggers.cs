@@ -204,12 +204,7 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
         if (ctx.Member is not null && ctx.Member.Permissions.HasPermission(DiscordPermission.ManageGuild))
             return true;
 
-        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-        {
-            Title = "Sin permiso",
-            Description = "Necesitas el permiso de `Gestionar servidor` para usar este comando.",
-            Color = DiscordColor.Red
-        }));
+        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.SinPermiso()));
         return false;
     }
 }

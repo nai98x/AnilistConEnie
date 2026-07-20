@@ -31,6 +31,7 @@ public class Challenges(
     XpState xpState,
     AnilistService anilistService,
     DiscordBotService discordBotService,
+    DiscordLogService logService,
     BotConfiguration config)
 {
     [Command("set")]
@@ -49,12 +50,7 @@ public class Challenges(
 
         if (ctx.Member is null || !ctx.Member.Permissions.HasPermission(DiscordPermission.ManageGuild))
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Sin permiso",
-                Description = "Necesitas el permiso de `Gestionar servidor` para usar este comando.",
-                Color = DiscordColor.Red
-            }));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.SinPermiso()));
             return;
         }
 
@@ -319,9 +315,10 @@ public class Challenges(
         }
         catch (Exception ex)
         {
+            await logService.LogException(ctx.Guild!, ex, $"Challenges de {usuario.DisplayName}");
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 .WithTitle($"Error obteniendo challenges de {usuario.DisplayName}")
-                .WithDescription(Formatter.BlockCode(ex.Message))
+                .WithDescription("Ocurrió un error inesperado. Probá de nuevo en unos minutos.")
                 .WithColor(DiscordColor.Red)));
         }
     }
@@ -343,12 +340,7 @@ public class Challenges(
 
         if (ctx.Member is null || ctx.Member.Roles.All(r => r.Id != config.Roles.Colaborador))
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Sin permiso",
-                Description = "Solo el staff puede usar este comando.",
-                Color = DiscordColor.Red
-            }));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.SinPermiso("Solo el staff puede usar este comando.")));
             return;
         }
 

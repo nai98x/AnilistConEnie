@@ -64,12 +64,7 @@ public class Fun(
 
         if (ctx.Member is null || !ctx.Member.Permissions.HasPermission(DiscordPermission.ManageGuild))
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Sin permiso",
-                Description = "Necesitas el permiso de `Gestionar servidor` para usar este comando.",
-                Color = DiscordColor.Red
-            }));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.SinPermiso()));
             return;
         }
 
@@ -81,7 +76,7 @@ public class Fun(
 
         DiscordWebhookBuilder wBuilder = new DiscordWebhookBuilder()
             .WithContent(mensaje)
-            .WithAvatarUrl(member.GuildAvatarUrl ?? member.AvatarUrl)
+            .WithAvatarUrl(member.AvatarUrlPreferido())
             .WithUsername(member.DisplayName)
             .AddMention(new UserMention());
 
@@ -362,9 +357,9 @@ public class Fun(
 
         HttpClient client = httpClientFactory.CreateClient();
         byte[] imagen = File.ReadAllBytes(ImagePath(FuckMarryKillTemplate));
-        imagen = ImageHelper.DrawIntoImage(imagen, await client.GetByteArrayAsync(usrCasarte.GuildAvatarUrl ?? usrCasarte.AvatarUrl), 26, 26);
-        imagen = ImageHelper.DrawIntoImage(imagen, await client.GetByteArrayAsync(usrCojer.GuildAvatarUrl ?? usrCojer.AvatarUrl), 643, 26);
-        imagen = ImageHelper.DrawIntoImage(imagen, await client.GetByteArrayAsync(usrMatar.GuildAvatarUrl ?? usrMatar.AvatarUrl), 1260, 26);
+        imagen = ImageHelper.DrawIntoImage(imagen, await client.GetByteArrayAsync(usrCasarte.AvatarUrlPreferido()), 26, 26);
+        imagen = ImageHelper.DrawIntoImage(imagen, await client.GetByteArrayAsync(usrCojer.AvatarUrlPreferido()), 643, 26);
+        imagen = ImageHelper.DrawIntoImage(imagen, await client.GetByteArrayAsync(usrMatar.AvatarUrlPreferido()), 1260, 26);
 
         await ctx.EditResponseAsync(new DiscordWebhookBuilder()
             .WithContent($"# Cojer, casarse o matar\n\n- Se casó con {usrCasarte.DisplayName}\n- Se cojió/folló a {usrCojer.DisplayName}\n- Mató a {usrMatar.DisplayName}\n")
@@ -449,7 +444,7 @@ public class Fun(
         DiscordEmbed embedDiario = new DiscordEmbedBuilder()
             .WithTitle("Boludómetro")
             .WithDescription(funService.BoluditoLevel(loreaEste, member, value))
-            .WithThumbnail(member.GuildAvatarUrl ?? member.AvatarUrl)
+            .WithThumbnail(member.AvatarUrlPreferido())
             .WithImageUrl($"attachment://{gaugeFile}")
             .Build();
 
@@ -459,7 +454,7 @@ public class Fun(
                 $"**{member.DisplayName}** este mes fue un {promedio:0}% bolud{genero}\n\n" +
                 $"- Su día de menor boludez fue el **{min.Key}/{hoy.Month}** siendo un **{min.Value:0}% bolud{genero}**\n" +
                 $"- Su día de mayor boludez fue el **{max.Key}/{hoy.Month}** siendo un **{max.Value:0}% bolud{genero}**")
-            .WithThumbnail(member.GuildAvatarUrl ?? member.AvatarUrl)
+            .WithThumbnail(member.AvatarUrlPreferido())
             .WithFooter("La gráfica se resetea mensualmente.")
             .WithImageUrl($"attachment://{lineFile}")
             .Build();
@@ -563,7 +558,7 @@ public class Fun(
                 $"### Envía una sugerencia {Formatter.MaskedUrl("aquí", new Uri("https://forms.gle/JMd42wysMQrQaekA6"), "Formulario de Google para enviar sugerencia de respuesta en apartados amor/dinero/bienestar.")}")
             .WithAuthor($"{signoStr} {emote}")
             .WithFooter("Este horóscopo se basa mayor parte en su signo zodiacal y en menor parte en su persona.")
-            .WithThumbnail(ctx.Member.GuildAvatarUrl ?? ctx.Member.AvatarUrl);
+            .WithThumbnail(ctx.Member.AvatarUrlPreferido());
 
         await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embed));
     }

@@ -54,27 +54,4 @@ public class XpUsuariosRepository(DbConnectionFactory connectionFactory) : IXpUs
             new { p_origen = (long)origen, p_destino = (long)destino, p_reemplazar = reemplazar },
             commandType: CommandType.StoredProcedure);
     }
-
-    public async Task Insert(UserXp xp)
-    {
-        using var connection = await connectionFactory.OpenConnectionAsync();
-        await connection.ExecuteAsync("xp_usuario_insert", Params(xp), commandType: CommandType.StoredProcedure);
-    }
-
-    public async Task Update(UserXp xp)
-    {
-        using var connection = await connectionFactory.OpenConnectionAsync();
-        await connection.ExecuteAsync("xp_usuario_update", Params(xp), commandType: CommandType.StoredProcedure);
-    }
-
-    private static object Params(UserXp xp) => new
-    {
-        p_user_id = xp.UserId,
-        p_total = xp.Total,
-        p_booster = xp.Booster,
-        p_challenges = xp.Challenges,
-        p_eventos = xp.Eventos,
-        p_intercambios = xp.Intercambios,
-        p_otros = xp.Otros
-    };
 }

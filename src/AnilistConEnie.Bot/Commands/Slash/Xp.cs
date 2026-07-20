@@ -165,7 +165,7 @@ public class Xp(
         embeds.Add("Resumen", new DiscordInteractivity.TabContent(
             new DiscordEmbedBuilder()
                 .WithTitle($"Experiencia de {member.DisplayName}")
-                .WithThumbnail(member.GuildAvatarUrl ?? member.AvatarUrl)
+                .WithThumbnail(member.AvatarUrlPreferido())
                 .WithDescription(desc)
                 .WithImageUrl($"attachment://{progressBarFile}")
                 .Build(),
@@ -193,7 +193,7 @@ public class Xp(
         embeds.Add("Detalle", new DiscordInteractivity.TabContent(
             new DiscordEmbedBuilder()
                 .WithTitle($"Experiencia de {member.DisplayName}")
-                .WithThumbnail(member.GuildAvatarUrl ?? member.AvatarUrl)
+                .WithThumbnail(member.AvatarUrlPreferido())
                 .WithDescription($"### Total: {rank.Total.ToSpanish()} {umaPoints}\n" + string.Join("\n", detalles.OrderByDescending(x => x.Valor).Select(x => x.Detalle)))
                 .WithImageUrl($"attachment://{pieFile}")
                 .Build(),
@@ -266,7 +266,7 @@ public class Xp(
             new DiscordEmbedBuilder()
                 .WithTitle($"Experiencia de {member.DisplayName}")
                 .WithDescription(descHistorial)
-                .WithThumbnail(member.GuildAvatarUrl ?? member.AvatarUrl)
+                .WithThumbnail(member.AvatarUrlPreferido())
                 .WithImageUrl($"attachment://{lineFile}")
                 .Build(),
             lineImage,

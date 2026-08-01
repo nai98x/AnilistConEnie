@@ -51,7 +51,7 @@ public class Usuarios(
         List<UserCumple> lista = CumpleCalculator.Proximos(cumples, RelojServidor.Ahora, month);
 
         List<(UserCumple Cumple, DiscordMember Miembro)> proximos = lista
-            .OrderBy(x => x.BirthdayActual)
+            .OrderBy(x => x.Proximo)
             .Select(x => (Cumple: x, Miembro: guild.Members.GetValueOrDefault((ulong)x.Id)))
             .Where(x => x.Miembro is not null)
             .Select(x => (x.Cumple, x.Miembro!))
@@ -86,11 +86,11 @@ public class Usuarios(
             header: header,
             renderItem: x =>
             {
-                string dia = x.Cumple.FechaOriginal.ToString("dddd", es);
-                string mes = x.Cumple.FechaOriginal.ToString("MMMM", es);
+                string dia = x.Cumple.Proximo.ToString("dddd", es);
+                string mes = x.Cumple.Proximo.ToString("MMMM", es);
                 return new DiscordSectionComponent(
                     text: $"### {x.Miembro.DisplayName}\n" +
-                          $"Cumple el {dia} {x.Cumple.FechaOriginal.Day} de {mes}",
+                          $"Cumple el {dia} {x.Cumple.Proximo.Day} de {mes}",
                     accessory: new DiscordThumbnailComponent(x.Miembro.AvatarUrlPreferido()));
             },
             separarItems: true);
@@ -225,7 +225,7 @@ public class Usuarios(
                     "-# Horarios en hora de Argentina (UTC-3).",
             renderItem: miembro =>
             {
-                DateTimeOffset entrada = fechaEntradaState.GetFechaEntrada(miembro.Id, miembro.JoinedAt).ToOffset(TimeSpan.FromHours(-3));
+                DateTimeOffset entrada = fechaEntradaState.GetFechaEntrada(miembro.Id, miembro.JoinedAt);
                 long xp = xpState.GetUserXp(miembro.Id).Total;
                 DiscordRole rango = rangoRoles.GetRoleByXp(guild, xp);
                 return new DiscordSectionComponent(

@@ -49,8 +49,8 @@ public class CumpleCalculatorTests
         List<UserCumple> lista = CumpleCalculator.Proximos(cumples, new DateTime(2026, 1, 15), soloMes: false);
 
         Assert.Single(lista);
-        Assert.Equal(28, lista[0].Birthday.Day);
-        Assert.Equal(2, lista[0].Birthday.Month);
+        Assert.Equal(28, lista[0].Proximo.Day);
+        Assert.Equal(2, lista[0].Proximo.Month);
     }
 
     [Fact]
@@ -62,6 +62,21 @@ public class CumpleCalculatorTests
 
         Assert.Single(lista);
         Assert.Equal(2, lista[0].Id);
+    }
+
+    [Fact]
+    public void Proximos_Proximo_UsaElAnioDelProximoFestejo()
+    {
+        List<Usuario> cumples = [Cumple(1, 10, 3), Cumple(2, 10, 1)];
+
+        List<UserCumple> lista = CumpleCalculator.Proximos(cumples, new DateTime(2026, 2, 15), soloMes: false);
+
+        UserCumple marzo = lista.Single(x => x.Id == 1);
+        Assert.Equal(new DateTime(2026, 3, 10), marzo.Proximo);
+        Assert.Equal(DayOfWeek.Tuesday, marzo.Proximo.DayOfWeek);
+
+        UserCumple enero = lista.Single(x => x.Id == 2);
+        Assert.Equal(new DateTime(2027, 1, 10), enero.Proximo);
     }
 
     [Fact]

@@ -4,7 +4,11 @@ using AnilistConEnie.Model.Entities;
 
 namespace AnilistConEnie.Bot.Services.State;
 
-/// <summary>Fechas de entrada reales al servidor cuando difieren del joined_at de Discord (fundadores/aniversarios).</summary>
+/// <summary>
+/// Fechas de entrada reales al servidor cuando difieren del joined_at de Discord (fundadores/aniversarios).
+/// Siempre en hora de Argentina: el día y la hora de entrada son datos de negocio y se comparan contra
+/// <see cref="RelojServidor.Ahora"/>.
+/// </summary>
 public class FechaEntradaState
 {
     private readonly ConcurrentDictionary<ulong, DateTimeOffset> _fechas = new();
@@ -17,5 +21,5 @@ public class FechaEntradaState
     }
 
     public DateTimeOffset GetFechaEntrada(ulong userId, DateTimeOffset joinedAt) =>
-        _fechas.TryGetValue(userId, out DateTimeOffset fecha) ? fecha : joinedAt;
+        _fechas.TryGetValue(userId, out DateTimeOffset fecha) ? fecha : RelojServidor.EnHoraLocal(joinedAt.UtcDateTime);
 }

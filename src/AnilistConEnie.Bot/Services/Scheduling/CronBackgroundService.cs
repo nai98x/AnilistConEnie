@@ -29,19 +29,13 @@ public abstract class CronBackgroundService(IServiceScopeFactory scopeFactory, D
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            DateTime now = RelojServidor.Ahora;
-            TimeSpan delay = schedule.GetNextOccurrence(now) - now;
+            // Task.Delay puede despertar unos ms antes del objetivo; sin este chequeo la tarea correría
+            // del lado anterior del borde (hora/día equivocados) y otra vez al instante, duplicando el trabajo.
+            DateTime objetivo = schedule.GetNextOccurrence(RelojServidor.Ahora);
 
-            while (delay > maxDelay)
-            {
-                await Task.Delay(maxDelay, stoppingToken);
-                delay -= maxDelay;
-            }
-
-            if (delay > TimeSpan.Zero)
-            {
-                await Task.Delay(delay, stoppingToken);
-            }
+            TimeSpan restante;
+            while ((restante = objetivo - RelojServidor.Ahora) > TimeSpan.Zero)
+                await Task.Delay(restante > maxDelay ? maxDelay : restante, stoppingToken);
 
             try
             {

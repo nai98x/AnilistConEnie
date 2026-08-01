@@ -416,16 +416,15 @@ public class Fun(
         await ctx.DeferResponseAsync();
 
         List<Usuario> cumples = await usuariosRepository.GetCumples();
-        List<UserCumple> birthdays = CumpleCalculator.Proximos(cumples, RelojServidor.Ahora, false);
-        UserCumple? birthday = birthdays.Find(x => x.Id == (long)ctx.Member!.Id);
+        Usuario? cumple = cumples.Find(x => x.UserId == (long)ctx.Member!.Id);
 
-        if (birthday is null)
+        if (cumple is null || !CumpleCalculator.EsFechaValida(cumple.CumpleDia!.Value, cumple.CumpleMes!.Value))
         {
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("No tienes registrado tu cumpleaños en el servidor.")));
             return;
         }
 
-        SignoZodiacal signo = FunService.GetSignoByBirthday(birthday.Birthday.Day, birthday.Birthday.Month);
+        SignoZodiacal signo = FunService.GetSignoByBirthday(cumple.CumpleDia.Value, cumple.CumpleMes.Value);
         string signoStrEnglish = signo.ToString().ToLowerInvariant();
         string signoStr = ((Enum)signo).GetDescription();
         DiscordEmoji emote = FunService.EmoteOfSignoZodiacal(signo);

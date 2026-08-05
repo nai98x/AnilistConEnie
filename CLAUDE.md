@@ -9,6 +9,13 @@ van las **convenciones** a respetar al editar.
 remoto. Los commits y pushes los hace **exclusivamente el dueño del repo, a mano**. Podés editar
 archivos, correr builds/tests y preparar cambios, pero el versionado lo controla siempre la persona.
 
+## Regla absoluta: cero warnings de compilación
+
+`dotnet build` tiene que terminar con **0 Advertencias y 0 Errores**. Si un cambio introduce un
+warning, se arregla en el mismo cambio: no se deja "para después" ni se silencia con `#pragma` o
+`<NoWarn>` salvo que haya una razón concreta y anotada. Antes de dar por terminado un trabajo que
+toca código, correr `dotnet build -c Release` y verificar el contador.
+
 ## Qué es
 
 Bot de Discord (DSharpPlus, .NET 10) para el servidor **Añilist**. Persistencia en base de datos relacional con PostgreSQL.

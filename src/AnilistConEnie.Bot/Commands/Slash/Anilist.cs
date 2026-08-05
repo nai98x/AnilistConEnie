@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Bot.Commands.Framework.Attributes;
-using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Model.Entities;
 using AnilistConEnie.Model.Entities.Anilist;
@@ -19,7 +18,7 @@ namespace AnilistConEnie.Bot.Commands.Slash;
 
 //[TestCommand]
 [Command("anilist")]
-public class Anilist(IAnilistClient anilistClient, AnilistService anilistService, IUsuariosRepository usuariosRepository, BotConfiguration config, DiscordBotService discordBotService)
+public class Anilist(IAnilistClient anilistClient, AnilistService anilistService, IUsuariosRepository usuariosRepository, DiscordBotService discordBotService)
 {
     [Command("statsserver")]
     [Description("Estadisticas de los usuarios del servidor de un anime o manga en AniList")]

@@ -1,0 +1,6 @@
+[Unit]
+Description=Backup diario de la base a almacenamiento externo
+
+[Service]
+Type=oneshot
+ExecStart=%h/bin/backup-db.sh

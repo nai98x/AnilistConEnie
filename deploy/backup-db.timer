@@ -1,0 +1,10 @@
+[Unit]
+Description=Backup diario de la base
+
+[Timer]
+# Hora local del server (no UTC): systemd 239 no acepta zona en la línea.
+OnCalendar=*-*-* 07:30:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

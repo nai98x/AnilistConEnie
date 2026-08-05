@@ -18,6 +18,7 @@ RETENER="${RETENER:-5}"
 PREFIJO="${PREFIJO:-backup}"
 PASSFILE="${PASSFILE:-$HOME/.config/anilist-backup/passphrase}"
 RCLONE="${RCLONE:-$HOME/bin/rclone}"
+ESTADO="${ESTADO:-$HOME/.config/anilist-backup/ultimo-ok}"
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
@@ -31,6 +32,10 @@ gpg --batch --yes --symmetric --cipher-algo AES256 --pinentry-mode loopback --pa
 ARCH="$ARCH.gpg"
 
 "$RCLONE" copyto "$ARCH" "$REMOTE/$(basename "$ARCH")" --checksum
+
+# Marca que lee el bot para avisar si un día no hubo backup. Se escribe recién acá: si algo falló
+# antes, queda con la fecha vieja y el chequeo la detecta.
+echo "$FECHA" > "$ESTADO"
 
 # Retención: se dejan los $RETENER más nuevos (el nombre con la fecha ordena solo).
 # Se poda después de subir, para que una racha de fallos no termine vaciando el remoto.

@@ -126,6 +126,21 @@ public record LogsSettings
     }
 }
 
+// La ruta no va en appsettings.json (repo público): se pasa por variable de entorno
+// Backups__RutaEstado, igual que la connection string.
+public record BackupsSettings
+{
+    public required string RutaEstado { get; init; }
+
+    public static BackupsSettings FromConfiguration(IConfiguration configuration)
+    {
+        string? ruta = configuration["Backups:RutaEstado"];
+        if (string.IsNullOrWhiteSpace(ruta))
+            throw new InvalidOperationException("'Backups:RutaEstado' es obligatoria: configurala via User Secrets (local) o variable de entorno (servidor)");
+        return new BackupsSettings { RutaEstado = ruta };
+    }
+}
+
 internal static class SettingsBindingExtensions
 {
     public static int RequireInt(this IConfigurationSection section, string key)
@@ -162,5 +177,6 @@ public static class BehaviorSettingsExtensions
             .AddSingleton(CooldownsSettings.FromConfiguration(configuration))
             .AddSingleton(XpSettings.FromConfiguration(configuration))
             .AddSingleton(ConfesionesSettings.FromConfiguration(configuration))
-            .AddSingleton(SubirImagenSettings.FromConfiguration(configuration));
+            .AddSingleton(SubirImagenSettings.FromConfiguration(configuration))
+            .AddSingleton(BackupsSettings.FromConfiguration(configuration));
 }

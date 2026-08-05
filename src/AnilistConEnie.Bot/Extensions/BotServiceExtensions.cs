@@ -43,6 +43,7 @@ public static class BotServiceExtensions
         services.AddHostedService<MinuteScheduledService>();
         services.AddHostedService<HourlyScheduledService>();
         services.AddHostedService<DailyScheduledService>();
+        services.AddHostedService<BackupScheduledService>();
 
         return services;
     }

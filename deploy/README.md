@@ -63,6 +63,16 @@ El dump cubre una sola base: **no incluye los roles ni sus permisos**, que se re
 arriba y lo de `db/README.md`. Tampoco cubre los JSON de credenciales de Firebase de
 `src/AnilistConEnie.Bot/`, que no están versionados.
 
+## Aviso de fallos
+
+Después de subir, el script escribe la fecha en el archivo de `ESTADO`. El bot
+(`BackupScheduledService`) lo lee todos los días a las 09:00 y, si la marca no es la de hoy, avisa en
+el canal de config. La ruta le llega al bot por la variable de entorno `Backups__RutaEstado` (no va en
+`appsettings.json`, que es público) y tiene que coincidir con la del `backup.env`.
+
+Verifica que el script terminó bien, no que el archivo siga existiendo en el proveedor: cubre los
+fallos reales (timer caído, credenciales vencidas, dump roto) pero no que alguien borre el bucket.
+
 ## Verificación
 
 Conviene reprobar el restore cada tanto contra una base descartable, comparando contra la viva:

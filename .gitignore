@@ -245,6 +245,10 @@ UpgradeLog*.htm
 ServiceFabricBackup/
 *.rptproj.bak
 
+# El Backup*/ de arriba matchea las carpetas de código del dominio de backups.
+!src/AnilistConEnie.Application/Backups/
+!tests/AnilistConEnie.Application.Tests/Backups/
+
 # SQL Server files
 *.mdf
 *.ldf

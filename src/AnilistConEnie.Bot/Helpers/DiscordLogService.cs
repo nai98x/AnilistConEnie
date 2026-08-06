@@ -31,6 +31,69 @@ public class DiscordLogService(BotConfiguration config, ILogger<DiscordLogServic
         }
     }
 
+    public async Task GrabarLogUsuarioIn(DiscordGuild guild, DiscordMember member)
+    {
+        try
+        {
+            DiscordChannel channelPuerta = guild.Channels[config.Channels.LogChannelPuerta];
+
+            await channelPuerta.SendMessageAsync(new DiscordEmbedBuilder
+            {
+                Title = "Un miembro entró al servidor",
+                Author = new DiscordEmbedBuilder.EmbedAuthor()
+                {
+                    IconUrl = member.AvatarUrl,
+                    Name = member.DisplayName
+                },
+                Description =
+                    $"{member.Mention}\n" +
+                    $"- Entró el {Formatter.Timestamp(member.JoinedAt, TimestampFormat.LongDate)}\n" +
+                    $"- Cuenta creada el {Formatter.Timestamp(member.CreationTimestamp, TimestampFormat.LongDate)}",
+                Footer = new DiscordEmbedBuilder.EmbedFooter()
+                {
+                    Text = $"ID: {member.Id}"
+                },
+                Color = DiscordColor.Green
+            });
+        }
+        catch (Exception ex)
+        {
+            await GrabarLogGeneralError(guild, $"Error al grabar log de usuario que entró al servidor: {ex.Message}\n\n{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
+        }
+    }
+
+    public async Task GrabarLogUsuarioVinculado(DiscordGuild guild, DiscordMember member, string anilistUrl, bool aprobadaManualmente)
+    {
+        try
+        {
+            DiscordChannel channelPuerta = guild.Channels[config.Channels.LogChannelPuerta];
+
+            await channelPuerta.SendMessageAsync(new DiscordEmbedBuilder
+            {
+                Title = aprobadaManualmente
+                    ? "Un miembro vinculó su cuenta de AniList [aprobada manualmente]"
+                    : "Un miembro vinculó su cuenta de AniList",
+                Author = new DiscordEmbedBuilder.EmbedAuthor()
+                {
+                    IconUrl = member.AvatarUrl,
+                    Name = member.DisplayName
+                },
+                Description =
+                    $"{member.Mention}\n" +
+                    $"- Su {Formatter.MaskedUrl("perfil", new Uri(anilistUrl))} de AniList",
+                Footer = new DiscordEmbedBuilder.EmbedFooter()
+                {
+                    Text = $"ID: {member.Id}"
+                },
+                Color = DiscordColor.Blurple
+            });
+        }
+        catch (Exception ex)
+        {
+            await GrabarLogGeneralError(guild, $"Error al grabar log de usuario que vinculó su AniList: {ex.Message}\n\n{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
+        }
+    }
+
     public async Task GrabarLogUsuarioOutAnilist(DiscordGuild guild, DiscordMember member, UsuarioAnilist userAnilist, UserXp rank)
     {
         try

@@ -121,7 +121,7 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
                         AvatarMedium = userApproval.Avatar,
                         BannerImage = userApproval.Banner
                     };
-                    await anilistService.TerminarVinculacion(client, user, member, args.Guild, anilistUser);
+                    await anilistService.TerminarVinculacion(client, user, member, args.Guild, anilistUser, true);
 
                     resuelto
                         .WithColor(DiscordColor.Green)

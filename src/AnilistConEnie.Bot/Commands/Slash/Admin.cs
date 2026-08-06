@@ -806,7 +806,7 @@ public class Admin(
             return;
         }
 
-        await anilistService.TerminarVinculacion(ctx.Client, user, miembro, ctx.Guild!, anilistUser);
+        await anilistService.TerminarVinculacion(ctx.Client, user, miembro, ctx.Guild!, anilistUser, true);
 
         await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
         {

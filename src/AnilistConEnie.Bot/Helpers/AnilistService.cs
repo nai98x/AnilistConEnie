@@ -18,7 +18,7 @@ namespace AnilistConEnie.Bot.Helpers;
 
 public class AnilistService(XpState xpState, ChallengePostsState challengePostsState, BotConfiguration config, LimpiezaMiembrosSettings limpiezaSettings, RangoRoles rangoRoles, DiscordLogService logService, AnilistServerScoreService scoreService, IFirebaseRepository firebaseRepository, IUsuariosRepository usuariosRepository, IAnilistBaneadosRepository anilistBaneadosRepository, IAnilistApprovalRepository anilistApprovalRepository, IAnilistClient anilistClient)
 {
-    public async Task TerminarVinculacion(DiscordClient client, DiscordUser user, DiscordMember member, DiscordGuild guild, AnilistUser anilistUser)
+    public async Task TerminarVinculacion(DiscordClient client, DiscordUser user, DiscordMember member, DiscordGuild guild, AnilistUser anilistUser, bool aprobadaManualmente)
     {
         DiscordEmbedBuilder bienvenidaEmbed = new()
         {
@@ -104,6 +104,8 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
         {
             await logService.GrabarLogGeneralError(guild, $"Error agregando rol miembro al vincular AniList para el usuario {user.Id}\n\n{ex.Message}:\n\n{ex.StackTrace}");
         }
+
+        await logService.GrabarLogUsuarioVinculado(guild, member, anilistUser.SiteUrl, aprobadaManualmente);
     }
 
     public async Task<ServerScoresView> GetServerScoresAsync(DiscordGuild guild, AnilistMedia media, bool includeUsersWithoutScore)
@@ -243,7 +245,7 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
             return;
         }
 
-        await TerminarVinculacion(client, interaction.User, member, interaction.Guild, anilistUser);
+        await TerminarVinculacion(client, interaction.User, member, interaction.Guild, anilistUser, false);
         await modalInteraction.DeleteOriginalResponseAsync();
     }
 

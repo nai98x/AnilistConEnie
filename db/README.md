@@ -18,6 +18,9 @@ db/
   EXISTS`, `CREATE OR REPLACE FUNCTION`, etc.).
 - **Un stored procedure por archivo** en `procedures/`, con el nombre del SP como nombre de archivo.
 - Cambios de esquema y los SPs que los consumen van en el **mismo commit** que el código C# que los usa.
+- **Las migraciones no se versionan**: `schema/` refleja siempre el estado actual de cada tabla (el
+  `CREATE` limpio), sin `ALTER`, sin bloques `DO $$` ni scripts de datos. El SQL de migración se corre
+  a mano y solo se versiona el estado final.
 
 ## Aplicar los scripts
 
@@ -29,5 +32,5 @@ Conectado a la base (por DBeaver o `psql`), correr primero los de `schema/` y de
 El usuario con el que se conecta el bot no debe ser superuser ni dueño del schema: alcanza con
 `CONNECT` a la base, `USAGE` del schema y `EXECUTE` sobre las funciones de `procedures/` (más los
 permisos de tabla que esas funciones necesiten). La BD vive en el mismo server que el bot y debe
-escuchar solo en localhost (ver `deploy-setup/README.md`); TLS solo haría falta si se mudara a
+escuchar solo en localhost (ver `deploy/README.md`); TLS solo haría falta si se mudara a
 otra máquina.

@@ -27,16 +27,19 @@ Dirección de dependencias: **Model ← Application ← Infrastructure ← Bot**
 inversas.
 
 - **AnilistConEnie.Model** — entidades, enums, excepciones e interfaces (`IAnilistClient`,
-  `Interfaces/Repositories/*`). Son POCOs puros; el mapeo Firestore vive en Infrastructure vía
-  `ConverterRegistry` (Model NO referencia `Google.Cloud.Firestore`).
+  `Interfaces/Repositories/*`). Son POCOs puros: Model no referencia paquetes de infraestructura
+  (ni Npgsql/Dapper ni `Google.Cloud.*`).
 - **AnilistConEnie.Application** — lógica de negocio. Sin dependencias de Discord ni infraestructura.
-- **AnilistConEnie.Infrastructure** — repositorios Firestore, `FirebaseService`, cliente AniList.
+- **AnilistConEnie.Infrastructure** — repositorios PostgreSQL (Dapper + SPs), `FirebaseService` y
+  `FirebaseRepository` (única superficie Firebase que queda: Storage de `/subirimagen` y el espejo en
+  Yumiko), cliente AniList.
 - **AnilistConEnie.Bot** — entry point, comandos, handlers, scheduling, estado, configuración, DI.
 
 ## Dónde va el código nuevo
 
 - **Regla/cálculo puro** (sin estado ni dependencias) → clase **estática** en Application
-  (`Xp/`, `Moderation/`, `Confessions/`, `Challenges/`, `Membership/`, `Charts/`, `Helpers/`).
+  (`Xp/`, `Moderation/`, `Confessions/`, `Challenges/`, `Membership/`, `Charts/`, `Anilist/`,
+  `Backups/`, `Fun/`, `Premios/`, `Triggers/`, `Helpers/`).
   Recibe sus datos **por parámetro**; no toca tipos de Discord ni de config.
 - **Servicio con dependencias** → clase instancia + DI (ej. `AnilistServerScoreService` en Application,
   `AnilistService`/`GuildMaintenanceService` en Bot).
@@ -73,12 +76,13 @@ inversas.
     `appsettings.json`. `RequireUlong` falla si falta una clave.
   - Reglas de negocio tuneables (thresholds, cooldowns, durations, amounts) → **una sección por
     dominio** en `appsettings.json` (`AntiSpam`, `LimpiezaMiembros`, `Cooldowns`, `Xp`, `Confesiones`,
-    `Logs`), bindeadas en `BehaviorSettings.cs` con defaults. La lógica de Application recibe esos
+    `SubirImagen`, `Logs`), bindeadas en `BehaviorSettings.cs` con defaults. La lógica de Application recibe esos
     valores por parámetro (no como `const`). No externalizar límites duros de Discord/AniList ni
     cosméticos.
-- **Secrets**: el token de Discord es la clave `discordToken` (env var / User Secrets); los JSON de
-  Firebase (`firebase-anilistconenie.json`, `firebase-yumiko.json`) van en `src/AnilistConEnie.Bot/`.
-  Nada de esto se versiona.
+- **Secrets**: se resuelven todos por `IConfiguration` (env var en el server, User Secrets en local):
+  `discordToken`, `ConnectionStrings:Database`, `Backups:RutaEstado` y `FIREBASE_CREDENTIALS_DIR`
+  (carpeta que contiene `firebase-anilistconenie.json` y `firebase-yumiko.json`). Nada de esto se
+  versiona; el setup está en `deploy/README.md`.
 - **Aleatoriedad**: usar `Random.Shared` salvo cuando se necesita determinismo por semilla (signos/
   ship en Fun, challenges), que se deja intacto.
 - **Catch amplios**: la resiliencia de los loops (no frenar ante miembro/mensaje ausente) es

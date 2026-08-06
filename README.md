@@ -23,15 +23,16 @@ las de adentro.
 | Proyecto | Responsabilidad |
 |----------|-----------------|
 | **AnilistConEnie.Model** | Entidades, enums, excepciones e interfaces. Define los contratos (`Interfaces/IAnilistClient.cs`, `Interfaces/Repositories/*`) que implementa Infrastructure. Sin dependencias hacia las otras capas. |
-| **AnilistConEnie.Application** | Lógica de negocio **pura**, como clases estáticas sin estado: `Xp/`, `Moderation/`, `Confessions/`, `Challenges/`, `Membership/`, `Charts/`, `Helpers/`. No depende de Discord ni de la infraestructura. |
-| **AnilistConEnie.Infrastructure** | Acceso a datos y servicios externos: `Database/DbConnectionFactory.cs` + `Repositories/*` (Dapper, stored procedures), `Firebase/FirebaseService.cs` + `FirebaseRepository` (Storage + Yumiko), `Anilist/` (cliente GraphQL: `AnilistClient`, `AnilistGraphQLExecutor`, `AnilistQueries`) y `Charts/`. |
+| **AnilistConEnie.Application** | Lógica de negocio, mayormente como clases estáticas sin estado: `Xp/`, `Moderation/`, `Confessions/`, `Challenges/`, `Membership/`, `Charts/`, `Anilist/`, `Backups/`, `Fun/`, `Premios/`, `Triggers/`, `Helpers/`. No depende de Discord ni de la infraestructura. |
+| **AnilistConEnie.Infrastructure** | Acceso a datos y servicios externos: `Database/DbConnectionFactory.cs` + `Repositories/*` (Dapper, stored procedures), `Firebase/FirebaseService.cs` + `Repositories/FirebaseRepository.cs` (Storage + Yumiko), `Anilist/` (cliente GraphQL: `AnilistClient`, `AnilistGraphQLExecutor`, `AnilistQueries`) y `Charts/`. |
 | **AnilistConEnie.Bot** | Punto de entrada y todo lo relacionado a Discord: comandos, handlers de eventos, tareas programadas, estado en memoria, configuración y cableado de DI. |
 
 **Decisiones de diseño:**
 
 - El **estado en memoria** del bot vive en singletons separados por responsabilidad (`Bot/Services/State/*`).
-- La **lógica de negocio** se mantiene en Application como funciones estáticas puras (reciben sus
-  datos por parámetro), de modo que el Bot solo orquesta.
+- La **lógica de negocio** se mantiene en Application, preferentemente como funciones estáticas puras
+  (reciben sus datos por parámetro), de modo que el Bot solo orquesta. Lo que necesita dependencias
+  va como servicio de instancia (`AnilistServerScoreService`, `XpChartService`).
 - El acceso a **AniList** está centralizado en un único cliente (`Infrastructure/Anilist/`) con
   reintentos (Polly) y rate limit, detrás de la interfaz `IAnilistClient`.
 
@@ -44,10 +45,11 @@ las de adentro.
 | **Servicios del Bot en DI** | `Bot/Extensions/BotServiceExtensions.cs` — estado, helpers y hosted services. |
 | **Servicios por capa en DI** | `Application/Extensions/ApplicationServiceExtensions.cs`, `Infrastructure/Extensions/InfrastructureServiceExtensions.cs`. |
 | **Configuración** | `Bot/Configuration/BotConfiguration.cs` (IDs de Discord) y `Bot/Configuration/BehaviorSettings.cs` (reglas de negocio tuneables). |
-| **Slash commands** | `Bot/Commands/SlashCommands/*.cs` — `Admin`, `Anilist`, `Challenges`, `Fun`, `Owner`, `Premios`, `Teiou`, `Triggers`, `Usuarios`, `Xp`. Se autoregistran vía `AddDiscoveredSlashCommands`. |
-| **Autocomplete** | `Bot/Commands/AutoComplete/`. |
+| **Slash commands** | `Bot/Commands/Slash/*.cs` — `Admin`, `Anilist`, `Challenges`, `Fun`, `Owner`, `Premios`, `Teiou`, `Triggers`, `Usuarios`, `Xp`. Se autoregistran vía `AddDiscoveredSlashCommands` (`Bot/Extensions/CommandsExtensionExtensions.cs`). |
+| **Otros comandos** | `Bot/Commands/Text/` y `Bot/Commands/ContextMenu/`, con sus propios `AddDiscovered*`. |
+| **Infra de comandos** | `Bot/Commands/Framework/` — `Checks/`, `Attributes/`, `Choices/`, `AutoComplete/` y `CommandErrorHandler.cs`. |
 | **Handlers de eventos** | `Bot/Events/Handlers/*` (`Message*`, `GuildMember*`, `ComponentInteraction`, `MessageReactionAdded`, `Session*`, `GuildDownloadCompleted`, `Zombied`). Se registran y cablean en `Bot/Events/EventHandlerRegistrar.cs` (resolución diferida vía `ServiceProvider` para evitar el ciclo de dependencias en el arranque). |
-| **Tareas programadas** | `Bot/Services/Scheduling/CronBackgroundService.cs` y `Tasks/*` (`Minute`, `Hourly`, `Daily`), como hosted services. |
+| **Tareas programadas** | `Bot/Services/Scheduling/CronBackgroundService.cs` y `Tasks/*` (`Minute`, `Hourly`, `Daily`, `Backup`), como hosted services. |
 | **Estado en memoria** | `Bot/Services/State/*` (`XpState`, `TriggersState`, `ConfessionsState`, `HackedAccountState`, etc.). |
 | **Helpers / servicios del Bot** | `Bot/Helpers/*` (`AnilistService`, `GuildMaintenanceService`, `DiscordLogService`, `RangoRoles`, `DiscordInteractivity`, …). |
 | **Servicio principal** | `Bot/Services/DiscordBotService.cs` — hosted service que conecta y mantiene el cliente. |
@@ -60,7 +62,8 @@ En `src/AnilistConEnie.Bot/appsettings.json`. No contiene secrets. Tiene dos blo
 
 - **`Ids`** — IDs del servidor, canales, roles, emotes y timezones. Se bindean en `BotConfiguration.cs`.
 - **Reglas de negocio tuneables** — secciones `AntiSpam`, `LimpiezaMiembros`, `Cooldowns`, `Xp`,
-  `Confesiones` y `Logs`. Se bindean en `BehaviorSettings.cs` (cada sección tiene defaults razonables).
+  `Confesiones`, `SubirImagen` y `Logs`. Se bindean en `BehaviorSettings.cs` (cada sección tiene
+  defaults razonables).
 
 ### Token de Discord
 
@@ -69,11 +72,14 @@ Secrets con la misma clave en desarrollo local. Si falta o es inválido, el bot 
 
 ### Credenciales de Firebase
 
-Dos archivos JSON de cuenta de servicio, ubicados en `src/AnilistConEnie.Bot/` con estos nombres
-exactos (los que carga `Infrastructure/Firebase/FirebaseService.cs`):
+Dos archivos JSON de cuenta de servicio con estos nombres exactos (los que carga
+`Infrastructure/Firebase/FirebaseService.cs`):
 
 - `firebase-anilistconenie.json` — solo para **Storage** (subida de imágenes de `/subirimagen`).
 - `firebase-yumiko.json` — base externa **Yumiko**, donde se espeja el vínculo de AniList.
+
+La carpeta que los contiene se indica por fuera con la clave **`FIREBASE_CREDENTIALS_DIR`**: en local
+suele apuntar a `src/AnilistConEnie.Bot/` (no se versionan), y en el servidor a `~/bots/secrets/`.
 
 ### Base de datos
 
@@ -82,7 +88,7 @@ Persistencia principal. Acceso vía **Dapper**, centralizado en
 *database-first* y se accede **solo vía stored procedures**; el esquema y los procedimientos viven
 versionados en `db/`. La connection string se provee por fuera con la clave
 **`ConnectionStrings:Database`**: variable de entorno en el servidor, o User Secrets en local. Detalle
-de setup en `deploy-setup/README.md`.
+de setup en `deploy/README.md`.
 
 ## Requisitos y ejecución
 

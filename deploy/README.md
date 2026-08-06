@@ -12,6 +12,10 @@ Los valores concretos (base, remote, bucket) **no se versionan**: viven en
 - `backup-db.service` / `backup-db.timer` → `~/.config/systemd/user/`
 - `backup.env.example` → copiar a `~/.config/anilist-backup/backup.env` (`chmod 600`) y completar
 
+Nada de esto lo despliega el CI (que solo publica el bot): cuando se toca un archivo de acá hay que
+copiarlo al server a mano. Si el script queda desactualizado el backup puede seguir subiendo y
+fallar después, sin que se note salvo por el aviso del bot.
+
 ## Requisitos en el server
 
 1. **rclone** en `~/bin/rclone` con un remote configurado (`rclone config`).

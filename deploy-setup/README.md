@@ -9,15 +9,18 @@ server por **SCP** → lo descomprime en `~/bots/AnilistConEnie-app` y reinicia 
 El proceso lo administra **systemd (servicio de usuario)**: sobrevive a la sesión SSH del deploy,
 reinicia solo y loguea en journald.
 
-El bot necesita **tres secretos** para arrancar, ninguno versionado:
+El bot necesita **cuatro claves** para arrancar, ninguna versionada:
 
 - `discordToken` — token del bot de Discord.
 - `FIREBASE_CREDENTIALS_DIR` — carpeta que contiene los `firebase-anilistconenie.json` y
   `firebase-yumiko.json` (credenciales de Firestore/Storage).
 - `ConnectionStrings:Database` — connection string de la base de datos.
+- `Backups:RutaEstado` — ruta del archivo de marca del backup. No es un secreto, pero no va en
+  `appsettings.json` porque es público. Tiene que coincidir con el `ESTADO` de
+  `~/.config/anilist-backup/backup.env` (ver `deploy/README.md`).
 
-Los tres se resuelven por el **mismo mecanismo** (`IConfiguration`): en el servidor por variable de
-entorno (las setea el unit de systemd) y en local por User Secrets. Son obligatorios; si falta
+Las cuatro se resuelven por el **mismo mecanismo** (`IConfiguration`): en el servidor por variable de
+entorno (las setea el unit de systemd) y en local por User Secrets. Son obligatorias; si falta
 cualquiera, el bot falla al arrancar.
 
 ## Setup en local (una sola vez)
@@ -28,6 +31,8 @@ dotnet user-secrets --project src/AnilistConEnie.Bot \
   set FIREBASE_CREDENTIALS_DIR /ruta/a/src/AnilistConEnie.Bot
 dotnet user-secrets --project src/AnilistConEnie.Bot \
   set "ConnectionStrings:Database" 'Host=...;Port=...;Database=...;Username=...;Password=...'
+dotnet user-secrets --project src/AnilistConEnie.Bot \
+  set "Backups:RutaEstado" /ruta/cualquiera/ultimo-ok
 ```
 
 (la carpeta de `FIREBASE_CREDENTIALS_DIR` debe contener los dos `firebase-*.json`).
@@ -52,7 +57,11 @@ dotnet user-secrets --project src/AnilistConEnie.Bot \
      ```
      discordToken=...
      ConnectionStrings__Database=Host=localhost;Port=...;Database=...;Username=...;Password=...
+     Backups__RutaEstado=/home/USUARIO/.config/anilist-backup/ultimo-ok
      ```
+
+     `Backups__RutaEstado` no admite `%h` ni `$HOME`: systemd no expande nada en un
+     `EnvironmentFile`, va la ruta absoluta.
 
    Seguridad de estos archivos y de la conexión:
    - `chmod 700 ~/bots/secrets && chmod 600 ~/bots/secrets/*` — solo el usuario del servicio debe

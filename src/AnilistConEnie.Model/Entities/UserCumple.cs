@@ -1,9 +1,9 @@
 namespace AnilistConEnie.Model.Entities;
 
-public class UserCumple
+public record UserCumple
 {
-    public long Id { get; set; }
+    public long Id { get; init; }
 
     /// <summary>Fecha del próximo festejo (este año si todavía no pasó; el que viene si ya pasó).</summary>
-    public DateTime Proximo { get; set; }
+    public DateTime Proximo { get; init; }
 }

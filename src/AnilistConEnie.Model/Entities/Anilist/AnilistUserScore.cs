@@ -5,16 +5,16 @@ namespace AnilistConEnie.Model.Entities.Anilist;
 /// <see cref="RawScore"/> viene en el formato elegido por el usuario (<see cref="ScoreFormat"/>);
 /// <see cref="Score100"/> es el mismo score normalizado a /100 por la propia API (para promediar).
 /// </summary>
-public class AnilistUserScore
+public record AnilistUserScore
 {
-    public int UserId { get; set; }
-    public string UserName { get; set; } = string.Empty;
-    public string UserSiteUrl { get; set; } = string.Empty;
-    public string? ScoreFormat { get; set; }
-    public double RawScore { get; set; }
-    public double Score100 { get; set; }
-    public string Status { get; set; } = string.Empty;
-    public int? Progress { get; set; }
+    public int UserId { get; init; }
+    public string UserName { get; init; } = string.Empty;
+    public string UserSiteUrl { get; init; } = string.Empty;
+    public string? ScoreFormat { get; init; }
+    public double RawScore { get; init; }
+    public double Score100 { get; init; }
+    public string Status { get; init; } = string.Empty;
+    public int? Progress { get; init; }
 
     public bool HasScore => RawScore > 0;
 }

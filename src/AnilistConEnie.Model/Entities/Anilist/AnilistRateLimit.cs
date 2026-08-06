@@ -5,14 +5,14 @@ namespace AnilistConEnie.Model.Entities.Anilist;
 /// de la última respuesta. Los valores son nullable porque no todas las respuestas
 /// incluyen los headers.
 /// </summary>
-public class AnilistRateLimit
+public record AnilistRateLimit
 {
     /// <summary>Cantidad máxima de requests permitidas en la ventana actual.</summary>
-    public int? Limit { get; set; }
+    public int? Limit { get; init; }
 
     /// <summary>Requests restantes en la ventana actual.</summary>
-    public int? Remaining { get; set; }
+    public int? Remaining { get; init; }
 
     /// <summary>Momento en que la ventana se reinicia (si el header lo informa).</summary>
-    public DateTimeOffset? ResetAt { get; set; }
+    public DateTimeOffset? ResetAt { get; init; }
 }

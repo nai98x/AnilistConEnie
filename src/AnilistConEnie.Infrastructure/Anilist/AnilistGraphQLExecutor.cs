@@ -183,14 +183,13 @@ internal sealed class AnilistGraphQLExecutor : IDisposable
 
     private static AnilistRateLimit ReadRateLimit(HttpResponseHeaders headers)
     {
-        AnilistRateLimit rateLimit = new();
-
-        if (TryGetInt(headers, "X-RateLimit-Limit", out int limit)) rateLimit.Limit = limit;
-        if (TryGetInt(headers, "X-RateLimit-Remaining", out int remaining)) rateLimit.Remaining = remaining;
-        // AniList informa el reset como epoch en segundos (Unix time).
-        if (TryGetLong(headers, "X-RateLimit-Reset", out long reset)) rateLimit.ResetAt = DateTimeOffset.FromUnixTimeSeconds(reset);
-
-        return rateLimit;
+        return new AnilistRateLimit
+        {
+            Limit = TryGetInt(headers, "X-RateLimit-Limit", out int limit) ? limit : null,
+            Remaining = TryGetInt(headers, "X-RateLimit-Remaining", out int remaining) ? remaining : null,
+            // AniList informa el reset como epoch en segundos (Unix time).
+            ResetAt = TryGetLong(headers, "X-RateLimit-Reset", out long reset) ? DateTimeOffset.FromUnixTimeSeconds(reset) : null
+        };
     }
 
     private static bool TryGetInt(HttpResponseHeaders headers, string name, out int value)

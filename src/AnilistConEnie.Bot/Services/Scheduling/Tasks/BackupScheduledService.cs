@@ -31,7 +31,7 @@ public class BackupScheduledService(
         if (EstadoBackup.EstaAlDia(marca, DateOnly.FromDateTime(RelojServidor.Hoy)))
             return;
 
-        await guild.Channels[config.Channels.ConfigBots].SendMessageAsync(
+        await guild.Channels[config.Channels.Playroom].SendMessageAsync(
             $"⚠️ No se detectó el backup de la base de hoy. Último backup correcto: {EstadoBackup.DescribirUltimo(marca)}.");
     }
 }

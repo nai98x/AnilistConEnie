@@ -4,62 +4,62 @@ namespace AnilistConEnie.Model.Entities.Anilist;
 /// Media (anime/manga) de AniList con datos crudos y estructurados. El formateo para presentación
 /// (unir géneros, marcar spoilers, armar fechas, etc.) es responsabilidad de la capa que lo consume.
 /// </summary>
-public class AnilistMedia
+public record AnilistMedia
 {
-    public int Id { get; set; }
-    public AnilistMediaTitle? Title { get; set; }
-    public string? CoverImageUrl { get; set; }
-    public string? BannerImageUrl { get; set; }
-    public string SiteUrl { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public string? Format { get; set; }
-    public string? Status { get; set; }
-    public int? Episodes { get; set; }
-    public int? Chapters { get; set; }
-    public int? MeanScore { get; set; }
-    public int? SeasonYear { get; set; }
-    public AnilistFuzzyDate? StartDate { get; set; }
-    public AnilistFuzzyDate? EndDate { get; set; }
-    public bool IsAdult { get; set; }
+    public int Id { get; init; }
+    public AnilistMediaTitle? Title { get; init; }
+    public string? CoverImageUrl { get; init; }
+    public string? BannerImageUrl { get; init; }
+    public string SiteUrl { get; init; } = string.Empty;
+    public string? Description { get; init; }
+    public string? Format { get; init; }
+    public string? Status { get; init; }
+    public int? Episodes { get; init; }
+    public int? Chapters { get; init; }
+    public int? MeanScore { get; init; }
+    public int? SeasonYear { get; init; }
+    public AnilistFuzzyDate? StartDate { get; init; }
+    public AnilistFuzzyDate? EndDate { get; init; }
+    public bool IsAdult { get; init; }
 
-    public IReadOnlyList<string> Genres { get; set; } = [];
-    public IReadOnlyList<string> Synonyms { get; set; } = [];
-    public IReadOnlyList<AnilistMediaTag> Tags { get; set; } = [];
-    public IReadOnlyList<AnilistStudio> Studios { get; set; } = [];
-    public IReadOnlyList<AnilistExternalLink> ExternalLinks { get; set; } = [];
+    public IReadOnlyList<string> Genres { get; init; } = [];
+    public IReadOnlyList<string> Synonyms { get; init; } = [];
+    public IReadOnlyList<AnilistMediaTag> Tags { get; init; } = [];
+    public IReadOnlyList<AnilistStudio> Studios { get; init; } = [];
+    public IReadOnlyList<AnilistExternalLink> ExternalLinks { get; init; } = [];
 }
 
-public class AnilistMediaTitle
+public record AnilistMediaTitle
 {
-    public string? Romaji { get; set; }
-    public string? English { get; set; }
-    public string? Native { get; set; }
+    public string? Romaji { get; init; }
+    public string? English { get; init; }
+    public string? Native { get; init; }
 }
 
 /// <summary>Fecha "difusa" de AniList: cualquiera de sus componentes puede faltar.</summary>
-public class AnilistFuzzyDate
+public record AnilistFuzzyDate
 {
-    public int? Year { get; set; }
-    public int? Month { get; set; }
-    public int? Day { get; set; }
+    public int? Year { get; init; }
+    public int? Month { get; init; }
+    public int? Day { get; init; }
 
     public bool IsComplete => Year is not null && Month is not null && Day is not null;
 }
 
-public class AnilistMediaTag
+public record AnilistMediaTag
 {
-    public string Name { get; set; } = string.Empty;
-    public bool IsSpoiler { get; set; }
+    public string Name { get; init; } = string.Empty;
+    public bool IsSpoiler { get; init; }
 }
 
-public class AnilistStudio
+public record AnilistStudio
 {
-    public string Name { get; set; } = string.Empty;
-    public string SiteUrl { get; set; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public string SiteUrl { get; init; } = string.Empty;
 }
 
-public class AnilistExternalLink
+public record AnilistExternalLink
 {
-    public string Site { get; set; } = string.Empty;
-    public string Url { get; set; } = string.Empty;
+    public string Site { get; init; } = string.Empty;
+    public string Url { get; init; } = string.Empty;
 }

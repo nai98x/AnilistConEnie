@@ -9,6 +9,7 @@ using AnilistConEnie.Model.Interfaces.Repositories;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using DSharpPlus.Exceptions;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
@@ -61,16 +62,25 @@ public class MessageCreatedHandler(
             await args.Message.CreateReactionAsync(emoteModeState.Emote!);
         #endregion
 
-        #region Autoban hacked accounts
+        #region Autokick hacked accounts
         if (!args.Author.IsBot && (!discordBotService.Debug || (discordBotService.Debug && args.Author.Id == config.OwnerId)))
         {
-            hackedAccountState.AddRecentUserMessage(args.Author.Id, args.Channel.Id, args.Message.Content);
+            hackedAccountState.AddRecentUserMessage(args.Author.Id, args.Message);
 
             if (hackedAccountState.IsHackedAccount(args.Author.Id)
                 && args.Guild.Members.TryGetValue(args.Author.Id, out DiscordMember? member)
                 && member.Roles.All(x => x.Id != config.Roles.KamiSama))
             {
-                await member.RemoveAsync("Autoban por cuenta hackeada");
+                const string motivo = "Kick automático por cuenta hackeada";
+
+                foreach (DiscordMessage mensaje in hackedAccountState.TakeRecentUserMessages(args.Author.Id))
+                {
+                    try { await mensaje.DeleteAsync(motivo); }
+                    catch (NotFoundException) { }
+                    catch (Exception ex) { _ = logService.LogException(args.Guild, ex, "Autokick cuenta hackeada - borrar mensaje"); }
+                }
+
+                await member.RemoveAsync(motivo);
             }
         }
         #endregion

@@ -1,8 +1,8 @@
 namespace AnilistConEnie.Model.Entities.Anilist;
 
-public class TitleDescription
+public record TitleDescription
 {
-    public string? Title { get; set; }
+    public string? Title { get; init; }
 
-    public string? Description { get; set; }
+    public string? Description { get; init; }
 }

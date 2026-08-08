@@ -1,6 +1,6 @@
 using System.Data;
 using AnilistConEnie.Infrastructure.Database;
-using AnilistConEnie.Model.Interfaces.Repositories;
+using AnilistConEnie.Domain.Interfaces.Repositories;
 using Dapper;
 
 namespace AnilistConEnie.Infrastructure.Repositories;

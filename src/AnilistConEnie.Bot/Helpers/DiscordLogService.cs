@@ -1,7 +1,7 @@
 using System.Globalization;
 using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Bot.Configuration;
-using AnilistConEnie.Model.Entities;
+using AnilistConEnie.Domain.Entities;
 using DSharpPlus;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.MessageCommands;

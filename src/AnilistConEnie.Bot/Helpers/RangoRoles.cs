@@ -1,6 +1,6 @@
 using AnilistConEnie.Application.Xp;
 using AnilistConEnie.Bot.Configuration;
-using AnilistConEnie.Model.Enum;
+using AnilistConEnie.Domain.Enum;
 using DSharpPlus.Entities;
 
 namespace AnilistConEnie.Bot.Helpers;

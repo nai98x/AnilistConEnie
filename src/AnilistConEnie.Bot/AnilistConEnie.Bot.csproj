@@ -33,7 +33,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AnilistConEnie.Model\AnilistConEnie.Model.csproj" />
+    <ProjectReference Include="..\AnilistConEnie.Domain\AnilistConEnie.Domain.csproj" />
     <ProjectReference Include="..\AnilistConEnie.Application\AnilistConEnie.Application.csproj" />
     <ProjectReference Include="..\AnilistConEnie.Infrastructure\AnilistConEnie.Infrastructure.csproj" />
   </ItemGroup>

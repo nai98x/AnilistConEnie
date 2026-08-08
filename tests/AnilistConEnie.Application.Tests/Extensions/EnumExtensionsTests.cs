@@ -1,6 +1,6 @@
 using System.ComponentModel;
 using AnilistConEnie.Application.Extensions;
-using AnilistConEnie.Model.Enum;
+using AnilistConEnie.Domain.Enum;
 
 namespace AnilistConEnie.Application.Tests.Extensions;
 

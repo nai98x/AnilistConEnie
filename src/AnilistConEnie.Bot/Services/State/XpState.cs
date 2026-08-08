@@ -1,5 +1,5 @@
-using AnilistConEnie.Model.Entities;
-using AnilistConEnie.Model.Enum;
+using AnilistConEnie.Domain.Entities;
+using AnilistConEnie.Domain.Enum;
 using DSharpPlus.Entities;
 using System.Collections.Concurrent;
 

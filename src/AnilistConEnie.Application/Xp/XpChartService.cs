@@ -1,6 +1,6 @@
 using AnilistConEnie.Application.Helpers;
-using AnilistConEnie.Model.Entities;
-using AnilistConEnie.Model.Interfaces.Repositories;
+using AnilistConEnie.Domain.Entities;
+using AnilistConEnie.Domain.Interfaces.Repositories;
 
 namespace AnilistConEnie.Application.Xp;
 

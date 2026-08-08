@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AnilistConEnie.Model\AnilistConEnie.Model.csproj" />
+    <ProjectReference Include="..\AnilistConEnie.Domain\AnilistConEnie.Domain.csproj" />
   </ItemGroup>
 
 </Project>

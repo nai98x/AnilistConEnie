@@ -1,6 +1,6 @@
 using AnilistConEnie.Application.Moderation;
 using AnilistConEnie.Bot.Configuration;
-using AnilistConEnie.Model.Entities;
+using AnilistConEnie.Domain.Entities;
 using DSharpPlus.Entities;
 using System.Collections.Concurrent;
 

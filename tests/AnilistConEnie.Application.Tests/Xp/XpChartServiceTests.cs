@@ -1,7 +1,7 @@
 using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Application.Xp;
-using AnilistConEnie.Model.Entities;
-using AnilistConEnie.Model.Interfaces.Repositories;
+using AnilistConEnie.Domain.Entities;
+using AnilistConEnie.Domain.Interfaces.Repositories;
 
 namespace AnilistConEnie.Application.Tests.Xp;
 

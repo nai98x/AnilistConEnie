@@ -1,5 +1,5 @@
 using AnilistConEnie.Bot.Configuration;
-using AnilistConEnie.Model.Enum;
+using AnilistConEnie.Domain.Enum;
 using DSharpPlus;
 using DSharpPlus.Entities;
 

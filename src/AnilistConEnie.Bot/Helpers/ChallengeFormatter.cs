@@ -1,5 +1,5 @@
 using System.Text;
-using AnilistConEnie.Model.Entities;
+using AnilistConEnie.Domain.Entities;
 using DSharpPlus;
 
 namespace AnilistConEnie.Bot.Helpers;

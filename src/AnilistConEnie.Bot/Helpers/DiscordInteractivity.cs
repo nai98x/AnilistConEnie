@@ -1,5 +1,5 @@
 using AnilistConEnie.Application.Helpers;
-using AnilistConEnie.Model.Entities.Anilist;
+using AnilistConEnie.Domain.Entities.Anilist;
 using DSharpPlus;
 using DSharpPlus.Commands;
 using DSharpPlus.Entities;

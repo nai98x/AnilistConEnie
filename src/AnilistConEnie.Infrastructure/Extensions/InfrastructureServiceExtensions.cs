@@ -3,8 +3,8 @@ using AnilistConEnie.Infrastructure.Charts;
 using AnilistConEnie.Infrastructure.Database;
 using AnilistConEnie.Infrastructure.Firebase;
 using AnilistConEnie.Infrastructure.Repositories;
-using AnilistConEnie.Model.Interfaces;
-using AnilistConEnie.Model.Interfaces.Repositories;
+using AnilistConEnie.Domain.Interfaces;
+using AnilistConEnie.Domain.Interfaces.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AnilistConEnie.Infrastructure.Extensions;

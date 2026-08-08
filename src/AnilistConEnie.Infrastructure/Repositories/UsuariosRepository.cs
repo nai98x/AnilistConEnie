@@ -1,7 +1,7 @@
 using System.Data;
 using AnilistConEnie.Infrastructure.Database;
-using AnilistConEnie.Model.Entities;
-using AnilistConEnie.Model.Interfaces.Repositories;
+using AnilistConEnie.Domain.Entities;
+using AnilistConEnie.Domain.Interfaces.Repositories;
 using AnilistConEnie.Application.Helpers;
 using Dapper;
 

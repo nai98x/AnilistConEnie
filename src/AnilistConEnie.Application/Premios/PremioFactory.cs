@@ -1,6 +1,6 @@
 using AnilistConEnie.Application.Helpers;
-using AnilistConEnie.Model.Entities;
-using AnilistConEnie.Model.Enum;
+using AnilistConEnie.Domain.Entities;
+using AnilistConEnie.Domain.Enum;
 
 namespace AnilistConEnie.Application.Premios;
 

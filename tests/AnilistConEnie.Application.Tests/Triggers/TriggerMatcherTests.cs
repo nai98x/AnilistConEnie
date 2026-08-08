@@ -1,6 +1,6 @@
 using AnilistConEnie.Application.Triggers;
-using AnilistConEnie.Model.Entities;
-using AnilistConEnie.Model.Enum;
+using AnilistConEnie.Domain.Entities;
+using AnilistConEnie.Domain.Enum;
 
 namespace AnilistConEnie.Application.Tests.Triggers;
 

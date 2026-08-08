@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
-using AnilistConEnie.Model.Entities.Anilist;
-using AnilistConEnie.Model.Exceptions;
+using AnilistConEnie.Domain.Entities.Anilist;
+using AnilistConEnie.Domain.Exceptions;
 using GraphQL;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.Newtonsoft;

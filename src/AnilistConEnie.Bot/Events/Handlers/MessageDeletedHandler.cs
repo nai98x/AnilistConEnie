@@ -1,8 +1,8 @@
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
-using AnilistConEnie.Model.Entities;
-using AnilistConEnie.Model.Interfaces.Repositories;
+using AnilistConEnie.Domain.Entities;
+using AnilistConEnie.Domain.Interfaces.Repositories;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;

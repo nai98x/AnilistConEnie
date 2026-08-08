@@ -1,4 +1,4 @@
-using AnilistConEnie.Model.Enum;
+using AnilistConEnie.Domain.Enum;
 
 namespace AnilistConEnie.Application.Xp;
 

@@ -1,7 +1,7 @@
 using AnilistConEnie.Infrastructure.Anilist.Responses;
-using AnilistConEnie.Model.Entities.Anilist;
-using AnilistConEnie.Model.Exceptions;
-using AnilistConEnie.Model.Interfaces;
+using AnilistConEnie.Domain.Entities.Anilist;
+using AnilistConEnie.Domain.Exceptions;
+using AnilistConEnie.Domain.Interfaces;
 using GraphQL;
 
 namespace AnilistConEnie.Infrastructure.Anilist;

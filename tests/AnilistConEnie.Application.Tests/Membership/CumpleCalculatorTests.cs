@@ -1,5 +1,5 @@
 using AnilistConEnie.Application.Membership;
-using AnilistConEnie.Model.Entities;
+using AnilistConEnie.Domain.Entities;
 
 namespace AnilistConEnie.Application.Tests.Membership;
 

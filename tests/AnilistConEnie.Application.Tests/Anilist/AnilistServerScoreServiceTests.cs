@@ -1,6 +1,6 @@
 using AnilistConEnie.Application.Anilist;
-using AnilistConEnie.Model.Entities.Anilist;
-using AnilistConEnie.Model.Interfaces;
+using AnilistConEnie.Domain.Entities.Anilist;
+using AnilistConEnie.Domain.Interfaces;
 
 namespace AnilistConEnie.Application.Tests.Anilist;
 

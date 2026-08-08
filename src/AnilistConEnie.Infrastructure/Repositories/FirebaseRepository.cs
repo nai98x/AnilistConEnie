@@ -1,5 +1,5 @@
 using AnilistConEnie.Infrastructure.Firebase;
-using AnilistConEnie.Model.Interfaces.Repositories;
+using AnilistConEnie.Domain.Interfaces.Repositories;
 using Google.Cloud.Firestore;
 using Google.Cloud.Storage.V1;
 

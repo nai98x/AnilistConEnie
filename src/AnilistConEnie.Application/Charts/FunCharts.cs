@@ -1,4 +1,4 @@
-using AnilistConEnie.Model.Entities.Charts;
+using AnilistConEnie.Domain.Entities.Charts;
 
 namespace AnilistConEnie.Application.Charts;
 

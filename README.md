@@ -17,12 +17,12 @@ Bot multipropósito para el servidor de Discord **Añilist**, desarrollado en DS
 ## Arquitectura
 
 La solución (`AnilistConEnie.sln`) sigue una arquitectura limpia con 4 proyectos en `src/`. La
-dirección de dependencias es **Model ← Application ← Infrastructure ← Bot**: cada capa solo conoce a
+dirección de dependencias es **Domain ← Application ← Infrastructure ← Bot**: cada capa solo conoce a
 las de adentro.
 
 | Proyecto | Responsabilidad |
 |----------|-----------------|
-| **AnilistConEnie.Model** | Entidades, enums, excepciones e interfaces. Define los contratos (`Interfaces/IAnilistClient.cs`, `Interfaces/Repositories/*`) que implementa Infrastructure. Sin dependencias hacia las otras capas. |
+| **AnilistConEnie.Domain** | Entidades, enums, excepciones e interfaces. Define los contratos (`Interfaces/IAnilistClient.cs`, `Interfaces/Repositories/*`) que implementa Infrastructure. Sin dependencias hacia las otras capas. |
 | **AnilistConEnie.Application** | Lógica de negocio, mayormente como clases estáticas sin estado: `Xp/`, `Moderation/`, `Confessions/`, `Challenges/`, `Membership/`, `Charts/`, `Anilist/`, `Backups/`, `Fun/`, `Premios/`, `Triggers/`, `Helpers/`. No depende de Discord ni de la infraestructura. |
 | **AnilistConEnie.Infrastructure** | Acceso a datos y servicios externos: `Database/DbConnectionFactory.cs` + `Repositories/*` (Dapper, stored procedures), `Firebase/FirebaseService.cs` + `Repositories/FirebaseRepository.cs` (Storage + Yumiko), `Anilist/` (cliente GraphQL: `AnilistClient`, `AnilistGraphQLExecutor`, `AnilistQueries`) y `Charts/`. |
 | **AnilistConEnie.Bot** | Punto de entrada y todo lo relacionado a Discord: comandos, handlers de eventos, tareas programadas, estado en memoria, configuración y configuración de inyección de dependencias. |

@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using AnilistConEnie.Application.Helpers;
-using AnilistConEnie.Model.Entities;
+using AnilistConEnie.Domain.Entities;
 
 namespace AnilistConEnie.Bot.Services.State;
 

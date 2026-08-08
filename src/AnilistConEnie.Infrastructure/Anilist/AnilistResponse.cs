@@ -1,4 +1,4 @@
-using AnilistConEnie.Model.Entities.Anilist;
+using AnilistConEnie.Domain.Entities.Anilist;
 
 namespace AnilistConEnie.Infrastructure.Anilist;
 

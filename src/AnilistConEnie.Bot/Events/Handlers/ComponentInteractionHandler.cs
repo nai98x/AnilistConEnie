@@ -1,10 +1,10 @@
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
-using AnilistConEnie.Model.Interfaces.Repositories;
-using AnilistConEnie.Model.Entities;
-using AnilistConEnie.Model.Entities.Anilist;
-using AnilistConEnie.Model.Enum;
+using AnilistConEnie.Domain.Interfaces.Repositories;
+using AnilistConEnie.Domain.Entities;
+using AnilistConEnie.Domain.Entities.Anilist;
+using AnilistConEnie.Domain.Enum;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;

@@ -1,10 +1,10 @@
 using AnilistConEnie.Application.Helpers;
-using AnilistConEnie.Model.Interfaces;
+using AnilistConEnie.Domain.Interfaces;
 using ScottPlot;
 using ScottPlot.Plottables;
 using ScottPlot.TickGenerators;
 using SkiaSharp;
-using ChartSpecs = AnilistConEnie.Model.Entities.Charts;
+using ChartSpecs = AnilistConEnie.Domain.Entities.Charts;
 
 namespace AnilistConEnie.Infrastructure.Charts;
 

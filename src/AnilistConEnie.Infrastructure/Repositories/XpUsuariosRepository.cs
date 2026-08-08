@@ -1,8 +1,8 @@
 using System.Data;
 using AnilistConEnie.Infrastructure.Database;
-using AnilistConEnie.Model.Entities;
-using AnilistConEnie.Model.Enum;
-using AnilistConEnie.Model.Interfaces.Repositories;
+using AnilistConEnie.Domain.Entities;
+using AnilistConEnie.Domain.Enum;
+using AnilistConEnie.Domain.Interfaces.Repositories;
 using Dapper;
 
 namespace AnilistConEnie.Infrastructure.Repositories;

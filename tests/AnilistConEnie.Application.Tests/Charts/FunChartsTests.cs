@@ -1,5 +1,5 @@
 using AnilistConEnie.Application.Charts;
-using AnilistConEnie.Model.Entities.Charts;
+using AnilistConEnie.Domain.Entities.Charts;
 
 namespace AnilistConEnie.Application.Tests.Charts;
 

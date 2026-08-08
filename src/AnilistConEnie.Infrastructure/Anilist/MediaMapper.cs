@@ -1,5 +1,5 @@
 using AnilistConEnie.Infrastructure.Anilist.Responses;
-using AnilistConEnie.Model.Entities.Anilist;
+using AnilistConEnie.Domain.Entities.Anilist;
 
 namespace AnilistConEnie.Infrastructure.Anilist;
 

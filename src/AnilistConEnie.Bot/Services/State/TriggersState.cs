@@ -1,4 +1,4 @@
-using AnilistConEnie.Model.Entities;
+using AnilistConEnie.Domain.Entities;
 using System.Collections.Concurrent;
 
 namespace AnilistConEnie.Bot.Services.State;

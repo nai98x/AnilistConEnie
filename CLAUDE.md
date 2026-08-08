@@ -11,10 +11,11 @@ archivos, correr builds/tests y preparar cambios, pero el versionado lo controla
 
 ## Regla absoluta: cero warnings de compilación
 
-`dotnet build` tiene que terminar con **0 Advertencias y 0 Errores**. Si un cambio introduce un
-warning, se arregla en el mismo cambio: no se deja "para después" ni se silencia con `#pragma` o
-`<NoWarn>` salvo que haya una razón concreta y anotada. Antes de dar por terminado un trabajo que
-toca código, correr `dotnet build -c Release` y verificar el contador.
+`Directory.Build.props` en la raíz activa `TreatWarningsAsErrors` (y `MSBuildTreatWarningsAsErrors`)
+para **todos** los proyectos: cualquier warning **rompe el build**, tanto local como en CI. Si un
+cambio introduce un warning, se arregla en el mismo cambio: no se deja "para después" ni se silencia
+con `#pragma`, `<NoWarn>` o `<WarningsNotAsErrors>` salvo que haya una razón concreta y anotada.
+Antes de dar por terminado un trabajo que toca código, correr `dotnet build -c Release`.
 
 ## Qué es
 
@@ -23,11 +24,11 @@ Idioma del código, commits y comunicación: **español**.
 
 ## Arquitectura (Clean Architecture, 4 proyectos en `src/`)
 
-Dirección de dependencias: **Model ← Application ← Infrastructure ← Bot**. Nunca agregar referencias
+Dirección de dependencias: **Domain ← Application ← Infrastructure ← Bot**. Nunca agregar referencias
 inversas.
 
-- **AnilistConEnie.Model** — entidades, enums, excepciones e interfaces (`IAnilistClient`,
-  `Interfaces/Repositories/*`). Son POCOs puros: Model no referencia paquetes de infraestructura
+- **AnilistConEnie.Domain** — entidades, enums, excepciones e interfaces (`IAnilistClient`,
+  `Interfaces/Repositories/*`). Son POCOs puros: Domain no referencia paquetes de infraestructura
   (ni Npgsql/Dapper ni `Google.Cloud.*`).
 - **AnilistConEnie.Application** — lógica de negocio. Sin dependencias de Discord ni infraestructura.
 - **AnilistConEnie.Infrastructure** — repositorios PostgreSQL (Dapper + SPs), `FirebaseService` y
@@ -52,14 +53,14 @@ inversas.
 
 ## Convenciones clave
 
-- **Repositorios**: inyectar SIEMPRE por su interfaz de Model (`IXxxRepository`), nunca la clase
+- **Repositorios**: inyectar SIEMPRE por su interfaz de Domain (`IXxxRepository`), nunca la clase
   concreta de Infrastructure. Solo las interfaces están registradas en el contenedor.
 - **Base de datos relacional (Dapper)**: es **database-first** y se accede **solo vía stored
   procedures** (funciones PostgreSQL). Los repos de Infrastructure las invocan **por nombre** con
   `commandType: CommandType.StoredProcedure` y parámetros `p_*`; **cero SQL en el código** (ni
   `SELECT * FROM fn()`). Para que `CommandType.StoredProcedure` resuelva funciones (y no `CALL`),
   `DbConnectionFactory` activa `AppContext.SetSwitch("Npgsql.EnableStoredProcedureCompatMode", true)`.
-  El esquema y los SPs viven versionados en `db/` (no en código). Los POCOs de Model mapean los
+  El esquema y los SPs viven versionados en `db/` (no en código). Los POCOs de Domain mapean los
   resultados (snake_case→PascalCase vía `DefaultTypeMap.MatchNamesWithUnderscores`); la conexión se
   abre con `DbConnectionFactory` (`Infrastructure/Database/`, único archivo que conoce el motor).
 - **Migraciones de BD: NO se versionan**. `db/schema/` refleja siempre el **estado actual** de cada

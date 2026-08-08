@@ -1,5 +1,5 @@
 using AnilistConEnie.Application.Xp;
-using AnilistConEnie.Model.Enum;
+using AnilistConEnie.Domain.Enum;
 
 namespace AnilistConEnie.Application.Tests.Xp;
 

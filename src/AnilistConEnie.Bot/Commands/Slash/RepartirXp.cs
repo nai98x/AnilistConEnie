@@ -19,7 +19,7 @@ using DSharpPlus.Interactivity.Extensions;
 namespace AnilistConEnie.Bot.Commands.Slash;
 
 [RequireStaff]
-[TestCommand]
+//[TestCommand]
 public class RepartirXp(
     BotConfiguration config,
     DiscordBotService discordBotService,

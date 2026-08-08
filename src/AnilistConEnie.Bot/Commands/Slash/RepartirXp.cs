@@ -55,9 +55,10 @@ public class RepartirXp(
 
         await ctx.DeferEphemeralAsync();
 
-        if (!ctx.Guild!.Channels.TryGetValue(config.Channels.Colaboradores, out DiscordChannel? canal))
+        ulong canalId = discordBotService.Debug ? config.Channels.Playroom : config.Channels.Colaboradores;
+        if (!ctx.Guild!.Channels.TryGetValue(canalId, out DiscordChannel? canal))
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("No está configurado el canal de colaboradores.")));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("No está configurado el canal donde se aprueban los repartos.")));
             return;
         }
 
@@ -201,7 +202,8 @@ public class RepartirXp(
             .WithCustomId(modalId)
             .WithTitle("Que se reparte")
             .AddTextInput(
-                new DiscordTextInputComponent(RepartoXpService.CampoDetalle, "Karaoke, juegos, etc", detalle, true, DiscordTextInputStyle.Short, 1, MaxDetalle),
+                // Discord rechaza un value vacío cuando hay minLength: sin nada que prellenar va null.
+                new DiscordTextInputComponent(RepartoXpService.CampoDetalle, "Torneo Pokémon, Torneo de fútbol, etc", detalle.Length > 0 ? detalle : null, true, DiscordTextInputStyle.Short, 1, MaxDetalle),
                 "Que se reparte");
 
         await interaccion.CreateResponseAsync(DiscordInteractionResponseType.Modal, modal);

@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, TriggersState triggersState, XpState xpState, FechaEntradaState fechaEntradaState, ILogger<GuildDownloadCompletedHandler> logger, BotConfiguration config, DiscordLogService logService, GuildMaintenanceService guildMaintenanceService, IXpUsuariosRepository xpUsuariosRepository, IUsuariosRepository usuariosRepository, ITriggersRepository triggersRepository, DbConnectionFactory connectionFactory)
+public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, TriggersState triggersState, FechaEntradaState fechaEntradaState, ILogger<GuildDownloadCompletedHandler> logger, BotConfiguration config, DiscordLogService logService, GuildMaintenanceService guildMaintenanceService, IUsuariosRepository usuariosRepository, ITriggersRepository triggersRepository, DbConnectionFactory connectionFactory)
 {
     public async Task Handle(DiscordClient client, GuildDownloadCompletedEventArgs args)
     {
@@ -43,12 +43,6 @@ public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, 
         List<Trigger> triggers = await triggersRepository.GetLista();
         triggersState.FillTriggers(triggers);
         logger.LogInformation("Triggers cargados correctamente");
-        #endregion
-
-        #region Usuarios Discord (xp)
-        List<UserXp> ranking = await xpUsuariosRepository.ObtenerRanking();
-        xpState.FillGuildXp(ranking.ToDictionary(r => (ulong)r.UserId));
-        logger.LogInformation("Xp de usuarios de Discord cargada correctamente");
         #endregion
 
         #region Fechas de entrada reales
@@ -102,7 +96,6 @@ public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, 
             new DiscordTextDisplayComponent(
                 $"⏱️ **Tiempo de inicialización:** {sw.Elapsed.TotalSeconds:0.00} s\n" +
                 $"⚡ **Triggers:** {triggers.Count}\n" +
-                $"👥 **Usuarios con XP:** {ranking.Count}\n" +
                 $"🧑‍🤝‍🧑 **Miembros:** {guild.MemberCount}")
         ];
 

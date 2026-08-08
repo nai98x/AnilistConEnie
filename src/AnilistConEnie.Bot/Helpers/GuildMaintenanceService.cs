@@ -72,10 +72,6 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
 
     public async Task GrantXpPorMensaje(DiscordGuild guild, ulong userId)
     {
-        // Sin la XP cargada en memoria, el rango calculado sería el de 0 XP y degradaría al usuario
-        if (!discordBotService.Inicializado)
-            return;
-
         if (!xpState.TryClaimXp(userId, TimeSpan.FromSeconds(xpSettings.CooldownSegundos)))
             return;
 
@@ -84,20 +80,12 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
             if (!guild.Members.TryGetValue(userId, out DiscordMember? member) || member.IsBot)
                 return;
 
-            UserXp memberXp = xpState.GetUserXp(userId);
-            long xpAntes = memberXp.Total;
-            XpAccrual accrual = XpReward.Accrue(memberXp, member.PremiumSince != null, Random.Shared, xpSettings.MinPorMensaje, xpSettings.MaxPorMensaje, xpSettings.MinBooster, xpSettings.MaxBooster);
-
-            if (accrual.BoosterXp > 0)
-            {
-                await xpUsuariosRepository.AddRemove(userId, new UserXpDelta { Booster = accrual.BoosterXp });
-                xpState.UpdateUserXp(userId, accrual.NewBoosterTotal, TipoXp.Booster);
-            }
+            XpAccrual accrual = XpReward.Accrue(member.PremiumSince != null, Random.Shared, xpSettings.MinPorMensaje, xpSettings.MaxPorMensaje, xpSettings.MinBooster, xpSettings.MaxBooster);
 
             DiscordRole roleBefore = rangoRoles.GetRoleByXpActual(guild, member);
-            DiscordRole roleAfter = rangoRoles.GetRoleByXp(guild, accrual.NewGrandTotal);
-            xpState.UpdateUserXp(userId, accrual.NewGrandTotal, TipoXp.Total);
-            await xpUsuariosRepository.AddRemove(userId, new UserXpDelta { Total = accrual.TotalGranted });
+            UserXp memberXp = await xpUsuariosRepository.AddRemove(userId, new UserXpDelta { Total = accrual.TotalGranted, Booster = accrual.BoosterXp });
+            long xpAntes = memberXp.Total - accrual.TotalGranted;
+            DiscordRole roleAfter = rangoRoles.GetRoleByXp(guild, memberXp.Total);
 
             (bool habilitado, ulong usuarioId) debug = xpState.GetDebugXp();
             if (debug.habilitado && member.Id == debug.usuarioId)
@@ -112,8 +100,8 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
                     .AddField("XP ganada", $"**+{accrual.TotalGranted}** XP", true)
                     .AddField("XP base", $"+{accrual.BaseXp}", true)
                     .AddField("XP booster", esBooster ? $"+{accrual.BoosterXp} 🚀" : "—", true)
-                    .AddField("XP total", $"{xpAntes:N0} → **{accrual.NewGrandTotal:N0}**", true)
-                    .AddField("Booster acumulado", $"{accrual.NewBoosterTotal:N0}", true)
+                    .AddField("XP total", $"{xpAntes:N0} → **{memberXp.Total:N0}**", true)
+                    .AddField("Booster acumulado", $"{memberXp.Booster:N0}", true)
                     .AddField("¿Boostea?", esBooster ? "Sí 💎" : "No", true)
                     .AddField("Rango", subioRango ? $"{roleBefore.Mention} → {roleAfter.Mention}  ⬆️" : roleAfter.Mention)
                     .WithTimestamp(DateTimeOffset.Now);
@@ -143,8 +131,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
         {
             yaTieneNuevoRango = member.Roles.Any(x => x.Id == newRango.Id);
 
-            if (oldRango.Id != config.Roles.Miembro) await member.RevokeRoleAsync(oldRango); // Miembro no se quita nunca
-            await member.GrantRoleAsync(newRango);
+            await rangoRoles.AplicarRangoAsync(member, oldRango, newRango);
         }
         catch (Exception ex)
         {
@@ -331,7 +318,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
     {
         try
         {
-            List<UserXp> rankings = xpState.GetGuildXp(guild);
+            List<UserXp> rankings = await xpUsuariosRepository.ObtenerRankingDelGuild(guild);
             await xpDiarioRepository.Snapshot(DateOnly.FromDateTime(RelojServidor.Hoy), rankings);
         }
         catch (Exception e)

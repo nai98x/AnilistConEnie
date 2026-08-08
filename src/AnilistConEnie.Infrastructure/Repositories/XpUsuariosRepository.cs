@@ -26,11 +26,11 @@ public class XpUsuariosRepository(DbConnectionFactory connectionFactory) : IXpUs
             commandType: CommandType.StoredProcedure)).AsList();
     }
 
-    public async Task AddRemove(ulong userId, UserXpDelta delta, XpOperation operation = XpOperation.Add)
+    public async Task<UserXp> AddRemove(ulong userId, UserXpDelta delta, XpOperation operation = XpOperation.Add)
     {
         int sign = operation == XpOperation.Add ? 1 : -1;
         using var connection = await connectionFactory.OpenConnectionAsync();
-        await connection.ExecuteAsync(
+        return await connection.QuerySingleAsync<UserXp>(
             "xp_usuario_add",
             new
             {

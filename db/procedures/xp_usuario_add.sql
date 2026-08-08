@@ -1,5 +1,5 @@
 -- Suma (p_sign=1) o resta (p_sign=-1) XP por categoría de forma atómica. Si el usuario no tenía fila,
--- la crea con el delta aplicado. Reemplaza el read-modify-write que se hacía contra Firestore.
+-- la crea con el delta aplicado. Devuelve la fila ya actualizada, para evitar una lectura extra.
 CREATE OR REPLACE FUNCTION xp_usuario_add(
     p_user_id      bigint,
     p_total        bigint,
@@ -9,7 +9,7 @@ CREATE OR REPLACE FUNCTION xp_usuario_add(
     p_intercambios bigint,
     p_otros        bigint,
     p_sign         integer
-) RETURNS void
+) RETURNS SETOF xp_usuarios
 LANGUAGE sql
 AS $$
     INSERT INTO xp_usuarios (user_id, total, booster, challenges, eventos, intercambios, otros)
@@ -21,5 +21,6 @@ AS $$
             challenges = xp_usuarios.challenges + p_sign * p_challenges,
             eventos = xp_usuarios.eventos + p_sign * p_eventos,
             intercambios = xp_usuarios.intercambios + p_sign * p_intercambios,
-            otros = xp_usuarios.otros + p_sign * p_otros;
+            otros = xp_usuarios.otros + p_sign * p_otros
+    RETURNING *;
 $$;

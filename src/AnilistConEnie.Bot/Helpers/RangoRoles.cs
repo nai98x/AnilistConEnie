@@ -28,6 +28,15 @@ public class RangoRoles(BotConfiguration config)
 
     public DiscordRole GetRoleByXp(DiscordGuild guild, long xp) => guild.Roles[RoleIdForRango(RangoXp.RangoActual(xp))];
 
+    /// <summary>Mueve al miembro de un rol de rango a otro. El rol Miembro no se quita nunca.</summary>
+    public async Task AplicarRangoAsync(DiscordMember member, DiscordRole rangoViejo, DiscordRole rangoNuevo)
+    {
+        if (rangoViejo.Id != config.Roles.Miembro)
+            await member.RevokeRoleAsync(rangoViejo);
+
+        await member.GrantRoleAsync(rangoNuevo);
+    }
+
     public RangoEnum RangoForRole(ulong roleId) =>
         System.Enum.GetValues<RangoEnum>().FirstOrDefault(x => x != RangoEnum.Miembro && RoleIdForRango(x) == roleId);
 

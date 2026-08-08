@@ -29,7 +29,6 @@ public class Challenges(
     IChallengesRepository challengesRepository,
     IXpUsuariosRepository xpUsuariosRepository,
     IUsuariosRepository usuariosRepository,
-    XpState xpState,
     AnilistService anilistService,
     DiscordBotService discordBotService,
     DiscordLogService logService,
@@ -326,12 +325,6 @@ public class Challenges(
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"{usuario.Mention} ya tiene completado el challenge `{challenge}`, no se vuelve a dar XP.")));
             return;
         }
-
-        UserXp memberXp = xpState.GetUserXp(usuario.Id);
-        long totalXp = memberXp.Total + (long)xp;
-        long totalChallenges = memberXp.Challenges + (long)xp;
-        xpState.UpdateUserXp(usuario.Id, totalXp, TipoXp.Total);
-        xpState.UpdateUserXp(usuario.Id, totalChallenges, TipoXp.Challenges);
 
         await challengesRepository.SetUsuarioChallenge(challenge, usuario.Id, (int)xp, ctx.Interaction.CreationTimestamp);
         await xpUsuariosRepository.AddRemove(usuario.Id, new UserXpDelta { Total = (int)xp, Challenges = (int)xp });

@@ -30,6 +30,7 @@ public class BotConfiguration
         public required ulong Bienvenida { get; init; }
         public required ulong Colores { get; init; }
         public required ulong Teiou { get; init; }
+        public required ulong Colaboradores { get; init; }
         public required IntercambiosChannelConfiguration Intercambios { get; init; }
 
         public class IntercambiosChannelConfiguration
@@ -134,6 +135,7 @@ public class BotConfiguration
                 Bienvenida = RequireUlong(channels, "Bienvenida"),
                 Colores = RequireUlong(channels, "Colores"),
                 Teiou = RequireUlong(channels, "Teiou"),
+                Colaboradores = RequireUlong(channels, "Colaboradores"),
                 LogChannelPuerta = RequireUlong(channels, "LogChannelPuerta"),
                 Intercambios = new ChannelConfiguration.IntercambiosChannelConfiguration
                 {

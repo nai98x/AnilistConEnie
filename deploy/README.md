@@ -28,13 +28,14 @@ El bot necesita **cuatro claves** para arrancar, ninguna versionada:
 - `FIREBASE_CREDENTIALS_DIR` — carpeta que contiene los `firebase-anilistconenie.json` y
   `firebase-yumiko.json` (credenciales de Firestore/Storage).
 - `ConnectionStrings:Database` — connection string de la base de datos.
-- `Backups:RutaEstado` — ruta del archivo de marca del backup. No es un secreto, pero no va en
-  `appsettings.json` porque es público. Tiene que coincidir con el `ESTADO` de
+- `Backups:RutaEstado` — **solo en release**: ruta del archivo de marca del backup. No es un secreto,
+  pero no va en `appsettings.json` porque es público. Tiene que coincidir con el `ESTADO` de
   `~/.config/anilist-backup/backup.env` (ver más abajo).
 
 Las cuatro se resuelven por el **mismo mecanismo** (`IConfiguration`): en el servidor por variable de
 entorno (las setea el unit de systemd) y en local por User Secrets. Son obligatorias; si falta
-cualquiera, el bot falla al arrancar.
+cualquiera, el bot falla al arrancar. La excepción es `Backups:RutaEstado`: el chequeo de backup es
+del bot desplegado, así que en compilaciones DEBUG no se registra ni se pide.
 
 ## Setup en local (una sola vez)
 
@@ -44,9 +45,9 @@ dotnet user-secrets --project src/AnilistConEnie.Bot \
   set FIREBASE_CREDENTIALS_DIR /ruta/a/src/AnilistConEnie.Bot
 dotnet user-secrets --project src/AnilistConEnie.Bot \
   set "ConnectionStrings:Database" 'Host=...;Port=...;Database=...;Username=...;Password=...'
-dotnet user-secrets --project src/AnilistConEnie.Bot \
-  set "Backups:RutaEstado" /ruta/cualquiera/ultimo-ok
 ```
+
+(`Backups:RutaEstado` no hace falta en local: en DEBUG el chequeo de backup no corre).
 
 (la carpeta de `FIREBASE_CREDENTIALS_DIR` debe contener los dos `firebase-*.json`).
 

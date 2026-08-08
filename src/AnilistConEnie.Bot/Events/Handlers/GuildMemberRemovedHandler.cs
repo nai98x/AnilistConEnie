@@ -13,7 +13,7 @@ using DSharpPlus.EventArgs;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class GuildMemberRemovedHandler(DiscordBotService discordBotService, XpState xpState, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, AnilistService anilistService, IUsuariosRepository usuariosRepository)
+public class GuildMemberRemovedHandler(DiscordBotService discordBotService, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, AnilistService anilistService, IUsuariosRepository usuariosRepository, IXpUsuariosRepository xpUsuariosRepository)
 {
     public async Task Handle(DiscordClient client, GuildMemberRemovedEventArgs args)
     {
@@ -22,7 +22,7 @@ public class GuildMemberRemovedHandler(DiscordBotService discordBotService, XpSt
         if (!args.Member.IsBot && !discordBotService.Debug)
         {
             #region Mensaje de despedida
-            UserXp rank = xpState.GetUserXp(args.Member.Id);
+            UserXp rank = await xpUsuariosRepository.Obtener(args.Member.Id) ?? new UserXp();
 
             if (args.Member.Roles.Any(x => x.Id == config.Roles.Miembro))
             {

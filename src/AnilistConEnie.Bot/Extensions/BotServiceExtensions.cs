@@ -31,6 +31,7 @@ public static class BotServiceExtensions
         services.AddSingleton<AnilistService>();
         services.AddSingleton<GuildMaintenanceService>();
         services.AddSingleton<FunService>();
+        services.AddSingleton<RepartoXpService>();
 
         // HttpClient para descargas de imágenes y APIs externas (horóscopo, traducción)
         services.AddHttpClient();
@@ -43,7 +44,11 @@ public static class BotServiceExtensions
         services.AddHostedService<MinuteScheduledService>();
         services.AddHostedService<HourlyScheduledService>();
         services.AddHostedService<DailyScheduledService>();
+
+#if !DEBUG
+        // El backup de la base es del bot desplegado: en debug no corre ni se pide su configuración.
         services.AddHostedService<BackupScheduledService>();
+#endif
 
         return services;
     }

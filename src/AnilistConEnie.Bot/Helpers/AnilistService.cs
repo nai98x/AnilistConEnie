@@ -1,5 +1,6 @@
 using AnilistConEnie.Application.Anilist;
 using AnilistConEnie.Bot.Configuration;
+using AnilistConEnie.Bot.Extensions;
 using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Domain.Entities.Anilist;
 using AnilistConEnie.Domain.Enum;
@@ -16,7 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AnilistConEnie.Bot.Helpers;
 
-public class AnilistService(XpState xpState, ChallengePostsState challengePostsState, BotConfiguration config, LimpiezaMiembrosSettings limpiezaSettings, RangoRoles rangoRoles, DiscordLogService logService, AnilistServerScoreService scoreService, IFirebaseRepository firebaseRepository, IUsuariosRepository usuariosRepository, IAnilistBaneadosRepository anilistBaneadosRepository, IAnilistApprovalRepository anilistApprovalRepository, IAnilistClient anilistClient)
+public class AnilistService(ChallengePostsState challengePostsState, BotConfiguration config, LimpiezaMiembrosSettings limpiezaSettings, RangoRoles rangoRoles, DiscordLogService logService, AnilistServerScoreService scoreService, IFirebaseRepository firebaseRepository, IUsuariosRepository usuariosRepository, IAnilistBaneadosRepository anilistBaneadosRepository, IAnilistApprovalRepository anilistApprovalRepository, IAnilistClient anilistClient, IXpUsuariosRepository xpUsuariosRepository)
 {
     public async Task TerminarVinculacion(DiscordClient client, DiscordUser user, DiscordMember member, DiscordGuild guild, AnilistUser anilistUser, bool aprobadaManualmente)
     {
@@ -73,7 +74,7 @@ public class AnilistService(XpState xpState, ChallengePostsState challengePostsS
         await usuariosRepository.Upsert(member.Id, anilistUser.SiteUrl, (long)mensaje.Id);
         await firebaseRepository.SetAnilistYumiko(anilistUser.Id, member.Id);
 
-        UserXp prevXp = xpState.GetUserXp(user.Id);
+        UserXp prevXp = await xpUsuariosRepository.Obtener(user.Id) ?? new UserXp();
 
         DiscordMessageBuilder msgBuilder = new DiscordMessageBuilder()
             .WithContent(user.Mention)

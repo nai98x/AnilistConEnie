@@ -1,5 +1,4 @@
 using AnilistConEnie.Application.Xp;
-using AnilistConEnie.Domain.Entities;
 
 namespace AnilistConEnie.Application.Tests.Xp;
 
@@ -11,53 +10,39 @@ public class XpRewardTests
     [Fact]
     public void Accrue_WithoutBooster_GrantsNoBoosterXp()
     {
-        UserXp current = new() { Total = 1000, Booster = 50 };
-
-        XpAccrual result = XpReward.Accrue(current, isBooster: false, Seeded(), 10, 20, 5, 15);
+        XpAccrual result = XpReward.Accrue(isBooster: false, Seeded(), 10, 20, 5, 15);
 
         Assert.Equal(0, result.BoosterXp);
         Assert.InRange(result.BaseXp, 10, 20);
         Assert.Equal(result.BaseXp, result.TotalGranted);
-        Assert.Equal(50, result.NewBoosterTotal);
-        Assert.Equal(1000 + result.TotalGranted, result.NewGrandTotal);
     }
 
     [Fact]
     public void Accrue_WithBooster_AddsBasePlusExtra()
     {
-        UserXp current = new() { Total = 1000, Booster = 50 };
-
-        XpAccrual result = XpReward.Accrue(current, isBooster: true, Seeded(), 10, 20, 5, 15);
+        XpAccrual result = XpReward.Accrue(isBooster: true, Seeded(), 10, 20, 5, 15);
 
         Assert.InRange(result.BaseXp, 10, 20);
         Assert.InRange(result.BoosterXp, 5, 15);
         Assert.Equal(result.BaseXp + result.BoosterXp, result.TotalGranted);
-        Assert.Equal(50 + result.BoosterXp, result.NewBoosterTotal);
-        Assert.Equal(1000 + result.TotalGranted, result.NewGrandTotal);
     }
 
     [Fact]
     public void Accrue_RespectsInclusiveBounds()
     {
         // min == max fuerza un valor exacto.
-        UserXp current = new() { Total = 0, Booster = 0 };
-
-        XpAccrual result = XpReward.Accrue(current, isBooster: true, Seeded(), 7, 7, 3, 3);
+        XpAccrual result = XpReward.Accrue(isBooster: true, Seeded(), 7, 7, 3, 3);
 
         Assert.Equal(7, result.BaseXp);
         Assert.Equal(3, result.BoosterXp);
         Assert.Equal(10, result.TotalGranted);
-        Assert.Equal(3, result.NewBoosterTotal);
-        Assert.Equal(10, result.NewGrandTotal);
     }
 
     [Fact]
     public void Accrue_SameSeed_IsDeterministic()
     {
-        UserXp current = new() { Total = 500, Booster = 0 };
-
-        XpAccrual a = XpReward.Accrue(current, isBooster: true, Seeded(), 1, 100, 1, 100);
-        XpAccrual b = XpReward.Accrue(current, isBooster: true, Seeded(), 1, 100, 1, 100);
+        XpAccrual a = XpReward.Accrue(isBooster: true, Seeded(), 1, 100, 1, 100);
+        XpAccrual b = XpReward.Accrue(isBooster: true, Seeded(), 1, 100, 1, 100);
 
         Assert.Equal(a, b);
     }

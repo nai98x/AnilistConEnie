@@ -24,7 +24,7 @@ namespace AnilistConEnie.Bot.Commands.Slash;
 [Command("usuarios")]
 public class Usuarios(
     IUsuariosRepository usuariosRepository,
-    XpState xpState,
+    IXpUsuariosRepository xpUsuariosRepository,
     FechaEntradaState fechaEntradaState,
     RangoRoles rangoRoles,
     RelojPais relojPais,
@@ -156,7 +156,7 @@ public class Usuarios(
             Color = DiscordColor.Green
         });
 
-        UserXp rango = xpState.GetUserXp(ctx.Member.Id);
+        UserXp rango = await xpUsuariosRepository.Obtener(ctx.Member.Id) ?? new UserXp();
         long xpRangoNecesario = RangoXp.XpRequerida(RangoEnum.Casual);
         if (rango.Total < xpRangoNecesario)
         {
@@ -215,6 +215,7 @@ public class Usuarios(
             .ToList();
 
         DiscordEmoji umaPoints = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.Bot.UmaPoints);
+        Dictionary<ulong, UserXp> xpPorUsuario = await xpUsuariosRepository.ObtenerXpPorUsuario();
 
         await DiscordInteractivity.PaginarContainerV2Async(
             ctx,
@@ -226,7 +227,7 @@ public class Usuarios(
             renderItem: miembro =>
             {
                 DateTimeOffset entrada = fechaEntradaState.GetFechaEntrada(miembro.Id, miembro.JoinedAt);
-                long xp = xpState.GetUserXp(miembro.Id).Total;
+                long xp = xpPorUsuario.TryGetValue(miembro.Id, out UserXp? xpMiembro) ? xpMiembro.Total : 0;
                 DiscordRole rango = rangoRoles.GetRoleByXp(guild, xp);
                 return new DiscordSectionComponent(
                     text: $"### {miembro.DisplayName}\n" +

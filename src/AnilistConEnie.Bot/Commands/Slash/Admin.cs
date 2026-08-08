@@ -42,7 +42,6 @@ public class Admin(
     EmoteModeState emoteModeState,
     AnilistService anilistService,
     InviteLinkState inviteLinkState,
-    XpState xpState,
     IAnilistClient anilistClient,
     IUsuariosRepository usuariosRepository,
     IAnilistBaneadosRepository anilistBaneadosRepository,
@@ -295,36 +294,17 @@ public class Admin(
             {
                 try
                 {
-                    UserXp memberXp = xpState.GetUserXp(miembro.Id);
-                    long totalXp = action == 0 ? memberXp.Total + (long)xp : memberXp.Total - (long)xp;
-                    long categoryXp = 0;
-
                     int eventos = 0, intercambios = 0, challenges = 0, otros = 0;
                     switch (categoria)
                     {
-                        case TipoXp.Eventos:
-                            eventos = (int)xp;
-                            categoryXp = action == 0 ? memberXp.Eventos + (long)xp : memberXp.Eventos - (long)xp;
-                            break;
-                        case TipoXp.Intercambios:
-                            intercambios = (int)xp;
-                            categoryXp = action == 0 ? memberXp.Intercambios + (long)xp : memberXp.Intercambios - (long)xp;
-                            break;
-                        case TipoXp.Challenges:
-                            challenges = (int)xp;
-                            categoryXp = action == 0 ? memberXp.Challenges + (long)xp : memberXp.Challenges - (long)xp;
-                            break;
-                        default:
-                            otros = (int)xp;
-                            categoryXp = action == 0 ? memberXp.Otros + (long)xp : memberXp.Otros - (long)xp;
-                            break;
+                        case TipoXp.Eventos: eventos = (int)xp; break;
+                        case TipoXp.Intercambios: intercambios = (int)xp; break;
+                        case TipoXp.Challenges: challenges = (int)xp; break;
+                        default: otros = (int)xp; break;
                     }
-
-                    xpState.UpdateUserXp(miembro.Id, categoryXp, categoria);
 
                     if (darXp)
                     {
-                        xpState.UpdateUserXp(miembro.Id, totalXp, TipoXp.Total);
                         await xpUsuariosRepository.AddRemove(miembro.Id, new UserXpDelta { Total = (int)xp, Challenges = challenges, Eventos = eventos, Intercambios = intercambios, Otros = otros }, operation);
 
                         await channel.SendMessageAsync(new DiscordEmbedBuilder()
@@ -435,7 +415,6 @@ public class Admin(
         try
         {
             UserXp resultado = await xpUsuariosRepository.Transferir(origen.Id, destino.Id, reemplazar);
-            xpState.SetUserXp(destino.Id, resultado);
 
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 .WithTitle("Experiencia transferida")
@@ -597,11 +576,13 @@ public class Admin(
 
         HashSet<ulong> memberIds = ctx.Guild!.Members.Keys.ToHashSet();
         List<UsuarioActivo> inactivos = await usuariosRepository.GetUsuariosInactivos(memberIds, limpiezaSettings.InactividadMeses);
+        Dictionary<ulong, UserXp> xpPorUsuario = await xpUsuariosRepository.ObtenerXpPorUsuario();
         List<ulong> kickeables = [];
 
         foreach (DiscordMember member in ctx.Guild.Members.Values)
         {
-            if (xpState.GetUserXp(member.Id).Total < limpiezaSettings.XpMinimoInactivo && inactivos.Any(x => x.UserId == (long)member.Id))
+            long xpMiembro = xpPorUsuario.TryGetValue(member.Id, out UserXp? xpUsuario) ? xpUsuario.Total : 0;
+            if (xpMiembro < limpiezaSettings.XpMinimoInactivo && inactivos.Any(x => x.UserId == (long)member.Id))
                 kickeables.Add(member.Id);
         }
 

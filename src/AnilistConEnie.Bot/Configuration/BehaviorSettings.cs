@@ -136,7 +136,7 @@ public record BackupsSettings
     {
         string? ruta = configuration["Backups:RutaEstado"];
         if (string.IsNullOrWhiteSpace(ruta))
-            throw new InvalidOperationException("'Backups:RutaEstado' es obligatoria: configurala via User Secrets (local) o variable de entorno (servidor)");
+            throw new InvalidOperationException("'Backups:RutaEstado' es obligatoria en release: configurala via variable de entorno Backups__RutaEstado");
         return new BackupsSettings { RutaEstado = ruta };
     }
 }
@@ -171,12 +171,20 @@ internal static class SettingsBindingExtensions
 public static class BehaviorSettingsExtensions
 {
     public static IServiceCollection AddBehaviorSettings(this IServiceCollection services, IConfiguration configuration)
-        => services
+    {
+        services
             .AddSingleton(AntiSpamSettings.FromConfiguration(configuration))
             .AddSingleton(LimpiezaMiembrosSettings.FromConfiguration(configuration))
             .AddSingleton(CooldownsSettings.FromConfiguration(configuration))
             .AddSingleton(XpSettings.FromConfiguration(configuration))
             .AddSingleton(ConfesionesSettings.FromConfiguration(configuration))
-            .AddSingleton(SubirImagenSettings.FromConfiguration(configuration))
-            .AddSingleton(BackupsSettings.FromConfiguration(configuration));
+            .AddSingleton(SubirImagenSettings.FromConfiguration(configuration));
+
+#if !DEBUG
+        // El backup solo existe en el bot desplegado; en debug no se exige la ruta.
+        services.AddSingleton(BackupsSettings.FromConfiguration(configuration));
+#endif
+
+        return services;
+    }
 }

@@ -7,7 +7,8 @@ public interface IXpUsuariosRepository
 {
     Task<UserXp?> Obtener(ulong userId);
     Task<List<UserXp>> ObtenerRanking();
-    Task AddRemove(ulong userId, UserXpDelta delta, XpOperation operation = XpOperation.Add);
+    /// <summary>Aplica el delta y devuelve la XP del usuario ya actualizada.</summary>
+    Task<UserXp> AddRemove(ulong userId, UserXpDelta delta, XpOperation operation = XpOperation.Add);
 
     /// <summary>
     /// Copia la xp del origen (actual e historial diario) al destino, sin modificar al origen. Si

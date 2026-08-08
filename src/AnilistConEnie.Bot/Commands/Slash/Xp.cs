@@ -31,10 +31,10 @@ namespace AnilistConEnie.Bot.Commands.Slash;
 public class Xp(
     BotConfiguration config,
     RangoRoles rangoRoles,
-    XpState xpState,
     XpChartService xpChartService,
     IChartRenderer chartRenderer,
     IXpDiarioRepository xpDiarioRepository,
+    IXpUsuariosRepository xpUsuariosRepository,
     DiscordBotService discordBotService,
     InteractivityExtension interactivity)
 {
@@ -53,7 +53,7 @@ public class Xp(
 
         await ctx.DeferResponseAsync();
 
-        List<UserXp> xp = xpState.GetGuildXp(ctx.Guild!);
+        List<UserXp> xp = await xpUsuariosRepository.ObtenerRankingDelGuild(ctx.Guild!);
 
         XpRankingCategory category = tipo switch
         {
@@ -117,7 +117,8 @@ public class Xp(
             return;
         }
 
-        UserXp rank = member.IsBot ? new UserXp() : xpState.GetUserXp(member.Id);
+        List<UserXp> totalOrdered = (await xpUsuariosRepository.ObtenerRankingDelGuild(ctx.Guild!)).OrderByDescending(x => x.Total).ToList();
+        UserXp rank = member.IsBot ? new UserXp() : totalOrdered.FirstOrDefault(x => (ulong)x.UserId == member.Id) ?? new UserXp();
 
         if (rank.Total <= 0)
         {
@@ -141,7 +142,6 @@ public class Xp(
         long nextXp = prog.NextXp;
         int mensajesNecesarios = prog.MensajesNecesarios;
 
-        List<UserXp> totalOrdered = xpState.GetGuildXp(ctx.Guild!).OrderByDescending(x => x.Total).ToList();
         int userRank = totalOrdered.FindIndex(x => (ulong)x.UserId == member.Id) + 1;
 
         string desc = $"### Tienes {rank.Total.ToSpanish()} {umaPoints}\n\n- Tu rango actual es {role.Mention}\n";
@@ -275,7 +275,7 @@ public class Xp(
 
         await ctx.DeferResponseAsync();
 
-        List<UserXp> serverRanking = xpState.GetGuildXp(ctx.Guild!).OrderByDescending(x => x.Total).ToList();
+        List<UserXp> serverRanking = (await xpUsuariosRepository.ObtenerRankingDelGuild(ctx.Guild!)).OrderByDescending(x => x.Total).ToList();
 
         List<string> colors = [.. Enumerable.Range(0, 5).Select(ChartColors.ForIndex)];
 
@@ -364,7 +364,7 @@ public class Xp(
 
         await ctx.DeferResponseAsync();
 
-        List<UserXp> serverRanking = xpState.GetGuildXp(ctx.Guild!);
+        List<UserXp> serverRanking = await xpUsuariosRepository.ObtenerRankingDelGuild(ctx.Guild!);
         DiscordEmoji umaPoints = await UmaPointsAsync(ctx);
 
         Dictionary<ulong, CountryXp> xpPerCountry = [];
@@ -455,7 +455,7 @@ public class Xp(
 
         DateOnly inicio = XpRankingParcial.InicioRango(rangoParcial, DateOnly.FromDateTime(RelojServidor.Hoy));
 
-        List<UserXp> xp = xpState.GetGuildXp(ctx.Guild!);
+        List<UserXp> xp = await xpUsuariosRepository.ObtenerRankingDelGuild(ctx.Guild!);
         Dictionary<long, long> baselines = (await xpDiarioRepository.ObtenerBaseline(inicio))
             .ToDictionary(x => x.UserId, x => x.Xp);
 
@@ -502,7 +502,7 @@ public class Xp(
         await ctx.DeferResponseAsync();
 
         DiscordEmoji umaPoints = await UmaPointsAsync(ctx);
-        List<UserXp> xp = xpState.GetGuildXp(ctx.Guild!);
+        List<UserXp> xp = await xpUsuariosRepository.ObtenerRankingDelGuild(ctx.Guild!);
         List<(DiscordMember Member, long NextXp, RangoEnum NextRango)> ret = [];
 
         foreach (UserXp member in xp)

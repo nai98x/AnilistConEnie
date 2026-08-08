@@ -11,7 +11,7 @@ using DSharpPlus.EventArgs;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class ComponentInteractionHandler(DiscordBotService discordBotService, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, AnilistService anilistService, IAnilistApprovalRepository anilistApprovalRepository, IHttpClientFactory httpClientFactory)
+public class ComponentInteractionHandler(DiscordBotService discordBotService, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, AnilistService anilistService, RepartoXpService repartoXpService, IAnilistApprovalRepository anilistApprovalRepository, IHttpClientFactory httpClientFactory)
 {
     public async Task Handle(DiscordClient client, ComponentInteractionCreatedEventArgs args)
     {
@@ -201,6 +201,10 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
                     Color = DiscordColor.Red
                 }));
             }
+        }
+        else if (args.Interaction.Data.CustomId.StartsWith(RepartoXpService.PrefijoBoton))
+        {
+            await repartoXpService.ResolverAsync(args);
         }
         else if (!args.Interaction.Data.CustomId.StartsWith("modal-"))
         {

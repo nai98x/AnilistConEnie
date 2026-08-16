@@ -1,5 +1,5 @@
 -- Usuarios que completaron un challenge (por nombre), con la XP acumulada, las veces que lo
--- completaron y la fecha del último completado.
+-- completaron y la fecha del último completado, primero los que más veces lo completaron.
 CREATE OR REPLACE FUNCTION challenge_completados(p_nombre text)
 RETURNS TABLE(user_id bigint, xp integer, "date" timestamptz, completados integer)
 LANGUAGE sql
@@ -8,5 +8,6 @@ AS $$
     SELECT cu.user_id, cu.xp, cu.fecha, cu.completados
     FROM challenge_usuarios cu
     JOIN challenges c ON c.id = cu.challenge_id
-    WHERE c.nombre = p_nombre;
+    WHERE c.nombre = p_nombre
+    ORDER BY cu.completados DESC, cu.fecha;
 $$;

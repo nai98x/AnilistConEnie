@@ -9,4 +9,6 @@ public class Challenge
     public bool Disponible { get; set; }
 
     public DateTime? Vencimiento { get; set; }
+
+    public int MaxCompletados { get; set; } = 1;
 }

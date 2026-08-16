@@ -7,4 +7,6 @@ public class ChallengeCompletado
     public int Xp { get; set; }
 
     public DateTimeOffset Date { get; set; }
+
+    public int Completados { get; set; }
 }

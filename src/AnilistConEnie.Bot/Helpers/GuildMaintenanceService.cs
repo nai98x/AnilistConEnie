@@ -310,7 +310,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
 
         foreach (Challenge challenge in challengesObsoletos)
         {
-            await challengesRepository.Upsert(challenge.Nombre, challenge.Link, false, challenge.Vencimiento);
+            await challengesRepository.Upsert(challenge.Nombre, challenge.Link, false, challenge.Vencimiento, challenge.MaxCompletados);
         }
     }
 

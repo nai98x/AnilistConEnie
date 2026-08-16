@@ -42,9 +42,16 @@ public class Challenges(
         [Parameter("Nombre")] [Description("Nombre del challenge")] string nombre,
         [Parameter("Link")] [Description("Link del challenge")] string link,
         [Parameter("Disponible")] [Description("Si el challenge se puede realizar")] bool disponible,
-        [Parameter("Vencimiento")] [Description("Vencimiento del challenge (dd/MM/yyyy)")] string? vencimiento = null)
+        [Parameter("Vencimiento")] [Description("Vencimiento del challenge (dd/MM/yyyy)")] string? vencimiento = null,
+        [Parameter("Veces")] [Description("Cuantas veces puede completarlo un mismo usuario (por defecto 1)")] int veces = 1)
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
+
+        if (veces < 1)
+        {
+            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(ErrorEmbed.De("El challenge se tiene que poder completar al menos una vez.")));
+            return;
+        }
 
         string dispStr = disponible ? "Disponible" : "No disponible";
         DateTime? fechaVencimiento = null;
@@ -60,12 +67,14 @@ public class Challenges(
             fechaVencimiento = new DateTime(fchVnc.Year, fchVnc.Month, fchVnc.Day, 5, 0, 0, DateTimeKind.Utc);
         }
 
-        await challengesRepository.Upsert(nombre, link, disponible, fechaVencimiento);
+        await challengesRepository.Upsert(nombre, link, disponible, fechaVencimiento, veces);
+
+        string vecesStr = veces > 1 ? $" (completable {veces} veces)" : string.Empty;
 
         await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(new DiscordEmbedBuilder
         {
             Title = "Nuevo challenge creado",
-            Description = $"[{nombre}]({link}) ({dispStr})",
+            Description = $"[{nombre}]({link}) ({dispStr}){vecesStr}",
             Color = DiscordColor.Green
         }));
     }
@@ -116,8 +125,10 @@ public class Challenges(
             descTerminados = string.Empty;
             foreach (ChallengeCompletado x in completaron)
             {
-                if (ctx.Guild!.Members.TryGetValue((ulong)x.UserId, out DiscordMember? member))
-                    descTerminados += $"- {member.DisplayName} - **XP:** {x.Xp} {umaPoints}\n";
+                if (!ctx.Guild!.Members.TryGetValue((ulong)x.UserId, out DiscordMember? member)) continue;
+
+                string veces = challengeData.MaxCompletados > 1 ? $" ({x.Completados}/{challengeData.MaxCompletados})" : string.Empty;
+                descTerminados += $"- {member.DisplayName}{veces} - **XP:** {x.Xp} {umaPoints}\n";
             }
         }
 
@@ -137,7 +148,9 @@ public class Challenges(
             return;
         }
 
-        List<UsuarioAnilist> pendientes = participantes.Where(x => completaron.All(y => y.UserId != x.UserId)).ToList();
+        List<UsuarioAnilist> pendientes = participantes
+            .Where(x => completaron.All(y => y.UserId != x.UserId || y.Completados < challengeData.MaxCompletados))
+            .ToList();
 
         string descPendientes = "(Ningún usuario tiene pendiente este challenge)";
         if (pendientes.Count > 0)
@@ -205,7 +218,9 @@ public class Challenges(
 
             List<UsuarioChallenge> challengesUsuario = await challengesRepository.GetChallengesUsuario(usuario.Id);
             List<Challenge> todos = await challengesRepository.GetLista();
-            List<Challenge> noCompletados = todos.Where(x => challengesUsuario.All(y => y.Challenge.Nombre != x.Nombre)).ToList();
+            List<Challenge> noCompletados = todos
+                .Where(x => challengesUsuario.All(y => y.Challenge.Nombre != x.Nombre || y.Completados < x.MaxCompletados))
+                .ToList();
             List<Challenge> enCurso = await anilistService.ChallengesPostsFromMemberAsync(anilistUserId, noCompletados);
             List<Challenge> sinPost = noCompletados.Where(x => enCurso.All(y => y.Nombre != x.Nombre)).ToList();
             List<Challenge> sinPostDisponibles = sinPost.Where(x => x.Disponible).ToList();
@@ -218,7 +233,8 @@ public class Challenges(
                 int xpTotal = 0;
                 foreach (UsuarioChallenge x in challengesUsuario)
                 {
-                    descCompletados += $"[{x.Challenge.Nombre}]({x.Challenge.Link}) - {x.Xp}\n";
+                    string veces = x.Challenge.MaxCompletados > 1 ? $" ({x.Completados}/{x.Challenge.MaxCompletados})" : string.Empty;
+                    descCompletados += $"[{x.Challenge.Nombre}]({x.Challenge.Link}){veces} - {x.Xp}\n";
                     xpTotal += x.Xp;
                 }
 
@@ -319,17 +335,35 @@ public class Challenges(
             return;
         }
 
-        List<UsuarioChallenge> yaCompletados = await challengesRepository.GetChallengesUsuario(usuario.Id);
-        if (yaCompletados.Any(x => x.Challenge.Nombre == challenge))
+        List<Challenge> challenges = await challengesRepository.GetLista();
+        Challenge? challengeData = challenges.Find(x => x.Nombre == challenge);
+        if (challengeData is null)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"{usuario.Mention} ya tiene completado el challenge `{challenge}`, no se vuelve a dar XP.")));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"No existe el challenge `{challenge}`")));
             return;
         }
 
-        await challengesRepository.SetUsuarioChallenge(challenge, usuario.Id, (int)xp, ctx.Interaction.CreationTimestamp);
+        List<UsuarioChallenge> yaCompletados = await challengesRepository.GetChallengesUsuario(usuario.Id);
+        UsuarioChallenge? previo = yaCompletados.Find(x => x.Challenge.Nombre == challenge);
+        if (previo is not null && previo.Completados >= challengeData.MaxCompletados)
+        {
+            string veces = challengeData.MaxCompletados > 1 ? $" las {challengeData.MaxCompletados} veces" : string.Empty;
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"{usuario.Mention} ya tiene completado el challenge `{challenge}`{veces}, no se vuelve a dar XP.")));
+            return;
+        }
+
+        int? completados = await challengesRepository.SetUsuarioChallenge(challenge, usuario.Id, (int)xp, ctx.Interaction.CreationTimestamp);
+        if (completados is null)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"No se pudo registrar el challenge `{challenge}` para {usuario.Mention}. Intenta de nuevo.")));
+            return;
+        }
+
         await xpUsuariosRepository.AddRemove(usuario.Id, new UserXpDelta { Total = (int)xp, Challenges = (int)xp });
 
         DiscordEmoji umaPoints = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.Bot.UmaPoints);
+
+        string progreso = challengeData.MaxCompletados > 1 ? $" ({completados}/{challengeData.MaxCompletados})" : string.Empty;
 
         DiscordFollowupMessageBuilder builder = new DiscordFollowupMessageBuilder()
             .WithContent(usuario.Mention)
@@ -337,7 +371,7 @@ public class Challenges(
             .AddEmbed(new DiscordEmbedBuilder
             {
                 Title = "Challenges completado",
-                Description = $"¡Felicitaciones {usuario.Mention}! Completaste el `{challenge}` y ganaste **{xp} {umaPoints} de xp**.",
+                Description = $"¡Felicitaciones {usuario.Mention}! Completaste el `{challenge}`{progreso} y ganaste **{xp} {umaPoints} de xp**.",
                 Color = DiscordColor.Green,
                 Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail
                 {

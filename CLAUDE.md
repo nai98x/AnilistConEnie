@@ -31,9 +31,10 @@ inversas.
   `Interfaces/Repositories/*`). Son POCOs puros: Domain no referencia paquetes de infraestructura
   (ni Npgsql/Dapper ni `Google.Cloud.*`).
 - **AnilistConEnie.Application** — lógica de negocio. Sin dependencias de Discord ni infraestructura.
-- **AnilistConEnie.Infrastructure** — repositorios PostgreSQL (Dapper + SPs), `FirebaseService` y
-  `FirebaseRepository` (única superficie Firebase que queda: Storage de `/subirimagen` y el espejo en
-  Yumiko), cliente AniList.
+- **AnilistConEnie.Infrastructure** — repositorios PostgreSQL (Dapper + SPs), incluido
+  `YumikoRepository` (base de Yumiko: espejo del vínculo de AniList), `FirebaseService` y
+  `FirebaseRepository` (única superficie Firebase que queda: Storage de `/subirimagen`),
+  cliente AniList.
 - **AnilistConEnie.Bot** — entry point, comandos, handlers, scheduling, estado, configuración, DI.
 
 ## Dónde va el código nuevo
@@ -81,8 +82,8 @@ inversas.
     valores por parámetro (no como `const`). No externalizar límites duros de Discord/AniList ni
     cosméticos.
 - **Secrets**: se resuelven todos por `IConfiguration` (env var en el server, User Secrets en local):
-  `discordToken`, `ConnectionStrings:Database`, `Backups:RutaEstado` y `FIREBASE_CREDENTIALS_DIR`
-  (carpeta que contiene `firebase-anilistconenie.json` y `firebase-yumiko.json`). Nada de esto se
+  `discordToken`, `ConnectionStrings:Database`, `ConnectionStrings:Yumiko`, `Backups:RutaEstado` y
+  `FIREBASE_CREDENTIALS_DIR` (carpeta que contiene `firebase-anilistconenie.json`). Nada de esto se
   versiona; el setup está en `deploy/README.md`.
 - **Aleatoriedad**: usar `Random.Shared` salvo cuando se necesita determinismo por semilla (signos/
   ship en Fun, challenges), que se deja intacto.

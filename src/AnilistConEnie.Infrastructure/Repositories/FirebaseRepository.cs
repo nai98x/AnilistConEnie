@@ -1,27 +1,12 @@
 using AnilistConEnie.Infrastructure.Firebase;
 using AnilistConEnie.Domain.Interfaces.Repositories;
-using Google.Cloud.Firestore;
 using Google.Cloud.Storage.V1;
 
 namespace AnilistConEnie.Infrastructure.Repositories;
 
-// Única superficie Firebase del bot: el espejo del vínculo en Yumiko (Firestore externa) y la subida
-// de imágenes a Storage (/subirimagen).
+// Única superficie Firebase del bot: la subida de imágenes a Storage (/subirimagen).
 public class FirebaseRepository(FirebaseService firebase) : IFirebaseRepository
 {
-    public Task SetAnilistYumiko(int anilistId, ulong userId)
-    {
-        DocumentReference doc = firebase.GetYumiko().Collection("AnilistUsers").Document($"{userId}");
-
-        Dictionary<string, object> data = new()
-        {
-            { "AnilistId", anilistId },
-            { "UserId", (long)userId },
-        };
-
-        return doc.SetAsync(data, SetOptions.MergeAll);
-    }
-
     public async Task<string> UploadImageAsync(Stream stream, string fileName, ulong userId)
     {
         (StorageClient client, string bucket) = await firebase.GetAnilistConEnieStorageAsync();

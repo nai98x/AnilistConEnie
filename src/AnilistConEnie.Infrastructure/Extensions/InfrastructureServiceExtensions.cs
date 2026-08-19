@@ -11,10 +11,11 @@ namespace AnilistConEnie.Infrastructure.Extensions;
 
 public static class InfrastructureServiceExtensions
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, string firebaseCredentialsDir, string dbConnectionString)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, string firebaseCredentialsDir, string dbConnectionString, string yumikoConnectionString)
     {
         services.AddSingleton(new FirebaseService(firebaseCredentialsDir));
         services.AddSingleton(new DbConnectionFactory(dbConnectionString));
+        services.AddSingleton(new YumikoDbConnectionFactory(yumikoConnectionString));
         services.AddSingleton<IUsuariosRepository, UsuariosRepository>();
         services.AddSingleton<IXpUsuariosRepository, XpUsuariosRepository>();
         services.AddSingleton<IXpDiarioRepository, XpDiarioRepository>();
@@ -26,7 +27,10 @@ public static class InfrastructureServiceExtensions
         services.AddSingleton<IIntercambiosRepostRepository, IntercambiosRepostRepository>();
         services.AddSingleton<ITeiouCooldownRepository, TeiouCooldownRepository>();
 
-        // Firebase: Yumiko (espejo del vínculo) y Storage (subir imágenes).
+        // Base de Yumiko: el vínculo de AniList se espeja ahí (otra base, otro rol).
+        services.AddSingleton<IYumikoRepository, YumikoRepository>();
+
+        // Firebase: Storage (subir imágenes).
         services.AddSingleton<IFirebaseRepository, FirebaseRepository>();
 
         // Cliente de AniList: el executor (que posee el GraphQLHttpClient) y el cliente de alto

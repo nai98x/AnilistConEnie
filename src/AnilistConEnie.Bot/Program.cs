@@ -80,11 +80,16 @@ public static class Program
             ? db
             : throw new InvalidOperationException("'ConnectionStrings:Database' es obligatoria: configurala via User Secrets (local) o variable de entorno (servidor)");
 
+        // Connection string de la base de Yumiko (otra base, con su propio rol): ahí se espeja el vínculo de AniList.
+        string yumikoConnectionString = host.Configuration.GetConnectionString("Yumiko") is { Length: > 0 } yumiko
+            ? yumiko
+            : throw new InvalidOperationException("'ConnectionStrings:Yumiko' es obligatoria: configurala via User Secrets (local) o variable de entorno (servidor)");
+
         host.Services
             .AddSingleton(botConfig)
             .AddBehaviorSettings(host.Configuration)
             .AddApplication()
-            .AddInfrastructure(firebaseCredentialsDir, dbConnectionString)
+            .AddInfrastructure(firebaseCredentialsDir, dbConnectionString, yumikoConnectionString)
             .AddConfiguredDiscordClient(host.Configuration)
             .AddSerilog()
             .AddBotServices();

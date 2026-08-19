@@ -22,17 +22,19 @@ server por **SCP** → lo descomprime en `~/bots/AnilistConEnie-app` y reinicia 
 El proceso lo administra **systemd (servicio de usuario)**: sobrevive a la sesión SSH del deploy,
 reinicia solo y loguea en journald.
 
-El bot necesita **cuatro claves** para arrancar, ninguna versionada:
+El bot necesita **cinco claves** para arrancar, ninguna versionada:
 
 - `discordToken` — token del bot de Discord.
-- `FIREBASE_CREDENTIALS_DIR` — carpeta que contiene los `firebase-anilistconenie.json` y
-  `firebase-yumiko.json` (credenciales de Firestore/Storage).
+- `FIREBASE_CREDENTIALS_DIR` — carpeta que contiene el `firebase-anilistconenie.json` (credenciales
+  de Storage).
 - `ConnectionStrings:Database` — connection string de la base de datos.
+- `ConnectionStrings:Yumiko` — connection string de la base de **Yumiko** (otra base, con su propio
+  rol), donde se espeja el vínculo de AniList.
 - `Backups:RutaEstado` — **solo en release**: ruta del archivo de marca del backup. No es un secreto,
   pero no va en `appsettings.json` porque es público. Tiene que coincidir con el `ESTADO` de
   `~/.config/anilist-backup/backup.env` (ver más abajo).
 
-Las cuatro se resuelven por el **mismo mecanismo** (`IConfiguration`): en el servidor por variable de
+Las cinco se resuelven por el **mismo mecanismo** (`IConfiguration`): en el servidor por variable de
 entorno (las setea el unit de systemd) y en local por User Secrets. Son obligatorias; si falta
 cualquiera, el bot falla al arrancar. La excepción es `Backups:RutaEstado`: el chequeo de backup es
 del bot desplegado, así que en compilaciones DEBUG no se registra ni se pide.
@@ -45,11 +47,13 @@ dotnet user-secrets --project src/AnilistConEnie.Bot \
   set FIREBASE_CREDENTIALS_DIR /ruta/a/src/AnilistConEnie.Bot
 dotnet user-secrets --project src/AnilistConEnie.Bot \
   set "ConnectionStrings:Database" 'Host=...;Port=...;Database=...;Username=...;Password=...'
+dotnet user-secrets --project src/AnilistConEnie.Bot \
+  set "ConnectionStrings:Yumiko" 'Host=...;Port=...;Database=...;Username=...;Password=...'
 ```
 
 (`Backups:RutaEstado` no hace falta en local: en DEBUG el chequeo de backup no corre).
 
-(la carpeta de `FIREBASE_CREDENTIALS_DIR` debe contener los dos `firebase-*.json`).
+(la carpeta de `FIREBASE_CREDENTIALS_DIR` debe contener el `firebase-anilistconenie.json`).
 
 > Si la password tiene `$`, usá comillas **simples** al setear el secret: en fish/bash las dobles lo
 > expanden y la guardan incompleta.
@@ -64,13 +68,13 @@ dotnet user-secrets --project src/AnilistConEnie.Bot \
 
 2. Colocar en `~/bots/secrets/` los archivos que **no se versionan**:
    - `firebase-anilistconenie.json`
-   - `firebase-yumiko.json`
-   - `anilistconenie.env` con el token de Discord y la connection string (acá lo lee systemd, no un
+   - `anilistconenie.env` con el token de Discord y las connection strings (acá lo lee systemd, no un
      shell: los valores van literales, sin comillas):
 
      ```
      discordToken=...
      ConnectionStrings__Database=Host=localhost;Port=...;Database=...;Username=...;Password=...
+     ConnectionStrings__Yumiko=Host=...;Port=...;Database=...;Username=...;Password=...
      Backups__RutaEstado=/home/USUARIO/.config/anilist-backup/ultimo-ok
      ```
 

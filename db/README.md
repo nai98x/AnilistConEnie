@@ -27,6 +27,14 @@ db/
 Conectado a la base (por DBeaver o `psql`), correr primero los de `schema/` y después los de
 `procedures/`. Como son idempotentes, reaplicarlos sincroniza la base con lo versionado.
 
+## La base de Yumiko
+
+`db/` versiona **solo la base propia**. El bot además escribe el vínculo de AniList en la base de
+**Yumiko** (otra base, con su propio rol) llamando a `anilist_user_upsert(bigint, integer)`: ese SP y
+la tabla `anilist_users` viven en el repo de Yumiko, no acá. El rol del bot tiene ahí solo `EXECUTE`
+sobre esa función y `SELECT`/`INSERT`/`UPDATE` sobre esa tabla: el `ON CONFLICT DO UPDATE` del SP lee
+`EXCLUDED`, así que el `SELECT` no es opcional.
+
 ## Seguridad del rol del bot
 
 El usuario con el que se conecta el bot no debe ser superuser ni dueño del schema: alcanza con

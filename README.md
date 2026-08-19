@@ -9,7 +9,7 @@ Bot multipropósito para el servidor de Discord **Añilist**, desarrollado en DS
 - **.NET 10** — lenguaje de programación para toda la solución.
 - **DSharpPlus** — librería de Discord (se usan paquetes *nightly/preview*).
 - **Base de datos relacional (Dapper)** — *database-first* y accedida vía stored procedures.
-- **Firebase** — Uso en Storage (imágenes de `/subirimagen`) y la base externa *Yumiko* (espejo de vinculación de AniList).
+- **Firebase** — Uso en Storage (imágenes de `/subirimagen`).
 - **AniList GraphQL API** — datos de animes, mangas y perfiles.
 - **ScottPlot / SkiaSharp** — generación de charts.
 - **Serilog** — logging a consola y archivo.
@@ -24,7 +24,7 @@ las de adentro.
 |----------|-----------------|
 | **AnilistConEnie.Domain** | Entidades, enums, excepciones e interfaces. Define los contratos (`Interfaces/IAnilistClient.cs`, `Interfaces/Repositories/*`) que implementa Infrastructure. Sin dependencias hacia las otras capas. |
 | **AnilistConEnie.Application** | Lógica de negocio, mayormente como clases estáticas sin estado: `Xp/`, `Moderation/`, `Confessions/`, `Challenges/`, `Membership/`, `Charts/`, `Anilist/`, `Backups/`, `Fun/`, `Premios/`, `Triggers/`, `Helpers/`. No depende de Discord ni de la infraestructura. |
-| **AnilistConEnie.Infrastructure** | Acceso a datos y servicios externos: `Database/DbConnectionFactory.cs` + `Repositories/*` (Dapper, stored procedures), `Firebase/FirebaseService.cs` + `Repositories/FirebaseRepository.cs` (Storage + Yumiko), `Anilist/` (cliente GraphQL: `AnilistClient`, `AnilistGraphQLExecutor`, `AnilistQueries`) y `Charts/`. |
+| **AnilistConEnie.Infrastructure** | Acceso a datos y servicios externos: `Database/DbConnectionFactory.cs` + `Repositories/*` (Dapper, stored procedures), `Firebase/FirebaseService.cs` + `Repositories/FirebaseRepository.cs` (Storage), `Anilist/` (cliente GraphQL: `AnilistClient`, `AnilistGraphQLExecutor`, `AnilistQueries`) y `Charts/`. |
 | **AnilistConEnie.Bot** | Punto de entrada y todo lo relacionado a Discord: comandos, handlers de eventos, tareas programadas, estado en memoria, configuración y configuración de inyección de dependencias. |
 
 **Decisiones de diseño:**
@@ -72,13 +72,12 @@ Secrets con la misma clave. Si falta o es inválido, el bot falla al iniciar.
 
 ### Credenciales de Firebase
 
-Dos archivos JSON de cuenta de servicio con estos nombres exactos (los que carga
+Un archivo JSON de cuenta de servicio con este nombre exacto (el que carga
 `Infrastructure/Firebase/FirebaseService.cs`):
 
 - `firebase-anilistconenie.json` — solo para **Storage** (subida de imágenes de `/subirimagen`).
-- `firebase-yumiko.json` — base externa **Yumiko**, donde se espeja el vínculo de AniList.
 
-La carpeta que los contiene se indica por fuera con la clave **`FIREBASE_CREDENTIALS_DIR`**.
+La carpeta que lo contiene se indica por fuera con la clave **`FIREBASE_CREDENTIALS_DIR`**.
 
 ### Base de datos
 

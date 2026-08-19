@@ -17,7 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AnilistConEnie.Bot.Helpers;
 
-public class AnilistService(ChallengePostsState challengePostsState, BotConfiguration config, LimpiezaMiembrosSettings limpiezaSettings, RangoRoles rangoRoles, DiscordLogService logService, AnilistServerScoreService scoreService, IFirebaseRepository firebaseRepository, IUsuariosRepository usuariosRepository, IAnilistBaneadosRepository anilistBaneadosRepository, IAnilistApprovalRepository anilistApprovalRepository, IAnilistClient anilistClient, IXpUsuariosRepository xpUsuariosRepository)
+public class AnilistService(ChallengePostsState challengePostsState, BotConfiguration config, LimpiezaMiembrosSettings limpiezaSettings, RangoRoles rangoRoles, DiscordLogService logService, AnilistServerScoreService scoreService, IYumikoRepository yumikoRepository, IUsuariosRepository usuariosRepository, IAnilistBaneadosRepository anilistBaneadosRepository, IAnilistApprovalRepository anilistApprovalRepository, IAnilistClient anilistClient, IXpUsuariosRepository xpUsuariosRepository)
 {
     public async Task TerminarVinculacion(DiscordClient client, DiscordUser user, DiscordMember member, DiscordGuild guild, AnilistUser anilistUser, bool aprobadaManualmente)
     {
@@ -72,7 +72,11 @@ public class AnilistService(ChallengePostsState challengePostsState, BotConfigur
         mensaje ??= await perfiles.SendMessageAsync($"**Perfil de {member.Mention}**\n\n{anilistUser.SiteUrl}");
 
         await usuariosRepository.Upsert(member.Id, anilistUser.SiteUrl, (long)mensaje.Id);
-        await firebaseRepository.SetAnilistYumiko(anilistUser.Id, member.Id);
+        try
+        {
+            await yumikoRepository.VincularAnilist(member.Id, anilistUser.Id);
+        }
+        catch (Exception ex) { await logService.LogException(guild, ex, "TerminarVinculacion - espejo del vínculo en Yumiko"); }
 
         UserXp prevXp = await xpUsuariosRepository.Obtener(user.Id) ?? new UserXp();
 

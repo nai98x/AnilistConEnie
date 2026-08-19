@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, TriggersState triggersState, FechaEntradaState fechaEntradaState, ILogger<GuildDownloadCompletedHandler> logger, BotConfiguration config, DiscordLogService logService, GuildMaintenanceService guildMaintenanceService, IUsuariosRepository usuariosRepository, ITriggersRepository triggersRepository, DbConnectionFactory connectionFactory)
+public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, TriggersState triggersState, FechaEntradaState fechaEntradaState, ILogger<GuildDownloadCompletedHandler> logger, BotConfiguration config, DiscordLogService logService, GuildMaintenanceService guildMaintenanceService, IUsuariosRepository usuariosRepository, ITriggersRepository triggersRepository, DbConnectionFactory connectionFactory, YumikoDbConnectionFactory yumikoConnectionFactory)
 {
     public async Task Handle(DiscordClient client, GuildDownloadCompletedEventArgs args)
     {
@@ -36,6 +36,21 @@ public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, 
                 "⚠️ **No se pudo conectar a la base de datos relacional.** No se cargaron triggers, XP ni se ejecutó el mantenimiento. " +
                 "Revisar la conexión (¿IP del servidor / túnel?).");
             return;
+        }
+        #endregion
+
+        #region Guard de conexión a la base de Yumiko
+        // No es crítica: sin ella solo se pierde el espejo del vínculo, el bot arranca igual.
+        bool yumikoOk = true;
+        try
+        {
+            await yumikoConnectionFactory.EnsureConnectionAsync();
+        }
+        catch (Exception ex)
+        {
+            yumikoOk = false;
+            logger.LogError(ex, "No se pudo conectar a la base de Yumiko; los vínculos de AniList no se van a espejar");
+            await logService.LogException(guild, ex, "Guard de conexión a la base de Yumiko");
         }
         #endregion
 
@@ -98,6 +113,13 @@ public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, 
                 $"⚡ **Triggers:** {triggers.Count}\n" +
                 $"🧑‍🤝‍🧑 **Miembros:** {guild.MemberCount}")
         ];
+
+        if (!yumikoOk)
+        {
+            componentes.Add(new DiscordSeparatorComponent(divider: true, spacing: DiscordSeparatorSpacing.Small));
+            componentes.Add(new DiscordTextDisplayComponent(
+                "⚠️ **Sin conexión a la base de Yumiko:** los vínculos de AniList no se van a espejar."));
+        }
 
         if (discordBotService.Debug)
         {

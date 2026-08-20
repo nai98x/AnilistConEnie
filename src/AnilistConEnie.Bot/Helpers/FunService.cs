@@ -120,7 +120,8 @@ public class FunService(BotConfiguration config)
                 _ => (Pick(rnd,
                     "Hoy es tu día, eres la auténtica putería en persona.",
                     "Waifu que buscas en mudae, waifu que consigues.",
-                    "Tu habilidad para comunicarte te convertirá en el rey/reina del sexting. ¡Prepárate para emoticones coquetos!"), DiscordEmoji.FromUnicode("😁"))
+                    "Tu habilidad para comunicarte te convertirá en el rey/reina del sexting. ¡Prepárate para emoticones coquetos!",
+                    "Los astros me dicen que hoy es TU día; hoy conseguirás pareja 😎"), DiscordEmoji.FromUnicode("😁"))
             },
             _ => valor switch
             {

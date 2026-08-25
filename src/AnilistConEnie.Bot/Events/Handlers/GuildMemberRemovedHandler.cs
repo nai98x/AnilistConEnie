@@ -13,7 +13,7 @@ using DSharpPlus.EventArgs;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class GuildMemberRemovedHandler(DiscordBotService discordBotService, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, AnilistService anilistService, IUsuariosRepository usuariosRepository, IXpUsuariosRepository xpUsuariosRepository)
+public class GuildMemberRemovedHandler(DiscordBotService discordBotService, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, IUsuariosRepository usuariosRepository, IXpUsuariosRepository xpUsuariosRepository)
 {
     public async Task Handle(DiscordClient client, GuildMemberRemovedEventArgs args)
     {
@@ -48,8 +48,6 @@ public class GuildMemberRemovedHandler(DiscordBotService discordBotService, BotC
             #endregion
 
             #region Mensaje puerta
-            await anilistService.CancelarAprobacionPendiente(args.Guild, args.Member);
-
             UsuarioAnilist? usuario = await usuariosRepository.GetPerfil(args.Member.Id);
             if (usuario != null)
             {

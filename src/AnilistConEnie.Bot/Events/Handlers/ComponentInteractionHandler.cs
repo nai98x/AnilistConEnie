@@ -8,6 +8,7 @@ using AnilistConEnie.Domain.Enum;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using DSharpPlus.Exceptions;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
@@ -100,10 +101,10 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
             }
             else
             {
-                DiscordMember? member = args.Guild.Members.Values.FirstOrDefault(x => x.Id == (ulong)discordId);
-                if (member is null)
+                DiscordMember? member = await TryGetMemberAsync(args.Guild, (ulong)discordId);
+                if (member is null && aprobado)
                 {
-                    await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral().AddEmbed(ErrorEmbed.De("No se encontró al usuario en el servidor")));
+                    await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral().AddEmbed(ErrorEmbed.De("No se encontró al usuario en el servidor. La solicitud queda pendiente hasta que vuelva a entrar")));
                     return;
                 }
 
@@ -121,7 +122,7 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
                         AvatarMedium = userApproval.Avatar,
                         BannerImage = userApproval.Banner
                     };
-                    await anilistService.TerminarVinculacion(client, user, member, args.Guild, anilistUser, true);
+                    await anilistService.TerminarVinculacion(client, user, member!, args.Guild, anilistUser, true);
 
                     resuelto
                         .WithColor(DiscordColor.Green)
@@ -130,12 +131,20 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
                 }
                 else
                 {
-                    await args.Guild.RemoveMemberAsync((ulong)discordId, "Solicitud de vinculación rechazada por el staff");
+                    string detalle = "el usuario fue expulsado del servidor.";
+                    if (member is null)
+                    {
+                        detalle = "el usuario ya no estaba en el servidor.";
+                    }
+                    else
+                    {
+                        await args.Guild.RemoveMemberAsync((ulong)discordId, "Solicitud de vinculación rechazada por el staff");
+                    }
 
                     resuelto
                         .WithColor(DiscordColor.Red)
                         .WithTitle("Vinculacion de AniList rechazada")
-                        .WithDescription($"{original.Description}\n\n{Formatter.Bold("Rechazada")} por {args.User.Mention}, el usuario fue expulsado del servidor.");
+                        .WithDescription($"{original.Description}\n\n{Formatter.Bold("Rechazada")} por {args.User.Mention}, {detalle}");
                 }
 
                 await anilistApprovalRepository.Delete(discordId);
@@ -210,6 +219,18 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
         {
             if (args.Interaction.Data.ComponentType is not DiscordComponentType.Button)
                 await args.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
+        }
+    }
+
+    private static async Task<DiscordMember?> TryGetMemberAsync(DiscordGuild guild, ulong userId)
+    {
+        try
+        {
+            return await guild.GetMemberAsync(userId);
+        }
+        catch (NotFoundException)
+        {
+            return null;
         }
     }
 

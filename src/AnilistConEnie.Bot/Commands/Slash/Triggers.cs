@@ -158,9 +158,10 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
         string desc = string.Empty;
         foreach (IGrouping<int, KeyValuePair<string, Trigger>> tipo in activeTriggers.GroupBy(x => x.Value.Tipo).OrderBy(x => x.Key))
         {
+            IOrderedEnumerable<KeyValuePair<string, Trigger>> tipoOrdered = tipo.ToList().OrderBy(x => x.Key);
             string tipoNombre = ((TipoTrigger)tipo.Key).GetDescription();
             desc += $"**{tipoNombre}**:\n" +
-                    $"- {string.Join(", ", tipo.Select(x => $"`{x.Key}`"))}";
+                    $"- {string.Join(", ", tipoOrdered.Select(x => $"`{x.Key}`"))}";
             desc += "\n\n";
         }
 

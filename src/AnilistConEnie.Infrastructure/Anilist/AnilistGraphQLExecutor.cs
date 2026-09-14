@@ -80,6 +80,10 @@ internal sealed class AnilistGraphQLExecutor : IDisposable
         {
             throw new AnilistRateLimitException(GetRetryAfter(ex.ResponseHeaders), ex);
         }
+        catch (GraphQLHttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Forbidden)
+        {
+            throw new AnilistRateLimitException(GetRetryAfter(ex.ResponseHeaders), ex);
+        }
         catch (GraphQLHttpRequestException ex) when ((int)ex.StatusCode >= 500)
         {
             throw new AnilistServerErrorException((int)ex.StatusCode, ex);
@@ -102,11 +106,12 @@ internal sealed class AnilistGraphQLExecutor : IDisposable
                     .Handle<HttpRequestException>()
                     .Handle<TaskCanceledException>()
                     .Handle<GraphQLHttpRequestException>(IsTransient),
-                // Ante 429 respetamos el Retry-After de AniList; en el resto usamos el backoff
+                // Ante 429 y 403 respetamos el Retry-After de AniList; en el resto usamos el backoff
                 // exponencial por defecto (devolviendo null).
                 DelayGenerator = static args =>
                 {
-                    if (args.Outcome.Exception is GraphQLHttpRequestException { StatusCode: HttpStatusCode.TooManyRequests } ex)
+                    if (args.Outcome.Exception is GraphQLHttpRequestException ex
+                        && (ex.StatusCode == HttpStatusCode.TooManyRequests || ex.StatusCode == HttpStatusCode.Forbidden))
                     {
                         return ValueTask.FromResult(GetRetryAfter(ex.ResponseHeaders));
                     }
@@ -162,9 +167,9 @@ internal sealed class AnilistGraphQLExecutor : IDisposable
         }
     }
 
-    /// <summary>Errores HTTP que vale la pena reintentar: rate limit (429) y errores de servidor (5xx).</summary>
+    /// <summary>Errores HTTP que vale la pena reintentar: rate limit (429), Forbidden (403) y errores de servidor (5xx).</summary>
     private static bool IsTransient(GraphQLHttpRequestException ex) =>
-        ex.StatusCode == HttpStatusCode.TooManyRequests || (int)ex.StatusCode >= 500;
+        ex.StatusCode == HttpStatusCode.TooManyRequests || ex.StatusCode == HttpStatusCode.Forbidden || (int)ex.StatusCode >= 500;
 
     private static TimeSpan? GetRetryAfter(HttpResponseHeaders? headers)
     {

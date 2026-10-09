@@ -261,9 +261,12 @@ public class Usuarios(
 
         await ctx.DeferResponseAsync();
 
+        bool EsInactivo(DiscordMember miembro) => miembro.Roles.Any(x => x.Id == config.Roles.Inactivo);
+
         List<DiscordMember> miembros = guild.Members.Values
             .Where(x => !x.IsBot && x.Roles.Any(y => y.Id == rolPais.Id))
-            .OrderBy(x => x.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+            .OrderBy(EsInactivo)
+            .ThenBy(x => x.DisplayName, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
 
         DiscordEmoji umaPoints = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.Bot.UmaPoints);
@@ -286,7 +289,8 @@ public class Usuarios(
                 return new DiscordSectionComponent(
                     text: $"### {miembro.DisplayName}\n" +
                           $"{miembro.Mention}\n" +
-                          $"{xp.ToSpanish()} {umaPoints} - {rango.Mention}",
+                          $"{xp.ToSpanish()} {umaPoints} - {rango.Mention}" +
+                          (EsInactivo(miembro) ? "\n*Usuario inactivo*" : ""),
                     accessory: new DiscordThumbnailComponent(miembro.AvatarUrlPreferido()));
             },
             separarItems: true);

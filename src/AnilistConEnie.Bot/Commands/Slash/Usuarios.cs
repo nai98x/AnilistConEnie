@@ -4,6 +4,7 @@ using AnilistConEnie.Application.Extensions;
 using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Application.Membership;
 using AnilistConEnie.Application.Xp;
+using AnilistConEnie.Bot.Commands.Framework.AutoComplete;
 using AnilistConEnie.Bot.Commands.Framework.Choices;
 using AnilistConEnie.Bot.Commands.Framework.Attributes;
 using AnilistConEnie.Bot.Configuration;
@@ -14,6 +15,7 @@ using AnilistConEnie.Domain.Enum;
 using AnilistConEnie.Domain.Interfaces.Repositories;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
+using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
 using AnilistConEnie.Bot.Extensions;
 using AnilistConEnie.Bot.Services;
@@ -232,6 +234,58 @@ public class Usuarios(
                 return new DiscordSectionComponent(
                     text: $"### {miembro.DisplayName}\n" +
                           $"Entró a las {entrada:HH:mm}\n" +
+                          $"{xp.ToSpanish()} {umaPoints} - {rango.Mention}",
+                    accessory: new DiscordThumbnailComponent(miembro.AvatarUrlPreferido()));
+            },
+            separarItems: true);
+    }
+
+    [Command("pais")]
+    [Description("Muestra los usuarios que tienen el rol de un país")]
+    public async Task Pais(
+        SlashCommandContext ctx,
+        [Parameter("Pais")] [Description("País a consultar")] [SlashAutoCompleteProvider<PaisesAutoCompleteProvider>] string pais)
+    {
+        if (!await ctx.BotInicializadoAsync(discordBotService)) return;
+
+        DiscordGuild guild = ctx.Guild!;
+        DiscordRole? rolPais = ulong.TryParse(pais, out ulong roleId) && config.PaisTimezones.Any(x => x.RoleId == roleId)
+            ? guild.Roles.GetValueOrDefault(roleId)
+            : null;
+
+        if (rolPais is null)
+        {
+            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(ErrorEmbed.De("Debes elegir un país de la lista.")));
+            return;
+        }
+
+        await ctx.DeferResponseAsync();
+
+        List<DiscordMember> miembros = guild.Members.Values
+            .Where(x => !x.IsBot && x.Roles.Any(y => y.Id == rolPais.Id))
+            .OrderBy(x => x.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+
+        DiscordEmoji umaPoints = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.Bot.UmaPoints);
+        Dictionary<ulong, UserXp> xpPorUsuario = await xpUsuariosRepository.ObtenerXpPorUsuario();
+
+        string header = $"# Usuarios de {rolPais.Name}\n" +
+                        (miembros.Count == 0
+                            ? "-# (No hay ningún usuario con este país)"
+                            : $"{miembros.Count} {(miembros.Count == 1 ? "usuario" : "usuarios")} con el rol {rolPais.Mention}");
+
+        await DiscordInteractivity.PaginarContainerV2Async(
+            ctx,
+            miembros,
+            porPagina: 8,
+            header: header,
+            renderItem: miembro =>
+            {
+                long xp = xpPorUsuario.TryGetValue(miembro.Id, out UserXp? xpMiembro) ? xpMiembro.Total : 0;
+                DiscordRole rango = rangoRoles.GetRoleByXp(guild, xp);
+                return new DiscordSectionComponent(
+                    text: $"### {miembro.DisplayName}\n" +
+                          $"{miembro.Mention}\n" +
                           $"{xp.ToSpanish()} {umaPoints} - {rango.Mention}",
                     accessory: new DiscordThumbnailComponent(miembro.AvatarUrlPreferido()));
             },

@@ -1,3 +1,4 @@
+using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Application.Triggers;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
@@ -22,7 +23,8 @@ public class MessageCreatedHandler(
     BotConfiguration config,
     DiscordLogService logService,
     GuildMaintenanceService guildMaintenanceService,
-    IIntercambiosRepostRepository intercambiosRepostRepository)
+    IIntercambiosRepostRepository intercambiosRepostRepository,
+    IMensajesDiariosRepository mensajesDiariosRepository)
 {
     public async Task Handle(DiscordClient client, MessageCreatedEventArgs args)
     {
@@ -53,8 +55,22 @@ public class MessageCreatedHandler(
             && !discordBotService.Debug
             && ((args.Channel is DiscordThreadChannel && !canalesSinXp.Contains(args.Channel.Parent.Id))
                 || (args.Channel is not DiscordThreadChannel && !canalesSinXp.Contains(args.Channel.Id)))
-            && !(args.Message.Content.StartsWith('<') && args.Message.Content.EndsWith('>') && args.Message.Content.Split(' ').Length == 1))
+            && ContenidoMensaje.CuentaComoActividad(args.Message.Content))
             await guildMaintenanceService.GrantXpPorMensaje(args.Guild, args.Author.Id);
+        #endregion
+
+        #region Conteo de mensajes diarios en general
+        if (!args.Author.IsBot
+            && !discordBotService.Debug
+            && args.Channel.Id == config.Channels.General
+            && ContenidoMensaje.CuentaComoActividad(args.Message.Content))
+        {
+            try
+            {
+                await mensajesDiariosRepository.Incrementar(args.Author.Id, DateOnly.FromDateTime(RelojServidor.Hoy));
+            }
+            catch (Exception ex) { await logService.LogException(args.Guild, ex, "Conteo de mensajes diarios"); }
+        }
         #endregion
 
         #region YepMode

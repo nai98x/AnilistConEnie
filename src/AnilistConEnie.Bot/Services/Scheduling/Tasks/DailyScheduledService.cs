@@ -1,6 +1,9 @@
+using AnilistConEnie.Application.Actividad;
+using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services.State;
+using AnilistConEnie.Domain.Interfaces.Repositories;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,7 +21,9 @@ public class DailyScheduledService(
     ConfessionsState confessionsState,
     BoluditosState boluditosState,
     MemberActivityState memberActivityState,
-    HackedAccountState hackedAccountState)
+    HackedAccountState hackedAccountState,
+    IMensajesDiariosRepository mensajesDiariosRepository,
+    MensajesDiariosSettings mensajesDiariosSettings)
     : CronBackgroundService(scopeFactory, discordBotService, logger)
 {
     protected override string CronExpression => "0 0 * * *";
@@ -32,6 +37,8 @@ public class DailyScheduledService(
         await guildMaintenanceService.ManageChallenges();
         await guildMaintenanceService.ManageUsuariosActivos(guild);
         await guildMaintenanceService.ManageXpUserHistory(guild);
+        await guildMaintenanceService.ManageRolActivoEnServidor(guild);
+        await mensajesDiariosRepository.Purgar(RetencionMensajes.FechaMinima(DateOnly.FromDateTime(RelojServidor.Hoy), mensajesDiariosSettings.DiasRetencion));
         confessionsState.ResetDailyConfessions();
         boluditosState.ResetBoluditos();
         memberActivityState.ResetDailyActiveUsers();

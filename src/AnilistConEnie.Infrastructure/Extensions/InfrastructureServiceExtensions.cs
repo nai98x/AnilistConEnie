@@ -19,6 +19,7 @@ public static class InfrastructureServiceExtensions
         services.AddSingleton<IUsuariosRepository, UsuariosRepository>();
         services.AddSingleton<IXpUsuariosRepository, XpUsuariosRepository>();
         services.AddSingleton<IXpDiarioRepository, XpDiarioRepository>();
+        services.AddSingleton<IMensajesDiariosRepository, MensajesDiariosRepository>();
         services.AddSingleton<IChallengesRepository, ChallengesRepository>();
         services.AddSingleton<ITriggersRepository, TriggersRepository>();
         services.AddSingleton<IPremiosRepository, PremiosRepository>();

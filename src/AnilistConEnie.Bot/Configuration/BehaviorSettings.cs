@@ -80,6 +80,31 @@ public record XpSettings
     }
 }
 
+public record MensajesDiariosSettings
+{
+    public required int DiasRetencion { get; init; }
+    public required int RolActivoVentanaDias { get; init; }
+    public required int RolActivoMasDeMensajes { get; init; }
+    public required int RolActivoMinimoDias { get; init; }
+
+    public static MensajesDiariosSettings FromConfiguration(IConfiguration configuration)
+    {
+        IConfigurationSection section = configuration.GetSection("MensajesDiarios");
+        MensajesDiariosSettings settings = new()
+        {
+            DiasRetencion = section.RequireInt("DiasRetencion"),
+            RolActivoVentanaDias = section.RequireInt("RolActivoVentanaDias"),
+            RolActivoMasDeMensajes = section.RequireInt("RolActivoMasDeMensajes"),
+            RolActivoMinimoDias = section.RequireInt("RolActivoMinimoDias"),
+        };
+
+        if (settings.RolActivoVentanaDias > settings.DiasRetencion)
+            throw new InvalidOperationException($"{section.Path}:RolActivoVentanaDias no puede superar a DiasRetencion: la ventana del rol se calcula sobre los días retenidos");
+
+        return settings;
+    }
+}
+
 public record ConfesionesSettings
 {
     public required int PorcentajePorReaccion { get; init; }
@@ -177,6 +202,7 @@ public static class BehaviorSettingsExtensions
             .AddSingleton(LimpiezaMiembrosSettings.FromConfiguration(configuration))
             .AddSingleton(CooldownsSettings.FromConfiguration(configuration))
             .AddSingleton(XpSettings.FromConfiguration(configuration))
+            .AddSingleton(MensajesDiariosSettings.FromConfiguration(configuration))
             .AddSingleton(ConfesionesSettings.FromConfiguration(configuration))
             .AddSingleton(SubirImagenSettings.FromConfiguration(configuration));
 

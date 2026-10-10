@@ -1,3 +1,4 @@
+using AnilistConEnie.Application.Actividad;
 using AnilistConEnie.Application.Challenges;
 using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Application.Membership;
@@ -15,7 +16,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AnilistConEnie.Bot.Helpers;
 
-public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, XpState xpState, InviteLinkState inviteLinkState, PermanentUsernameState permanentUsernameState, FechaEntradaState fechaEntradaState, BotConfiguration config, XpSettings xpSettings, LimpiezaMiembrosSettings limpiezaSettings, RangoRoles rangoRoles, RelojPais relojPais, DiscordLogService logService, DiscordBotService discordBotService, IUsuariosRepository usuariosRepository, IXpUsuariosRepository xpUsuariosRepository, IXpDiarioRepository xpDiarioRepository, IChallengesRepository challengesRepository)
+public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, XpState xpState, InviteLinkState inviteLinkState, PermanentUsernameState permanentUsernameState, FechaEntradaState fechaEntradaState, BotConfiguration config, XpSettings xpSettings, LimpiezaMiembrosSettings limpiezaSettings, RangoRoles rangoRoles, RelojPais relojPais, DiscordLogService logService, DiscordBotService discordBotService, IUsuariosRepository usuariosRepository, IXpUsuariosRepository xpUsuariosRepository, IXpDiarioRepository xpDiarioRepository, IChallengesRepository challengesRepository, IMensajesDiariosRepository mensajesDiariosRepository, MensajesDiariosSettings mensajesDiariosSettings)
 {
     public async Task ClearInvitesRoleOnStartup(DiscordGuild guild)
     {
@@ -302,6 +303,35 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
         }
     }
     
+    public async Task ManageRolActivoEnServidor(DiscordGuild guild)
+    {
+        // En debug el conteo no se registra: sincronizar contra esa base le sacaría el rol a todos.
+        if (discordBotService.Debug) return;
+
+        DiscordRole activoRole = guild.Roles[config.Roles.ActivoEnServidor];
+        (DateOnly desde, DateOnly hasta) = RolActivoServidor.Ventana(DateOnly.FromDateTime(RelojServidor.Hoy), mensajesDiariosSettings.RolActivoVentanaDias);
+
+        HashSet<long> correspondenIds = (await mensajesDiariosRepository.ObtenerTotales(desde, hasta))
+            .Where(x => RolActivoServidor.Corresponde(x.Total, x.Dias, mensajesDiariosSettings.RolActivoMasDeMensajes, mensajesDiariosSettings.RolActivoMinimoDias))
+            .Select(x => x.UserId)
+            .ToHashSet();
+
+        foreach (DiscordMember member in guild.Members.Values.Where(x => !x.IsBot))
+        {
+            try
+            {
+                bool corresponde = correspondenIds.Contains((long)member.Id);
+                bool loTiene = member.Roles.Any(x => x.Id == activoRole.Id);
+
+                if (corresponde && !loTiene)
+                    await member.GrantRoleAsync(activoRole);
+                else if (!corresponde && loTiene)
+                    await member.RevokeRoleAsync(activoRole);
+            }
+            catch (Exception ex) { await logService.LogException(guild, ex, "Rol activo en servidor"); }
+        }
+    }
+
     public async Task ManageChallenges()
     {
         List<Challenge> challenges = await challengesRepository.GetLista();

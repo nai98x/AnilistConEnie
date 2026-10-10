@@ -366,15 +366,13 @@ public class Admin(
         UsuarioAnilist? perfilOrigen = await usuariosRepository.GetPerfil(origen.Id);
         UsuarioAnilist? perfilDestino = await usuariosRepository.GetPerfil(destino.Id);
 
-        if (!AnilistProfileUrl.TryGetUserId(perfilOrigen?.AnilistURL, out int anilistOrigen) ||
-            !AnilistProfileUrl.TryGetUserId(perfilDestino?.AnilistURL, out int anilistDestino))
+        if (!AnilistProfileUrl.TryGetUserId(perfilDestino?.AnilistURL, out int anilistDestino))
         {
-            DiscordUser sinVincular = anilistOrigen == 0 ? origen : destino;
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"{sinVincular.Mention} no tiene una cuenta de AniList vinculada.")));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"{destino.Mention} no tiene una cuenta de AniList vinculada.")));
             return;
         }
 
-        if (anilistOrigen != anilistDestino)
+        if (AnilistProfileUrl.TryGetUserId(perfilOrigen?.AnilistURL, out int anilistOrigen) && anilistOrigen != anilistDestino)
         {
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De(
                 $"Solo se puede transferir xp entre cuentas del mismo perfil de AniList.\n" +

@@ -2,8 +2,9 @@
 -- El origen queda intacto: es una copia, no un movimiento.
 -- p_reemplazar = true: el destino queda igual al origen (se pisan su xp y su historial; si el origen
 -- no tiene xp, el destino queda en cero).
--- p_reemplazar = false: se suma categoría por categoría, y en el historial los días que colisionan
--- se suman.
+-- p_reemplazar = false: se suma categoría por categoría. El historial guarda el acumulado de cada día,
+-- así que en cada fecha de cualquiera de los dos el destino queda con la suma de los últimos
+-- acumulados conocidos de ambos a esa fecha (0 si todavía no tenía registros).
 -- Devuelve la xp del destino ya transferida.
 CREATE OR REPLACE FUNCTION xp_transferir(
     p_origen     bigint,
@@ -41,10 +42,15 @@ BEGIN
                 otros = EXCLUDED.otros;
     ELSE
         INSERT INTO xp_diario (user_id, fecha, xp)
-        SELECT p_destino, fecha, xp
-        FROM xp_diario
-        WHERE user_id = p_origen
-        ON CONFLICT (user_id, fecha) DO UPDATE SET xp = xp_diario.xp + EXCLUDED.xp;
+        SELECT p_destino, f.fecha,
+               COALESCE((SELECT o.xp FROM xp_diario o
+                         WHERE o.user_id = p_origen AND o.fecha <= f.fecha
+                         ORDER BY o.fecha DESC LIMIT 1), 0)
+             + COALESCE((SELECT d.xp FROM xp_diario d
+                         WHERE d.user_id = p_destino AND d.fecha <= f.fecha
+                         ORDER BY d.fecha DESC LIMIT 1), 0)
+        FROM (SELECT DISTINCT fecha FROM xp_diario WHERE user_id IN (p_origen, p_destino)) f
+        ON CONFLICT (user_id, fecha) DO UPDATE SET xp = EXCLUDED.xp;
 
         INSERT INTO xp_usuarios (user_id, total, booster, challenges, eventos, intercambios, otros)
         SELECT p_destino, o.total, o.booster, o.challenges, o.eventos, o.intercambios, o.otros

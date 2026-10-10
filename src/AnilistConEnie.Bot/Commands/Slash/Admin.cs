@@ -435,9 +435,7 @@ public class Admin(
 
     [Command("repartir_intercambio")]
     [Description("Reparte los intercambios")]
-    public async Task RepartirIntercambio(
-        SlashCommandContext ctx,
-        [Parameter("Version")] [Description("Version del algoritmo")] VersionReparto version)
+    public async Task RepartirIntercambio(SlashCommandContext ctx)
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
@@ -456,51 +454,41 @@ public class Admin(
 
         if (modalInteraction.TimedOut) return;
 
-        await modalInteraction.Result.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
-
         string value = modalInteraction.Result.Values[customId] is TextInputModalSubmission texto ? texto.Value : string.Empty;
-        string[] values = value.Split(',');
+        PedidosIntercambio pedidos = IntercambioHelper.ParsearPedidos(value);
 
-        Dictionary<string, int> pelisPorRecibir = [];
-        foreach (string kvp in values)
+        if (!pedidos.EsValido)
         {
-            string[] r = kvp.Trim().Split(' ');
-            pelisPorRecibir[r[0]] = int.Parse(r[1]);
+            await modalInteraction.Result.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource,
+                new DiscordInteractionResponseBuilder()
+                    .AddEmbed(ErrorEmbed.De("Pedidos inválidos", string.Join("\n", pedidos.Errores)))
+                    .AsEphemeral());
+            return;
         }
 
-        pelisPorRecibir = pelisPorRecibir.Shuffle();
+        await modalInteraction.Result.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
+
+        Dictionary<string, int> pelisPorRecibir = pedidos.Pedidos.Shuffle();
 
         DiscordChannel canal = ctx.Guild!.Channels[config.Channels.Playroom];
 
-        if (version == VersionReparto.GPT)
-        {
-            (List<string> reparto, Dictionary<string, int> detalle) = IntercambioHelper.RepartirGPT(pelisPorRecibir);
+        (List<string> reparto, Dictionary<string, int> detalle) = IntercambioHelper.Repartir(pelisPorRecibir);
 
-            DiscordMessageBuilder builder = new DiscordMessageBuilder()
-                .AddEmbed(new DiscordEmbedBuilder()
-                    .WithTitle("Input")
-                    .WithDescription(value)
-                    .WithColor(DiscordColor.Yellow))
-                .AddEmbed(new DiscordEmbedBuilder()
-                    .WithTitle($"Reparto para intercambio {version}")
-                    .WithDescription(string.Join("\n", reparto))
-                    .WithColor(DiscordColor.Green))
-                .AddEmbed(new DiscordEmbedBuilder()
-                    .WithTitle("Detalle de usuarios que reparten")
-                    .WithDescription(string.Join("\n", detalle.Select(x => $"{x.Key} - {x.Value}")))
-                    .WithColor(DiscordColor.MidnightBlue));
+        DiscordMessageBuilder builder = new DiscordMessageBuilder()
+            .AddEmbed(new DiscordEmbedBuilder()
+                .WithTitle("Input")
+                .WithDescription(value)
+                .WithColor(DiscordColor.Yellow))
+            .AddEmbed(new DiscordEmbedBuilder()
+                .WithTitle("Reparto para intercambio")
+                .WithDescription(string.Join("\n", reparto))
+                .WithColor(DiscordColor.Green))
+            .AddEmbed(new DiscordEmbedBuilder()
+                .WithTitle("Detalle de usuarios que reparten")
+                .WithDescription(string.Join("\n", detalle.Select(x => $"{x.Key} - {x.Value}")))
+                .WithColor(DiscordColor.MidnightBlue));
 
-            await canal.SendMessageAsync(builder);
-        }
-        else
-        {
-            List<string> resultClasico = IntercambioHelper.RepartirClasico(pelisPorRecibir);
-
-            await canal.SendMessageAsync(new DiscordEmbedBuilder()
-                .WithTitle($"Reparto para intercambio {version}")
-                .WithDescription($"{value}\n\n" + string.Join("\n", resultClasico))
-                .WithColor(DiscordColor.Green));
-        }
+        await canal.SendMessageAsync(builder);
     }
 
     [Command("pdd")]

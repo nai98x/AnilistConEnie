@@ -403,32 +403,34 @@ public class Admin(
 
         if (!confirmed)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+            await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
                 .WithTitle("Transferencia cancelada")
                 .WithColor(DiscordColor.Red)
                 .WithDescription($"No se transfirió la xp de {origen.Mention} a {destino.Mention}.")));
             return;
         }
 
+        UserXp resultado;
         try
         {
-            UserXp resultado = await xpUsuariosRepository.Transferir(origen.Id, destino.Id, reemplazar);
-
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-                .WithTitle("Experiencia transferida")
-                .WithColor(DiscordColor.Green)
-                .WithDescription($"{desc}\n\n### {destino.Mention} queda con {resultado.Total} xp.")
-                .WithThumbnail(destino.AvatarUrl)));
+            resultado = await xpUsuariosRepository.Transferir(origen.Id, destino.Id, reemplazar);
         }
         catch (Exception ex)
         {
             await logService.GrabarLogGeneralError(ctx.Guild!, $"Error transfiriendo xp\n{ex.Message}\n{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
 
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
+            await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
                 .WithTitle("Experiencia no transferida")
                 .WithColor(DiscordColor.Red)
                 .WithDescription($"Ocurrió un error transfiriendo la experiencia de {origen.Mention} a {destino.Mention}.")));
+            return;
         }
+
+        await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
+            .WithTitle("Experiencia transferida")
+            .WithColor(DiscordColor.Green)
+            .WithDescription($"{desc}\n\n### {destino.Mention} queda con {resultado.Total} xp.")
+            .WithThumbnail(destino.AvatarUrl)));
     }
 
     [Command("repartir_intercambio")]

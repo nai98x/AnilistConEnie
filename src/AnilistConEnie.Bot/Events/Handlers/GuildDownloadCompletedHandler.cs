@@ -90,6 +90,9 @@ public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, 
         await guildMaintenanceService.ManageNewUsuarios(guild);
         logger.LogInformation("Nuevos usuarios gestionados correctamente");
         
+        await guildMaintenanceService.ManageUsuariosAusentes(guild);
+        logger.LogInformation("Usuarios ausentes desvinculados correctamente");
+
         await guildMaintenanceService.ManageUsuariosActivos(guild);
         logger.LogInformation("Usuarios activos gestionados correctamente");
         

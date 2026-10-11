@@ -296,6 +296,27 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
         fechaEntradaState.FillFechasEntrada(await usuariosRepository.GetFechasEntrada());
     }
 
+    public async Task ManageUsuariosAusentes(DiscordGuild guild)
+    {
+        // Bajas que no pasaron por GuildMemberRemoved (se fueron con el bot apagado).
+        if (discordBotService.Debug) return;
+
+        List<UsuarioAnilist> ausentes = (await usuariosRepository.GetVinculados())
+            .Where(x => !guild.Members.ContainsKey((ulong)x.UserId))
+            .ToList();
+
+        foreach (UsuarioAnilist usuario in ausentes)
+        {
+            try
+            {
+                await logService.BorrarMensajeUsuarioAnilist(guild, usuario.MessageId);
+                await usuariosRepository.Desvincular((ulong)usuario.UserId);
+                logger.LogInformation("Usuario ausente {UserId} desvinculado ({AnilistUrl})", usuario.UserId, usuario.AnilistURL);
+            }
+            catch (Exception ex) { await logService.LogException(guild, ex, $"ManageUsuariosAusentes ({usuario.UserId})"); }
+        }
+    }
+
     public async Task ManageUsuariosActivos(DiscordGuild guild)
     {
         DiscordRole inactivoRole = guild.Roles.First(x => x.Key == config.Roles.Inactivo).Value;

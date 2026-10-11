@@ -8,12 +8,12 @@ namespace AnilistConEnie.Infrastructure.Repositories;
 
 public class MensajesDiariosRepository(DbConnectionFactory connectionFactory) : IMensajesDiariosRepository
 {
-    public async Task Incrementar(ulong userId, DateOnly fecha)
+    public async Task Incrementar(ulong userId, ulong canalId, DateOnly fecha)
     {
         using var connection = await connectionFactory.OpenConnectionAsync();
         await connection.ExecuteAsync(
             "mensajes_diarios_incrementar",
-            new { p_user_id = (long)userId, p_fecha = fecha },
+            new { p_user_id = (long)userId, p_canal_id = (long)canalId, p_fecha = fecha },
             commandType: CommandType.StoredProcedure);
     }
 

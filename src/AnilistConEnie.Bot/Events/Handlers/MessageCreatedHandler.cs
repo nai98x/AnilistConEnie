@@ -51,23 +51,22 @@ public class MessageCreatedHandler(
             config.Channels.ComandosForo
         ];
 
-        if (!args.Author.IsBot
+        ulong canalId = args.Channel is DiscordThreadChannel ? args.Channel.Parent.Id : args.Channel.Id;
+        bool cuentaComoActividad = !args.Author.IsBot
             && !discordBotService.Debug
-            && ((args.Channel is DiscordThreadChannel && !canalesSinXp.Contains(args.Channel.Parent.Id))
-                || (args.Channel is not DiscordThreadChannel && !canalesSinXp.Contains(args.Channel.Id)))
-            && ContenidoMensaje.CuentaComoActividad(args.Message.Content))
+            && !canalesSinXp.Contains(canalId)
+            && ContenidoMensaje.CuentaComoActividad(args.Message.Content);
+
+        if (cuentaComoActividad)
             await guildMaintenanceService.GrantXpPorMensaje(args.Guild, args.Author.Id);
         #endregion
 
-        #region Conteo de mensajes diarios en general
-        if (!args.Author.IsBot
-            && !discordBotService.Debug
-            && args.Channel.Id == config.Channels.General
-            && ContenidoMensaje.CuentaComoActividad(args.Message.Content))
+        #region Conteo de mensajes diarios por canal
+        if (cuentaComoActividad)
         {
             try
             {
-                await mensajesDiariosRepository.Incrementar(args.Author.Id, DateOnly.FromDateTime(RelojServidor.Hoy));
+                await mensajesDiariosRepository.Incrementar(args.Author.Id, canalId, DateOnly.FromDateTime(RelojServidor.Hoy));
             }
             catch (Exception ex) { await logService.LogException(args.Guild, ex, "Conteo de mensajes diarios"); }
         }

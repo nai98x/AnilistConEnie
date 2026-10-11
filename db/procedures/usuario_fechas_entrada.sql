@@ -1,5 +1,5 @@
--- Usuarios con fecha de entrada real registrada (excepciones al joined_at de Discord, usadas para
--- fundadores y aniversarios). No filtra por `activo`: la excepción vale aunque el usuario se haya ido.
+-- Usuarios con fecha de entrada registrada (la primera vez que entraron al server; prevalece sobre el
+-- joined_at de Discord, que se reinicia si salen y vuelven). No filtra por `activo`.
 CREATE OR REPLACE FUNCTION usuario_fechas_entrada()
 RETURNS TABLE(user_id bigint, fecha_entrada timestamptz)
 LANGUAGE sql

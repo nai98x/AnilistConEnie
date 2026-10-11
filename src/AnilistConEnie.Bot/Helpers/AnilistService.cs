@@ -17,7 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AnilistConEnie.Bot.Helpers;
 
-public class AnilistService(ChallengePostsState challengePostsState, BotConfiguration config, LimpiezaMiembrosSettings limpiezaSettings, RangoRoles rangoRoles, DiscordLogService logService, AnilistServerScoreService scoreService, IYumikoRepository yumikoRepository, IUsuariosRepository usuariosRepository, IAnilistBaneadosRepository anilistBaneadosRepository, IAnilistApprovalRepository anilistApprovalRepository, IAnilistClient anilistClient, IXpUsuariosRepository xpUsuariosRepository)
+public class AnilistService(ChallengePostsState challengePostsState, FechaEntradaState fechaEntradaState, BotConfiguration config, LimpiezaMiembrosSettings limpiezaSettings, RangoRoles rangoRoles, DiscordLogService logService, AnilistServerScoreService scoreService, IYumikoRepository yumikoRepository, IUsuariosRepository usuariosRepository, IAnilistBaneadosRepository anilistBaneadosRepository, IAnilistApprovalRepository anilistApprovalRepository, IAnilistClient anilistClient, IXpUsuariosRepository xpUsuariosRepository)
 {
     public async Task TerminarVinculacion(DiscordClient client, DiscordUser user, DiscordMember member, DiscordGuild guild, AnilistUser anilistUser, bool aprobadaManualmente)
     {
@@ -71,7 +71,8 @@ public class AnilistService(ChallengePostsState challengePostsState, BotConfigur
 
         mensaje ??= await perfiles.SendMessageAsync($"**Perfil de {member.Mention}**\n\n{anilistUser.SiteUrl}");
 
-        await usuariosRepository.Upsert(member.Id, anilistUser.SiteUrl, (long)mensaje.Id);
+        await usuariosRepository.Upsert(member.Id, anilistUser.SiteUrl, (long)mensaje.Id, member.JoinedAt.UtcDateTime);
+        fechaEntradaState.RegistrarSiNoExiste(member.Id, member.JoinedAt);
         try
         {
             await yumikoRepository.VincularAnilist(member.Id, anilistUser.Id);

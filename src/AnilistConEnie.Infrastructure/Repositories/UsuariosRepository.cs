@@ -35,12 +35,12 @@ public class UsuariosRepository(DbConnectionFactory connectionFactory) : IUsuari
             commandType: CommandType.StoredProcedure);
     }
 
-    public async Task Upsert(ulong userId, string anilistUrl, long mensajeId)
+    public async Task Upsert(ulong userId, string anilistUrl, long mensajeId, DateTime fechaEntrada)
     {
         using var connection = await connectionFactory.OpenConnectionAsync();
         await connection.ExecuteAsync(
             "usuario_upsert",
-            new { p_user_id = (long)userId, p_anilist_url = anilistUrl, p_mensaje_id = mensajeId },
+            new { p_user_id = (long)userId, p_anilist_url = anilistUrl, p_mensaje_id = mensajeId, p_fecha_entrada = fechaEntrada },
             commandType: CommandType.StoredProcedure);
     }
 
@@ -94,6 +94,15 @@ public class UsuariosRepository(DbConnectionFactory connectionFactory) : IUsuari
         return (await connection.QueryAsync<Usuario>(
             "usuario_fechas_entrada",
             commandType: CommandType.StoredProcedure)).AsList();
+    }
+
+    public async Task<int> CompletarFechasEntrada(Dictionary<ulong, DateTime> fechasEntrada)
+    {
+        using var connection = await connectionFactory.OpenConnectionAsync();
+        return await connection.ExecuteScalarAsync<int>(
+            "usuario_completar_fechas_entrada",
+            new { p_user_ids = fechasEntrada.Keys.Select(x => (long)x).ToArray(), p_fechas = fechasEntrada.Values.ToArray() },
+            commandType: CommandType.StoredProcedure);
     }
 
     public async Task SetLastActivity(ulong userId, DateTime lastActivity)

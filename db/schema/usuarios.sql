@@ -9,6 +9,6 @@ CREATE TABLE IF NOT EXISTS usuarios (
     cumple_mes    smallint    NULL CHECK (cumple_mes BETWEEN 1 AND 12),
     activo        boolean     NOT NULL DEFAULT true,
     last_activity timestamptz NULL,
-    fecha_entrada timestamptz NULL,                                     -- fecha real de entrada al server cuando difiere del joined_at de Discord (fundadores/aniversarios)
+    fecha_entrada timestamptz NULL,                                     -- primera entrada al server (se fija al vincularse y no se pisa); null = usar joined_at de Discord
     CONSTRAINT cumple_dia_mes_juntos CHECK ((cumple_dia IS NULL) = (cumple_mes IS NULL))
 );

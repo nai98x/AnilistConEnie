@@ -282,6 +282,20 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
         }
     }
     
+    public async Task ManageFechasEntrada(DiscordGuild guild)
+    {
+        try
+        {
+            Dictionary<ulong, DateTime> joinedAts = guild.Members.Values.Where(x => !x.IsBot).ToDictionary(x => x.Id, x => x.JoinedAt.UtcDateTime);
+            int completadas = await usuariosRepository.CompletarFechasEntrada(joinedAts);
+            if (completadas > 0)
+                logger.LogInformation("Fechas de entrada completadas con el joined_at de Discord: {Cantidad}", completadas);
+        }
+        catch (Exception ex) { await logService.LogException(guild, ex, "ManageFechasEntrada"); }
+
+        fechaEntradaState.FillFechasEntrada(await usuariosRepository.GetFechasEntrada());
+    }
+
     public async Task ManageUsuariosActivos(DiscordGuild guild)
     {
         DiscordRole inactivoRole = guild.Roles.First(x => x.Key == config.Roles.Inactivo).Value;
@@ -311,16 +325,16 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
         DiscordRole activoRole = guild.Roles[config.Roles.ActivoEnServidor];
         (DateOnly desde, DateOnly hasta) = RolActivoServidor.Ventana(DateOnly.FromDateTime(RelojServidor.Hoy), mensajesDiariosSettings.RolActivoVentanaDias);
 
-        HashSet<long> correspondenIds = (await mensajesDiariosRepository.ObtenerTotales(desde, hasta))
-            .Where(x => RolActivoServidor.Corresponde(x.Total, x.Dias, mensajesDiariosSettings.RolActivoMasDeMensajes, mensajesDiariosSettings.RolActivoMinimoDias))
-            .Select(x => x.UserId)
-            .ToHashSet();
+        Dictionary<long, UsuarioMensajes> totales = (await mensajesDiariosRepository.ObtenerTotales(desde, hasta)).ToDictionary(x => x.UserId);
+        DateTimeOffset ahora = DateTimeOffset.UtcNow;
 
         foreach (DiscordMember member in guild.Members.Values.Where(x => !x.IsBot))
         {
             try
             {
-                bool corresponde = correspondenIds.Contains((long)member.Id);
+                bool corresponde = totales.TryGetValue((long)member.Id, out UsuarioMensajes? total)
+                    && RolActivoServidor.Corresponde(total.Total, total.Dias, mensajesDiariosSettings.RolActivoMasDeMensajes, mensajesDiariosSettings.RolActivoMinimoDias,
+                        fechaEntradaState.GetFechaEntrada(member.Id, member.JoinedAt), ahora, mensajesDiariosSettings.RolActivoAntiguedadMinimaMeses);
                 bool loTiene = member.Roles.Any(x => x.Id == activoRole.Id);
 
                 if (corresponde && !loTiene)

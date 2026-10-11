@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, TriggersState triggersState, FechaEntradaState fechaEntradaState, ILogger<GuildDownloadCompletedHandler> logger, BotConfiguration config, DiscordLogService logService, GuildMaintenanceService guildMaintenanceService, IUsuariosRepository usuariosRepository, ITriggersRepository triggersRepository, DbConnectionFactory connectionFactory, YumikoDbConnectionFactory yumikoConnectionFactory)
+public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, TriggersState triggersState, ILogger<GuildDownloadCompletedHandler> logger, BotConfiguration config, DiscordLogService logService, GuildMaintenanceService guildMaintenanceService, ITriggersRepository triggersRepository, DbConnectionFactory connectionFactory, YumikoDbConnectionFactory yumikoConnectionFactory)
 {
     public async Task Handle(DiscordClient client, GuildDownloadCompletedEventArgs args)
     {
@@ -60,9 +60,9 @@ public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, 
         logger.LogInformation("Triggers cargados correctamente");
         #endregion
 
-        #region Fechas de entrada reales
-        fechaEntradaState.FillFechasEntrada(await usuariosRepository.GetFechasEntrada());
-        logger.LogInformation("Fechas de entrada reales cargadas correctamente");
+        #region Fechas de entrada
+        await guildMaintenanceService.ManageFechasEntrada(guild);
+        logger.LogInformation("Fechas de entrada gestionadas correctamente");
         #endregion
 
         #region Control de roles en startup

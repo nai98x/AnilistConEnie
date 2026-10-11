@@ -86,6 +86,7 @@ public record MensajesDiariosSettings
     public required int RolActivoVentanaDias { get; init; }
     public required int RolActivoMasDeMensajes { get; init; }
     public required int RolActivoMinimoDias { get; init; }
+    public required int RolActivoAntiguedadMinimaMeses { get; init; }
 
     public static MensajesDiariosSettings FromConfiguration(IConfiguration configuration)
     {
@@ -96,6 +97,7 @@ public record MensajesDiariosSettings
             RolActivoVentanaDias = section.RequireInt("RolActivoVentanaDias"),
             RolActivoMasDeMensajes = section.RequireInt("RolActivoMasDeMensajes"),
             RolActivoMinimoDias = section.RequireInt("RolActivoMinimoDias"),
+            RolActivoAntiguedadMinimaMeses = section.RequireInt("RolActivoAntiguedadMinimaMeses"),
         };
 
         if (settings.RolActivoVentanaDias > settings.DiasRetencion)

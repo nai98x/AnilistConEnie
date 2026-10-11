@@ -12,6 +12,6 @@ public static class RolActivoServidor
         return (RetencionMensajes.FechaMinima(hasta, dias), hasta);
     }
 
-    public static bool Corresponde(long mensajes, long diasConMensajes, int masDeMensajes, int minimoDias) =>
-        mensajes > masDeMensajes && diasConMensajes >= minimoDias;
+    public static bool Corresponde(long mensajes, long diasConMensajes, int masDeMensajes, int minimoDias, DateTimeOffset fechaEntrada, DateTimeOffset ahora, int antiguedadMinimaMeses) =>
+        mensajes > masDeMensajes && diasConMensajes >= minimoDias && fechaEntrada <= ahora.AddMonths(-antiguedadMinimaMeses);
 }

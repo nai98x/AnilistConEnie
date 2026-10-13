@@ -26,12 +26,12 @@ public class MensajesDiariosRepository(DbConnectionFactory connectionFactory) : 
             commandType: CommandType.StoredProcedure);
     }
 
-    public async Task<List<UsuarioMensajes>> ObtenerTotales(DateOnly desde, DateOnly hasta)
+    public async Task<List<UsuarioMensajes>> ObtenerTotales(DateOnly desde, DateOnly hasta, ulong canalExcluido)
     {
         using var connection = await connectionFactory.OpenConnectionAsync();
         return (await connection.QueryAsync<UsuarioMensajes>(
             "mensajes_diarios_totales",
-            new { p_desde = desde, p_hasta = hasta },
+            new { p_desde = desde, p_hasta = hasta, p_canal_excluido = (long)canalExcluido },
             commandType: CommandType.StoredProcedure)).AsList();
     }
 }

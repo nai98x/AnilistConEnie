@@ -12,6 +12,12 @@ public static class RolActivoServidor
         return (RetencionMensajes.FechaMinima(hasta, dias), hasta);
     }
 
-    public static bool Corresponde(long mensajes, long diasConMensajes, int masDeMensajes, int minimoDias, DateTimeOffset fechaEntrada, DateTimeOffset ahora, int antiguedadMinimaMeses) =>
-        mensajes > masDeMensajes && diasConMensajes >= minimoDias && fechaEntrada <= ahora.AddMonths(-antiguedadMinimaMeses);
+    /// <summary>
+    /// <paramref name="maximoEnUnCanal"/> es la mayor cantidad de mensajes en un solo canal sin contar general:
+    /// hablar casi solo en un canal que no es general no alcanza, pero hacerlo en general sí.
+    /// </summary>
+    public static bool Corresponde(long mensajes, long maximoEnUnCanal, long diasConMensajes, int masDeMensajes, int minimoFueraDelCanalPrincipal, int minimoDias,
+        DateTimeOffset fechaEntrada, DateTimeOffset ahora, int antiguedadMinimaMeses) =>
+        mensajes > masDeMensajes && mensajes - maximoEnUnCanal >= minimoFueraDelCanalPrincipal && diasConMensajes >= minimoDias
+        && fechaEntrada <= ahora.AddMonths(-antiguedadMinimaMeses);
 }

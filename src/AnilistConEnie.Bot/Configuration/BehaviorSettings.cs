@@ -85,6 +85,7 @@ public record MensajesDiariosSettings
     public required int DiasRetencion { get; init; }
     public required int RolActivoVentanaDias { get; init; }
     public required int RolActivoMasDeMensajes { get; init; }
+    public required int RolActivoMinimoFueraDelCanalPrincipal { get; init; }
     public required int RolActivoMinimoDias { get; init; }
     public required int RolActivoAntiguedadMinimaMeses { get; init; }
 
@@ -96,6 +97,7 @@ public record MensajesDiariosSettings
             DiasRetencion = section.RequireInt("DiasRetencion"),
             RolActivoVentanaDias = section.RequireInt("RolActivoVentanaDias"),
             RolActivoMasDeMensajes = section.RequireInt("RolActivoMasDeMensajes"),
+            RolActivoMinimoFueraDelCanalPrincipal = section.RequireInt("RolActivoMinimoFueraDelCanalPrincipal"),
             RolActivoMinimoDias = section.RequireInt("RolActivoMinimoDias"),
             RolActivoAntiguedadMinimaMeses = section.RequireInt("RolActivoAntiguedadMinimaMeses"),
         };

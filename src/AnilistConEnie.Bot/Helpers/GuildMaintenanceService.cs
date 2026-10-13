@@ -346,7 +346,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
         DiscordRole activoRole = guild.Roles[config.Roles.ActivoEnServidor];
         (DateOnly desde, DateOnly hasta) = RolActivoServidor.Ventana(DateOnly.FromDateTime(RelojServidor.Hoy), mensajesDiariosSettings.RolActivoVentanaDias);
 
-        Dictionary<long, UsuarioMensajes> totales = (await mensajesDiariosRepository.ObtenerTotales(desde, hasta)).ToDictionary(x => x.UserId);
+        Dictionary<long, UsuarioMensajes> totales = (await mensajesDiariosRepository.ObtenerTotales(desde, hasta, config.Channels.General)).ToDictionary(x => x.UserId);
         DateTimeOffset ahora = DateTimeOffset.UtcNow;
 
         foreach (DiscordMember member in guild.Members.Values.Where(x => !x.IsBot))
@@ -354,7 +354,8 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
             try
             {
                 bool corresponde = totales.TryGetValue((long)member.Id, out UsuarioMensajes? total)
-                    && RolActivoServidor.Corresponde(total.Total, total.Dias, mensajesDiariosSettings.RolActivoMasDeMensajes, mensajesDiariosSettings.RolActivoMinimoDias,
+                    && RolActivoServidor.Corresponde(total.Total, total.MaximoEnUnCanal, total.Dias, mensajesDiariosSettings.RolActivoMasDeMensajes,
+                        mensajesDiariosSettings.RolActivoMinimoFueraDelCanalPrincipal, mensajesDiariosSettings.RolActivoMinimoDias,
                         fechaEntradaState.GetFechaEntrada(member.Id, member.JoinedAt), ahora, mensajesDiariosSettings.RolActivoAntiguedadMinimaMeses);
                 bool loTiene = member.Roles.Any(x => x.Id == activoRole.Id);
 

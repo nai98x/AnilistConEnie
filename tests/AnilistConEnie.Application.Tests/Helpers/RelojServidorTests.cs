@@ -35,6 +35,27 @@ public class RelojServidorTests
     }
 
     [Fact]
+    public void DesdeHoraLocal_ConvierteArgentinaAUtc()
+    {
+        DateTime local = new(2021, 7, 7, 23, 0, 0);
+
+        DateTime utc = RelojServidor.DesdeHoraLocal(local);
+
+        Assert.Equal(DateTimeKind.Utc, utc.Kind);
+        Assert.Equal(new DateTime(2021, 7, 8, 2, 0, 0), utc);
+    }
+
+    [Fact]
+    public void DesdeHoraLocal_IgnoraElKindDeEntrada()
+    {
+        DateTime local = new(2023, 2, 23, 9, 44, 0, DateTimeKind.Utc);
+
+        DateTime utc = RelojServidor.DesdeHoraLocal(local);
+
+        Assert.Equal(new DateTime(2023, 2, 23, 12, 44, 0), utc);
+    }
+
+    [Fact]
     public void Hoy_EsLaFechaDeAhoraSinHora()
     {
         DateTime hoy = RelojServidor.Hoy;

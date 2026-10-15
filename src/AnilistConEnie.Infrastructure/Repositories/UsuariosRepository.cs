@@ -105,6 +105,15 @@ public class UsuariosRepository(DbConnectionFactory connectionFactory) : IUsuari
             commandType: CommandType.StoredProcedure);
     }
 
+    public async Task<bool> SetFechaEntrada(ulong userId, DateTime fechaEntrada)
+    {
+        using var connection = await connectionFactory.OpenConnectionAsync();
+        return await connection.ExecuteScalarAsync<bool>(
+            "usuario_set_fecha_entrada",
+            new { p_user_id = (long)userId, p_fecha_entrada = fechaEntrada },
+            commandType: CommandType.StoredProcedure);
+    }
+
     public async Task SetLastActivity(ulong userId, DateTime lastActivity)
     {
         using var connection = await connectionFactory.OpenConnectionAsync();

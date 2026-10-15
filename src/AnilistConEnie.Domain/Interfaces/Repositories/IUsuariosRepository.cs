@@ -15,6 +15,7 @@ public interface IUsuariosRepository
     Task<List<Usuario>> GetCumples();
     Task<List<Usuario>> GetFechasEntrada();
     Task<int> CompletarFechasEntrada(Dictionary<ulong, DateTime> fechasEntrada);
+    Task<bool> SetFechaEntrada(ulong userId, DateTime fechaEntrada);
     Task SetLastActivity(ulong userId, DateTime lastActivity);
     Task<List<UsuarioActivo>> GetUsuariosActivos(HashSet<ulong> memberIds, int months);
     Task<List<UsuarioActivo>> GetUsuariosInactivos(HashSet<ulong> memberIds, int months);

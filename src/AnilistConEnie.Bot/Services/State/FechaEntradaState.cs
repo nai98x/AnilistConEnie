@@ -23,6 +23,9 @@ public class FechaEntradaState
     public void RegistrarSiNoExiste(ulong userId, DateTimeOffset fechaEntrada) =>
         _fechas.TryAdd(userId, RelojServidor.EnHoraLocal(fechaEntrada.UtcDateTime));
 
+    public void SetFechaEntrada(ulong userId, DateTime fechaEntradaUtc) =>
+        _fechas[userId] = RelojServidor.EnHoraLocal(fechaEntradaUtc);
+
     public DateTimeOffset GetFechaEntrada(ulong userId, DateTimeOffset joinedAt) =>
         _fechas.TryGetValue(userId, out DateTimeOffset fecha) ? fecha : RelojServidor.EnHoraLocal(joinedAt.UtcDateTime);
 }

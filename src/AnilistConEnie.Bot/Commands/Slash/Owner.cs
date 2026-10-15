@@ -1,5 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
+using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Bot.Commands.Framework.Attributes;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Extensions;
@@ -24,7 +26,7 @@ namespace AnilistConEnie.Bot.Commands.Slash;
 [Command("owner")]
 [TestCommand]
 [RequirePermissions(DiscordPermission.Administrator)]
-public class Owner(XpState xpState, PermanentUsernameState permanentUsernameState, DiscordBotService discordBotService, IAnilistClient anilistClient, IHostApplicationLifetime appLifetime, BotConfiguration config, IXpUsuariosRepository xpUsuariosRepository, ILogger<Owner> logger)
+public class Owner(XpState xpState, PermanentUsernameState permanentUsernameState, FechaEntradaState fechaEntradaState, DiscordBotService discordBotService, IAnilistClient anilistClient, IHostApplicationLifetime appLifetime, BotConfiguration config, IXpUsuariosRepository xpUsuariosRepository, IUsuariosRepository usuariosRepository, ILogger<Owner> logger)
 {
     [Command("test")]
     [Description("Comando general para testear cosas")]
@@ -175,6 +177,40 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
             .AsEphemeral());
     }
     
+    [Command("set_fecha_entrada_usuario")]
+    [Description("Registra la fecha de entrada real de un usuario al servidor (hora de Argentina)")]
+    public async Task SetFechaEntradaUsuario(
+        SlashCommandContext ctx,
+        [Parameter("Usuario")] [Description("El usuario al que se le registra la fecha de entrada")] DiscordUser usuario,
+        [Parameter("Fecha")] [Description("Fecha y hora de entrada en hora de Argentina (dd/MM/yyyy HH:mm)")] string fecha)
+    {
+        await ctx.DeferEphemeralAsync();
+
+        if (!DateTime.TryParseExact(fecha.Trim(), ["dd/MM/yyyy HH:mm", "dd/MM/yyyy HH:mm:ss"], CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime fechaLocal))
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"Fecha `{fecha}` invalida (debe ser dd/MM/yyyy HH:mm)")));
+            return;
+        }
+
+        DateTime fechaUtc = RelojServidor.DesdeHoraLocal(fechaLocal);
+        if (fechaUtc > DateTime.UtcNow)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("La fecha de entrada no puede ser futura.")));
+            return;
+        }
+
+        if (!await usuariosRepository.SetFechaEntrada(usuario.Id, fechaUtc))
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"{usuario.Username} no está registrado en la base de datos.")));
+            return;
+        }
+
+        fechaEntradaState.SetFechaEntrada(usuario.Id, fechaUtc);
+
+        await ctx.EditResponseAsync(new DiscordWebhookBuilder()
+            .WithContent($"Fecha de entrada de {usuario.Username} registrada: {fechaLocal:dd/MM/yyyy HH:mm} ({Formatter.Timestamp(new DateTimeOffset(fechaUtc), TimestampFormat.LongDateTime)})"));
+    }
+
     [Command("configurarbienvenida")]
     [Description("Agrega el mensaje de bienvenida")]
     public async Task ConfigurarBienvenida(SlashCommandContext ctx)

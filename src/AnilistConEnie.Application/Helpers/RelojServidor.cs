@@ -16,4 +16,8 @@ public static class RelojServidor
     /// <summary>Convierte un instante UTC a la hora de Argentina, con su offset.</summary>
     public static DateTimeOffset EnHoraLocal(DateTime utc) =>
         TimeZoneInfo.ConvertTime(new DateTimeOffset(DateTime.SpecifyKind(utc, DateTimeKind.Utc)), Zona);
+
+    /// <summary>Interpreta una fecha/hora de pared como hora de Argentina y devuelve el instante en UTC.</summary>
+    public static DateTime DesdeHoraLocal(DateTime local) =>
+        TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(local, DateTimeKind.Unspecified), Zona);
 }

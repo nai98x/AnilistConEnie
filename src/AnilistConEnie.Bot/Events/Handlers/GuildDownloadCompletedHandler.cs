@@ -96,8 +96,8 @@ public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, 
         await guildMaintenanceService.ManageUsuariosActivos(guild);
         logger.LogInformation("Usuarios activos gestionados correctamente");
         
-        await guildMaintenanceService.ManageRolActivoEnServidor(guild);
-        logger.LogInformation("Rol activo en servidor gestionado correctamente");
+        await guildMaintenanceService.ManageRolActivoEnComunidad(guild);
+        logger.LogInformation("Rol activo en comunidad gestionado correctamente");
         
         await guildMaintenanceService.ManageUnlinkedAccounts(client);
         logger.LogInformation("Cuentas sin vincular gestionadas correctamente");

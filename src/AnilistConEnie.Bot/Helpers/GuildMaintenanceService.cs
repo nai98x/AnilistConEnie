@@ -338,13 +338,13 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
         }
     }
     
-    public async Task ManageRolActivoEnServidor(DiscordGuild guild)
+    public async Task ManageRolActivoEnComunidad(DiscordGuild guild)
     {
         // En debug el conteo no se registra: sincronizar contra esa base le sacaría el rol a todos.
         if (discordBotService.Debug) return;
 
-        DiscordRole activoRole = guild.Roles[config.Roles.ActivoEnServidor];
-        (DateOnly desde, DateOnly hasta) = RolActivoServidor.Ventana(DateOnly.FromDateTime(RelojServidor.Hoy), mensajesDiariosSettings.RolActivoVentanaDias);
+        DiscordRole activoRole = guild.Roles[config.Roles.ActivoEnComunidad];
+        (DateOnly desde, DateOnly hasta) = RolActivoComunidad.Ventana(DateOnly.FromDateTime(RelojServidor.Hoy), mensajesDiariosSettings.RolActivoVentanaDias);
 
         Dictionary<long, UsuarioMensajes> totales = (await mensajesDiariosRepository.ObtenerTotales(desde, hasta, config.Channels.General)).ToDictionary(x => x.UserId);
         DateTimeOffset ahora = DateTimeOffset.UtcNow;
@@ -354,7 +354,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
             try
             {
                 bool corresponde = totales.TryGetValue((long)member.Id, out UsuarioMensajes? total)
-                    && RolActivoServidor.Corresponde(total.Total, total.MaximoEnUnCanal, total.Dias, mensajesDiariosSettings.RolActivoMasDeMensajes,
+                    && RolActivoComunidad.Corresponde(total.Total, total.MaximoEnUnCanal, total.Dias, mensajesDiariosSettings.RolActivoMasDeMensajes,
                         mensajesDiariosSettings.RolActivoMinimoFueraDelCanalPrincipal, mensajesDiariosSettings.RolActivoMinimoDias,
                         fechaEntradaState.GetFechaEntrada(member.Id, member.JoinedAt), ahora, mensajesDiariosSettings.RolActivoAntiguedadMinimaMeses);
                 bool loTiene = member.Roles.Any(x => x.Id == activoRole.Id);
@@ -364,7 +364,7 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
                 else if (!corresponde && loTiene)
                     await member.RevokeRoleAsync(activoRole);
             }
-            catch (Exception ex) { await logService.LogException(guild, ex, "Rol activo en servidor"); }
+            catch (Exception ex) { await logService.LogException(guild, ex, "Rol activo en comunidad"); }
         }
     }
 

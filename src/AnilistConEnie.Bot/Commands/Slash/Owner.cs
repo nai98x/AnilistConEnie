@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
+using AnilistConEnie.Application.Actividad;
 using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Bot.Commands.Framework.Attributes;
 using AnilistConEnie.Bot.Configuration;
@@ -18,6 +19,7 @@ using DSharpPlus.Commands;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
+using DSharpPlus.Exceptions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -26,7 +28,7 @@ namespace AnilistConEnie.Bot.Commands.Slash;
 [Command("owner")]
 [TestCommand]
 [RequirePermissions(DiscordPermission.Administrator)]
-public class Owner(XpState xpState, PermanentUsernameState permanentUsernameState, FechaEntradaState fechaEntradaState, DiscordBotService discordBotService, IAnilistClient anilistClient, IHostApplicationLifetime appLifetime, BotConfiguration config, IXpUsuariosRepository xpUsuariosRepository, IUsuariosRepository usuariosRepository, ILogger<Owner> logger)
+public class Owner(XpState xpState, PermanentUsernameState permanentUsernameState, FechaEntradaState fechaEntradaState, DiscordBotService discordBotService, IAnilistClient anilistClient, IHostApplicationLifetime appLifetime, BotConfiguration config, IXpUsuariosRepository xpUsuariosRepository, IUsuariosRepository usuariosRepository, IMensajesDiariosRepository mensajesDiariosRepository, MensajesDiariosSettings mensajesDiariosSettings, ILogger<Owner> logger)
 {
     [Command("test")]
     [Description("Comando general para testear cosas")]
@@ -209,6 +211,57 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
 
         await ctx.EditResponseAsync(new DiscordWebhookBuilder()
             .WithContent($"Fecha de entrada de {usuario.Username} registrada: {fechaLocal:dd/MM/yyyy HH:mm} ({Formatter.Timestamp(new DateTimeOffset(fechaUtc), TimestampFormat.LongDateTime)})"));
+    }
+
+    [Command("rol_activo_comunidad")]
+    [Description("Muestra si un usuario tiene el rol activo en la comunidad y cómo va con cada condición")]
+    public async Task RolActivoComunidadUsuario(
+        SlashCommandContext ctx,
+        [Parameter("Usuario")] [Description("El usuario a consultar")] DiscordUser usuario)
+    {
+        await ctx.DeferEphemeralAsync();
+
+        DiscordMember miembro;
+        try
+        {
+            miembro = await ctx.Guild!.GetMemberAsync(usuario.Id);
+        }
+        catch (NotFoundException)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"{usuario.Mention} no se encuentra en el servidor")));
+            return;
+        }
+
+        MensajesDiariosSettings s = mensajesDiariosSettings;
+        (DateOnly desde, DateOnly hasta) = RolActivoComunidad.Ventana(DateOnly.FromDateTime(RelojServidor.Hoy), s.RolActivoVentanaDias);
+        List<UsuarioMensajes> totales = await mensajesDiariosRepository.ObtenerTotales(desde, hasta, config.Channels.General);
+        UsuarioMensajes total = totales.FirstOrDefault(x => x.UserId == (long)miembro.Id) ?? new UsuarioMensajes { UserId = (long)miembro.Id };
+
+        DateTimeOffset fechaEntrada = fechaEntradaState.GetFechaEntrada(miembro.Id, miembro.JoinedAt);
+        DateTimeOffset cumpleAntiguedad = fechaEntrada.AddMonths(s.RolActivoAntiguedadMinimaMeses);
+        EvaluacionRolActivo evaluacion = RolActivoComunidad.Evaluar(total.Total, total.MaximoEnUnCanal, total.Dias, s.RolActivoMasDeMensajes,
+            s.RolActivoMinimoFueraDelCanalPrincipal, s.RolActivoMinimoDias, fechaEntrada, DateTimeOffset.UtcNow, s.RolActivoAntiguedadMinimaMeses);
+        bool tieneRol = miembro.Roles.Any(x => x.Id == config.Roles.ActivoEnComunidad);
+
+        static string Check(bool cumple) => cumple ? "✅" : "❌";
+
+        string desc =
+            $"{Formatter.Bold("Tiene el rol:")} {(tieneRol ? "Sí" : "No")}\n" +
+            $"{Formatter.Bold("Le corresponde:")} {(evaluacion.Corresponde ? "Sí" : "No")}\n" +
+            $"Ventana: {desde:dd/MM/yyyy} al {hasta:dd/MM/yyyy} ({s.RolActivoVentanaDias} días, hoy incluido)\n\n" +
+            $"{Check(evaluacion.Mensajes)} Mensajes: {total.Total} (más de {s.RolActivoMasDeMensajes})\n" +
+            $"{Check(evaluacion.FueraDelCanalPrincipal)} Fuera del canal principal: {total.Total - total.MaximoEnUnCanal} (mínimo {s.RolActivoMinimoFueraDelCanalPrincipal}; " +
+            $"canal principal sin contar general: {total.MaximoEnUnCanal})\n" +
+            $"{Check(evaluacion.Dias)} Días con mensajes: {total.Dias} (mínimo {s.RolActivoMinimoDias})\n" +
+            $"{Check(evaluacion.Antiguedad)} Antigüedad: entró {Formatter.Timestamp(fechaEntrada, TimestampFormat.ShortDate)}, " +
+            $"cumple {s.RolActivoAntiguedadMinimaMeses} mes(es) {Formatter.Timestamp(cumpleAntiguedad, TimestampFormat.RelativeTime)}";
+
+        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+        {
+            Title = $"Rol activo en la comunidad: {miembro.DisplayName}",
+            Description = desc,
+            Color = evaluacion.Corresponde ? DiscordColor.Green : DiscordColor.Red
+        }));
     }
 
     [Command("configurarbienvenida")]

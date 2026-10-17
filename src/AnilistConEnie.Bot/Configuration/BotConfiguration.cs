@@ -51,7 +51,7 @@ public class BotConfiguration
         public required ulong Fundador { get; init; }
         public required ulong NoVinculado { get; init; }
         public required ulong Inactivo { get; init; }
-        public required ulong ActivoEnServidor { get; init; }
+        public required ulong ActivoEnComunidad { get; init; }
         public required ulong Invite { get; init; }
         public required ulong Pdd { get; init; }
         public required ulong KamiSama { get; init; }
@@ -155,7 +155,7 @@ public class BotConfiguration
                 Fundador = RequireUlong(roles, "Fundador"),
                 NoVinculado = RequireUlong(roles, "NoVinculado"),
                 Inactivo = RequireUlong(roles, "Inactivo"),
-                ActivoEnServidor = RequireUlong(roles, "ActivoEnServidor"),
+                ActivoEnComunidad = RequireUlong(roles, "ActivoEnComunidad"),
                 Invite = RequireUlong(roles, "Invite"),
                 Pdd = RequireUlong(roles, "Pdd"),
                 KamiSama = RequireUlong(roles, "KamiSama"),

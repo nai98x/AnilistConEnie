@@ -23,7 +23,7 @@ las de adentro.
 | Proyecto | Responsabilidad |
 |----------|-----------------|
 | **AnilistConEnie.Domain** | Entidades, enums, excepciones e interfaces. Define los contratos (`Interfaces/IAnilistClient.cs`, `Interfaces/Repositories/*`) que implementa Infrastructure. Sin dependencias hacia las otras capas. |
-| **AnilistConEnie.Application** | Lógica de negocio, mayormente como clases estáticas sin estado: `Xp/`, `Moderation/`, `Confessions/`, `Challenges/`, `Membership/`, `Charts/`, `Anilist/`, `Backups/`, `Fun/`, `Premios/`, `Triggers/`, `Helpers/`. No depende de Discord ni de la infraestructura. |
+| **AnilistConEnie.Application** | Lógica de negocio, mayormente como clases estáticas sin estado: `Xp/`, `Actividad/`, `Moderation/`, `Confessions/`, `Challenges/`, `Membership/`, `Charts/`, `Anilist/`, `Backups/`, `Fun/`, `Premios/`, `Triggers/`, `Helpers/`. No depende de Discord ni de la infraestructura. |
 | **AnilistConEnie.Infrastructure** | Acceso a datos y servicios externos: `Database/DbConnectionFactory.cs` + `Repositories/*` (Dapper, stored procedures), `Firebase/FirebaseService.cs` + `Repositories/FirebaseRepository.cs` (Storage), `Anilist/` (cliente GraphQL: `AnilistClient`, `AnilistGraphQLExecutor`, `AnilistQueries`) y `Charts/`. |
 | **AnilistConEnie.Bot** | Punto de entrada y todo lo relacionado a Discord: comandos, handlers de eventos, tareas programadas, estado en memoria, configuración y configuración de inyección de dependencias. |
 
@@ -62,7 +62,7 @@ En `src/AnilistConEnie.Bot/appsettings.json`. Tiene dos bloques:
 
 - **`Ids`** — IDs del servidor, canales, roles, emotes y timezones. Se bindean en `BotConfiguration.cs`.
 - **Reglas de negocio configurables** — secciones `AntiSpam`, `LimpiezaMiembros`, `Cooldowns`, `Xp`,
-  `Confesiones`, `SubirImagen` y `Logs`. Se bindean en `BehaviorSettings.cs` (cada sección tiene
+  `MensajesDiarios`, `Confesiones`, `SubirImagen` y `Logs`. Se bindean en `BehaviorSettings.cs` (cada sección tiene
   sus defaults).
 
 ### Token de Discord
@@ -88,6 +88,15 @@ dentro de la carpeta `db/`. La connection string se provee por fuera con la clav
 **`ConnectionStrings:Database`**: variable de entorno o User Secrets. Detalle
 de setup en `deploy/README.md`.
 
+El bot además espeja el vínculo de AniList en la base de **Yumiko** (otra base, con su propio rol),
+cuya connection string va en **`ConnectionStrings:Yumiko`** (ver `db/README.md`).
+
+### Backups
+
+En release, el bot avisa si no se detecta el backup diario de la base. La ruta del archivo de estado que
+deja el backup se provee por fuera con la clave **`Backups:RutaEstado`** (variable de entorno
+`Backups__RutaEstado`); en debug no se exige.
+
 ## Requisitos y ejecución
 
 - .NET 10 SDK.
@@ -101,4 +110,14 @@ dotnet restore
 
 ```bash
 dotnet run --project src/AnilistConEnie.Bot
+```
+
+## Tests
+
+`tests/AnilistConEnie.Application.Tests` (xUnit) cubre la lógica de negocio de Application con tests
+unitarios puros: un archivo por clase y métodos nombrados `Metodo_Escenario_Resultado`. Infrastructure
+y Bot no tienen tests (dependen de Discord, la base de datos o el render de imágenes).
+
+```bash
+dotnet test
 ```

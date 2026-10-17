@@ -57,7 +57,7 @@ public class AniversarioCalculatorTests
     [InlineData(2023, 6, 24, 3)]   // ya pasó el día
     [InlineData(2023, 6, 26, 2)]   // todavía no llega el día este año
     [InlineData(2023, 12, 31, 2)]  // falta para fin de año
-    public void AniosEnServidor_CountsCompletedYears(int year, int month, int day, int esperado)
+    public void AniosEnServidor_BeforeAndAfterAnniversary_CountsCompletedYears(int year, int month, int day, int esperado)
     {
         DateTime now = new(2026, 6, 25);
         DateTimeOffset entrada = new(year, month, day, 0, 0, 0, TimeSpan.Zero);

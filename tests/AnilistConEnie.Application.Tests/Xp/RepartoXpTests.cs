@@ -12,7 +12,7 @@ public class RepartoXpTests
     };
 
     [Fact]
-    public void Prellenar_SacaLosSeparadoresDelNombre()
+    public void Prellenar_NameWithSeparators_RemovesThem()
     {
         Dictionary<ulong, string> raro = new() { [1] = "Na=i:  x" };
 
@@ -28,7 +28,7 @@ public class RepartoXpTests
     [InlineData(" 1.500 ", 1500)]
     [InlineData("2 000", 2000)]
     [InlineData("0", 0)]
-    public void TryParseXp_AceptaLosFormatosDelModal(string valor, long esperado)
+    public void TryParseXp_ModalFormats_ReturnsTrue(string valor, long esperado)
     {
         Assert.True(RepartoXp.TryParseXp(valor, out long xp));
         Assert.Equal(esperado, xp);
@@ -38,13 +38,13 @@ public class RepartoXpTests
     [InlineData("mucha")]
     [InlineData("")]
     [InlineData("1,5x")]
-    public void TryParseXp_RechazaLoQueNoEsNumero(string valor)
+    public void TryParseXp_NotANumber_ReturnsFalse(string valor)
     {
         Assert.False(RepartoXp.TryParseXp(valor, out _));
     }
 
     [Fact]
-    public void Parse_AceptaPositivosNegativosYSignoExplicito()
+    public void Parse_PositiveNegativeAndExplicitSign_AreAccepted()
     {
         RepartoParseado resultado = RepartoXp.Parse("Nai = 500\nEli = -200\nGaby = +1500", Nombres);
 
@@ -55,7 +55,7 @@ public class RepartoXpTests
     }
 
     [Fact]
-    public void Parse_IgnoraLasLineasEnCeroYLasVacias()
+    public void Parse_ZeroAndEmptyLines_AreIgnored()
     {
         RepartoParseado resultado = RepartoXp.Parse("Nai = 500\n\nEli = 0\n   \n", Nombres);
 
@@ -64,7 +64,7 @@ public class RepartoXpTests
     }
 
     [Fact]
-    public void Parse_AceptaDosPuntosYSeparadoresDeMiles()
+    public void Parse_ColonAndThousandsSeparators_AreAccepted()
     {
         RepartoParseado resultado = RepartoXp.Parse("Nai: 1.500\nEli : -2 000", Nombres);
 
@@ -73,7 +73,7 @@ public class RepartoXpTests
     }
 
     [Fact]
-    public void Parse_IgnoraMayusculasYAcentos()
+    public void Parse_CaseAndAccents_AreIgnored()
     {
         RepartoParseado resultado = RepartoXp.Parse("gaby = 100", Nombres);
 
@@ -82,7 +82,7 @@ public class RepartoXpTests
     }
 
     [Fact]
-    public void Parse_ReportaNombreDesconocido()
+    public void Parse_UnknownName_ReportsError()
     {
         RepartoParseado resultado = RepartoXp.Parse("Nai = 500\nPepe = 300", Nombres);
 
@@ -92,7 +92,7 @@ public class RepartoXpTests
     }
 
     [Fact]
-    public void Parse_ReportaNumeroInvalido()
+    public void Parse_InvalidNumber_ReportsError()
     {
         RepartoParseado resultado = RepartoXp.Parse("Nai = mucha", Nombres);
 
@@ -102,7 +102,7 @@ public class RepartoXpTests
     }
 
     [Fact]
-    public void Parse_ReportaLineaSinSeparador()
+    public void Parse_LineWithoutSeparator_ReportsError()
     {
         RepartoParseado resultado = RepartoXp.Parse("Nai 500", Nombres);
 
@@ -112,7 +112,7 @@ public class RepartoXpTests
     }
 
     [Fact]
-    public void Parse_ReportaUsuarioRepetido()
+    public void Parse_RepeatedUser_ReportsError()
     {
         RepartoParseado resultado = RepartoXp.Parse("Nai = 500\nNai = 300", Nombres);
 
@@ -122,7 +122,7 @@ public class RepartoXpTests
     }
 
     [Fact]
-    public void Parse_ReportaNombreAmbiguo()
+    public void Parse_AmbiguousName_ReportsError()
     {
         Dictionary<ulong, string> homonimos = new() { [1] = "Nai", [2] = "nai" };
 
@@ -134,7 +134,7 @@ public class RepartoXpTests
     }
 
     [Fact]
-    public void Parse_SinNingunaAsignacionAvisa()
+    public void Parse_NoAssignments_ReportsError()
     {
         RepartoParseado resultado = RepartoXp.Parse("Nai = 0\nEli = 0", Nombres);
 
@@ -144,7 +144,7 @@ public class RepartoXpTests
     }
 
     [Fact]
-    public void Renderizar_MuestraMencionYSigno()
+    public void Renderizar_Assignments_ShowsMentionAndSign()
     {
         string texto = RepartoXp.Renderizar([new AsignacionXp(1, 500), new AsignacionXp(2, -200)]);
 
@@ -152,7 +152,7 @@ public class RepartoXpTests
     }
 
     [Fact]
-    public void ParseMensaje_RecuperaLoQueRenderizo()
+    public void ParseMensaje_RenderedText_RecoversAssignments()
     {
         AsignacionXp[] original = [new AsignacionXp(1, 500), new AsignacionXp(2, -200), new AsignacionXp(3, 1500)];
 
@@ -163,7 +163,7 @@ public class RepartoXpTests
     }
 
     [Fact]
-    public void PrellenarDesdeAsignaciones_ArmaElTextoParaEditar()
+    public void Prellenar_Assignments_BuildsEditableText()
     {
         string texto = RepartoXp.Prellenar([new AsignacionXp(1, 500), new AsignacionXp(2, -200)], Nombres);
 

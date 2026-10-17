@@ -31,7 +31,7 @@ public class NumberHelperTests
     [InlineData(100, 100, 100)]
     [InlineData(199, 100, 100)]
     [InlineData(200, 100, 200)]
-    public void ObtenerMultiploAnterior_RoundsDownToMultiple(long numero, int multiplo, long esperado)
+    public void ObtenerMultiploAnterior_AnyNumber_RoundsDownToMultiple(long numero, int multiplo, long esperado)
     {
         Assert.Equal(esperado, NumberHelper.ObtenerMultiploAnterior(numero, multiplo));
     }
@@ -42,7 +42,7 @@ public class NumberHelperTests
     [InlineData(100, 100, 100)]
     [InlineData(101, 100, 200)]
     [InlineData(250, 100, 300)]
-    public void ObtenerMultiploSiguiente_RoundsUpToMultiple(long numero, int multiplo, long esperado)
+    public void ObtenerMultiploSiguiente_AnyNumber_RoundsUpToMultiple(long numero, int multiplo, long esperado)
     {
         Assert.Equal(esperado, NumberHelper.ObtenerMultiploSiguiente(numero, multiplo));
     }

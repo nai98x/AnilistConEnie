@@ -22,7 +22,7 @@ public class XpHistoryExtensionsTests
     }
 
     [Fact]
-    public void GetPromedio_XpGainedDividedByDays()
+    public void GetPromedio_TwoRecords_ReturnsXpGainedDividedByDays()
     {
         List<UserDailyXp> registros =
         [
@@ -35,7 +35,7 @@ public class XpHistoryExtensionsTests
     }
 
     [Fact]
-    public void GetPromedio_UsesOnlyFirstAndLastRecord()
+    public void GetPromedio_IntermediatePeak_UsesOnlyFirstAndLastRecord()
     {
         List<UserDailyXp> registros =
         [
@@ -52,7 +52,7 @@ public class XpHistoryExtensionsTests
         new() { PrimeraFecha = primera, PrimerXp = primerXp, UltimaFecha = ultima, UltimoXp = ultimoXp };
 
     [Fact]
-    public void GetPromedioExtremos_UltimoDelAnioEnCurso_CuentaHastaHoy()
+    public void GetPromedio_ExtremosLastInCurrentYear_CountsUntilToday()
     {
         XpDiarioExtremos extremos = Extremos(new DateTime(2026, 1, 1), 0, new DateTime(2026, 1, 6), 1000);
 
@@ -61,7 +61,7 @@ public class XpHistoryExtensionsTests
     }
 
     [Fact]
-    public void GetPromedioExtremos_UltimoDeAniosAnteriores_CuentaHastaElUltimoRegistro()
+    public void GetPromedio_ExtremosLastInPreviousYear_CountsUntilLastRecord()
     {
         XpDiarioExtremos extremos = Extremos(new DateTime(2025, 1, 1), 0, new DateTime(2025, 1, 11), 1000);
 
@@ -69,7 +69,7 @@ public class XpHistoryExtensionsTests
     }
 
     [Fact]
-    public void GetPromedioExtremos_SinDiasTranscurridos_ReturnsZero()
+    public void GetPromedio_ExtremosWithoutElapsedDays_ReturnsZero()
     {
         XpDiarioExtremos extremos = Extremos(new DateTime(2026, 3, 1), 500, new DateTime(2026, 3, 1), 500);
 
@@ -77,7 +77,7 @@ public class XpHistoryExtensionsTests
     }
 
     [Fact]
-    public void GetPromedioExtremos_CoincideConElPromedioDelChartRelleno()
+    public void GetPromedio_Extremos_MatchesFilledChartAverage()
     {
         DateTime hoy = new(2026, 1, 11, 12, 0, 0);
         List<UserDailyXp> historial = [Day(2026, 1, 1, 0), Day(2026, 1, 4, 300), Day(2026, 1, 6, 1000)];

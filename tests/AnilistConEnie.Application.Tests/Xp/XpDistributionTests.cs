@@ -6,7 +6,7 @@ namespace AnilistConEnie.Application.Tests.Xp;
 public class XpDistributionTests
 {
     [Fact]
-    public void Build_DistributesSixCategories()
+    public void Build_AllCategories_DistributesSixShares()
     {
         UserXp rank = new()
         {
@@ -31,7 +31,7 @@ public class XpDistributionTests
     }
 
     [Fact]
-    public void Build_PercentagesSumTo100()
+    public void Build_AnyXp_PercentagesSumTo100()
     {
         UserXp rank = new()
         {

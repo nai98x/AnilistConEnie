@@ -5,7 +5,7 @@ namespace AnilistConEnie.Application.Tests.Helpers;
 public class RelojServidorTests
 {
     [Fact]
-    public void Ahora_EsUtcMenosTresHoras()
+    public void Ahora_Always_IsUtcMinusThreeHours()
     {
         TimeSpan diferencia = DateTime.UtcNow - RelojServidor.Ahora;
 
@@ -14,7 +14,7 @@ public class RelojServidorTests
     }
 
     [Fact]
-    public void EnHoraLocal_ConvierteUtcAArgentina()
+    public void EnHoraLocal_UtcInstant_ConvertsToArgentina()
     {
         DateTime utc = new(2021, 7, 8, 2, 0, 0, DateTimeKind.Utc);
 
@@ -25,7 +25,7 @@ public class RelojServidorTests
     }
 
     [Fact]
-    public void EnHoraLocal_AsumeUtcAunqueElKindSeaUnspecified()
+    public void EnHoraLocal_UnspecifiedKind_AssumesUtc()
     {
         DateTime unspecified = new(2023, 2, 23, 12, 44, 0, DateTimeKind.Unspecified);
 
@@ -35,7 +35,7 @@ public class RelojServidorTests
     }
 
     [Fact]
-    public void DesdeHoraLocal_ConvierteArgentinaAUtc()
+    public void DesdeHoraLocal_ArgentinaTime_ConvertsToUtc()
     {
         DateTime local = new(2021, 7, 7, 23, 0, 0);
 
@@ -46,7 +46,7 @@ public class RelojServidorTests
     }
 
     [Fact]
-    public void DesdeHoraLocal_IgnoraElKindDeEntrada()
+    public void DesdeHoraLocal_AnyInputKind_IsIgnored()
     {
         DateTime local = new(2023, 2, 23, 9, 44, 0, DateTimeKind.Utc);
 
@@ -56,7 +56,7 @@ public class RelojServidorTests
     }
 
     [Fact]
-    public void Hoy_EsLaFechaDeAhoraSinHora()
+    public void Hoy_Always_IsAhoraWithoutTime()
     {
         DateTime hoy = RelojServidor.Hoy;
 

@@ -6,7 +6,7 @@ namespace AnilistConEnie.Application.Tests.Xp;
 public class XpProgressionTests
 {
     [Fact]
-    public void Describe_ComputesNextRankAndMissingXp()
+    public void Describe_MidRank_ComputesNextRankAndMissingXp()
     {
         // 5000 de total: próximo rango Casual (10000), faltan 5000.
         XpProgressionInfo info = XpProgression.Describe(total: 5000);
@@ -19,7 +19,7 @@ public class XpProgressionTests
     }
 
     [Fact]
-    public void Describe_RedondeaLosMensajesHaciaArriba()
+    public void Describe_PartialMessage_RoundsMessagesUp()
     {
         // 9999 de total: faltan 1 de xp para Casual, alcanza con un mensaje.
         XpProgressionInfo info = XpProgression.Describe(total: 9999);
@@ -28,7 +28,7 @@ public class XpProgressionTests
     }
 
     [Fact]
-    public void Describe_RangoMaximoSuperado_NoDevuelveMensajesNegativos()
+    public void Describe_BeyondMaxRank_ReturnsZeroMessages()
     {
         XpProgressionInfo info = XpProgression.Describe(total: 2000000);
 
@@ -47,7 +47,7 @@ public class XpProgressionTests
     [InlineData(RangoEnum.Teiou, 9999, true)]
     [InlineData(RangoEnum.Teiou, 10000, false)]
     [InlineData(RangoEnum.Miembro, 0, false)]
-    public void EstaProximoASubir_PerRankThreshold(RangoEnum nextRango, long nextXp, bool esperado)
+    public void EstaProximoASubir_PerRank_UsesRankThreshold(RangoEnum nextRango, long nextXp, bool esperado)
     {
         Assert.Equal(esperado, XpProgression.EstaProximoASubir(nextRango, nextXp));
     }
@@ -100,7 +100,7 @@ public class XpProgressionTests
     }
 
     [Fact]
-    public void EstimarTiempo_OtroUsuario_UsaTerceraPersona()
+    public void EstimarTiempo_OtherUser_UsesThirdPerson()
     {
         string result = XpProgression.EstimarTiempo(nextXp: 3000, promedioXp: 100, "Casual", mensajes: 200, esPropio: false);
 

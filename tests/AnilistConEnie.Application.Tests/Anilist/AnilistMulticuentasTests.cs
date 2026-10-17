@@ -9,7 +9,7 @@ public class AnilistMulticuentasTests
         new() { UserId = userId, AnilistURL = $"https://anilist.co/user/{anilistId}" };
 
     [Fact]
-    public void Detectar_SinPerfilesRepetidos_DevuelveVacio()
+    public void Detectar_NoRepeatedProfiles_ReturnsEmpty()
     {
         IReadOnlyList<GrupoMulticuenta> grupos = AnilistMulticuentas.Detectar(
             [Vinculado(111, 1), Vinculado(222, 2)]);
@@ -18,7 +18,7 @@ public class AnilistMulticuentasTests
     }
 
     [Fact]
-    public void Detectar_PerfilConDosDiscord_DevuelveGrupo()
+    public void Detectar_ProfileWithTwoDiscords_ReturnsGroup()
     {
         IReadOnlyList<GrupoMulticuenta> grupos = AnilistMulticuentas.Detectar(
             [Vinculado(111, 999), Vinculado(222, 999)]);
@@ -29,7 +29,7 @@ public class AnilistMulticuentasTests
     }
 
     [Fact]
-    public void Detectar_MismoDiscordRepetido_NoCuentaComoMulticuenta()
+    public void Detectar_SameDiscordRepeated_IsNotMulticuenta()
     {
         IReadOnlyList<GrupoMulticuenta> grupos = AnilistMulticuentas.Detectar(
             [Vinculado(111, 999), Vinculado(111, 999)]);
@@ -38,7 +38,7 @@ public class AnilistMulticuentasTests
     }
 
     [Fact]
-    public void Detectar_IgnoraUrlsInvalidas()
+    public void Detectar_InvalidUrls_AreIgnored()
     {
         IReadOnlyList<GrupoMulticuenta> grupos = AnilistMulticuentas.Detectar(
             [new() { UserId = 111, AnilistURL = "https://anilist.co/user/Nombre" },
@@ -48,7 +48,7 @@ public class AnilistMulticuentasTests
     }
 
     [Fact]
-    public void Detectar_OrdenaPorCantidadDescendente()
+    public void Detectar_SeveralGroups_SortsByCountDescending()
     {
         IReadOnlyList<GrupoMulticuenta> grupos = AnilistMulticuentas.Detectar(
         [
@@ -58,5 +58,38 @@ public class AnilistMulticuentasTests
 
         Assert.Equal(new[] { 2, 1 }, grupos.Select(g => g.AnilistId));
         Assert.Equal(3, grupos[0].DiscordIds.Count);
+    }
+
+    [Fact]
+    public void AgruparPorAnilistId_SeveralProfiles_GroupsDiscordIdsByProfileInOrder()
+    {
+        Dictionary<int, List<long>> grupos = AnilistMulticuentas.AgruparPorAnilistId(
+            [Vinculado(111, 1), Vinculado(222, 2), Vinculado(333, 1)]);
+
+        Assert.Equal(2, grupos.Count);
+        Assert.Equal(new long[] { 111, 333 }, grupos[1]);
+        Assert.Equal(new long[] { 222 }, grupos[2]);
+    }
+
+    [Fact]
+    public void AgruparPorAnilistId_SameDiscordTwice_KeepsItOnce()
+    {
+        Dictionary<int, List<long>> grupos = AnilistMulticuentas.AgruparPorAnilistId(
+            [Vinculado(111, 1), Vinculado(111, 1)]);
+
+        Assert.Equal(new long[] { 111 }, grupos[1]);
+    }
+
+    [Fact]
+    public void AgruparPorAnilistId_InvalidOrMissingUrl_IsSkipped()
+    {
+        Dictionary<int, List<long>> grupos = AnilistMulticuentas.AgruparPorAnilistId(
+        [
+            new UsuarioAnilist { UserId = 111, AnilistURL = "https://anilist.co/user/Nombre" },
+            new UsuarioAnilist { UserId = 222, AnilistURL = string.Empty },
+            Vinculado(333, 5)
+        ]);
+
+        Assert.Equal([5], grupos.Keys);
     }
 }

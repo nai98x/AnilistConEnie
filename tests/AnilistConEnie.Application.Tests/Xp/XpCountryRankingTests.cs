@@ -7,7 +7,7 @@ public class XpCountryRankingTests
     private const ulong OtrosId = 999;
 
     [Fact]
-    public void BuildChartSeries_SiNoEntranTodos_AgrupaElRestoEnOtros()
+    public void BuildChartSeries_MoreCountriesThanSlices_GroupsRestIntoOtros()
     {
         // maxPorciones = 3: Argentina y Chile entran; México se suma a Otros.
         List<CountryXp> perCountry =
@@ -25,7 +25,7 @@ public class XpCountryRankingTests
     }
 
     [Fact]
-    public void BuildChartSeries_NoDescartaXp()
+    public void BuildChartSeries_AnyInput_PreservesTotalXp()
     {
         List<CountryXp> perCountry =
         [
@@ -43,7 +43,7 @@ public class XpCountryRankingTests
     }
 
     [Fact]
-    public void BuildChartSeries_SiEntranTodos_NoAgrupaYOmiteOtrosEnCero()
+    public void BuildChartSeries_AllCountriesFit_DoesNotGroupAndOmitsEmptyOtros()
     {
         List<CountryXp> perCountry =
         [
@@ -59,7 +59,7 @@ public class XpCountryRankingTests
     }
 
     [Fact]
-    public void BuildChartSeries_OtrosPuedeLiderar()
+    public void BuildChartSeries_LargeOtros_CanLead()
     {
         List<CountryXp> perCountry =
         [
@@ -77,7 +77,7 @@ public class XpCountryRankingTests
     }
 
     [Fact]
-    public void BuildChartSeries_SinPaisOtros_AgrupaLoQueNoEntra()
+    public void BuildChartSeries_NoOtrosCountry_GroupsRemainderIntoOtros()
     {
         List<CountryXp> perCountry =
         [
@@ -93,7 +93,7 @@ public class XpCountryRankingTests
     }
 
     [Fact]
-    public void BuildChartSeries_SinPaises_DevuelveVacio()
+    public void BuildChartSeries_NoCountries_ReturnsEmpty()
     {
         Assert.Empty(XpCountryRanking.BuildChartSeries([], OtrosId, maxPorciones: 6));
     }

@@ -84,7 +84,7 @@ public class XpRankingTests
     }
 
     [Fact]
-    public void ResolvePosition_LeaderWithRivalBelow()
+    public void ResolvePosition_LeaderWithRivalBelow_ReturnsLeader()
     {
         List<UserXp> users = [User(1, total: 300), User(2, total: 100)];
         IReadOnlyList<XpRankEntry> ranking = XpRanking.Build(users, XpRankingCategory.Total);
@@ -98,7 +98,7 @@ public class XpRankingTests
     }
 
     [Fact]
-    public void ResolvePosition_BehindRival()
+    public void ResolvePosition_BehindRival_ReturnsBehind()
     {
         List<UserXp> users = [User(1, total: 300), User(2, total: 100)];
         IReadOnlyList<XpRankEntry> ranking = XpRanking.Build(users, XpRankingCategory.Total);

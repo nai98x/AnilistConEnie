@@ -5,7 +5,7 @@ namespace AnilistConEnie.Application.Tests.Helpers;
 public class ByteHelperTests
 {
     [Fact]
-    public void ToMemoryStream_ConservaLosBytes()
+    public void ToMemoryStream_Bytes_PreservesBytes()
     {
         byte[] datos = [1, 2, 3, 42, 255];
 
@@ -15,7 +15,7 @@ public class ByteHelperTests
     }
 
     [Fact]
-    public void ToMemoryStream_ArrancaEnPosicionCero()
+    public void ToMemoryStream_Bytes_StartsAtPositionZero()
     {
         using MemoryStream stream = new byte[] { 9, 8, 7 }.ToMemoryStream();
 
@@ -23,7 +23,7 @@ public class ByteHelperTests
     }
 
     [Fact]
-    public void ToMemoryStream_ArrayVacio_StreamVacio()
+    public void ToMemoryStream_EmptyArray_ReturnsEmptyStream()
     {
         using MemoryStream stream = Array.Empty<byte>().ToMemoryStream();
 

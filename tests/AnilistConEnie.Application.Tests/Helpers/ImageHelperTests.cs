@@ -15,19 +15,19 @@ public class ImageHelperTests
     }
 
     [Fact]
-    public void EsImagenValida_PngReal_DevuelveTrue()
+    public void EsImagenValida_RealPng_ReturnsTrue()
     {
         Assert.True(ImageHelper.EsImagenValida(PngValido()));
     }
 
     [Fact]
-    public void EsImagenValida_BytesArbitrarios_DevuelveFalse()
+    public void EsImagenValida_ArbitraryBytes_ReturnsFalse()
     {
         Assert.False(ImageHelper.EsImagenValida("esto no es una imagen"u8.ToArray()));
     }
 
     [Fact]
-    public void EsImagenValida_Vacio_DevuelveFalse()
+    public void EsImagenValida_Empty_ReturnsFalse()
     {
         Assert.False(ImageHelper.EsImagenValida([]));
     }

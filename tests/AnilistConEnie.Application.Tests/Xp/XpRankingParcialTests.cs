@@ -8,7 +8,7 @@ public class XpRankingParcialTests
     private static UserXp User(long id, long total) => new() { UserId = id, Total = total };
 
     [Fact]
-    public void InicioRango_Diario_EsHoy()
+    public void InicioRango_Diario_ReturnsToday()
     {
         DateOnly hoy = new(2026, 7, 15);
 
@@ -21,25 +21,25 @@ public class XpRankingParcialTests
     [InlineData(2026, 7, 19, 2026, 7, 13)] // domingo -> lunes anterior (DayOfWeek.Sunday == 0)
     [InlineData(2026, 7, 1, 2026, 6, 29)]  // semana que cruza de mes
     [InlineData(2026, 1, 2, 2025, 12, 29)] // semana que cruza de año
-    public void InicioRango_Semanal_EsElLunesDeLaSemana(int y, int m, int d, int ey, int em, int ed)
+    public void InicioRango_Semanal_ReturnsMondayOfWeek(int y, int m, int d, int ey, int em, int ed)
     {
         Assert.Equal(new DateOnly(ey, em, ed), XpRankingParcial.InicioRango(XpRangoParcial.Semanal, new DateOnly(y, m, d)));
     }
 
     [Fact]
-    public void InicioRango_Mensual_EsElPrimeroDelMes()
+    public void InicioRango_Mensual_ReturnsFirstOfMonth()
     {
         Assert.Equal(new DateOnly(2026, 7, 1), XpRankingParcial.InicioRango(XpRangoParcial.Mensual, new DateOnly(2026, 7, 15)));
     }
 
     [Fact]
-    public void InicioRango_Anual_EsElPrimeroDeEnero()
+    public void InicioRango_Anual_ReturnsJanuaryFirst()
     {
         Assert.Equal(new DateOnly(2026, 1, 1), XpRankingParcial.InicioRango(XpRangoParcial.Anual, new DateOnly(2026, 7, 15)));
     }
 
     [Fact]
-    public void Build_OrdenaPorDeltaDescendenteConRanks()
+    public void Build_SeveralUsers_SortsByDeltaDescendingWithRanks()
     {
         List<UserXp> totales = [User(1, 500), User(2, 1000), User(3, 300)];
         Dictionary<long, long> baselines = new() { [1] = 100, [2] = 900, [3] = 0 };
@@ -53,7 +53,7 @@ public class XpRankingParcialTests
     }
 
     [Fact]
-    public void Build_UsuarioSinBaseline_CuentaTodoSuTotal()
+    public void Build_UserWithoutBaseline_CountsWholeTotal()
     {
         IReadOnlyList<XpRankEntry> ranking = XpRankingParcial.Build([User(1, 250)], new Dictionary<long, long>());
 
@@ -62,7 +62,7 @@ public class XpRankingParcialTests
     }
 
     [Fact]
-    public void Build_DeltaCero_QuedaAlFinalDelRanking()
+    public void Build_ZeroDelta_IsLastInRanking()
     {
         List<UserXp> totales = [User(1, 100), User(3, 200)];
         Dictionary<long, long> baselines = new() { [1] = 100, [3] = 50 };
@@ -75,7 +75,7 @@ public class XpRankingParcialTests
     }
 
     [Fact]
-    public void Build_DeltaNegativo_QuedaExcluido()
+    public void Build_NegativeDelta_IsExcluded()
     {
         List<UserXp> totales = [User(2, 100), User(3, 200)];
         Dictionary<long, long> baselines = new() { [2] = 150, [3] = 50 };
@@ -87,13 +87,13 @@ public class XpRankingParcialTests
     }
 
     [Fact]
-    public void Build_ListaVacia_RankingVacio()
+    public void Build_EmptyList_ReturnsEmptyRanking()
     {
         Assert.Empty(XpRankingParcial.Build([], new Dictionary<long, long>()));
     }
 
     [Fact]
-    public void Build_ResultadoCompatibleConResolvePosition()
+    public void Build_Result_IsCompatibleWithResolvePosition()
     {
         List<UserXp> totales = [User(1, 500), User(2, 300)];
         Dictionary<long, long> baselines = new() { [1] = 100, [2] = 100 };

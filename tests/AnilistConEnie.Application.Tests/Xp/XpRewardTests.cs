@@ -28,7 +28,7 @@ public class XpRewardTests
     }
 
     [Fact]
-    public void Accrue_RespectsInclusiveBounds()
+    public void Accrue_MinAndMax_RespectsInclusiveBounds()
     {
         // min == max fuerza un valor exacto.
         XpAccrual result = XpReward.Accrue(isBooster: true, Seeded(), 7, 7, 3, 3);

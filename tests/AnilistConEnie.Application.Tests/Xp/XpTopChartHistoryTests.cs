@@ -53,7 +53,7 @@ public class XpTopChartHistoryTests
     }
 
     [Fact]
-    public void Build_InterpolatesLinearlyBetweenCheckpointsInsteadOfSteppingFlat()
+    public void Build_SparseRecords_InterpolatesLinearlyBetweenCheckpoints()
     {
         DateTime today = new(2026, 1, 22); // 3 semanas después del ingreso
         DateTime joined = today.AddDays(-21);
@@ -68,7 +68,7 @@ public class XpTopChartHistoryTests
     }
 
     [Fact]
-    public void Build_LastPointAlwaysUsesLiveCurrentXpRegardlessOfPersistedValue()
+    public void Build_StalePersistedValue_LastPointUsesLiveCurrentXp()
     {
         DateTime today = new(2026, 6, 25);
         List<UserDailyXp> history = [Day(today.AddDays(-10), 100), Day(today, 500)];

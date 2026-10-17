@@ -7,7 +7,7 @@ namespace AnilistConEnie.Application.Tests.Charts;
 public class XpChartsTests
 {
     [Fact]
-    public void ProgressBar_UsaTotalYMax()
+    public void ProgressBar_TotalAndMax_UsesBoth()
     {
         BarProgressSpec spec = XpCharts.ProgressBar(300, 1000);
         Assert.Equal(300, spec.Value);
@@ -15,7 +15,7 @@ public class XpChartsTests
     }
 
     [Fact]
-    public void Distribution_UsaDonutFractionPorDefecto()
+    public void Distribution_Slices_UsesDefaultDonutFraction()
     {
         IReadOnlyList<PieSlice> slices = [new("A", 1, "#111111")];
         DonutChartSpec spec = XpCharts.Distribution(slices);
@@ -25,7 +25,7 @@ public class XpChartsTests
     }
 
     [Fact]
-    public void History_MapeaXpYFormateaFechas()
+    public void History_Points_MapsXpAndFormatsDates()
     {
         List<(long Xp, DateTime Date)> puntos =
         [
@@ -43,7 +43,7 @@ public class XpChartsTests
     }
 
     [Fact]
-    public void TopMultiLine_FormateaLabelsSinCeros()
+    public void TopMultiLine_LabelDates_FormatsWithoutLeadingZeros()
     {
         IReadOnlyList<LineSeries> series = [new("User", [1d, 2d], "#abcdef")];
         IReadOnlyList<DateTime> fechas = [new DateTime(2026, 3, 4), new DateTime(2026, 11, 20)];
@@ -55,7 +55,7 @@ public class XpChartsTests
     }
 
     [Fact]
-    public void CountryPie_UsaDonutFractionPorDefecto()
+    public void CountryPie_Slices_UsesDefaultDonutFraction()
     {
         IReadOnlyList<PieSlice> slices = [new("AR", 5, "#75AADB")];
         DonutChartSpec spec = XpCharts.CountryPie(slices);
@@ -65,7 +65,7 @@ public class XpChartsTests
     }
 
     [Fact]
-    public void CountrySlices_OtrosEnGrisYElRestoEnOrdenSinSaltearColores()
+    public void CountrySlices_OtrosInMiddle_GrayForOtrosAndPaletteInOrder()
     {
         const ulong otrosId = 999;
         List<CountryXp> series =

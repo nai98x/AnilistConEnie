@@ -40,8 +40,8 @@ inversas.
 ## Dónde va el código nuevo
 
 - **Regla/cálculo puro** (sin estado ni dependencias) → clase **estática** en Application
-  (`Xp/`, `Moderation/`, `Confessions/`, `Challenges/`, `Membership/`, `Charts/`, `Anilist/`,
-  `Backups/`, `Fun/`, `Premios/`, `Triggers/`, `Helpers/`).
+  (`Xp/`, `Actividad/`, `Moderation/`, `Confessions/`, `Challenges/`, `Membership/`, `Charts/`,
+  `Anilist/`, `Backups/`, `Fun/`, `Premios/`, `Triggers/`, `Helpers/`).
   Recibe sus datos **por parámetro**; no toca tipos de Discord ni de config.
 - **Servicio con dependencias** → clase instancia + DI (ej. `AnilistServerScoreService` en Application,
   `AnilistService`/`GuildMaintenanceService` en Bot).
@@ -77,8 +77,8 @@ inversas.
   - IDs de Discord (guild, canales, roles, emotes, timezones) → `BotConfiguration` + sección `Ids` de
     `appsettings.json`. `RequireUlong` falla si falta una clave.
   - Reglas de negocio tuneables (thresholds, cooldowns, durations, amounts) → **una sección por
-    dominio** en `appsettings.json` (`AntiSpam`, `LimpiezaMiembros`, `Cooldowns`, `Xp`, `Confesiones`,
-    `SubirImagen`, `Logs`), bindeadas en `BehaviorSettings.cs` con defaults. La lógica de Application recibe esos
+    dominio** en `appsettings.json` (`AntiSpam`, `LimpiezaMiembros`, `Cooldowns`, `Xp`, `MensajesDiarios`,
+    `Confesiones`, `SubirImagen`, `Logs`), bindeadas en `BehaviorSettings.cs` con defaults. La lógica de Application recibe esos
     valores por parámetro (no como `const`). No externalizar límites duros de Discord/AniList ni
     cosméticos.
 - **Secrets**: se resuelven todos por `IConfiguration` (env var en el server, User Secrets en local):
@@ -90,6 +90,13 @@ inversas.
 - **Catch amplios**: la resiliencia de los loops (no frenar ante miembro/mensaje ausente) es
   intencional. Loguear con `DiscordLogService.LogException(guild, ex, contexto)` sin cambiar el flujo;
   `NotFoundException` es benigno (solo Debug local).
+- **Tests**: solo **unitarios de lógica pura** de Application, en `tests/AnilistConEnie.Application.Tests`
+  (xUnit; carpetas y namespaces espejan los de Application). **Un archivo de tests por clase**
+  (`<Clase>Tests.cs`) y métodos nombrados `Metodo_Escenario_Resultado` **en inglés**, conservando el
+  nombre original del método bajo prueba (`Corresponde_NoMessages_ReturnsFalse`). Nada de tests de
+  integración ni que ejerciten piezas reales (HTTP, Polly, render de charts, base de datos), aunque sea
+  con dobles: Infrastructure y Bot no tienen proyecto de tests a propósito. Al agregar o mover lógica a
+  Application, agregar sus tests.
 - **Estilo**: **no** agregar comentarios ni XML summaries explicando *cómo se resolvió* algo o
   justificando un cambio. Comentar solo lo no obvio del dominio, al nivel del código circundante.
 
@@ -105,4 +112,5 @@ inversas.
 dotnet restore
 dotnet build
 dotnet run --project src/AnilistConEnie.Bot
+dotnet test
 ```

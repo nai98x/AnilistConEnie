@@ -13,7 +13,7 @@ public class CumpleCalculatorTests
     [InlineData(31, 12)]
     [InlineData(29, 2)]
     [InlineData(30, 6)]
-    public void EsFechaValida_FechasReales_ReturnsTrue(int dia, int mes)
+    public void EsFechaValida_RealDates_ReturnsTrue(int dia, int mes)
     {
         Assert.True(CumpleCalculator.EsFechaValida(dia, mes));
     }
@@ -27,7 +27,7 @@ public class CumpleCalculatorTests
     [InlineData(15, 0)]
     [InlineData(15, 13)]
     [InlineData(99, 99)]
-    public void EsFechaValida_FechasInvalidas_ReturnsFalse(int dia, int mes)
+    public void EsFechaValida_InvalidDates_ReturnsFalse(int dia, int mes)
     {
         Assert.False(CumpleCalculator.EsFechaValida(dia, mes));
     }
@@ -36,13 +36,13 @@ public class CumpleCalculatorTests
     [InlineData(5, 7, true)]
     [InlineData(6, 7, false)]
     [InlineData(5, 8, false)]
-    public void EsDelDia_ComparaDiaYMes(int dia, int mes, bool esperado)
+    public void EsDelDia_DayAndMonth_ComparesBoth(int dia, int mes, bool esperado)
     {
         Assert.Equal(esperado, CumpleCalculator.EsDelDia(Cumple(1, dia, mes), new DateTime(2026, 7, 5)));
     }
 
     [Fact]
-    public void Proximos_29DeFebrero_NoLanzaEnAnioNoBisiesto()
+    public void Proximos_Feb29InNonLeapYear_DoesNotThrow()
     {
         List<Usuario> cumples = [Cumple(1, 29, 2)];
 
@@ -54,7 +54,7 @@ public class CumpleCalculatorTests
     }
 
     [Fact]
-    public void Proximos_FechaInvalidaPersistida_SeIgnoraSinLanzar()
+    public void Proximos_InvalidStoredDate_IsSkipped()
     {
         List<Usuario> cumples = [Cumple(1, 31, 2), Cumple(2, 10, 3)];
 
@@ -65,7 +65,7 @@ public class CumpleCalculatorTests
     }
 
     [Fact]
-    public void Proximos_Proximo_UsaElAnioDelProximoFestejo()
+    public void Proximos_PastAndUpcoming_UsesYearOfNextCelebration()
     {
         List<Usuario> cumples = [Cumple(1, 10, 3), Cumple(2, 10, 1)];
 
@@ -80,7 +80,7 @@ public class CumpleCalculatorTests
     }
 
     [Fact]
-    public void Proximos_SoloMes_FiltraFueraDelMes()
+    public void Proximos_SoloMes_ExcludesOutsideNextMonth()
     {
         List<Usuario> cumples = [Cumple(1, 20, 1), Cumple(2, 20, 6)];
 
@@ -91,7 +91,7 @@ public class CumpleCalculatorTests
     }
 
     [Fact]
-    public void Proximos_SoloMes_EnDiciembreIncluyeLosDeEneroDelAnioSiguiente()
+    public void Proximos_SoloMesInDecember_IncludesNextJanuary()
     {
         List<Usuario> cumples = [Cumple(1, 5, 1), Cumple(2, 25, 1)];
 
@@ -100,5 +100,16 @@ public class CumpleCalculatorTests
         Assert.Single(lista);
         Assert.Equal(1, lista[0].Id);
         Assert.Equal(new DateTime(2027, 1, 5), lista[0].Proximo);
+    }
+
+    [Fact]
+    public void Proximos_BirthdayToday_NextCelebrationIsNextYearAndExcludedFromMonth()
+    {
+        // Los que cumplen hoy se muestran aparte ("Cumplen años hoy"): su próximo festejo es el año que viene.
+        List<Usuario> cumples = [Cumple(1, 17, 10)];
+        DateTime ahora = new(2026, 10, 17, 15, 0, 0);
+
+        Assert.Equal(new DateTime(2027, 10, 17), CumpleCalculator.Proximos(cumples, ahora, soloMes: false).Single().Proximo);
+        Assert.Empty(CumpleCalculator.Proximos(cumples, ahora, soloMes: true));
     }
 }

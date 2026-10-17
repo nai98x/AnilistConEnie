@@ -5,20 +5,20 @@ namespace AnilistConEnie.Application.Tests.Fun;
 public class TrueLoveCalculatorTests
 {
     [Fact]
-    public void Afinidad_MismaPareja_EsDeterministica()
+    public void Afinidad_SamePair_IsDeterministic()
     {
         Assert.Equal(TrueLoveCalculator.Afinidad(10, 20), TrueLoveCalculator.Afinidad(10, 20));
     }
 
     [Fact]
-    public void Afinidad_DentroDe0A100()
+    public void Afinidad_AnyPair_Within0To100()
     {
         for (ulong c = 1; c < 200; c++)
             Assert.InRange(TrueLoveCalculator.Afinidad(500, c), 0, 100);
     }
 
     [Fact]
-    public void Calcular_SinCandidatos_MatchNulo()
+    public void Calcular_NoCandidates_MatchIsNull()
     {
         TrueLoveResult r = TrueLoveCalculator.Calcular(1, []);
 
@@ -29,7 +29,7 @@ public class TrueLoveCalculatorTests
     }
 
     [Fact]
-    public void Calcular_MatchEsElDeMayorAfinidad()
+    public void Calcular_SeveralCandidates_MatchIsHighestAffinity()
     {
         ulong target = 777;
         List<ulong> candidatos = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -42,7 +42,7 @@ public class TrueLoveCalculatorTests
     }
 
     [Fact]
-    public void Calcular_TopSeLimitaA5YOrdenaCorrecto()
+    public void Calcular_ManyCandidates_TopsLimitedTo5AndSorted()
     {
         List<ulong> candidatos = Enumerable.Range(1, 20).Select(i => (ulong)i).ToList();
 
@@ -55,7 +55,7 @@ public class TrueLoveCalculatorTests
     }
 
     [Fact]
-    public void Calcular_EsDeterministico()
+    public void Calcular_SameInput_IsDeterministic()
     {
         List<ulong> candidatos = [11, 22, 33, 44];
 

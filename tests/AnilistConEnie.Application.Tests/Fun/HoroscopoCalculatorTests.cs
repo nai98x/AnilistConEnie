@@ -5,7 +5,7 @@ namespace AnilistConEnie.Application.Tests.Fun;
 public class HoroscopoCalculatorTests
 {
     [Fact]
-    public void Puntajes_MismaEntrada_EsDeterministico()
+    public void Puntajes_SameInput_IsDeterministic()
     {
         Assert.Equal(
             HoroscopoCalculator.Puntajes(3, 200, 2026, 555),
@@ -13,7 +13,7 @@ public class HoroscopoCalculatorTests
     }
 
     [Fact]
-    public void Puntajes_DentroDe0A100()
+    public void Puntajes_AnyInput_Within0To100()
     {
         for (int signo = 0; signo < 12; signo++)
         {
@@ -25,7 +25,7 @@ public class HoroscopoCalculatorTests
     }
 
     [Fact]
-    public void Puntajes_DistintoUsuario_MismoSignoYDia_PuedeDiferir()
+    public void Puntajes_DifferentUserSameSignAndDay_CanDiffer()
     {
         var a = HoroscopoCalculator.Puntajes(5, 150, 2026, 1);
         var b = HoroscopoCalculator.Puntajes(5, 150, 2026, 99999);
@@ -34,7 +34,7 @@ public class HoroscopoCalculatorTests
     }
 
     [Fact]
-    public void Puntajes_SonEnteros()
+    public void Puntajes_AnyInput_AreWholeNumbers()
     {
         (double amor, double salud, double dinero) = HoroscopoCalculator.Puntajes(7, 80, 2026, 314);
 

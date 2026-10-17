@@ -147,4 +147,17 @@ public class IntercambioHelperTests
             Assert.All(detalle, d => Assert.Equal(d.Value, dadas.GetValueOrDefault(d.Key)));
         }
     }
+
+    [Fact]
+    public void Shuffle_Dictionary_PreservesPairs()
+    {
+        Dictionary<string, int> dict = new() { ["a"] = 1, ["b"] = 2, ["c"] = 3 };
+
+        Dictionary<string, int> shuffled = dict.Shuffle();
+
+        Assert.Equal(3, shuffled.Count);
+        Assert.Equal(1, shuffled["a"]);
+        Assert.Equal(2, shuffled["b"]);
+        Assert.Equal(3, shuffled["c"]);
+    }
 }

@@ -5,19 +5,19 @@ namespace AnilistConEnie.Application.Tests.Fun;
 public class BoludometroCalculatorTests
 {
     [Fact]
-    public void Seed_MismoUsuarioYMes_EsEstable()
+    public void Seed_SameUserAndMonth_IsStable()
     {
         Assert.Equal(BoludometroCalculator.Seed(123, 2026, 7), BoludometroCalculator.Seed(123, 2026, 7));
     }
 
     [Fact]
-    public void Seed_CambiaDeMes_CambiaLaSemilla()
+    public void Seed_DifferentMonth_ChangesSeed()
     {
         Assert.NotEqual(BoludometroCalculator.Seed(123, 2026, 7), BoludometroCalculator.Seed(123, 2026, 8));
     }
 
     [Fact]
-    public void GenerarHistorial_MismaSemilla_ProduceMismoResultado()
+    public void GenerarHistorial_SameSeed_ProducesSameResult()
     {
         Dictionary<int, int> a = BoludometroCalculator.GenerarHistorial(new Random(42), 15, 31);
         Dictionary<int, int> b = BoludometroCalculator.GenerarHistorial(new Random(42), 15, 31);
@@ -30,7 +30,7 @@ public class BoludometroCalculatorTests
     [InlineData(15, 31)]
     [InlineData(28, 28)]
     [InlineData(30, 30)]
-    public void GenerarHistorial_TieneUnaEntradaPorDiaHastaHoy(int diaHoy, int totalDiasDelMes)
+    public void GenerarHistorial_AnyDay_HasOneEntryPerDayUntilToday(int diaHoy, int totalDiasDelMes)
     {
         Dictionary<int, int> historial = BoludometroCalculator.GenerarHistorial(new Random(7), diaHoy, totalDiasDelMes);
 
@@ -39,7 +39,7 @@ public class BoludometroCalculatorTests
     }
 
     [Fact]
-    public void GenerarHistorial_ValoresDentroDe0A100()
+    public void GenerarHistorial_AnySeed_ValuesWithin0To100()
     {
         for (int seed = 0; seed < 50; seed++)
         {
@@ -49,7 +49,7 @@ public class BoludometroCalculatorTests
     }
 
     [Fact]
-    public void GenerarHistorial_UltimoDiaEsHoy()
+    public void GenerarHistorial_AnyDay_LastDayIsToday()
     {
         Dictionary<int, int> historial = BoludometroCalculator.GenerarHistorial(new Random(99), 12, 31);
         Assert.Equal(12, historial.Last().Key);

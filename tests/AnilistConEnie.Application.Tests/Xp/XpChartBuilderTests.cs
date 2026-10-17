@@ -106,7 +106,7 @@ public class XpChartBuilderTests
     }
 
     [Fact]
-    public void Build_WithFill_NoYearRecords_ProducesNoPoints()
+    public void Build_WithFillAndNoYearRecords_ProducesNoPoints()
     {
         DateTime today = new(2026, 6, 25);
         List<UserDailyXp> history = [Day(2025, 5, 1, 500)];

@@ -6,14 +6,14 @@ namespace AnilistConEnie.Application.Tests.Charts;
 public class FunChartsTests
 {
     [Fact]
-    public void BoludoGauge_UsaElValor()
+    public void BoludoGauge_Value_UsesValue()
     {
         GaugeSpec spec = FunCharts.BoludoGauge(73);
         Assert.Equal(73, spec.Value);
     }
 
     [Fact]
-    public void BoludoLine_MapeaValoresYEtiquetas()
+    public void BoludoLine_DaysAndValues_MapsValuesAndLabels()
     {
         LineChartSpec spec = FunCharts.BoludoLine("Fulano", [1, 2, 3], [10, 20, 30]);
 

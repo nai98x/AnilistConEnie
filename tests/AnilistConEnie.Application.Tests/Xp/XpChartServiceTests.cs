@@ -29,7 +29,7 @@ public class XpChartServiceTests
         new() { UserId = userId, Date = fecha, Xp = xp };
 
     [Fact]
-    public async Task GetUserChartHistory_DevuelveLosPuntosDelBuilder()
+    public async Task GetUserChartHistory_WithHistory_ReturnsBuilderPoints()
     {
         const ulong userId = 42;
         List<UserDailyXp> historial =
@@ -47,7 +47,7 @@ public class XpChartServiceTests
     }
 
     [Fact]
-    public async Task GetUserChartHistory_PersisteLosDiasFaltantesQueDevuelveElBuilder()
+    public async Task GetUserChartHistory_MissingDays_PersistsThem()
     {
         const ulong userId = 7;
         List<UserDailyXp> historial =
@@ -70,7 +70,7 @@ public class XpChartServiceTests
     }
 
     [Fact]
-    public async Task GetUserChartHistory_SinRelleno_NoPersiste()
+    public async Task GetUserChartHistory_WithoutFill_DoesNotPersist()
     {
         FakeXpDiarioRepo repo = new([Dia(1, RelojServidor.Hoy.AddDays(-2), 10)]);
         XpChartService service = new(repo);
@@ -81,7 +81,7 @@ public class XpChartServiceTests
     }
 
     [Fact]
-    public async Task GetUserWeeklyHistory_CoincideConXpTopChartHistory()
+    public async Task GetUserWeeklyHistory_WithHistory_MatchesXpTopChartHistory()
     {
         const ulong userId = 99;
         const long currentXp = 1234;

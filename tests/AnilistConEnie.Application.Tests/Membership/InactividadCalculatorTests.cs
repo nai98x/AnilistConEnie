@@ -7,7 +7,7 @@ public class InactividadCalculatorTests
     private static readonly DateTimeOffset Ahora = new(2026, 7, 15, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    public void MiembroNuevoSinActividad_NoCorresponde()
+    public void CorrespondeRolInactivo_NewMemberWithoutActivity_ReturnsFalse()
     {
         DateTimeOffset entrada = Ahora.AddDays(-2);
 
@@ -15,7 +15,7 @@ public class InactividadCalculatorTests
     }
 
     [Fact]
-    public void MiembroDentroDeLaVentanaSinActividad_NoCorresponde()
+    public void CorrespondeRolInactivo_WithinGracePeriodWithoutActivity_ReturnsFalse()
     {
         DateTimeOffset entrada = Ahora.AddMonths(-3).AddDays(1);
 
@@ -23,7 +23,7 @@ public class InactividadCalculatorTests
     }
 
     [Fact]
-    public void MiembroViejoSinActividad_Corresponde()
+    public void CorrespondeRolInactivo_OldMemberWithoutActivity_ReturnsTrue()
     {
         DateTimeOffset entrada = Ahora.AddMonths(-6);
 
@@ -31,7 +31,7 @@ public class InactividadCalculatorTests
     }
 
     [Fact]
-    public void MiembroViejoConActividadReciente_NoCorresponde()
+    public void CorrespondeRolInactivo_OldMemberWithRecentActivity_ReturnsFalse()
     {
         DateTimeOffset entrada = Ahora.AddYears(-2);
 
@@ -39,7 +39,7 @@ public class InactividadCalculatorTests
     }
 
     [Fact]
-    public void MiembroQueEntroJustoEnElLimite_Corresponde()
+    public void CorrespondeRolInactivo_JoinedExactlyAtLimit_ReturnsTrue()
     {
         DateTimeOffset entrada = Ahora.AddMonths(-3);
 

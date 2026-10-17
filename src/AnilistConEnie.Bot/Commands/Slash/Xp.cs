@@ -144,24 +144,35 @@ public class Xp(
 
         int userRank = totalOrdered.FindIndex(x => (ulong)x.UserId == member.Id) + 1;
 
-        string desc = $"### Tienes {rank.Total.ToSpanish()} {umaPoints}\n\n- Tu rango actual es {role.Mention}\n";
-        if (nextXp > 0) desc += $"- Obteniendo **{nextXp.ToSpanish()} {umaPoints}** llegarás a **{((Enum)nextRango).GetDescription()}**\n";
-        desc += $"- Eres la persona **#{userRank}** con mas xp {umaPoints} del servidor\n";
-        desc += $"- Estas obteniendo en promedio **{promedioXp.ToSpanish()}** de xp por día\n";
-        if (nextXp > 0) desc += XpProgression.EstimarTiempo(nextXp, promedioXp, ((Enum)nextRango).GetDescription(), mensajesNecesarios);
+        bool esPropio = member.Id == ctx.User.Id;
+        string tiene = esPropio ? "Tienes" : "Tiene";
+        string rangoActual = esPropio ? "Tu rango actual es" : "Su rango actual es";
 
-        byte[] progressBarImage = await chartRenderer.RenderAsync(XpCharts.ProgressBar(rank.Total, RangoXp.MetaProgreso(rank.Total)));
-        const string progressBarFile = "xpchartprogress.png";
+        string desc = $"### {tiene} {rank.Total.ToSpanish()} {umaPoints}\n\n- {rangoActual} {role.Mention}\n";
+        if (nextXp > 0) desc += $"- Obteniendo **{nextXp.ToSpanish()} {umaPoints}** {(esPropio ? "llegarás" : "llegará")} a **{((Enum)nextRango).GetDescription()}**\n";
+        desc += $"- {(esPropio ? "Eres" : "Es")} la persona **#{userRank}** con mas xp {umaPoints} del servidor\n";
+        desc += $"- {(esPropio ? "Estás" : "Está")} obteniendo en promedio **{promedioXp.ToSpanish()}** de xp por día\n";
+        if (nextXp > 0) desc += XpProgression.EstimarTiempo(nextXp, promedioXp, ((Enum)nextRango).GetDescription(), mensajesNecesarios, esPropio);
 
-        embeds.Add("Resumen", new DiscordInteractivity.TabContent(
-            new DiscordEmbedBuilder()
-                .WithTitle($"Experiencia de {member.DisplayName}")
-                .WithThumbnail(member.AvatarUrlPreferido())
-                .WithDescription(desc)
-                .WithImageUrl($"attachment://{progressBarFile}")
-                .Build(),
-            progressBarImage,
-            progressBarFile));
+        DiscordEmbedBuilder resumenEmbed = new DiscordEmbedBuilder()
+            .WithTitle($"Experiencia de {member.DisplayName}")
+            .WithThumbnail(member.AvatarUrlPreferido())
+            .WithDescription(desc);
+
+        if (nextXp > 0)
+        {
+            byte[] progressBarImage = await chartRenderer.RenderAsync(XpCharts.ProgressBar(rank.Total, nextRangeXp));
+            const string progressBarFile = "xpchartprogress.png";
+
+            embeds.Add("Resumen", new DiscordInteractivity.TabContent(
+                resumenEmbed.WithImageUrl($"attachment://{progressBarFile}").Build(),
+                progressBarImage,
+                progressBarFile));
+        }
+        else
+        {
+            embeds.Add("Resumen", new DiscordInteractivity.TabContent(resumenEmbed.Build()));
+        }
         #endregion
 
         #region Detalle (distribución)
@@ -243,9 +254,9 @@ public class Xp(
         long maxXpChart = (long)(resultado.Max(x => x.Xp) * 1.1);
 
         string descHistorial =
-            $"### Tienes {rank.Total.ToSpanish()} {umaPoints}\n\n- Tu rango actual es {role.Mention}\n" +
-            $"- Empezaste teniendo **{minXpValue.Xp.ToSpanish()} {umaPoints}** ({minXpValue.Date.Day}/{minXpValue.Date.Month}/{minXpValue.Date.Year})\n" +
-            $"- En {days.ToSpanish()} dias subiste **{xpSubida.ToSpanish()} {umaPoints}**";
+            $"### {tiene} {rank.Total.ToSpanish()} {umaPoints}\n\n- {rangoActual} {role.Mention}\n" +
+            $"- {(esPropio ? "Empezaste" : "Empezó")} teniendo **{minXpValue.Xp.ToSpanish()} {umaPoints}** ({minXpValue.Date.Day}/{minXpValue.Date.Month}/{minXpValue.Date.Year})\n" +
+            $"- En {days.ToSpanish()} dias {(esPropio ? "subiste" : "subió")} **{xpSubida.ToSpanish()} {umaPoints}**";
 
         if (nextRango != prevRango && nextRango != RangoXp.RangoAnterior(rank.Total))
             descHistorial += $"\n- El siguiente rango es **{((Enum)nextRango).GetDescription()}** llegando a **{nextRangeXp.ToSpanish()} {umaPoints}**";

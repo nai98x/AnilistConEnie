@@ -2,6 +2,7 @@ using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Domain.Entities.Anilist;
 using DSharpPlus;
 using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
@@ -128,9 +129,15 @@ public static class DiscordInteractivity
             return builder;
         }
 
+        // Sin la lista vacía de attachments, Discord conserva la imagen de la pestaña anterior al
+        // pasar a una pestaña que no adjunta ninguna.
+        async Task<DiscordMessage> EditTabAsync(bool disabled) => ctx is SlashCommandContext slash
+            ? await slash.Interaction.EditOriginalResponseAsync(BuildTab(disabled), [])
+            : await ctx.EditResponseAsync(BuildTab(disabled));
+
         while (true)
         {
-            DiscordMessage message = await ctx.EditResponseAsync(BuildTab(disabled: false));
+            DiscordMessage message = await EditTabAsync(disabled: false);
 
             TimeSpan remaining = deadline - DateTimeOffset.UtcNow;
             if (remaining <= TimeSpan.Zero) break;
@@ -148,7 +155,7 @@ public static class DiscordInteractivity
 
         // Inactividad o límite de vida de la interacción alcanzado: dejamos la última pestaña con
         // todos los botones deshabilitados.
-        await ctx.EditResponseAsync(BuildTab(disabled: true));
+        await EditTabAsync(disabled: true);
     }
 
     private static IEnumerable<DiscordButtonComponent> BuildTabButtons(IEnumerable<string> keys, string activeTab, bool disabled) =>

@@ -55,7 +55,7 @@ public class XpProgressionTests
     [Fact]
     public void EstimarTiempo_NoAverage_CannotEstimate()
     {
-        string result = XpProgression.EstimarTiempo(nextXp: 5000, promedioXp: 0, "Casual", mensajes: 10);
+        string result = XpProgression.EstimarTiempo(nextXp: 5000, promedioXp: 0, "Casual", mensajes: 10, esPropio: true);
 
         Assert.Contains("No se puede estimar", result);
         Assert.Contains("Casual", result);
@@ -64,7 +64,7 @@ public class XpProgressionTests
     [Fact]
     public void EstimarTiempo_RankAlreadyReached_Congratulates()
     {
-        string result = XpProgression.EstimarTiempo(nextXp: 0, promedioXp: 100, "Teiou", mensajes: 0);
+        string result = XpProgression.EstimarTiempo(nextXp: 0, promedioXp: 100, "Teiou", mensajes: 0, esPropio: true);
 
         Assert.Contains("Felicidades", result);
         Assert.Contains("Teiou", result);
@@ -74,7 +74,7 @@ public class XpProgressionTests
     public void EstimarTiempo_LessThanAYearLeft_ReturnsDays()
     {
         // ceil(3000 / 100) = 30 días
-        string result = XpProgression.EstimarTiempo(nextXp: 3000, promedioXp: 100, "Casual", mensajes: 200);
+        string result = XpProgression.EstimarTiempo(nextXp: 3000, promedioXp: 100, "Casual", mensajes: 200, esPropio: true);
 
         Assert.Contains("30 días", result);
         Assert.DoesNotContain("año", result);
@@ -84,7 +84,7 @@ public class XpProgressionTests
     public void EstimarTiempo_WholeYears_ReturnsYears()
     {
         // 73000 / 100 = 730 días = 2 años exactos
-        string result = XpProgression.EstimarTiempo(nextXp: 73000, promedioXp: 100, "Teiou", mensajes: 5000);
+        string result = XpProgression.EstimarTiempo(nextXp: 73000, promedioXp: 100, "Teiou", mensajes: 5000, esPropio: true);
 
         Assert.Contains("2 año(s)", result);
         Assert.DoesNotContain("y ", result);
@@ -94,8 +94,17 @@ public class XpProgressionTests
     public void EstimarTiempo_YearsAndRemainder_ReturnsYearsAndDays()
     {
         // ceil(40000 / 100) = 400 días = 1 año y 35 días
-        string result = XpProgression.EstimarTiempo(nextXp: 40000, promedioXp: 100, "Teiou", mensajes: 5000);
+        string result = XpProgression.EstimarTiempo(nextXp: 40000, promedioXp: 100, "Teiou", mensajes: 5000, esPropio: true);
 
         Assert.Contains("1 año(s) y 35 días", result);
+    }
+
+    [Fact]
+    public void EstimarTiempo_OtroUsuario_UsaTerceraPersona()
+    {
+        string result = XpProgression.EstimarTiempo(nextXp: 3000, promedioXp: 100, "Casual", mensajes: 200, esPropio: false);
+
+        Assert.Contains("llegará", result);
+        Assert.DoesNotContain("llegarás", result);
     }
 }

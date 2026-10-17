@@ -33,24 +33,25 @@ public static class XpProgression
         _ => false
     };
 
-    public static string EstimarTiempo(long nextXp, double promedioXp, string rangoName, int mensajes)
+    public static string EstimarTiempo(long nextXp, double promedioXp, string rangoName, int mensajes, bool esPropio)
     {
         if (promedioXp <= 0)
             return $"- No se puede estimar el tiempo para el siguiente rango ({rangoName}) porque no se ha registrado ningún punto de experiencia ganado.";
 
         if (nextXp <= 0)
-            return $"- ¡Felicidades! Ya has alcanzado el rango **{rangoName}** o lo has superado.";
+            return $"- ¡Felicidades! {(esPropio ? "Ya has alcanzado" : "Ya ha alcanzado")} el rango **{rangoName}** o lo {(esPropio ? "has" : "ha")} superado.";
 
         int diasTotales = (int)Math.Ceiling(nextXp / promedioXp);
+        string llegara = esPropio ? "llegarás" : "llegará";
 
         if (diasTotales < 365)
-            return $"- A este ritmo llegarás a **{rangoName}** en **{diasTotales} días** (equivale a aproximadamente {mensajes.ToSpanish()} mensajes)";
+            return $"- A este ritmo {llegara} a **{rangoName}** en **{diasTotales} días** (equivale a aproximadamente {mensajes.ToSpanish()} mensajes)";
 
         int anios = diasTotales / 365;
         int diasRestantes = diasTotales % 365;
 
         return diasRestantes == 0
-            ? $"- A este ritmo llegarás a **{rangoName}** en **{anios} año(s)** (equivale a aproximadamente {mensajes.ToSpanish()} mensajes)"
-            : $"- A este ritmo llegarás a **{rangoName}** en **{anios} año(s) y {diasRestantes} días** (equivale a aproximadamente {mensajes.ToSpanish()} mensajes)";
+            ? $"- A este ritmo {llegara} a **{rangoName}** en **{anios} año(s)** (equivale a aproximadamente {mensajes.ToSpanish()} mensajes)"
+            : $"- A este ritmo {llegara} a **{rangoName}** en **{anios} año(s) y {diasRestantes} días** (equivale a aproximadamente {mensajes.ToSpanish()} mensajes)";
     }
 }

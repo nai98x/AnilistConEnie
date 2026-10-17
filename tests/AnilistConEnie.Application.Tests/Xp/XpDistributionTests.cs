@@ -6,7 +6,7 @@ namespace AnilistConEnie.Application.Tests.Xp;
 public class XpDistributionTests
 {
     [Fact]
-    public void Build_DistributesFiveCategories()
+    public void Build_DistributesSixCategories()
     {
         UserXp rank = new()
         {
@@ -14,14 +14,16 @@ public class XpDistributionTests
             Challenges = 100,
             Eventos = 200,
             Intercambios = 50,
+            Booster = 40,
             Otros = 150,
         };
 
         IReadOnlyList<XpCategoryShare> shares = XpDistribution.Build(rank);
 
-        Assert.Equal(5, shares.Count);
-        // mensajes = 1000 - 100 - 200 - 50 - 150 = 500
-        Assert.Equal(500, shares.Single(s => s.Category == XpCategory.Mensajes).Value);
+        Assert.Equal(6, shares.Count);
+        // mensajes = 1000 - 100 - 200 - 50 - 40 - 150 = 460: el booster no cuenta como mensajes.
+        Assert.Equal(460, shares.Single(s => s.Category == XpCategory.Mensajes).Value);
+        Assert.Equal(40, shares.Single(s => s.Category == XpCategory.Booster).Value);
         Assert.Equal(100, shares.Single(s => s.Category == XpCategory.Challenges).Value);
         Assert.Equal(200, shares.Single(s => s.Category == XpCategory.Eventos).Value);
         Assert.Equal(50, shares.Single(s => s.Category == XpCategory.Intercambios).Value);
@@ -37,6 +39,7 @@ public class XpDistributionTests
             Challenges = 100,
             Eventos = 200,
             Intercambios = 50,
+            Booster = 40,
             Otros = 150,
         };
 

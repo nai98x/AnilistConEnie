@@ -46,6 +46,7 @@ public class ChartColorsTests
     [InlineData(XpCategory.Challenges)]
     [InlineData(XpCategory.Eventos)]
     [InlineData(XpCategory.Intercambios)]
+    [InlineData(XpCategory.Booster)]
     [InlineData(XpCategory.Otros)]
     public void ForXpCategory_CoversEveryCategoryWithAStableColor(XpCategory category)
     {

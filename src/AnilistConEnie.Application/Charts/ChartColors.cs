@@ -45,6 +45,7 @@ public static class ChartColors
         XpCategory.Challenges => ("Challenges", Categorical[1], "challenges"),
         XpCategory.Eventos => ("Eventos y actividades", Categorical[2], "eventos y actividades"),
         XpCategory.Intercambios => ("Intercambios", Categorical[3], "intercambios"),
+        XpCategory.Booster => ("Extra por boosting", Categorical[4], "boostear el servidor"),
         _ => ("Otros", Otros, "otros motivos")
     };
 }

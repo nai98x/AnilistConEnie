@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text;
 using SkiaSharp;
+using SkiaSharp.HarfBuzz;
 
 namespace AnilistConEnie.Infrastructure.Charts;
 
@@ -9,6 +10,8 @@ namespace AnilistConEnie.Infrastructure.Charts;
 /// Texto con fallback de fuente por carácter. Inter no cubre símbolos, emojis ni letras "decorativas"
 /// Unicode (✨, 𝓐, 𝔸) frecuentes en los nicknames de Discord: cada tramo se dibuja con la primera
 /// fuente que tenga el glifo, entre Inter y las instaladas en el sistema (ver <c>deploy/README.md</c>).
+/// Los tramos se dibujan con shaping (HarfBuzz) para que las secuencias de varios code points (banderas,
+/// tonos de piel, emojis unidos con ZWJ) salgan como un solo glifo.
 /// </summary>
 internal static class ChartText
 {
@@ -28,6 +31,8 @@ internal static class ChartText
     ];
 
     private static readonly ConcurrentDictionary<int, SKTypeface> Matches = new();
+
+    private static readonly ConcurrentDictionary<SKTypeface, SKShaper> Shapers = new();
 
     // El build de Skia sin fontconfig no implementa MatchCharacter: se recorren las familias instaladas.
     private static readonly Lazy<SKTypeface[]> SystemTypefaces = new(() =>
@@ -51,7 +56,7 @@ internal static class ChartText
         foreach ((string run, SKTypeface typeface) in Runs(text))
         {
             using SKFont font = new(typeface, size);
-            width += font.MeasureText(run);
+            width += ShaperFor(typeface).Shape(run, font).Width;
         }
 
         return width;
@@ -62,8 +67,9 @@ internal static class ChartText
         foreach ((string run, SKTypeface typeface) in Runs(text))
         {
             using SKFont font = new(typeface, size);
-            canvas.DrawText(run, x, baseline, SKTextAlign.Left, font, paint);
-            x += font.MeasureText(run);
+            SKShaper shaper = ShaperFor(typeface);
+            canvas.DrawShapedText(shaper, run, x, baseline, SKTextAlign.Left, font, paint);
+            x += shaper.Shape(run, font).Width;
         }
     }
 
@@ -102,12 +108,13 @@ internal static class ChartText
             }
 
             current = typeface;
-            // Sin shaping el selector se dibujaría como un glifo vacío con ancho propio.
-            run.Append(emojiPresentation ? element.Replace("\uFE0F", "") : element);
+            run.Append(element);
         }
 
         if (current is not null) yield return (run.ToString(), current);
     }
+
+    private static SKShaper ShaperFor(SKTypeface typeface) => Shapers.GetOrAdd(typeface, t => new SKShaper(t));
 
     /// <summary>
     /// Con el selector de variación U+FE0F (ej: "❤️") el carácter pide su versión emoji, así que se

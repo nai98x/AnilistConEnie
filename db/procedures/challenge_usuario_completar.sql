@@ -1,14 +1,18 @@
--- Suma un completado al usuario para un challenge (resolviéndolo por su nombre), acumulando la XP.
+-- Suma un completado al usuario para un challenge (resolviéndolo por su nombre), acumulando la XP, y en
+-- la misma transacción le suma esa XP (total y categoría challenges) en xp_usuarios.
 -- Devuelve la cantidad de completados resultante, o NULL si el challenge no existe o el usuario ya
--- llegó al máximo de completados permitido.
+-- llegó al máximo de completados permitido (en ese caso no se suma XP).
 CREATE OR REPLACE FUNCTION challenge_usuario_completar(
     p_nombre  text,
     p_user_id bigint,
     p_xp      integer,
     p_fecha   timestamptz
 ) RETURNS integer
-LANGUAGE sql
+LANGUAGE plpgsql
 AS $$
+DECLARE
+    v_completados integer;
+BEGIN
     INSERT INTO challenge_usuarios (challenge_id, user_id, xp, fecha, completados)
     SELECT c.id, p_user_id, p_xp, p_fecha, 1
     FROM challenges c
@@ -20,5 +24,12 @@ AS $$
         WHERE challenge_usuarios.completados < (
             SELECT c.max_completados FROM challenges c WHERE c.id = challenge_usuarios.challenge_id
         )
-    RETURNING completados;
+    RETURNING completados INTO v_completados;
+
+    IF v_completados IS NOT NULL THEN
+        PERFORM xp_usuario_add(p_user_id, p_xp, 0, p_xp, 0, 0, 0, 1);
+    END IF;
+
+    RETURN v_completados;
+END;
 $$;

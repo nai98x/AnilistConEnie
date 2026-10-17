@@ -7,9 +7,9 @@ public class XpCountryRankingTests
     private const ulong OtrosId = 999;
 
     [Fact]
-    public void BuildChartSeries_BeyondTop_GroupsIntoOtros()
+    public void BuildChartSeries_SiNoEntranTodos_AgrupaElRestoEnOtros()
     {
-        // topN = 2: Argentina y Chile entran al top; México queda fuera y se suma a Otros.
+        // maxPorciones = 3: Argentina y Chile entran; México se suma a Otros.
         List<CountryXp> perCountry =
         [
             new(1, "Argentina", 500),
@@ -18,18 +18,32 @@ public class XpCountryRankingTests
             new(OtrosId, "Otros", 50),
         ];
 
-        IReadOnlyList<CountryXp> series = XpCountryRanking.BuildChartSeries(perCountry, OtrosId, topN: 2);
+        IReadOnlyList<CountryXp> series = XpCountryRanking.BuildChartSeries(perCountry, OtrosId, maxPorciones: 3);
 
-        // top (Arg 500, Chile 300) + Otros (100 + 50 = 150). Se descarta el último (Otros).
-        Assert.Equal(2, series.Count);
-        Assert.Equal("Argentina", series[0].Name);
-        Assert.Equal(500, series[0].Xp);
-        Assert.Equal("Chile", series[1].Name);
-        Assert.Equal(300, series[1].Xp);
+        Assert.Equal(["Argentina", "Chile", "Otros"], series.Select(x => x.Name));
+        Assert.Equal(150, series[2].Xp);
     }
 
     [Fact]
-    public void BuildChartSeries_SortsDescendingAndDropsLast()
+    public void BuildChartSeries_NoDescartaXp()
+    {
+        List<CountryXp> perCountry =
+        [
+            new(1, "A", 500),
+            new(2, "B", 300),
+            new(3, "C", 200),
+            new(4, "D", 100),
+            new(OtrosId, "Otros", 50),
+        ];
+
+        IReadOnlyList<CountryXp> series = XpCountryRanking.BuildChartSeries(perCountry, OtrosId, maxPorciones: 3);
+
+        Assert.Equal(3, series.Count);
+        Assert.Equal(perCountry.Sum(x => x.Xp), series.Sum(x => x.Xp));
+    }
+
+    [Fact]
+    public void BuildChartSeries_SiEntranTodos_NoAgrupaYOmiteOtrosEnCero()
     {
         List<CountryXp> perCountry =
         [
@@ -39,14 +53,13 @@ public class XpCountryRankingTests
             new(OtrosId, "Otros", 0),
         ];
 
-        IReadOnlyList<CountryXp> series = XpCountryRanking.BuildChartSeries(perCountry, OtrosId, topN: 10);
+        IReadOnlyList<CountryXp> series = XpCountryRanking.BuildChartSeries(perCountry, OtrosId, maxPorciones: 6);
 
-        // Otros queda en 0 y, al ordenar desc, es el último -> se descarta. Quedan B, C, A.
         Assert.Equal(["B", "C", "A"], series.Select(x => x.Name));
     }
 
     [Fact]
-    public void BuildChartSeries_OtrosAccumulatesMore_MayRankTop()
+    public void BuildChartSeries_OtrosPuedeLiderar()
     {
         List<CountryXp> perCountry =
         [
@@ -56,15 +69,15 @@ public class XpCountryRankingTests
             new(OtrosId, "Otros", 1000),
         ];
 
-        IReadOnlyList<CountryXp> series = XpCountryRanking.BuildChartSeries(perCountry, OtrosId, topN: 2);
+        IReadOnlyList<CountryXp> series = XpCountryRanking.BuildChartSeries(perCountry, OtrosId, maxPorciones: 3);
 
-        // Otros (1000 + 80 sobrante) lidera; se descarta el último (C con 80... ya está en Otros) -> queda Otros, A.
-        Assert.Equal("Otros", series[0].Name);
+        // A y B entran; C (80) se suma a Otros (1000), que queda primero.
+        Assert.Equal(["Otros", "A", "B"], series.Select(x => x.Name));
         Assert.Equal(1080, series[0].Xp);
     }
 
     [Fact]
-    public void BuildChartSeries_SinPaisOtros_NoLanzaYAgrupaLoQueQuedaFuera()
+    public void BuildChartSeries_SinPaisOtros_AgrupaLoQueNoEntra()
     {
         List<CountryXp> perCountry =
         [
@@ -73,16 +86,15 @@ public class XpCountryRankingTests
             new(3, "México", 100),
         ];
 
-        IReadOnlyList<CountryXp> series = XpCountryRanking.BuildChartSeries(perCountry, OtrosId, topN: 1);
+        IReadOnlyList<CountryXp> series = XpCountryRanking.BuildChartSeries(perCountry, OtrosId, maxPorciones: 2);
 
-        // top (Arg 500) + Otros (300 + 100 = 400). Se descarta el último (Otros).
-        Assert.Single(series);
-        Assert.Equal("Argentina", series[0].Name);
+        Assert.Equal(["Argentina", "Otros"], series.Select(x => x.Name));
+        Assert.Equal(400, series[1].Xp);
     }
 
     [Fact]
     public void BuildChartSeries_SinPaises_DevuelveVacio()
     {
-        Assert.Empty(XpCountryRanking.BuildChartSeries([], OtrosId));
+        Assert.Empty(XpCountryRanking.BuildChartSeries([], OtrosId, maxPorciones: 6));
     }
 }

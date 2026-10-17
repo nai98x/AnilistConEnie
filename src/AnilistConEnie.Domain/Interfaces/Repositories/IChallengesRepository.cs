@@ -9,8 +9,9 @@ public interface IChallengesRepository
     Task UpsertCompletado(long challengeId, ulong userId, int xp, DateTimeOffset fecha, int completados);
 
     /// <summary>
-    /// Suma un completado al usuario acumulando la XP. Devuelve la cantidad de completados resultante,
-    /// o null si el usuario ya llegó al máximo permitido por el challenge.
+    /// Suma un completado al usuario acumulando la XP del challenge, y le suma esa XP (total y challenges)
+    /// en la misma transacción. Devuelve la cantidad de completados resultante, o null si el usuario ya
+    /// llegó al máximo permitido por el challenge (en ese caso no se suma XP).
     /// </summary>
     Task<int?> SetUsuarioChallenge(string nombre, ulong userId, int xp, DateTimeOffset fecha);
     Task<List<ChallengeCompletado>> GetListaUsuariosCompletaron(string nombre);

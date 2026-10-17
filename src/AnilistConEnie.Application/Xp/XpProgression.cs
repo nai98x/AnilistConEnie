@@ -11,12 +11,12 @@ public static class XpProgression
     /// <summary>XP promedio que otorga un mensaje (usado para estimar cuántos mensajes faltan para el próximo rango).</summary>
     private const int XpPorMensaje = 15;
 
-    public static XpProgressionInfo Describe(long total, double promedioDiario)
+    public static XpProgressionInfo Describe(long total)
     {
         RangoEnum nextRango = RangoXp.RangoSiguiente(total);
         long nextRangeXp = RangoXp.XpRequerida(nextRango);
         long nextXp = nextRangeXp - total;
-        int mensajesNecesarios = Math.Max(0, (int)Math.Ceiling((nextXp - promedioDiario) / XpPorMensaje));
+        int mensajesNecesarios = Math.Max(0, (int)Math.Ceiling(nextXp / (double)XpPorMensaje));
 
         return new XpProgressionInfo(nextRango, nextRangeXp, nextXp, mensajesNecesarios);
     }

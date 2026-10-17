@@ -6,11 +6,12 @@ public readonly record struct CountryXp(ulong CountryId, string Name, long Xp);
 public static class XpCountryRanking
 {
     /// <summary>
-    /// Arma la serie para el gráfico de XP por país: los <paramref name="topN"/> países con más XP, más una
-    /// entrada "Otros" que agrupa al país marcado como otros (<paramref name="otrosCountryId"/>) y a todos los
-    /// que quedaron fuera del top. La serie se devuelve ordenada de mayor a menor descartando el último puesto.
+    /// Arma la serie para el gráfico de XP por país con a lo sumo <paramref name="maxPorciones"/> entradas: los
+    /// países con más XP y una entrada "Otros" que agrupa al país marcado como otros (<paramref name="otrosCountryId"/>)
+    /// y a todos los que no entran. No se descarta XP: la serie suma lo mismo que <paramref name="perCountry"/>.
+    /// "Otros" se omite si queda en cero. La serie se devuelve ordenada de mayor a menor.
     /// </summary>
-    public static IReadOnlyList<CountryXp> BuildChartSeries(IReadOnlyList<CountryXp> perCountry, ulong otrosCountryId, int topN = 10)
+    public static IReadOnlyList<CountryXp> BuildChartSeries(IReadOnlyList<CountryXp> perCountry, ulong otrosCountryId, int maxPorciones)
     {
         CountryXp otros = perCountry.FirstOrDefault(x => x.CountryId == otrosCountryId, new CountryXp(otrosCountryId, "Otros", 0));
         List<CountryXp> sinOtros = perCountry
@@ -18,12 +19,12 @@ public static class XpCountryRanking
             .OrderByDescending(x => x.Xp)
             .ToList();
 
-        List<CountryXp> top = sinOtros.Take(topN).ToList();
-        long otrosXp = sinOtros.Skip(topN).Sum(x => x.Xp) + otros.Xp;
+        int lugaresParaPaises = sinOtros.Count + (otros.Xp > 0 ? 1 : 0) <= maxPorciones ? sinOtros.Count : maxPorciones - 1;
 
-        List<CountryXp> folded = [.. top, otros with { Xp = otrosXp }];
-        folded = folded.OrderByDescending(x => x.Xp).ToList();
-        folded.RemoveAt(folded.Count - 1);
-        return folded;
+        List<CountryXp> top = sinOtros.Take(lugaresParaPaises).ToList();
+        long otrosXp = sinOtros.Skip(lugaresParaPaises).Sum(x => x.Xp) + otros.Xp;
+
+        List<CountryXp> serie = otrosXp > 0 ? [.. top, otros with { Xp = otrosXp }] : top;
+        return serie.OrderByDescending(x => x.Xp).ToList();
     }
 }

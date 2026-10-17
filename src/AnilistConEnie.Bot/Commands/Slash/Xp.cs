@@ -136,7 +136,7 @@ public class Xp(
 
         #region Resumen
         double promedioXp = chartHistory.GetPromedio();
-        XpProgressionInfo prog = XpProgression.Describe(rank.Total, promedioXp);
+        XpProgressionInfo prog = XpProgression.Describe(rank.Total);
         RangoEnum nextRango = prog.NextRango;
         long nextRangeXp = prog.NextRangeXp;
         long nextXp = prog.NextXp;

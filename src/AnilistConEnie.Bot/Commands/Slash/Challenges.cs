@@ -27,7 +27,6 @@ namespace AnilistConEnie.Bot.Commands.Slash;
 //[TestCommand]
 public class Challenges(
     IChallengesRepository challengesRepository,
-    IXpUsuariosRepository xpUsuariosRepository,
     IUsuariosRepository usuariosRepository,
     AnilistService anilistService,
     DiscordBotService discordBotService,
@@ -358,8 +357,6 @@ public class Challenges(
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"No se pudo registrar el challenge `{challenge}` para {usuario.Mention}. Intenta de nuevo.")));
             return;
         }
-
-        await xpUsuariosRepository.AddRemove(usuario.Id, new UserXpDelta { Total = (int)xp, Challenges = (int)xp });
 
         DiscordEmoji umaPoints = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.Bot.UmaPoints);
 

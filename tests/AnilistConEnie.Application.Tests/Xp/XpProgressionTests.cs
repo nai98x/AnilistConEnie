@@ -9,28 +9,28 @@ public class XpProgressionTests
     public void Describe_ComputesNextRankAndMissingXp()
     {
         // 5000 de total: próximo rango Casual (10000), faltan 5000.
-        XpProgressionInfo info = XpProgression.Describe(total: 5000, promedioDiario: 0);
+        XpProgressionInfo info = XpProgression.Describe(total: 5000);
 
         Assert.Equal(RangoEnum.Casual, info.NextRango);
         Assert.Equal(10000, info.NextRangeXp);
         Assert.Equal(5000, info.NextXp);
-        // ceil((5000 - 0) / 15) = 334
+        // ceil(5000 / 15) = 334
         Assert.Equal(334, info.MensajesNecesarios);
     }
 
     [Fact]
-    public void Describe_DiscountsDailyAverageFromNeededMessages()
+    public void Describe_RedondeaLosMensajesHaciaArriba()
     {
-        XpProgressionInfo info = XpProgression.Describe(total: 5000, promedioDiario: 1000);
+        // 9999 de total: faltan 1 de xp para Casual, alcanza con un mensaje.
+        XpProgressionInfo info = XpProgression.Describe(total: 9999);
 
-        // ceil((5000 - 1000) / 15) = 267
-        Assert.Equal(267, info.MensajesNecesarios);
+        Assert.Equal(1, info.MensajesNecesarios);
     }
 
     [Fact]
-    public void Describe_NeverReturnsNegativeMessages()
+    public void Describe_RangoMaximoSuperado_NoDevuelveMensajesNegativos()
     {
-        XpProgressionInfo info = XpProgression.Describe(total: 9999, promedioDiario: 100000);
+        XpProgressionInfo info = XpProgression.Describe(total: 2000000);
 
         Assert.Equal(0, info.MensajesNecesarios);
     }

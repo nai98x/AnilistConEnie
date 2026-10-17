@@ -8,6 +8,7 @@ public enum XpCategory
     Challenges,
     Eventos,
     Intercambios,
+    Booster,
     Otros
 }
 
@@ -17,7 +18,7 @@ public readonly record struct XpCategoryShare(XpCategory Category, long Value, d
 public static class XpDistribution
 {
     /// <summary>
-    /// Reparte la XP total del usuario entre sus categorías (mensajes, challenges, eventos, intercambios, otros).
+    /// Reparte la XP total del usuario entre sus categorías (mensajes, challenges, eventos, intercambios, booster, otros).
     /// Requiere <see cref="UserXp.Total"/> mayor a cero. El porcentaje de "Mensajes" se calcula como el resto
     /// para que la suma cierre en 100.
     /// </summary>
@@ -27,15 +28,17 @@ public static class XpDistribution
         long challenges = rank.Challenges;
         long eventos = rank.Eventos;
         long intercambios = rank.Intercambios;
+        long booster = rank.Booster;
         long otros = rank.Otros;
 
         decimal challengesPct = Math.Round(challenges * 100m / total, 2);
         decimal eventosPct = Math.Round(eventos * 100m / total, 2);
         decimal intercambiosPct = Math.Round(intercambios * 100m / total, 2);
+        decimal boosterPct = Math.Round(booster * 100m / total, 2);
         decimal otrosPct = Math.Round(otros * 100m / total, 2);
 
-        long mensajes = total - challenges - eventos - intercambios - otros;
-        decimal mensajesPct = 100 - challengesPct - eventosPct - intercambiosPct - otrosPct;
+        long mensajes = total - challenges - eventos - intercambios - booster - otros;
+        decimal mensajesPct = 100 - challengesPct - eventosPct - intercambiosPct - boosterPct - otrosPct;
 
         return
         [
@@ -43,6 +46,7 @@ public static class XpDistribution
             new XpCategoryShare(XpCategory.Challenges, challenges, challengesPct),
             new XpCategoryShare(XpCategory.Eventos, eventos, eventosPct),
             new XpCategoryShare(XpCategory.Intercambios, intercambios, intercambiosPct),
+            new XpCategoryShare(XpCategory.Booster, booster, boosterPct),
             new XpCategoryShare(XpCategory.Otros, otros, otrosPct),
         ];
     }

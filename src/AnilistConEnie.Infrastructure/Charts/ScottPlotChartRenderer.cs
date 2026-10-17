@@ -16,6 +16,22 @@ namespace AnilistConEnie.Infrastructure.Charts;
 internal sealed class ScottPlotChartRenderer : IChartRenderer
 {
     private const float LineWidth = 2.5f;
+    private const float LegendFontSize = 13;
+    private const float LegendRowHeight = 24;
+    private const float LegendSwatch = 14;
+    private const float LegendPadding = 14;
+    private const float TitleFontSize = 15;
+    private const float TitleHeight = 34;
+
+    /// <summary>
+    /// Título y leyenda se dibujan con Skia fuera del área del plot (no con ScottPlot) porque llevan
+    /// nombres de usuarios y ScottPlot usa una sola fuente por etiqueta, sin fallback por carácter.
+    /// </summary>
+    private sealed record Overlay(string? Title, IReadOnlyList<LegendEntry> Legend);
+
+    /// <summary><paramref name="Suffix"/> (ej: el porcentaje) no se recorta aunque el nombre no entre.</summary>
+    private readonly record struct LegendEntry(string Label, Color Color, bool IsLine, string Suffix = "");
+
 
     public Task<byte[]> RenderAsync(ChartSpecs.ChartSpec spec, CancellationToken cancellationToken = default) =>
         // El render es CPU-bound (rasterizado con Skia); lo corremos fuera del hilo del gateway de Discord.
@@ -32,15 +48,92 @@ internal sealed class ScottPlotChartRenderer : IChartRenderer
         Plot plot = new();
         ChartTheme.Apply(plot);
 
-        switch (spec)
+        Overlay overlay = spec switch
         {
-            case ChartSpecs.DonutChartSpec donut: RenderDonut(plot, donut); break;
-            case ChartSpecs.LineChartSpec line: RenderLine(plot, line); break;
-            case ChartSpecs.MultiLineChartSpec multi: RenderMultiLine(plot, multi); break;
-            default: throw new NotSupportedException($"Tipo de gráfico no soportado: {spec.GetType().Name}");
+            ChartSpecs.DonutChartSpec donut => RenderDonut(plot, donut),
+            ChartSpecs.LineChartSpec line => RenderLine(plot, line),
+            ChartSpecs.MultiLineChartSpec multi => RenderMultiLine(plot, multi),
+            _ => throw new NotSupportedException($"Tipo de gráfico no soportado: {spec.GetType().Name}")
+        };
+
+        return Compose(plot, spec.Width, spec.Height, overlay);
+    }
+
+    private static byte[] Compose(Plot plot, int width, int height, Overlay overlay)
+    {
+        float legendWidth = LegendWidth(overlay.Legend, width);
+        float top = overlay.Title is null ? 0 : TitleHeight;
+
+        using SKSurface surface = CreateSurface(width, height);
+        SKCanvas canvas = surface.Canvas;
+
+        // El plot ocupa solo su recuadro: sin esto ScottPlot limpia el canvas entero antes de dibujar.
+        plot.RenderManager.ClearCanvasBeforeEachRender = false;
+        canvas.Save();
+        canvas.ResetMatrix();
+        plot.Render(canvas, new PixelRect(0, Scaled((int)(width - legendWidth)), Scaled(height), Scaled((int)top)));
+        canvas.Restore();
+
+        using SKPaint textPaint = new() { Color = ToSk(ChartTheme.TextColor), IsAntialias = true };
+
+        if (overlay.Title is not null)
+        {
+            float maxWidth = width - legendWidth - 2 * LegendPadding;
+            string title = ChartText.Ellipsize(overlay.Title, TitleFontSize, maxWidth);
+            float x = (width - legendWidth - ChartText.Measure(title, TitleFontSize)) / 2;
+            ChartText.Draw(canvas, title, x, Baseline(TitleHeight / 2 + 4, TitleFontSize), TitleFontSize, textPaint);
         }
 
-        return plot.GetImageBytes(Scaled(spec.Width), Scaled(spec.Height), ImageFormat.Png);
+        DrawLegend(canvas, overlay.Legend, width - legendWidth, top, width, height, textPaint);
+
+        return EncodePng(surface);
+    }
+
+    private static float LegendWidth(IReadOnlyList<LegendEntry> legend, int width)
+    {
+        if (legend.Count == 0) return 0;
+
+        float maxText = width * .3f;
+        float text = legend.Max(e => Math.Min(maxText, ChartText.Measure(e.Label + e.Suffix, LegendFontSize)));
+        return LegendSwatch + 8 + text + 2 * LegendPadding;
+    }
+
+    private static void DrawLegend(SKCanvas canvas, IReadOnlyList<LegendEntry> legend, float left, float top, float right, float bottom, SKPaint textPaint)
+    {
+        if (legend.Count == 0) return;
+
+        float x = left + LegendPadding;
+        float textX = x + LegendSwatch + 8;
+        float maxText = right - LegendPadding - textX;
+        float y = top + (bottom - top - legend.Count * LegendRowHeight) / 2 + LegendRowHeight / 2;
+
+        foreach (LegendEntry entry in legend)
+        {
+            using SKPaint swatchPaint = new() { Color = ToSk(entry.Color), IsAntialias = true };
+            if (entry.IsLine)
+            {
+                swatchPaint.Style = SKPaintStyle.Stroke;
+                swatchPaint.StrokeWidth = LineWidth;
+                swatchPaint.StrokeCap = SKStrokeCap.Round;
+                canvas.DrawLine(x + 1, y, x + LegendSwatch - 1, y, swatchPaint);
+            }
+            else
+            {
+                SKRect swatch = new(x, y - LegendSwatch / 2, x + LegendSwatch, y + LegendSwatch / 2);
+                canvas.DrawRoundRect(swatch, 3, 3, swatchPaint);
+            }
+
+            string label = ChartText.Ellipsize(entry.Label, LegendFontSize, maxText - ChartText.Measure(entry.Suffix, LegendFontSize)) + entry.Suffix;
+            ChartText.Draw(canvas, label, textX, Baseline(y, LegendFontSize), LegendFontSize, textPaint);
+            y += LegendRowHeight;
+        }
+    }
+
+    /// <summary>Baseline para centrar verticalmente una línea de texto (según las métricas de Inter) en <paramref name="centerY"/>.</summary>
+    private static float Baseline(float centerY, float size)
+    {
+        SKFontMetrics metrics = ChartText.Metrics(size);
+        return centerY - (metrics.Ascent + metrics.Descent) / 2;
     }
 
     private static int Scaled(int size) => (int)(size * ChartTheme.Scale);
@@ -55,10 +148,9 @@ internal sealed class ScottPlotChartRenderer : IChartRenderer
         using SKSurface surface = CreateSurface(spec.Width, spec.Height);
         SKCanvas canvas = surface.Canvas;
 
-        using SKTypeface typeface = LoadTypeface();
-        using SKFont valueFont = new(typeface, 30) { Embolden = true };
-        using SKFont maxFont = new(typeface, 18);
-        using SKFont percentFont = new(typeface, 22) { Embolden = true };
+        using SKFont valueFont = new(ChartText.Primary, 30) { Embolden = true };
+        using SKFont maxFont = new(ChartText.Primary, 18);
+        using SKFont percentFont = new(ChartText.Primary, 22) { Embolden = true };
         using SKPaint textPaint = new() { Color = ToSk(ChartTheme.TextColor), IsAntialias = true };
         using SKPaint mutedPaint = new() { Color = ToSk(ChartTheme.MutedTextColor), IsAntialias = true };
 
@@ -93,7 +185,7 @@ internal sealed class ScottPlotChartRenderer : IChartRenderer
         return EncodePng(surface);
     }
 
-    private static void RenderDonut(Plot plot, ChartSpecs.DonutChartSpec spec)
+    private static Overlay RenderDonut(Plot plot, ChartSpecs.DonutChartSpec spec)
     {
         // Sin texto sobre las porciones: con categorías chicas/parejas los labels se superponen.
         // El nombre y el porcentaje de cada una van en la leyenda.
@@ -103,8 +195,7 @@ internal sealed class ScottPlotChartRenderer : IChartRenderer
             .. spec.Slices.Select(s => new PieSlice
             {
                 Value = s.Value,
-                FillColor = Color.FromHex(s.ColorHex),
-                LegendText = total > 0 ? $"{s.Label}  {s.Value / total * 100:0.#}%" : s.Label
+                FillColor = Color.FromHex(s.ColorHex)
             })
         ];
 
@@ -116,10 +207,15 @@ internal sealed class ScottPlotChartRenderer : IChartRenderer
 
         plot.Axes.Frameless();
         plot.HideGrid();
-        plot.ShowLegend(Edge.Right);
+
+        return new Overlay(null,
+        [
+            .. spec.Slices.Select(s => new LegendEntry(
+                s.Label, Color.FromHex(s.ColorHex), IsLine: false, total > 0 ? $"  {s.Value / total * 100:0.#}%" : ""))
+        ]);
     }
 
-    private static void RenderLine(Plot plot, ChartSpecs.LineChartSpec spec)
+    private static Overlay RenderLine(Plot plot, ChartSpecs.LineChartSpec spec)
     {
         double[] xs = [.. Enumerable.Range(0, spec.Values.Count).Select(i => (double)i)];
         double[] ys = [.. spec.Values];
@@ -134,25 +230,24 @@ internal sealed class ScottPlotChartRenderer : IChartRenderer
             scatter.FillYAboveColor = accent.WithAlpha(.18);
         }
 
-        // Una sola serie: el nombre va como título y no hace falta una caja de leyenda.
-        if (spec.Label is not null) plot.Title(spec.Label);
-
         if (ys.Length > 0) AddEndDot(plot, xs[^1], ys[^1], accent);
 
         plot.Axes.SetLimitsY(spec.Min, spec.Max);
         ChartTheme.CompactYTicks(plot);
         ApplyXLabels(plot, spec.XLabels, spec.Width, spec.ShowXAxis);
+
+        // Una sola serie: el nombre va como título y no hace falta una caja de leyenda.
+        return new Overlay(spec.Label, []);
     }
 
-    private static void RenderMultiLine(Plot plot, ChartSpecs.MultiLineChartSpec spec)
+    private static Overlay RenderMultiLine(Plot plot, ChartSpecs.MultiLineChartSpec spec)
     {
         double[] xs = [.. Enumerable.Range(0, spec.XLabels.Count).Select(i => (double)i)];
 
         foreach (ChartSpecs.LineSeries series in spec.Series)
         {
             Color color = Color.FromHex(series.ColorHex);
-            Scatter scatter = AddLine(plot, xs, [.. series.Data], color);
-            scatter.LegendText = series.Label;
+            AddLine(plot, xs, [.. series.Data], color);
 
             if (series.Data.Count > 0) AddEndDot(plot, series.Data.Count - 1, series.Data[^1], color);
         }
@@ -160,7 +255,8 @@ internal sealed class ScottPlotChartRenderer : IChartRenderer
         plot.Axes.SetLimitsY(spec.Min, spec.Max);
         ChartTheme.CompactYTicks(plot);
         ApplyXLabels(plot, spec.XLabels, spec.Width, showAxis: true);
-        plot.ShowLegend(Edge.Right);
+
+        return new Overlay(null, [.. spec.Series.Select(s => new LegendEntry(s.Label, Color.FromHex(s.ColorHex), IsLine: true))]);
     }
 
     private static byte[] RenderGauge(ChartSpecs.GaugeSpec spec)
@@ -197,8 +293,7 @@ internal sealed class ScottPlotChartRenderer : IChartRenderer
             canvas.DrawArc(arcBounds, 180, (float)(180 * value / 100), false, valuePaint);
         }
 
-        using SKTypeface typeface = LoadTypeface();
-        using SKFont font = new(typeface, 44) { Embolden = true };
+        using SKFont font = new(ChartText.Primary, 44) { Embolden = true };
         using SKPaint textPaint = new() { Color = ToSk(ChartTheme.TextColor), IsAntialias = true };
         canvas.DrawText($"{value:0}%", centerX, centerY - 4, SKTextAlign.Center, font, textPaint);
 
@@ -271,9 +366,6 @@ internal sealed class ScottPlotChartRenderer : IChartRenderer
         surface.Canvas.Clear(ToSk(ChartTheme.Background));
         return surface;
     }
-
-    private static SKTypeface LoadTypeface() =>
-        ChartTheme.FontPath is not null ? SKTypeface.FromFile(ChartTheme.FontPath) : SKTypeface.Default;
 
     private static byte[] EncodePng(SKSurface surface)
     {

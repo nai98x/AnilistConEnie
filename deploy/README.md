@@ -102,7 +102,20 @@ dotnet user-secrets --project src/AnilistConEnie.Bot \
    systemctl --user enable anilistconenie
    ```
 
-4. En GitHub (Settings → Secrets and variables → Actions), configurar los secrets que usa el deploy
+4. Instalar las fuentes de respaldo de los gráficos (en el repo solo viaja Inter, en `Fonts/`). Sin
+   ellas los emojis, símbolos (✦, ✩), letras decorativas (𝓐) y caracteres japoneses/chinos/coreanos
+   de los nicknames salen como un carácter genérico:
+
+   ```bash
+   sudo dnf install google-noto-emoji-color-fonts google-noto-sans-cjk-ttc-fonts google-noto-sans-symbols-fonts
+   ```
+
+   Noto Sans Symbols 2 y Noto Sans Math no tienen paquete en Oracle Linux 8: se bajan de
+   [notofonts](https://github.com/notofonts) (o se copian de otra máquina) y se dejan a mano en
+   `/usr/share/fonts/noto-extra/` (`NotoSansSymbols2-Regular.ttf`, `NotoSansMath-Regular.ttf`, con
+   `chmod 644`). No hace falta `fc-cache`: Skia lee `/usr/share/fonts/` directo, basta reiniciar el bot.
+
+5. En GitHub (Settings → Secrets and variables → Actions), configurar los secrets que usa el deploy
    por SSH/SCP:
    - `HOST` — host o IP del server.
    - `USERNAME` — usuario SSH (el mismo que corre el servicio de systemd).

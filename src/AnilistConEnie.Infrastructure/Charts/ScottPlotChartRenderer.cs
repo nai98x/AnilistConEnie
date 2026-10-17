@@ -1,3 +1,4 @@
+using AnilistConEnie.Application.Charts;
 using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Domain.Interfaces;
 using ScottPlot;
@@ -14,98 +15,133 @@ namespace AnilistConEnie.Infrastructure.Charts;
 /// </summary>
 internal sealed class ScottPlotChartRenderer : IChartRenderer
 {
+    private const float LineWidth = 2.5f;
+
     public Task<byte[]> RenderAsync(ChartSpecs.ChartSpec spec, CancellationToken cancellationToken = default) =>
         // El render es CPU-bound (rasterizado con Skia); lo corremos fuera del hilo del gateway de Discord.
         Task.Run(() => Render(spec), cancellationToken);
 
     private static byte[] Render(ChartSpecs.ChartSpec spec)
     {
+        switch (spec)
+        {
+            case ChartSpecs.BarProgressSpec progress: return RenderBarProgress(progress);
+            case ChartSpecs.GaugeSpec gauge: return RenderGauge(gauge);
+        }
+
         Plot plot = new();
         ChartTheme.Apply(plot);
 
         switch (spec)
         {
-            case ChartSpecs.BarProgressSpec bar: RenderBarProgress(plot, bar); break;
             case ChartSpecs.DonutChartSpec donut: RenderDonut(plot, donut); break;
             case ChartSpecs.LineChartSpec line: RenderLine(plot, line); break;
             case ChartSpecs.MultiLineChartSpec multi: RenderMultiLine(plot, multi); break;
-            case ChartSpecs.GaugeSpec gauge: return RenderGauge(plot, gauge);
             default: throw new NotSupportedException($"Tipo de gráfico no soportado: {spec.GetType().Name}");
         }
 
-        return plot.GetImageBytes(spec.Width, spec.Height, ImageFormat.Png);
+        return plot.GetImageBytes(Scaled(spec.Width), Scaled(spec.Height), ImageFormat.Png);
     }
 
-    private static void RenderBarProgress(Plot plot, ChartSpecs.BarProgressSpec spec)
+    private static int Scaled(int size) => (int)(size * ChartTheme.Scale);
+
+    private static byte[] RenderBarProgress(ChartSpecs.BarProgressSpec spec)
     {
+        // Se dibuja directo con Skia: una barra de progreso no necesita ejes, y así queda con track
+        // redondeado y el valor/porcentaje como encabezado en lugar de ticks numéricos.
         double max = spec.Max > 0 ? spec.Max : 1;
+        double fraction = Math.Clamp(spec.Value / max, 0, 1);
 
-        BarPlot bars = plot.Add.Bars([spec.Value]);
-        bars.Horizontal = true;
-        bars.Bars[0].FillColor = Color.FromHex(ChartTheme.AccentForIndex(0));
-        bars.Bars[0].Label = spec.Value.ToSpanish();
-        // Pasado ~85% ya no entra el label a la derecha de la barra (se corta contra el borde), así
-        // que ahí se pasa a centrado adentro; por debajo queda afuera como siempre.
-        bars.Bars[0].CenterLabel = spec.Value >= max * 0.85;
-        bars.ValueLabelStyle.Bold = true;
-        bars.ValueLabelStyle.FontSize = 22;
-        bars.ValueLabelStyle.ForeColor = ChartTheme.TextColor;
+        using SKSurface surface = CreateSurface(spec.Width, spec.Height);
+        SKCanvas canvas = surface.Canvas;
 
-        // Un poco de margen a los costados: si el eje termina justo en 0/max, esos ticks quedan
-        // centrados sobre el borde del canvas y se cortan a la mitad.
-        plot.Axes.SetLimitsX(-max * 0.01, max * 1.09);
-        plot.Axes.Left.IsVisible = false;
-        plot.HideGrid();
+        using SKTypeface typeface = LoadTypeface();
+        using SKFont valueFont = new(typeface, 30) { Embolden = true };
+        using SKFont maxFont = new(typeface, 18);
+        using SKFont percentFont = new(typeface, 22) { Embolden = true };
+        using SKPaint textPaint = new() { Color = ToSk(ChartTheme.TextColor), IsAntialias = true };
+        using SKPaint mutedPaint = new() { Color = ToSk(ChartTheme.MutedTextColor), IsAntialias = true };
+
+        const float padding = 24;
+        const float baseline = 70;
+        float right = spec.Width - padding;
+
+        string valueText = spec.Value.ToSpanish();
+        canvas.DrawText(valueText, padding, baseline, SKTextAlign.Left, valueFont, textPaint);
+        float valueWidth = valueFont.MeasureText(valueText);
+        canvas.DrawText($" / {max.ToSpanish()}", padding + valueWidth, baseline, SKTextAlign.Left, maxFont, mutedPaint);
+        canvas.DrawText($"{Math.Floor(fraction * 100):0}%", right, baseline, SKTextAlign.Right, percentFont, textPaint);
+
+        const float trackTop = 90;
+        const float trackHeight = 22;
+        const float radius = trackHeight / 2;
+        SKRect track = new(padding, trackTop, right, trackTop + trackHeight);
+
+        using SKPaint trackPaint = new() { Color = ToSk(ChartTheme.TrackColor), IsAntialias = true };
+        canvas.DrawRoundRect(track, radius, radius, trackPaint);
+
+        if (fraction > 0)
+        {
+            // Mínimo del ancho de la barra = su alto, para que con valores muy chicos siga viéndose
+            // como una píldora y no como un óvalo deformado.
+            float fillWidth = Math.Max(trackHeight, (float)(track.Width * fraction));
+            SKRect fill = new(track.Left, track.Top, track.Left + fillWidth, track.Bottom);
+            using SKPaint fillPaint = new() { Color = SKColor.Parse(ChartColors.ForIndex(0)), IsAntialias = true };
+            canvas.DrawRoundRect(fill, radius, radius, fillPaint);
+        }
+
+        return EncodePng(surface);
     }
 
     private static void RenderDonut(Plot plot, ChartSpecs.DonutChartSpec spec)
     {
         // Sin texto sobre las porciones: con categorías chicas/parejas los labels se superponen.
-        // El nombre de cada una ya se muestra en la leyenda.
+        // El nombre y el porcentaje de cada una van en la leyenda.
+        double total = spec.Slices.Sum(s => s.Value);
         List<PieSlice> slices =
         [
             .. spec.Slices.Select(s => new PieSlice
             {
                 Value = s.Value,
                 FillColor = Color.FromHex(s.ColorHex),
-                LegendText = s.Label
+                LegendText = total > 0 ? $"{s.Label}  {s.Value / total * 100:0.#}%" : s.Label
             })
         ];
 
         Pie pie = plot.Add.Pie(slices);
         pie.DonutFraction = spec.DonutFraction;
+        // Separación entre porciones en el color del fondo, en vez de un borde oscuro alrededor.
+        pie.LineColor = ChartTheme.Background;
+        pie.LineWidth = 2;
 
         plot.Axes.Frameless();
         plot.HideGrid();
-        plot.ShowLegend();
+        plot.ShowLegend(Edge.Right);
     }
 
     private static void RenderLine(Plot plot, ChartSpecs.LineChartSpec spec)
     {
         double[] xs = [.. Enumerable.Range(0, spec.Values.Count).Select(i => (double)i)];
         double[] ys = [.. spec.Values];
-        string accent = ChartTheme.AccentForIndex(0);
+        Color accent = Color.FromHex(ChartColors.ForIndex(0));
 
-        Scatter scatter = plot.Add.Scatter(xs, ys);
-        scatter.Color = Color.FromHex(accent);
-        scatter.LineWidth = 3;
-        scatter.MarkerSize = 0;
+        Scatter scatter = AddLine(plot, xs, ys, accent);
 
         if (spec.Fill)
         {
             scatter.FillY = true;
             scatter.FillYValue = spec.Min;
-            scatter.FillYAboveColor = Color.FromHex(accent).WithAlpha(.25);
+            scatter.FillYAboveColor = accent.WithAlpha(.18);
         }
 
-        if (spec.Label is not null)
-        {
-            scatter.LegendText = spec.Label;
-            plot.ShowLegend();
-        }
+        // Una sola serie: el nombre va como título y no hace falta una caja de leyenda.
+        if (spec.Label is not null) plot.Title(spec.Label);
+
+        if (ys.Length > 0) AddEndDot(plot, xs[^1], ys[^1], accent);
 
         plot.Axes.SetLimitsY(spec.Min, spec.Max);
-        ApplyXLabels(plot, xs, spec.XLabels, spec.ShowXAxis);
+        ChartTheme.CompactYTicks(plot);
+        ApplyXLabels(plot, spec.XLabels, spec.Width, spec.ShowXAxis);
     }
 
     private static void RenderMultiLine(Plot plot, ChartSpecs.MultiLineChartSpec spec)
@@ -114,82 +150,137 @@ internal sealed class ScottPlotChartRenderer : IChartRenderer
 
         foreach (ChartSpecs.LineSeries series in spec.Series)
         {
-            Scatter scatter = plot.Add.Scatter(xs, [.. series.Data]);
-            scatter.Color = Color.FromHex(series.ColorHex);
-            scatter.LineWidth = 3;
-            scatter.MarkerSize = 0;
+            Color color = Color.FromHex(series.ColorHex);
+            Scatter scatter = AddLine(plot, xs, [.. series.Data], color);
             scatter.LegendText = series.Label;
+
+            if (series.Data.Count > 0) AddEndDot(plot, series.Data.Count - 1, series.Data[^1], color);
         }
 
         plot.Axes.SetLimitsY(spec.Min, spec.Max);
-        // Ocultar solo las etiquetas: Bottom.IsVisible = false esconde el eje entero, incluyendo el
-        // borde inferior del recuadro, y el gráfico queda "abierto" abajo.
-        plot.Axes.Bottom.TickLabelStyle.IsVisible = false;
-        plot.ShowLegend();
+        ChartTheme.CompactYTicks(plot);
+        ApplyXLabels(plot, spec.XLabels, spec.Width, showAxis: true);
+        plot.ShowLegend(Edge.Right);
     }
 
-    private static byte[] RenderGauge(Plot plot, ChartSpecs.GaugeSpec spec)
+    private static byte[] RenderGauge(ChartSpecs.GaugeSpec spec)
     {
-        // Semicírculo estilo velocímetro: un solo anillo con 2 segmentos (valor + resto hasta 100),
-        // arrancando a la izquierda (180°) y barriendo 180° hasta la derecha, pasando por arriba.
+        // Semicírculo estilo velocímetro dibujado con Skia: track completo de 180° y encima el arco
+        // del valor, arrancando a la izquierda y barriendo por arriba hacia la derecha.
         double value = Math.Clamp(spec.Value, 0, 100);
-        RadialGaugePlot gauge = plot.Add.RadialGaugePlot([value, 100 - value]);
-        gauge.GaugeMode = RadialGaugeMode.SingleGauge;
-        gauge.Colors = [GaugeColor(value), ChartTheme.GridColor];
-        gauge.ShowLevels = false;
-        gauge.StartingAngle = 180;
-        gauge.MaximumAngle = 180;
-        gauge.StartCap = SKStrokeCap.Round;
-        gauge.EndCap = SKStrokeCap.Round;
 
-        const double contentBottom = -.3;
-        Text label = plot.Add.Text($"{value:0}%", 0, -.1);
-        label.LabelFontSize = 32;
-        label.LabelBold = true;
-        label.LabelFontColor = ChartTheme.TextColor;
-        label.Alignment = Alignment.MiddleCenter;
+        const float radius = 110;
+        const float stroke = 26;
+        const float top = 28;
+        float centerX = spec.Width / 2f;
+        float centerY = top + stroke / 2 + radius;
+        int height = (int)(centerY + stroke / 2 + 24);
 
-        plot.Axes.Frameless();
-        plot.HideGrid();
+        using SKSurface surface = CreateSurface(spec.Width, height);
+        SKCanvas canvas = surface.Canvas;
 
-        byte[] fullImage = plot.GetImageBytes(spec.Width, spec.Height, ImageFormat.Png);
+        SKRect arcBounds = new(centerX - radius, centerY - radius, centerX + radius, centerY + radius);
+        using SKPaint trackPaint = new()
+        {
+            Color = ToSk(ChartTheme.TrackColor), IsAntialias = true, Style = SKPaintStyle.Stroke,
+            StrokeWidth = stroke, StrokeCap = SKStrokeCap.Round
+        };
+        canvas.DrawArc(arcBounds, 180, 180, false, trackPaint);
 
-        // El gauge reserva su eje Y como si fuera un círculo completo (ignora los límites manuales
-        // y se recalcula en cada render), dejando un vacío grande abajo ya que solo dibujamos el
-        // semicírculo superior. Recortamos en espacio de píxeles hasta donde termina el contenido
-        // real (arco + label), usando los límites reales que terminó usando el autoscale.
-        AxisLimits limits = plot.Axes.GetLimits();
-        double keepFraction = Math.Clamp((limits.Top - contentBottom) / (limits.Top - limits.Bottom), .3, 1);
+        if (value > 0)
+        {
+            using SKPaint valuePaint = new()
+            {
+                Color = ToSk(GaugeColor(value)), IsAntialias = true, Style = SKPaintStyle.Stroke,
+                StrokeWidth = stroke, StrokeCap = SKStrokeCap.Round
+            };
+            canvas.DrawArc(arcBounds, 180, (float)(180 * value / 100), false, valuePaint);
+        }
 
-        using SKBitmap bitmap = SKBitmap.Decode(fullImage);
-        int cropHeight = Math.Max(1, (int)(bitmap.Height * keepFraction));
-        using SKBitmap cropped = new(bitmap.Width, cropHeight);
-        using (SKCanvas canvas = new(cropped))
-            canvas.DrawBitmap(bitmap, new SKRect(0, 0, bitmap.Width, cropHeight), new SKRect(0, 0, bitmap.Width, cropHeight));
+        using SKTypeface typeface = LoadTypeface();
+        using SKFont font = new(typeface, 44) { Embolden = true };
+        using SKPaint textPaint = new() { Color = ToSk(ChartTheme.TextColor), IsAntialias = true };
+        canvas.DrawText($"{value:0}%", centerX, centerY - 4, SKTextAlign.Center, font, textPaint);
 
-        using SKData data = cropped.Encode(SKEncodedImageFormat.Png, 100);
-        return data.ToArray();
+        return EncodePng(surface);
     }
 
     private static Color GaugeColor(double value) => value switch
     {
-        >= 75 => Color.FromHex("#ED4245"),
-        >= 40 => Color.FromHex("#FEE75C"),
-        _ => Color.FromHex("#57F287")
+        >= 75 => ChartTheme.StatusCritical,
+        >= 40 => ChartTheme.StatusWarning,
+        _ => ChartTheme.StatusGood
     };
 
-    private static void ApplyXLabels(Plot plot, double[] xs, IReadOnlyList<string> labels, bool showAxis)
+    private static Scatter AddLine(Plot plot, double[] xs, double[] ys, Color color)
     {
-        if (!showAxis)
+        Scatter scatter = plot.Add.Scatter(xs, ys);
+        scatter.Color = color;
+        scatter.LineWidth = LineWidth;
+        scatter.LineStyle.Rounded = true;
+        scatter.MarkerSize = 0;
+        return scatter;
+    }
+
+    /// <summary>Punto al final de la serie con un anillo del color de fondo, para que se lea sobre otras líneas.</summary>
+    private static void AddEndDot(Plot plot, double x, double y, Color color)
+    {
+        plot.Add.Marker(x, y, MarkerShape.FilledCircle, 13, ChartTheme.Background);
+        plot.Add.Marker(x, y, MarkerShape.FilledCircle, 9, color);
+    }
+
+    private static void ApplyXLabels(Plot plot, IReadOnlyList<string> labels, int width, bool showAxis)
+    {
+        int count = labels.Count;
+        int longest = showAxis && count > 0 ? labels.Max(l => l.Length) : 0;
+
+        // Margen horizontal suficiente para que la primera/última etiqueta (centradas sobre su punto)
+        // no se corten contra el borde. Ancho aproximado del área de datos descontando el eje Y.
+        double halfLabel = longest * 3.4 + 4;
+        double dataWidth = Math.Max(1, width - 60 - 2 * halfLabel);
+        double padding = Math.Max(.3, halfLabel * Math.Max(1, count - 1) / dataWidth);
+        plot.Axes.SetLimitsX(-padding, Math.Max(0, count - 1) + padding);
+
+        if (!showAxis || count == 0)
         {
-            plot.Axes.Bottom.IsVisible = false;
+            plot.Axes.Bottom.TickLabelStyle.IsVisible = false;
             return;
         }
 
-        Tick[] ticks = [.. xs.Select((x, i) => new Tick(x, labels[i]))];
-        plot.Axes.Bottom.TickGenerator = new NumericManual(ticks);
-        plot.Axes.Bottom.TickLabelStyle.Rotation = -45;
-        // Con rotación, ScottPlot subestima el alto necesario para las etiquetas y las corta.
-        plot.Axes.Bottom.MinimumSize = 60;
+        // Etiquetas horizontales y salteadas a intervalos regulares según cuántas entran a lo ancho,
+        // en vez de una por punto rotada (con 30+ fechas quedaban encimadas).
+        int maxTicks = Math.Max(2, (int)(width / (longest * 7.5 + 28)));
+        int step = count <= maxTicks ? 1 : (int)Math.Ceiling((count - 1) / (double)(maxTicks - 1));
+
+        List<int> indices = [.. Enumerable.Range(0, count).Where(i => i % step == 0)];
+        int last = count - 1;
+        // La última etiqueta se muestra siempre; si quedaría pegada a la anterior, la reemplaza.
+        if (indices[^1] != last)
+        {
+            if (indices.Count > 1 && last - indices[^1] < step * .6) indices[^1] = last;
+            else indices.Add(last);
+        }
+
+        plot.Axes.Bottom.TickGenerator = new NumericManual([.. indices.Select(i => new Tick(i, labels[i]))]);
     }
+
+    private static SKSurface CreateSurface(int width, int height)
+    {
+        SKSurface surface = SKSurface.Create(new SKImageInfo(Scaled(width), Scaled(height)));
+        surface.Canvas.Scale(ChartTheme.Scale);
+        surface.Canvas.Clear(ToSk(ChartTheme.Background));
+        return surface;
+    }
+
+    private static SKTypeface LoadTypeface() =>
+        ChartTheme.FontPath is not null ? SKTypeface.FromFile(ChartTheme.FontPath) : SKTypeface.Default;
+
+    private static byte[] EncodePng(SKSurface surface)
+    {
+        using SKImage image = surface.Snapshot();
+        using SKData data = image.Encode(SKEncodedImageFormat.Png, 100);
+        return data.ToArray();
+    }
+
+    private static SKColor ToSk(Color color) => new(color.R, color.G, color.B, color.A);
 }

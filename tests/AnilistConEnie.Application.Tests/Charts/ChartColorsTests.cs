@@ -12,14 +12,33 @@ public class ChartColorsTests
     }
 
     [Fact]
-    public void ForIndex_CyclesThroughPaletteWithoutRepeatingWithinACycle()
+    public void ForIndex_NoRepiteColoresDentroDeLaPaleta()
     {
-        // Antes "toppaises" usaba un color 100% aleatorio por ejecución; ahora el ciclo debe ser
-        // estable y no repetir colores dentro de una misma vuelta de la paleta.
-        List<string> firstCycle = [.. Enumerable.Range(0, 6).Select(ChartColors.ForIndex)];
+        List<string> colores = [.. Enumerable.Range(0, ChartColors.Count).Select(ChartColors.ForIndex)];
 
-        Assert.Equal(6, firstCycle.Distinct().Count());
-        Assert.Equal(ChartColors.ForIndex(0), ChartColors.ForIndex(6));
+        Assert.Equal(ChartColors.Count, colores.Distinct().Count());
+        Assert.DoesNotContain(ChartColors.Otros, colores);
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(8)]
+    public void ForIndex_FueraDeLaPaleta_Lanza(int index)
+    {
+        // Más series que colores se agrupan en "Otros"; nunca se recicla un color.
+        Assert.Throws<ArgumentOutOfRangeException>(() => ChartColors.ForIndex(index));
+    }
+
+    [Fact]
+    public void MaxPorcionesTorta_EntraEnLaPaleta()
+    {
+        Assert.InRange(ChartColors.MaxPorcionesTorta, 1, ChartColors.Count);
+    }
+
+    [Fact]
+    public void ForXpCategory_OtrosUsaGrisNeutro()
+    {
+        Assert.Equal(ChartColors.Otros, ChartColors.ForXpCategory(XpCategory.Otros).Color);
     }
 
     [Theory]

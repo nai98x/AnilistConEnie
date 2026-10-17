@@ -1,4 +1,5 @@
 using AnilistConEnie.Application.Charts;
+using AnilistConEnie.Application.Xp;
 using AnilistConEnie.Domain.Entities.Charts;
 
 namespace AnilistConEnie.Application.Tests.Charts;
@@ -14,12 +15,12 @@ public class XpChartsTests
     }
 
     [Fact]
-    public void Distribution_DonutFractionCero()
+    public void Distribution_UsaDonutFractionPorDefecto()
     {
         IReadOnlyList<PieSlice> slices = [new("A", 1, "#111111")];
         DonutChartSpec spec = XpCharts.Distribution(slices);
 
-        Assert.Equal(0, spec.DonutFraction);
+        Assert.Equal(0.55, spec.DonutFraction);
         Assert.Same(slices, spec.Slices);
     }
 
@@ -61,5 +62,25 @@ public class XpChartsTests
 
         Assert.Equal(0.55, spec.DonutFraction);
         Assert.Same(slices, spec.Slices);
+    }
+
+    [Fact]
+    public void CountrySlices_OtrosEnGrisYElRestoEnOrdenSinSaltearColores()
+    {
+        const ulong otrosId = 999;
+        List<CountryXp> series =
+        [
+            new(1, "Argentina", 500),
+            new(otrosId, "Otros", 300),
+            new(2, "Chile", 100),
+        ];
+
+        IReadOnlyList<PieSlice> slices = XpCharts.CountrySlices(series, otrosId);
+
+        Assert.Equal(["Argentina", "Otros", "Chile"], slices.Select(s => s.Label));
+        Assert.Equal([500d, 300d, 100d], slices.Select(s => s.Value));
+        Assert.Equal(ChartColors.ForIndex(0), slices[0].ColorHex);
+        Assert.Equal(ChartColors.Otros, slices[1].ColorHex);
+        Assert.Equal(ChartColors.ForIndex(1), slices[2].ColorHex);
     }
 }

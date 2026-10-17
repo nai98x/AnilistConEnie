@@ -385,11 +385,8 @@ public class Xp(
             .OrderByDescending(x => x.Xp)
             .ToList();
 
-        IReadOnlyList<CountryXp> res = XpCountryRanking.BuildChartSeries([.. xpPerCountry.Values], config.Roles.OtrosPais);
-
-        List<PieSlice> slices = res
-            .Select((x, i) => new PieSlice(x.Name, x.Xp, ChartColors.ForIndex(i)))
-            .ToList();
+        IReadOnlyList<CountryXp> res = XpCountryRanking.BuildChartSeries([.. xpPerCountry.Values], config.Roles.OtrosPais, ChartColors.MaxPorcionesTorta);
+        IReadOnlyList<PieSlice> slices = XpCharts.CountrySlices(res, config.Roles.OtrosPais);
 
         byte[] image = await chartRenderer.RenderAsync(XpCharts.CountryPie(slices));
 

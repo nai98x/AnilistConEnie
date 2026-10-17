@@ -62,4 +62,27 @@ public class XpCountryRankingTests
         Assert.Equal("Otros", series[0].Name);
         Assert.Equal(1080, series[0].Xp);
     }
+
+    [Fact]
+    public void BuildChartSeries_SinPaisOtros_NoLanzaYAgrupaLoQueQuedaFuera()
+    {
+        List<CountryXp> perCountry =
+        [
+            new(1, "Argentina", 500),
+            new(2, "Chile", 300),
+            new(3, "México", 100),
+        ];
+
+        IReadOnlyList<CountryXp> series = XpCountryRanking.BuildChartSeries(perCountry, OtrosId, topN: 1);
+
+        // top (Arg 500) + Otros (300 + 100 = 400). Se descarta el último (Otros).
+        Assert.Single(series);
+        Assert.Equal("Argentina", series[0].Name);
+    }
+
+    [Fact]
+    public void BuildChartSeries_SinPaises_DevuelveVacio()
+    {
+        Assert.Empty(XpCountryRanking.BuildChartSeries([], OtrosId));
+    }
 }

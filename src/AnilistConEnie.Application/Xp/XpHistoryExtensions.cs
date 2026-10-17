@@ -20,4 +20,19 @@ public static class XpHistoryExtensions
 
         return (last.Xp - first.Xp) / totalDays;
     }
+
+    /// <summary>
+    /// Mismo promedio que <see cref="GetPromedio(IReadOnlyList{UserDailyXp})"/> sobre el historial del chart,
+    /// a partir solo del primer y el último registro: si el último es del año en curso, el chart lo
+    /// extiende hasta hoy con la misma XP.
+    /// </summary>
+    public static double GetPromedio(this XpDiarioExtremos extremos, DateTime hoy)
+    {
+        DateTime hasta = extremos.UltimaFecha.Year == hoy.Year ? hoy.Date : extremos.UltimaFecha;
+
+        double totalDays = (hasta - extremos.PrimeraFecha).TotalDays;
+        if (totalDays <= 0) return 0;
+
+        return (extremos.UltimoXp - extremos.PrimerXp) / totalDays;
+    }
 }

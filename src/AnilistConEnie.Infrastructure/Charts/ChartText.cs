@@ -13,7 +13,7 @@ namespace AnilistConEnie.Infrastructure.Charts;
 internal static class ChartText
 {
     public static readonly SKTypeface Primary =
-        ChartTheme.FontPath is not null ? SKTypeface.FromFile(ChartTheme.FontPath) : SKTypeface.Default;
+        (ChartTheme.FontPath is not null ? SKTypeface.FromFile(ChartTheme.FontPath) : null) ?? SKTypeface.Default;
 
     /// <summary>
     /// Familias del sistema que se prueban antes que el resto. Emoji va primero para que lo que

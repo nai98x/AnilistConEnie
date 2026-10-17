@@ -23,6 +23,7 @@ public static class BotServiceExtensions
         services.AddSingleton<ChallengePostsState>();
         services.AddSingleton<SubirImagenState>();
         services.AddSingleton<FechaEntradaState>();
+        services.AddSingleton<ResolucionesState>();
 
         // Helpers
         services.AddSingleton<RangoRoles>();

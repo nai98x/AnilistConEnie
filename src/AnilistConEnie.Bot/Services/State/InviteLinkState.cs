@@ -8,7 +8,7 @@ public class InviteLinkState
 
     public IReadOnlyDictionary<ulong, DateTime> GetLinkRoleUsers() => _linkRoleUsers;
 
-    public void AddLinkRoleUser(ulong id, DateTime expiration) => _linkRoleUsers.TryAdd(id, expiration);
+    public void AddLinkRoleUser(ulong id, DateTime expiration) => _linkRoleUsers[id] = expiration;
 
     public void RemoveLinkRoleUser(ulong id) => _linkRoleUsers.TryRemove(id, out _);
 }

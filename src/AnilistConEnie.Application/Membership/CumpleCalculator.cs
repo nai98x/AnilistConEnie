@@ -26,14 +26,15 @@ public static class CumpleCalculator
             if (!EsFechaValida(dia, mes)) continue;
 
             DateTime esteAnio = Fecha(now.Year, mes, dia);
+            DateTime proximo = now > esteAnio ? Fecha(now.Year + 1, mes, dia) : esteAnio;
 
-            if (soloMes && (esteAnio < now || esteAnio > now.AddMonths(1)))
+            if (soloMes && proximo > now.AddMonths(1))
                 continue;
 
             lista.Add(new UserCumple
             {
                 Id = x.UserId,
-                Proximo = now > esteAnio ? Fecha(now.Year + 1, mes, dia) : esteAnio
+                Proximo = proximo
             });
         }
 

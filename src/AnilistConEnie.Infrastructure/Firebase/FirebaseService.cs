@@ -9,6 +9,10 @@ public class FirebaseService
     private const string AnilistConEnieCredentialFile = "firebase-anilistconenie.json";
 
     private readonly string _credentialsDir;
+    private readonly SemaphoreSlim _storageLock = new(1, 1);
+    private volatile StorageCliente? _storage;
+
+    private sealed record StorageCliente(StorageClient Client, string Bucket);
 
     public FirebaseService(string credentialsDir)
     {
@@ -17,9 +21,23 @@ public class FirebaseService
 
     public async Task<(StorageClient Client, string Bucket)> GetAnilistConEnieStorageAsync()
     {
-        string jsonCredentials = await File.ReadAllTextAsync(CredentialPath(AnilistConEnieCredentialFile));
-        StorageClient client = await StorageClient.CreateAsync(CredentialFrom(jsonCredentials));
-        return (client, $"{ProjectId(jsonCredentials, AnilistConEnieCredentialFile)}.appspot.com");
+        if (_storage is { } storage) return (storage.Client, storage.Bucket);
+
+        await _storageLock.WaitAsync();
+        try
+        {
+            if (_storage is { } creado) return (creado.Client, creado.Bucket);
+
+            string jsonCredentials = await File.ReadAllTextAsync(CredentialPath(AnilistConEnieCredentialFile));
+            StorageClient client = await StorageClient.CreateAsync(CredentialFrom(jsonCredentials));
+            StorageCliente nuevo = new(client, $"{ProjectId(jsonCredentials, AnilistConEnieCredentialFile)}.appspot.com");
+            _storage = nuevo;
+            return (nuevo.Client, nuevo.Bucket);
+        }
+        finally
+        {
+            _storageLock.Release();
+        }
     }
 
     private static GoogleCredential CredentialFrom(string jsonCredentials) =>

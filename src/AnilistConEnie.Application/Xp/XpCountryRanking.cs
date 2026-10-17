@@ -12,7 +12,7 @@ public static class XpCountryRanking
     /// </summary>
     public static IReadOnlyList<CountryXp> BuildChartSeries(IReadOnlyList<CountryXp> perCountry, ulong otrosCountryId, int topN = 10)
     {
-        CountryXp otros = perCountry.First(x => x.CountryId == otrosCountryId);
+        CountryXp otros = perCountry.FirstOrDefault(x => x.CountryId == otrosCountryId, new CountryXp(otrosCountryId, "Otros", 0));
         List<CountryXp> sinOtros = perCountry
             .Where(x => x.CountryId != otrosCountryId)
             .OrderByDescending(x => x.Xp)

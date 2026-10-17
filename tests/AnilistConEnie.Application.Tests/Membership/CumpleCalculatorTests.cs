@@ -89,4 +89,16 @@ public class CumpleCalculatorTests
         Assert.Single(lista);
         Assert.Equal(1, lista[0].Id);
     }
+
+    [Fact]
+    public void Proximos_SoloMes_EnDiciembreIncluyeLosDeEneroDelAnioSiguiente()
+    {
+        List<Usuario> cumples = [Cumple(1, 5, 1), Cumple(2, 25, 1)];
+
+        List<UserCumple> lista = CumpleCalculator.Proximos(cumples, new DateTime(2026, 12, 20, 15, 0, 0), soloMes: true);
+
+        Assert.Single(lista);
+        Assert.Equal(1, lista[0].Id);
+        Assert.Equal(new DateTime(2027, 1, 5), lista[0].Proximo);
+    }
 }

@@ -20,6 +20,7 @@ public class XpChartServiceTests
         }
 
         public Task<List<UserDailyXp>> ObtenerBaseline(DateOnly fecha) => Task.FromResult(new List<UserDailyXp>());
+        public Task<List<XpDiarioExtremos>> ObtenerExtremos() => Task.FromResult(new List<XpDiarioExtremos>());
         public Task Upsert(ulong userId, DateTime fecha, long xp) => Task.CompletedTask;
         public Task Snapshot(DateOnly fecha, IReadOnlyList<UserXp> usuarios) => Task.CompletedTask;
     }

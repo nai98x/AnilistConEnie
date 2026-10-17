@@ -252,11 +252,13 @@ internal sealed class ScottPlotChartRenderer : IChartRenderer
             if (series.Data.Count > 0) AddEndDot(plot, series.Data.Count - 1, series.Data[^1], color);
         }
 
+        List<LegendEntry> legend = [.. spec.Series.Select(s => new LegendEntry(s.Label, Color.FromHex(s.ColorHex), IsLine: true))];
+
         plot.Axes.SetLimitsY(spec.Min, spec.Max);
         ChartTheme.CompactYTicks(plot);
-        ApplyXLabels(plot, spec.XLabels, spec.Width, showAxis: true);
+        ApplyXLabels(plot, spec.XLabels, (int)(spec.Width - LegendWidth(legend, spec.Width)), showAxis: true);
 
-        return new Overlay(null, [.. spec.Series.Select(s => new LegendEntry(s.Label, Color.FromHex(s.ColorHex), IsLine: true))]);
+        return new Overlay(null, legend);
     }
 
     private static byte[] RenderGauge(ChartSpecs.GaugeSpec spec)

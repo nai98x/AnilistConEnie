@@ -1,6 +1,7 @@
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
 using AnilistConEnie.Bot.Services;
+using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Domain.Interfaces.Repositories;
 using AnilistConEnie.Domain.Entities;
 using AnilistConEnie.Domain.Entities.Anilist;
@@ -12,7 +13,7 @@ using DSharpPlus.Exceptions;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class ComponentInteractionHandler(DiscordBotService discordBotService, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, AnilistService anilistService, RepartoXpService repartoXpService, IAnilistApprovalRepository anilistApprovalRepository, IHttpClientFactory httpClientFactory)
+public class ComponentInteractionHandler(DiscordBotService discordBotService, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, AnilistService anilistService, RepartoXpService repartoXpService, ResolucionesState resolucionesState, IAnilistApprovalRepository anilistApprovalRepository, IHttpClientFactory httpClientFactory)
 {
     public async Task Handle(DiscordClient client, ComponentInteractionCreatedEventArgs args)
     {
@@ -94,67 +95,21 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
 
             await args.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
 
-            UserApprovalAnilist? userApproval = await anilistApprovalRepository.Obtener(discordId);
-            if (userApproval is null)
+            if (!resolucionesState.TryIniciar(args.Message.Id))
             {
-                await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral().AddEmbed(ErrorEmbed.De("No se encontró la solicitud de vinculación o la misma ya fue revisada")));
-            }
-            else
-            {
-                DiscordMember? member = await TryGetMemberAsync(args.Guild, (ulong)discordId);
-                if (member is null && aprobado)
-                {
-                    await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral().AddEmbed(ErrorEmbed.De("No se encontró al usuario en el servidor. La solicitud queda pendiente hasta que vuelva a entrar")));
-                    return;
-                }
-
-                DiscordEmbed original = args.Message.Embeds[0];
-                DiscordEmbedBuilder resuelto = new DiscordEmbedBuilder(original);
-
-                if (aprobado)
-                {
-                    DiscordUser user = await client.GetUserAsync((ulong)discordId);
-                    AnilistUser anilistUser = new()
-                    {
-                        Id = userApproval.IdAnilist,
-                        Name = userApproval.Name,
-                        SiteUrl = userApproval.SiteUrl,
-                        AvatarMedium = userApproval.Avatar,
-                        BannerImage = userApproval.Banner
-                    };
-                    await anilistService.TerminarVinculacion(client, user, member!, args.Guild, anilistUser, true);
-
-                    resuelto
-                        .WithColor(DiscordColor.Green)
-                        .WithTitle("Vinculacion de AniList aprobada")
-                        .WithDescription($"{original.Description}\n\n{Formatter.Bold("Aprobada")} por {args.User.Mention}, el usuario fue vinculado correctamente.");
-                }
-                else
-                {
-                    string detalle = "el usuario fue expulsado del servidor.";
-                    if (member is null)
-                    {
-                        detalle = "el usuario ya no estaba en el servidor.";
-                    }
-                    else
-                    {
-                        await args.Guild.RemoveMemberAsync((ulong)discordId, "Solicitud de vinculación rechazada por el staff");
-                    }
-
-                    resuelto
-                        .WithColor(DiscordColor.Red)
-                        .WithTitle("Vinculacion de AniList rechazada")
-                        .WithDescription($"{original.Description}\n\n{Formatter.Bold("Rechazada")} por {args.User.Mention}, {detalle}");
-                }
-
-                await anilistApprovalRepository.Delete(discordId);
-                try
-                {
-                    await args.Message.ModifyAsync(new DiscordMessageBuilder().AddEmbed(resuelto.Build()));
-                }
-                catch (Exception ex) { await logService.LogException(args.Guild, ex, "Resolución de vinculación - editar mensaje"); }
+                await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral().AddEmbed(ErrorEmbed.De("Esta solicitud de vinculación ya está siendo revisada")));
+                return;
             }
 
+            try
+            {
+                await ResolverVinculacionAsync(client, args, aprobado, discordId);
+            }
+            catch
+            {
+                resolucionesState.Liberar(args.Message.Id);
+                throw;
+            }
         }
         else if (args.Interaction.Data.CustomId.StartsWith("yoink-"))
         {
@@ -219,6 +174,71 @@ public class ComponentInteractionHandler(DiscordBotService discordBotService, Bo
         {
             if (args.Interaction.Data.ComponentType is not DiscordComponentType.Button)
                 await args.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
+        }
+    }
+
+    private async Task ResolverVinculacionAsync(DiscordClient client, ComponentInteractionCreatedEventArgs args, bool aprobado, long discordId)
+    {
+        UserApprovalAnilist? userApproval = await anilistApprovalRepository.Obtener(discordId);
+        if (userApproval is null)
+        {
+            await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral().AddEmbed(ErrorEmbed.De("No se encontró la solicitud de vinculación o la misma ya fue revisada")));
+        }
+        else
+        {
+            DiscordMember? member = await TryGetMemberAsync(args.Guild, (ulong)discordId);
+            if (member is null && aprobado)
+            {
+                resolucionesState.Liberar(args.Message.Id);
+                await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral().AddEmbed(ErrorEmbed.De("No se encontró al usuario en el servidor. La solicitud queda pendiente hasta que vuelva a entrar")));
+                return;
+            }
+
+            DiscordEmbed original = args.Message.Embeds[0];
+            DiscordEmbedBuilder resuelto = new DiscordEmbedBuilder(original);
+
+            if (aprobado)
+            {
+                DiscordUser user = await client.GetUserAsync((ulong)discordId);
+                AnilistUser anilistUser = new()
+                {
+                    Id = userApproval.IdAnilist,
+                    Name = userApproval.Name,
+                    SiteUrl = userApproval.SiteUrl,
+                    AvatarMedium = userApproval.Avatar,
+                    BannerImage = userApproval.Banner
+                };
+                await anilistService.TerminarVinculacion(client, user, member!, args.Guild, anilistUser, true);
+
+                resuelto
+                    .WithColor(DiscordColor.Green)
+                    .WithTitle("Vinculacion de AniList aprobada")
+                    .WithDescription($"{original.Description}\n\n{Formatter.Bold("Aprobada")} por {args.User.Mention}, el usuario fue vinculado correctamente.");
+            }
+            else
+            {
+                string detalle = "el usuario fue expulsado del servidor.";
+                if (member is null)
+                {
+                    detalle = "el usuario ya no estaba en el servidor.";
+                }
+                else
+                {
+                    await args.Guild.RemoveMemberAsync((ulong)discordId, "Solicitud de vinculación rechazada por el staff");
+                }
+
+                resuelto
+                    .WithColor(DiscordColor.Red)
+                    .WithTitle("Vinculacion de AniList rechazada")
+                    .WithDescription($"{original.Description}\n\n{Formatter.Bold("Rechazada")} por {args.User.Mention}, {detalle}");
+            }
+
+            await anilistApprovalRepository.Delete(discordId);
+            try
+            {
+                await args.Message.ModifyAsync(new DiscordMessageBuilder().AddEmbed(resuelto.Build()));
+            }
+            catch (Exception ex) { await logService.LogException(args.Guild, ex, "Resolución de vinculación - editar mensaje"); }
         }
     }
 

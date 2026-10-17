@@ -103,7 +103,14 @@ public class Fun(
         await ctx.DeferResponseAsync();
 
         usuario ??= ctx.User;
-        DiscordMember elegido = ElegirMiembroAleatorio(ctx, usuario.Id);
+        List<DiscordMember> candidatos = CandidatosShip(ctx, usuario.Id);
+        if (candidatos.Count == 0)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("No hay suficientes miembros para shippear."));
+            return;
+        }
+
+        DiscordMember elegido = candidatos[Random.Shared.Next(candidatos.Count)];
         DiscordMember ctxMiembro = await ctx.Guild!.GetMemberAsync(usuario.Id);
 
         byte[] imagen = await GenerarImagenShipAsync(usuario.GetAvatarUrl(MediaFormat.Png, 512), elegido.GetAvatarUrl(MediaFormat.Png, 512));
@@ -124,12 +131,19 @@ public class Fun(
 
         await ctx.DeferResponseAsync();
 
-        DiscordMember elegido1 = ElegirMiembroAleatorio(ctx, ctx.User.Id);
-        DiscordMember elegido2;
-        do
+        List<DiscordMember> candidatos = CandidatosShip(ctx, ctx.User.Id);
+        if (candidatos.Count < 2)
         {
-            elegido2 = ElegirMiembroAleatorio(ctx, ctx.User.Id);
-        } while (elegido1.Id == elegido2.Id);
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("No hay suficientes miembros para shippear."));
+            return;
+        }
+
+        int indice1 = Random.Shared.Next(candidatos.Count);
+        int indice2 = Random.Shared.Next(candidatos.Count - 1);
+        if (indice2 >= indice1) indice2++;
+
+        DiscordMember elegido1 = candidatos[indice1];
+        DiscordMember elegido2 = candidatos[indice2];
 
         byte[] imagen = await GenerarImagenShipAsync(elegido1.GetAvatarUrl(MediaFormat.Png, 512), elegido2.GetAvatarUrl(MediaFormat.Png, 512));
 
@@ -528,15 +542,11 @@ public class Fun(
             .WithDescription("Tu confesión fue publicada de forma anónima.")));
     }
 
-    private DiscordMember ElegirMiembroAleatorio(SlashCommandContext ctx, ulong excluirId)
-    {
-        List<DiscordMember> miembros = ctx.Guild!.Members.Values
+    private List<DiscordMember> CandidatosShip(SlashCommandContext ctx, ulong excluirId) =>
+        ctx.Guild!.Members.Values
             .Where(x => !x.IsBot && x.Id != excluirId
                         && (ctx.Guild.Id != config.GuildId || rangoRoles.RangoAPartirDe(ctx.Guild, x, RangoEnum.Tama, true)))
             .ToList();
-
-        return miembros[Random.Shared.Next(miembros.Count)];
-    }
 
     private async Task<byte[]> GenerarImagenShipAsync(string avatar1, string avatar2)
     {

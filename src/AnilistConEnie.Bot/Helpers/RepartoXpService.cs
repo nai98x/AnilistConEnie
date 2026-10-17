@@ -22,6 +22,7 @@ public class RepartoXpService(
     RangoRoles rangoRoles,
     IXpUsuariosRepository xpUsuariosRepository,
     DiscordLogService logService,
+    ResolucionesState resolucionesState,
     InteractivityExtension interactivity)
 {
     public const string PrefijoBoton = "repartirxp-";
@@ -101,10 +102,12 @@ public class RepartoXpService(
     private async Task AprobarAsync(ComponentInteractionCreatedEventArgs args)
     {
         await args.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
+        if (!await IniciarResolucionAsync(args)) return;
 
         IReadOnlyList<AsignacionXp> asignaciones = RepartoXp.ParseMensaje(TextoDelReparto(args.Message));
         if (asignaciones.Count == 0)
         {
+            resolucionesState.Liberar(args.Message.Id);
             await AvisarAsync(args, "No se pudo leer el reparto de este mensaje.");
             return;
         }
@@ -116,6 +119,7 @@ public class RepartoXpService(
     private async Task DenegarAsync(ComponentInteractionCreatedEventArgs args)
     {
         await args.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
+        if (!await IniciarResolucionAsync(args)) return;
 
         IReadOnlyList<AsignacionXp> asignaciones = RepartoXp.ParseMensaje(TextoDelReparto(args.Message));
         string lista = asignaciones.Count > 0 ? RepartoXp.Renderizar(asignaciones) : "-# No se pudo releer el reparto.";
@@ -126,6 +130,7 @@ public class RepartoXpService(
     private async Task DescartarAsync(ComponentInteractionCreatedEventArgs args)
     {
         await args.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
+        if (!await IniciarResolucionAsync(args)) return;
 
         try
         {
@@ -170,6 +175,14 @@ public class RepartoXpService(
             await respuesta.Result.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
                 .AsEphemeral()
                 .WithContent($"No se guardó nada:\n{string.Join("\n", parseado.Errores.Select(e => $"- {e}"))}"));
+            return;
+        }
+
+        if (resolucionesState.EstaResuelto(args.Message.Id))
+        {
+            await respuesta.Result.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder()
+                .AsEphemeral()
+                .WithContent("No se guardó nada: el reparto ya fue resuelto mientras lo editabas."));
             return;
         }
 
@@ -241,6 +254,15 @@ public class RepartoXpService(
         {
             await logService.LogException(args.Guild, ex, "Repartir XP - cerrar mensaje");
         }
+    }
+
+    private async Task<bool> IniciarResolucionAsync(ComponentInteractionCreatedEventArgs args)
+    {
+        if (resolucionesState.TryIniciar(args.Message.Id))
+            return true;
+
+        await AvisarAsync(args, "Este reparto ya está siendo resuelto.");
+        return false;
     }
 
     private async Task<bool> EsKamiSamaAsync(ComponentInteractionCreatedEventArgs args)

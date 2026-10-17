@@ -290,17 +290,15 @@ public class Xp(
 
         List<string> colors = [.. Enumerable.Range(0, 5).Select(ChartColors.ForIndex)];
 
+        const int porPagina = 5;
         int start = 0;
-        UserXp? self = serverRanking.FirstOrDefault(x => x.UserId == (long)ctx.User.Id);
-        if (self != null)
-        {
-            int indexOf = serverRanking.IndexOf(self);
-            start = indexOf % 10 <= 5 ? indexOf / 10 * 10 : (indexOf / 10 + 1) * 10;
-        }
+        int indexOf = serverRanking.FindIndex(x => x.UserId == (long)ctx.User.Id);
+        if (indexOf >= 0)
+            start = indexOf / porPagina * porPagina;
 
         while (true)
         {
-            List<UserXp> rankings = serverRanking.Skip(start).Take(5).ToList();
+            List<UserXp> rankings = serverRanking.Skip(start).Take(porPagina).ToList();
 
             List<(DiscordMember Member, List<UserDailyXp> History)> memberHistories = [];
             foreach (UserXp ranking in rankings)
@@ -340,13 +338,13 @@ public class Xp(
                 XpCharts.TopMultiLine(series, [.. chartHistoryLabels.Select(x => x.Date)], minXpValue, maxXpValue));
             string fileName = $"{StringHelper.CreateString(10)}.png";
 
-            int end = start + 5;
+            int end = Math.Min(start + porPagina, serverRanking.Count);
             DiscordMessage message = await ctx.EditResponseAsync(new DiscordWebhookBuilder()
                 .AddActionRowComponent(
                     new DiscordButtonComponent(DiscordButtonStyle.Secondary, "anterior", "Anterior"),
                     new DiscordButtonComponent(DiscordButtonStyle.Secondary, "siguiente", "Siguiente"))
                 .AddEmbed(new DiscordEmbedBuilder()
-                    .WithTitle("Top 10 de experiencia")
+                    .WithTitle("Top de experiencia")
                     .WithDescription($"Puestos del {start + 1} al {end}")
                     .WithThumbnail(RankThumbnail)
                     .WithImageUrl($"attachment://{fileName}"))
@@ -360,10 +358,10 @@ public class Xp(
             await interaction.Result.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
 
             string value = interaction.Result.Id;
-            if ((value == "anterior" && start <= 4) || (value == "siguiente" && start >= serverRanking.Count - 4))
+            if ((value == "anterior" && start == 0) || (value == "siguiente" && start + porPagina >= serverRanking.Count))
                 continue;
 
-            start += value == "anterior" ? -5 : 5;
+            start += value == "anterior" ? -porPagina : porPagina;
         }
     }
 
@@ -389,6 +387,12 @@ public class Xp(
             long acumulado = xpPerCountry.TryGetValue(pais.Id, out CountryXp prev) ? prev.Xp : 0;
             string nombre = pais.Id == config.Roles.OtrosPais ? "Otros" : pais.Name;
             xpPerCountry[pais.Id] = new CountryXp(pais.Id, nombre, acumulado + ranking.Total);
+        }
+
+        if (xpPerCountry.Count == 0)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("No hay miembros con rol de país y experiencia registrada.")));
+            return;
         }
 
         List<CountryXp> rankingPaises = xpPerCountry.Values
@@ -419,13 +423,12 @@ public class Xp(
 
         DiscordEmoji umaPoints = await UmaPointsAsync(ctx);
         Dictionary<DiscordMember, double> promediosByUser = [];
+        DateTime hoy = RelojServidor.Hoy;
 
-        foreach (DiscordMember member in ctx.Guild!.Members.Values)
+        foreach (XpDiarioExtremos extremos in await xpDiarioRepository.ObtenerExtremos())
         {
-            if (member.IsBot) continue;
-            List<UserDailyXp> chartHistory = await xpChartService.GetUserChartHistory(member.Id);
-            if (chartHistory.Count == 0) continue;
-            promediosByUser.Add(member, chartHistory.GetPromedio());
+            if (!ctx.Guild!.Members.TryGetValue((ulong)extremos.UserId, out DiscordMember? member) || member.IsBot) continue;
+            promediosByUser.Add(member, extremos.GetPromedio(hoy));
         }
 
         int puesto = 0;

@@ -278,7 +278,11 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
         List<DiscordMember> newMembers = guild.Members.Values.Where(x => !x.IsBot && !x.Roles.Contains(miembroRole) && !x.Roles.Contains(noVerificadoRole)).ToList();
         foreach (DiscordMember member in newMembers)
         {
-            await member.GrantRoleAsync(noVerificadoRole);
+            try
+            {
+                await member.GrantRoleAsync(noVerificadoRole);
+            }
+            catch (Exception ex) { await logService.LogException(guild, ex, $"ManageNewUsuarios ({member.Id})"); }
         }
     }
     
@@ -327,14 +331,18 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
 
         foreach (KeyValuePair<ulong, DiscordMember> user in guild.Members.Where(x => !x.Value.IsBot))
         {
-            DateTimeOffset fechaEntrada = fechaEntradaState.GetFechaEntrada(user.Key, user.Value.JoinedAt);
-            bool corresponde = InactividadCalculator.CorrespondeRolInactivo(fechaEntrada, activosIds.Contains((long)user.Key), ahora, limpiezaSettings.RolInactivoMeses);
-            bool loTiene = user.Value.Roles.Any(x => x.Id == inactivoRole.Id);
+            try
+            {
+                DateTimeOffset fechaEntrada = fechaEntradaState.GetFechaEntrada(user.Key, user.Value.JoinedAt);
+                bool corresponde = InactividadCalculator.CorrespondeRolInactivo(fechaEntrada, activosIds.Contains((long)user.Key), ahora, limpiezaSettings.RolInactivoMeses);
+                bool loTiene = user.Value.Roles.Any(x => x.Id == inactivoRole.Id);
 
-            if (corresponde && !loTiene)
-                await user.Value.GrantRoleAsync(inactivoRole);
-            else if (!corresponde && loTiene)
-                await user.Value.RevokeRoleAsync(inactivoRole);
+                if (corresponde && !loTiene)
+                    await user.Value.GrantRoleAsync(inactivoRole);
+                else if (!corresponde && loTiene)
+                    await user.Value.RevokeRoleAsync(inactivoRole);
+            }
+            catch (Exception ex) { await logService.LogException(guild, ex, $"ManageUsuariosActivos ({user.Key})"); }
         }
     }
     

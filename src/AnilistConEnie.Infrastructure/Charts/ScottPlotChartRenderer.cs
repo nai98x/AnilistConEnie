@@ -17,6 +17,8 @@ internal sealed class ScottPlotChartRenderer : IChartRenderer
 {
     private const float LineWidth = 2.5f;
     private const float LegendFontSize = 13;
+    private const float LegendMaxFraction = .3f;
+    private const float DonutLegendMaxFraction = .45f;
     private const float LegendRowHeight = 24;
     private const float LegendSwatch = 14;
     private const float LegendPadding = 14;
@@ -26,8 +28,9 @@ internal sealed class ScottPlotChartRenderer : IChartRenderer
     /// <summary>
     /// Título y leyenda se dibujan con Skia fuera del área del plot (no con ScottPlot) porque llevan
     /// nombres de usuarios y ScottPlot usa una sola fuente por etiqueta, sin fallback por carácter.
+    /// <paramref name="LegendMaxFraction"/> es la fracción máxima del ancho que puede ocupar el texto de la leyenda.
     /// </summary>
-    private sealed record Overlay(string? Title, IReadOnlyList<LegendEntry> Legend);
+    private sealed record Overlay(string? Title, IReadOnlyList<LegendEntry> Legend, float LegendMaxFraction = LegendMaxFraction);
 
     /// <summary><paramref name="Suffix"/> (ej: el porcentaje) no se recorta aunque el nombre no entre.</summary>
     private readonly record struct LegendEntry(string Label, Color Color, bool IsLine, string Suffix = "");
@@ -61,7 +64,7 @@ internal sealed class ScottPlotChartRenderer : IChartRenderer
 
     private static byte[] Compose(Plot plot, int width, int height, Overlay overlay)
     {
-        float legendWidth = LegendWidth(overlay.Legend, width);
+        float legendWidth = LegendWidth(overlay.Legend, width, overlay.LegendMaxFraction);
         float top = overlay.Title is null ? 0 : TitleHeight;
 
         using SKSurface surface = CreateSurface(width, height);
@@ -89,11 +92,11 @@ internal sealed class ScottPlotChartRenderer : IChartRenderer
         return EncodePng(surface);
     }
 
-    private static float LegendWidth(IReadOnlyList<LegendEntry> legend, int width)
+    private static float LegendWidth(IReadOnlyList<LegendEntry> legend, int width, float maxFraction = LegendMaxFraction)
     {
         if (legend.Count == 0) return 0;
 
-        float maxText = width * .3f;
+        float maxText = width * maxFraction;
         float text = legend.Max(e => Math.Min(maxText, ChartText.Measure(e.Label + e.Suffix, LegendFontSize)));
         return LegendSwatch + 8 + text + 2 * LegendPadding;
     }
@@ -212,7 +215,7 @@ internal sealed class ScottPlotChartRenderer : IChartRenderer
         [
             .. spec.Slices.Select(s => new LegendEntry(
                 s.Label, Color.FromHex(s.ColorHex), IsLine: false, total > 0 ? $"  {s.Value / total * 100:0.#}%" : ""))
-        ]);
+        ], DonutLegendMaxFraction);
     }
 
     private static Overlay RenderLine(Plot plot, ChartSpecs.LineChartSpec spec)

@@ -25,5 +25,6 @@ public class MinuteScheduledService(
 
         await guildMaintenanceService.ManageInvitesRole(guild);
         await guildMaintenanceService.ManagePermanentUsernames(guild);
+        await guildMaintenanceService.ManageRolActivoEnServidor(guild);
     }
 }

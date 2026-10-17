@@ -2,15 +2,8 @@ namespace AnilistConEnie.Application.Actividad;
 
 public static class RolActivoServidor
 {
-    /// <summary>
-    /// Ventana de <paramref name="dias"/> días completos que termina ayer: el día en curso no cuenta
-    /// porque la evaluación corre a la medianoche, cuando hoy todavía no tiene mensajes.
-    /// </summary>
-    public static (DateOnly Desde, DateOnly Hasta) Ventana(DateOnly hoy, int dias)
-    {
-        DateOnly hasta = hoy.AddDays(-1);
-        return (RetencionMensajes.FechaMinima(hasta, dias), hasta);
-    }
+    /// <summary>Ventana de <paramref name="dias"/> días que termina hoy, con el día en curso parcial.</summary>
+    public static (DateOnly Desde, DateOnly Hasta) Ventana(DateOnly hoy, int dias) => (RetencionMensajes.FechaMinima(hoy, dias), hoy);
 
     /// <summary>
     /// <paramref name="maximoEnUnCanal"/> es la mayor cantidad de mensajes en un solo canal sin contar general:

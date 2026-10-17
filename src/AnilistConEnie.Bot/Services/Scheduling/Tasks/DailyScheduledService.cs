@@ -37,7 +37,6 @@ public class DailyScheduledService(
         await guildMaintenanceService.ManageChallenges();
         await guildMaintenanceService.ManageUsuariosActivos(guild);
         await guildMaintenanceService.ManageXpUserHistory(guild);
-        await guildMaintenanceService.ManageRolActivoEnServidor(guild);
         await mensajesDiariosRepository.Purgar(RetencionMensajes.FechaMinima(DateOnly.FromDateTime(RelojServidor.Hoy), mensajesDiariosSettings.DiasRetencion));
         confessionsState.ResetDailyConfessions();
         boluditosState.ResetBoluditos();

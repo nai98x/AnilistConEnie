@@ -5,12 +5,12 @@ namespace AnilistConEnie.Application.Tests.Actividad;
 public class RolActivoServidorTests
 {
     [Fact]
-    public void Ventana_TerminaAyerYAbarcaLosDias()
+    public void Ventana_TerminaHoyYAbarcaLosDias()
     {
         (DateOnly desde, DateOnly hasta) = RolActivoServidor.Ventana(new DateOnly(2026, 10, 10), 30);
 
-        Assert.Equal(new DateOnly(2026, 9, 10), desde);
-        Assert.Equal(new DateOnly(2026, 10, 9), hasta);
+        Assert.Equal(new DateOnly(2026, 9, 11), desde);
+        Assert.Equal(new DateOnly(2026, 10, 10), hasta);
     }
 
     private static readonly DateTimeOffset Ahora = new(2026, 10, 10, 0, 0, 0, TimeSpan.Zero);

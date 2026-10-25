@@ -42,14 +42,14 @@ public class TrueLoveCalculatorTests
     }
 
     [Fact]
-    public void Calcular_ManyCandidates_TopsLimitedTo5AndSorted()
+    public void Calcular_ManyCandidates_TopsLimitedTo3AndSorted()
     {
         List<ulong> candidatos = Enumerable.Range(1, 20).Select(i => (ulong)i).ToList();
 
         TrueLoveResult r = TrueLoveCalculator.Calcular(333, candidatos);
 
-        Assert.Equal(5, r.Pretendientes.Count);
-        Assert.Equal(5, r.Odiados.Count);
+        Assert.Equal(3, r.Pretendientes.Count);
+        Assert.Equal(3, r.Odiados.Count);
         Assert.Equal(r.Pretendientes.Select(x => x.Porcentaje).OrderByDescending(x => x), r.Pretendientes.Select(x => x.Porcentaje));
         Assert.Equal(r.Odiados.Select(x => x.Porcentaje).OrderBy(x => x), r.Odiados.Select(x => x.Porcentaje));
     }

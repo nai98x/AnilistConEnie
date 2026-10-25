@@ -22,7 +22,6 @@ using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
-using DSharpPlus.Interactivity.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using AnilistConEnie.Bot.Extensions;
 using DSharpPlus.Exceptions;
@@ -174,18 +173,15 @@ public class Admin(
         List<DiscordMember> noVinculados = ctx.Guild.Members.Values.Except(vinculados).ToList();
         List<DiscordMember> noVinculadosNoBot = noVinculados.Where(x => !x.IsBot).ToList();
 
-        string desc = "**Usuarios sin AniList vinculado:**\n" +
-                      string.Join("\n", noVinculadosNoBot.Select(member => $"{member.DisplayName} (<@{member.Id}>)")) +
-                      $"\n\nTotal: {noVinculadosNoBot.Count}";
-
-        DiscordEmbedBuilder embed = new()
-        {
-            Color = DiscordColor.Red,
-            Title = "Usuarios sin cuenta vinculada de AniList"
-        };
-
-        IEnumerable<Page> pages = InteractivityExtension.GeneratePagesInEmbed(desc, SplitType.Line, embed);
-        await interactivity.SendPaginatedResponseAsync(ctx.Interaction, ephemeral: false, ctx.User, pages);
+        await DiscordInteractivity.PaginarContainerV2Async(
+            ctx,
+            noVinculadosNoBot,
+            porPagina: 10,
+            header: $"## Usuarios sin cuenta vinculada de AniList\n-# Total: {noVinculadosNoBot.Count}",
+            renderItem: member => new DiscordSectionComponent(
+                text: $"### {member.DisplayName}\n{member.Mention}",
+                accessory: new DiscordThumbnailComponent(member.AvatarUrlPreferido())),
+            color: DiscordColor.Red);
     }
 
     [Command("multicuentas")]
@@ -209,27 +205,34 @@ public class Admin(
             return;
         }
 
-        List<string> bloques = [];
-        foreach (GrupoMulticuenta grupo in grupos)
-        {
-            string miembros = string.Join("\n", grupo.DiscordIds.Select(id =>
+        Dictionary<long, long> xpPorUsuario = (await xpUsuariosRepository.ObtenerRankingDelGuild(ctx.Guild!))
+            .ToDictionary(x => x.UserId, x => x.Total);
+
+        await DiscordInteractivity.PaginarContainerV2Async(
+            ctx,
+            grupos,
+            porPagina: 5,
+            header: $"## Perfiles de AniList con más de un Discord vinculado\n-# Total de perfiles con multicuenta: {grupos.Count}",
+            renderItem: grupo =>
             {
-                string nombre = ctx.Guild!.Members.TryGetValue((ulong)id, out DiscordMember? member) ? member.DisplayName : "ausente";
-                return $"- {Formatter.InlineCode(nombre)} (<@{id}>)";
-            }));
-            bloques.Add($"{Formatter.MaskedUrl($"AniList #{grupo.AnilistId}", new Uri($"https://anilist.co/user/{grupo.AnilistId}"))} — {grupo.DiscordIds.Count} cuentas\n{miembros}");
-        }
+                string miembros = string.Join("\n", grupo.DiscordIds.Select(id =>
+                {
+                    string nombre = ctx.Guild!.Members.TryGetValue((ulong)id, out DiscordMember? member) ? member.DisplayName : "ausente";
+                    return $"- {Formatter.InlineCode(nombre)} (<@{id}>)";
+                }));
+                string texto = $"### {Formatter.MaskedUrl($"AniList #{grupo.AnilistId}", new Uri($"https://anilist.co/user/{grupo.AnilistId}"))} — {grupo.DiscordIds.Count} cuentas\n{miembros}";
 
-        string desc = string.Join("\n\n", bloques) + $"\n\nTotal de perfiles con multicuenta: {grupos.Count}";
+                DiscordMember? principal = grupo.DiscordIds
+                    .Select(id => ctx.Guild!.Members.GetValueOrDefault((ulong)id))
+                    .OfType<DiscordMember>()
+                    .MaxBy(m => xpPorUsuario.GetValueOrDefault((long)m.Id));
 
-        DiscordEmbedBuilder embed = new()
-        {
-            Color = DiscordColor.Orange,
-            Title = "Perfiles de AniList con más de un Discord vinculado"
-        };
-
-        IEnumerable<Page> pages = InteractivityExtension.GeneratePagesInEmbed(desc, SplitType.Line, embed);
-        await interactivity.SendPaginatedResponseAsync(ctx.Interaction, ephemeral: false, ctx.User, pages);
+                return principal is null
+                    ? new DiscordTextDisplayComponent(texto)
+                    : new DiscordSectionComponent(texto, new DiscordThumbnailComponent(principal.AvatarUrlPreferido()));
+            },
+            color: DiscordColor.Orange,
+            separarItems: true);
     }
 
     [Command("xp")]
@@ -733,7 +736,7 @@ public class Admin(
             await logService.GrabarLogGeneralError(ctx.Guild!, $"{ex.Message}\n\n{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
         }
     }
-    
+
     [Command("anilist_vincular_force")]
     [Description("Registra un AniList en el servidor para otro usuario")]
     public async Task SetAnilistMod(

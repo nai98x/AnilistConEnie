@@ -524,14 +524,19 @@ public class Xp(
             return;
         }
 
-        string desc = string.Join("\n", ret
-            .OrderBy(x => x.NextXp)
-            .Select(x => $"- **{x.Member.DisplayName}** le faltan **{x.NextXp}** {umaPoints} para llegar a **{((Enum)x.NextRango).GetDescription()}**"));
+        List<(DiscordMember Member, long NextXp, RangoEnum NextRango)> ordenados = [.. ret.OrderBy(x => x.NextXp).Take(10)];
 
-        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
-            .WithTitle("Usuarios que estan por subir de rango")
-            .WithDescription(desc)
-            .WithColor(DiscordColor.Green)));
+        await DiscordInteractivity.PaginarContainerV2Async(
+            ctx,
+            ordenados,
+            porPagina: 10,
+            header: "## Usuarios que están por subir de rango",
+            renderItem: x => new DiscordSectionComponent(
+                text: $"### {x.Member.DisplayName}\n" +
+                      $"Le faltan **{x.NextXp.ToSpanish()}** {umaPoints} para llegar a **{((Enum)x.NextRango).GetDescription()}**",
+                accessory: new DiscordThumbnailComponent(x.Member.AvatarUrlPreferido())),
+            color: DiscordColor.Green,
+            headerThumbnail: RankThumbnail);
     }
 
     [Command("beneficios")]

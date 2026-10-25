@@ -172,25 +172,52 @@ public class Fun(
         TrueLoveResult resultado = TrueLoveCalculator.Calcular(usuario.Id, candidatos.Select(m => m.Id));
 
         Dictionary<ulong, DiscordMember> porId = candidatos.ToDictionary(m => m.Id);
-        string NombreDe(ulong id) => porId.TryGetValue(id, out DiscordMember? m) ? m.DisplayName : id.ToString();
 
         DiscordMember match = resultado.MatchId is { } matchId && porId.TryGetValue(matchId, out DiscordMember? matchMember)
             ? matchMember
             : ctx.Member!;
         int maxPorcentaje = resultado.MaxPorcentaje;
 
-        string amoriosStr = $"**Top 5 pretendientes:**\n{string.Join("\n", resultado.Pretendientes.Select(x => $"- **{NombreDe(x.Id)}** con un **{x.Porcentaje}%**"))}";
-        string odiadosStr = $"**Top 5 odiados:**\n{string.Join("\n", resultado.Odiados.Select(x => $"- **{NombreDe(x.Id)}** con un **{x.Porcentaje}%**"))}";
+        DiscordComponent Fila((ulong Id, int Porcentaje) x)
+        {
+            if (!porId.TryGetValue(x.Id, out DiscordMember? m))
+                return new DiscordTextDisplayComponent($"### {x.Id}\nCon un **{x.Porcentaje}%**");
+
+            return new DiscordSectionComponent(
+                text: $"### {m.DisplayName}\nCon un **{x.Porcentaje}%**",
+                accessory: new DiscordThumbnailComponent(m.AvatarUrlPreferido()));
+        }
+
+        IEnumerable<DiscordComponent> Filas(IReadOnlyList<(ulong Id, int Porcentaje)> items)
+        {
+            for (int i = 0; i < items.Count; i++)
+            {
+                if (i > 0) yield return new DiscordSeparatorComponent(divider: true, spacing: DiscordSeparatorSpacing.Small);
+                yield return Fila(items[i]);
+            }
+        }
 
         byte[] imagen = await GenerarImagenShipAsync(usuario.GetAvatarUrl(MediaFormat.Png, 512), match.GetAvatarUrl(MediaFormat.Png, 512));
 
-        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
-        {
-            Title = "True love",
-            Description = $"El amor verdadero de {(ctx.Guild.Members.TryGetValue(usuario.Id, out DiscordMember? enamorado) ? enamorado.DisplayName : usuario.Username)} es **{match.DisplayName}** con un **{maxPorcentaje}%** 💘\n\n{amoriosStr}\n\n{odiadosStr}",
-            ImageUrl = "attachment://imagen.png",
-            Color = DiscordColor.HotPink
-        }).AddFile("imagen.png", imagen.ToMemoryStream()));
+        string enamorado = ctx.Guild.Members.TryGetValue(usuario.Id, out DiscordMember? enamoradoMember) ? enamoradoMember.DisplayName : usuario.Username;
+
+        List<DiscordComponent> componentes =
+        [
+            new DiscordTextDisplayComponent(
+                $"## True love\nEl amor verdadero de {enamorado} es **{match.DisplayName}** con un **{maxPorcentaje}%** 💘"),
+            new DiscordMediaGalleryComponent([new DiscordMediaGalleryItem("attachment://imagen.png")]),
+            new DiscordSeparatorComponent(divider: true, spacing: DiscordSeparatorSpacing.Large),
+            new DiscordTextDisplayComponent("## Top 3 pretendientes"),
+            .. Filas(resultado.Pretendientes),
+            new DiscordSeparatorComponent(divider: true, spacing: DiscordSeparatorSpacing.Large),
+            new DiscordTextDisplayComponent("## Top 3 odiados"),
+            .. Filas(resultado.Odiados)
+        ];
+
+        await ctx.EditResponseAsync(new DiscordWebhookBuilder()
+            .EnableV2Components()
+            .AddContainerComponent(new DiscordContainerComponent(componentes, color: DiscordColor.HotPink))
+            .AddFile("imagen.png", imagen.ToMemoryStream()));
     }
 
     [Command("subirimagen")]

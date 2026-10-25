@@ -43,4 +43,11 @@ public static class XpRankingParcial
 
         return result;
     }
+
+    /// <summary>
+    /// XP ganado por día en el período: lo ganado dividido por los días transcurridos desde
+    /// <paramref name="inicio"/>, contando hoy como día completo.
+    /// </summary>
+    public static double PromedioDiario(long ganado, DateOnly inicio, DateOnly hoy) =>
+        ganado / (double)(hoy.DayNumber - inicio.DayNumber + 1);
 }

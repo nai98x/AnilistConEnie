@@ -280,7 +280,8 @@ public static class DiscordInteractivity
     /// <summary>
     /// Pagina una lista en un container de Components V2 con botones "Anterior"/"Siguiente". Cada item se
     /// renderiza con <paramref name="renderItem"/>; el header recibe una línea "Página x/x" cuando hay más
-    /// de una página. "Anterior" se deshabilita en la primera página y "Siguiente" en la última; ambos se
+    /// de una página. Arranca en la página que contiene el item en <paramref name="indiceInicial"/>.
+    /// "Anterior" se deshabilita en la primera página y "Siguiente" en la última; ambos se
     /// deshabilitan tras 3 minutos de inactividad o al acercarse al límite de vida de la interacción (15
     /// minutos por regla de Discord). Requiere que la respuesta ya haya sido diferida.
     /// </summary>
@@ -291,21 +292,25 @@ public static class DiscordInteractivity
         string header,
         Func<T, DiscordComponent> renderItem,
         DiscordColor? color = null,
-        bool separarItems = false)
+        bool separarItems = false,
+        int indiceInicial = 0,
+        string? headerThumbnail = null)
     {
         // Discord limita a 40 componentes (anidados incluidos) por mensaje. Recortamos los items por
         // página al máximo que entra para no exceder el límite si el render de cada item es pesado.
-        porPagina = AjustarPorPagina(items, porPagina, renderItem, separarItems);
+        porPagina = AjustarPorPagina(items, porPagina, renderItem, separarItems, headerThumbnail is not null);
 
         int totalPaginas = Math.Max(1, (int)Math.Ceiling(items.Count / (double)porPagina));
-        int pagina = 0;
+        int pagina = Math.Clamp(indiceInicial / porPagina, 0, totalPaginas - 1);
 
         DiscordWebhookBuilder Build(bool inactivo)
         {
+            string textoHeader = header + (totalPaginas > 1 ? $"\n-# Página {pagina + 1}/{totalPaginas}" : "");
             List<DiscordComponent> componentes =
             [
-                new DiscordTextDisplayComponent(
-                    header + (totalPaginas > 1 ? $"\n-# Página {pagina + 1}/{totalPaginas}" : "")),
+                headerThumbnail is null
+                    ? new DiscordTextDisplayComponent(textoHeader)
+                    : new DiscordSectionComponent(textoHeader, new DiscordThumbnailComponent(headerThumbnail)),
                 new DiscordSeparatorComponent(divider: true, spacing: DiscordSeparatorSpacing.Large)
             ];
 
@@ -370,13 +375,14 @@ public static class DiscordInteractivity
 
     private const int LimiteComponentesV2 = 40;
 
-    private static int AjustarPorPagina<T>(IReadOnlyList<T> items, int porPagina, Func<T, DiscordComponent> renderItem, bool separarItems)
+    private static int AjustarPorPagina<T>(IReadOnlyList<T> items, int porPagina, Func<T, DiscordComponent> renderItem, bool separarItems, bool headerConThumbnail)
     {
         if (items.Count == 0) return Math.Max(1, porPagina);
 
         // Overhead fijo del container: el propio container, el text display del header, el separador y la
-        // fila de botones (acción + Anterior + Siguiente) por si hay más de una página.
-        const int overhead = 1 + 1 + 1 + 3;
+        // fila de botones (acción + Anterior + Siguiente) por si hay más de una página. Con thumbnail, el
+        // header es una section (section + text display + thumbnail).
+        int overhead = 1 + (headerConThumbnail ? 3 : 1) + 1 + 3;
         int costoItem = ContarComponentes(renderItem(items[0])) + (separarItems ? 1 : 0);
 
         int maximo = Math.Max(1, (LimiteComponentesV2 - overhead) / costoItem);

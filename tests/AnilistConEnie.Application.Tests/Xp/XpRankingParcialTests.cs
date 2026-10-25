@@ -39,6 +39,32 @@ public class XpRankingParcialTests
     }
 
     [Fact]
+    public void PromedioDiario_FirstDayOfPeriod_ReturnsWholeAmount()
+    {
+        DateOnly hoy = new(2026, 7, 13);
+
+        Assert.Equal(300, XpRankingParcial.PromedioDiario(300, hoy, hoy));
+    }
+
+    [Fact]
+    public void PromedioDiario_SeveralDaysElapsed_CountsTodayAsFullDay()
+    {
+        Assert.Equal(100, XpRankingParcial.PromedioDiario(300, new DateOnly(2026, 7, 13), new DateOnly(2026, 7, 15)));
+    }
+
+    [Fact]
+    public void PromedioDiario_PeriodCrossesYear_CountsDaysAcrossBoundary()
+    {
+        Assert.Equal(50, XpRankingParcial.PromedioDiario(250, new DateOnly(2025, 12, 29), new DateOnly(2026, 1, 2)));
+    }
+
+    [Fact]
+    public void PromedioDiario_NothingGained_ReturnsZero()
+    {
+        Assert.Equal(0, XpRankingParcial.PromedioDiario(0, new DateOnly(2026, 7, 1), new DateOnly(2026, 7, 15)));
+    }
+
+    [Fact]
     public void Build_SeveralUsers_SortsByDeltaDescendingWithRanks()
     {
         List<UserXp> totales = [User(1, 500), User(2, 1000), User(3, 300)];

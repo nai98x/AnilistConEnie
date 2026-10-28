@@ -307,6 +307,8 @@ public class Xp(
         if (indexOf >= 0)
             start = indexOf / porPagina * porPagina;
 
+        XpTopChartPeriodo periodo = XpTopChartPeriodo.Anual;
+
         while (true)
         {
             List<UserXp> rankings = serverRanking.Skip(start).Take(porPagina).ToList();
@@ -317,7 +319,7 @@ public class Xp(
                 if (!ctx.Guild!.Members.TryGetValue((ulong)ranking.UserId, out DiscordMember? member))
                     continue;
 
-                List<UserDailyXp> chartHistory = await xpChartService.GetUserWeeklyHistory(member.Id, ranking.Total);
+                List<UserDailyXp> chartHistory = await xpChartService.GetUserTopChartHistory(member.Id, ranking.Total, periodo);
                 memberHistories.Add((member, chartHistory));
             }
 
@@ -331,7 +333,7 @@ public class Xp(
             long maxXpValue = NumberHelper.ObtenerMultiploSiguiente(memberHistories.SelectMany(x => x.History).Max(x => x.Xp), 1000);
 
             // La grilla de fechas es la del historial más largo: como todos arrancan la cuenta desde
-            // "hoy" en pasos semanales, un historial más corto (usuario más nuevo) es la cola de uno
+            // "hoy" en pasos fijos, un historial más corto (usuario más nuevo) es la cola de uno
             // más largo, así que alinearlo "a la derecha" reconstruye su fecha real de ingreso.
             List<UserDailyXp> chartHistoryLabels = memberHistories.MaxBy(x => x.History.Count).History;
 
@@ -352,11 +354,15 @@ public class Xp(
             int end = Math.Min(start + porPagina, serverRanking.Count);
             DiscordMessage message = await ctx.EditResponseAsync(new DiscordWebhookBuilder()
                 .AddActionRowComponent(
+                    BotonPeriodo(XpTopChartPeriodo.Anual, "Anual", periodo),
+                    BotonPeriodo(XpTopChartPeriodo.Mensual, "Mensual", periodo),
+                    BotonPeriodo(XpTopChartPeriodo.Semanal, "Semanal", periodo))
+                .AddActionRowComponent(
                     new DiscordButtonComponent(DiscordButtonStyle.Secondary, "anterior", "Anterior"),
                     new DiscordButtonComponent(DiscordButtonStyle.Secondary, "siguiente", "Siguiente"))
                 .AddEmbed(new DiscordEmbedBuilder()
                     .WithTitle("Top de experiencia")
-                    .WithDescription($"Puestos del {start + 1} al {end}")
+                    .WithDescription($"Puestos del {start + 1} al {end} · {DescripcionPeriodo(periodo)}")
                     .WithThumbnail(RankThumbnail)
                     .WithImageUrl($"attachment://{fileName}"))
                 .AddFile(fileName, image.ToMemoryStream()));
@@ -369,12 +375,28 @@ public class Xp(
             await interaction.Result.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
 
             string value = interaction.Result.Id;
+            if (Enum.TryParse(value, out XpTopChartPeriodo nuevoPeriodo))
+            {
+                periodo = nuevoPeriodo;
+                continue;
+            }
+
             if ((value == "anterior" && start == 0) || (value == "siguiente" && start + porPagina >= serverRanking.Count))
                 continue;
 
             start += value == "anterior" ? -porPagina : porPagina;
         }
     }
+
+    private static DiscordButtonComponent BotonPeriodo(XpTopChartPeriodo valor, string label, XpTopChartPeriodo actual) =>
+        new(DiscordButtonStyle.Primary, valor.ToString(), label, valor == actual);
+
+    private static string DescripcionPeriodo(XpTopChartPeriodo periodo) => periodo switch
+    {
+        XpTopChartPeriodo.Mensual => "Último mes",
+        XpTopChartPeriodo.Semanal => "Última semana",
+        _ => "Último año"
+    };
 
     [Command("top_paises")]
     [Description("Muestra el ranking de experiencia del servidor por pais")]

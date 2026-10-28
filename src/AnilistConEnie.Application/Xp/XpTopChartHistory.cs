@@ -2,30 +2,43 @@ using AnilistConEnie.Domain.Entities;
 
 namespace AnilistConEnie.Application.Xp;
 
+public enum XpTopChartPeriodo
+{
+    Anual,
+    Mensual,
+    Semanal
+}
+
 /// <summary>
-/// Arma el historial semanal (1 punto cada 7 días) de los últimos 365 días para el comparativo de
-/// "/topchart". Si el usuario tiene menos de 365 días de historial, arranca desde su primer registro
-/// en vez de rellenar con ceros previos a su ingreso al servidor.
+/// Arma el historial muestreado para el comparativo de "/topchart": anual (1 punto cada 7 días de
+/// los últimos 365), mensual (diario, últimos 30) o semanal (diario, últimos 7). Si el usuario tiene
+/// menos historial que la ventana, arranca desde su primer registro en vez de rellenar con ceros
+/// previos a su ingreso al servidor.
 /// </summary>
 public static class XpTopChartHistory
 {
-    private const int WindowDays = 365;
-    private const int StepDays = 7;
+    private static (int WindowDays, int StepDays) Ventana(XpTopChartPeriodo periodo) => periodo switch
+    {
+        XpTopChartPeriodo.Mensual => (30, 1),
+        XpTopChartPeriodo.Semanal => (7, 1),
+        _ => (365, 7)
+    };
 
-    public static List<UserDailyXp> Build(long userId, IReadOnlyList<UserDailyXp> history, DateTime today, long currentXp)
+    public static List<UserDailyXp> Build(long userId, IReadOnlyList<UserDailyXp> history, DateTime today, long currentXp, XpTopChartPeriodo periodo)
     {
         DateTime todayDate = today.Date;
+        (int windowDays, int stepDays) = Ventana(periodo);
 
         if (history.Count == 0)
             return [new UserDailyXp { UserId = userId, Date = todayDate, Xp = currentXp }];
 
         List<UserDailyXp> sorted = [.. history.OrderBy(x => x.Date)];
         DateTime firstRecord = sorted[0].Date.Date;
-        DateTime earliestWindow = todayDate.AddDays(-WindowDays);
+        DateTime earliestWindow = todayDate.AddDays(-windowDays);
         DateTime windowStart = firstRecord > earliestWindow ? firstRecord : earliestWindow;
 
         List<DateTime> checkpoints = [];
-        for (DateTime day = todayDate; day >= windowStart; day = day.AddDays(-StepDays))
+        for (DateTime day = todayDate; day >= windowStart; day = day.AddDays(-stepDays))
             checkpoints.Add(day);
         checkpoints.Reverse();
 
@@ -71,9 +84,9 @@ public static class XpTopChartHistory
 
     /// <summary>
     /// Alinea el historial de un usuario a una grilla de <paramref name="gridLength"/> puntos,
-    /// rellenando con <see cref="double.NaN"/> las semanas anteriores a su primer registro. Como
-    /// <see cref="Build"/> siempre arranca la cuenta regresiva desde el mismo "hoy" en pasos de
-    /// <see cref="StepDays"/>, un historial más corto es exactamente la cola (más reciente) de uno
+    /// rellenando con <see cref="double.NaN"/> los puntos anteriores a su primer registro. Como
+    /// <see cref="Build"/> siempre arranca la cuenta regresiva desde el mismo "hoy" en pasos fijos
+    /// según el período, un historial más corto es exactamente la cola (más reciente) de uno
     /// más largo, así que alinear "a la derecha" reconstruye la fecha real de cada punto.
     /// </summary>
     public static double[] AlignToGrid(IReadOnlyList<UserDailyXp> points, int gridLength)

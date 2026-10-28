@@ -14,7 +14,7 @@ public class XpTopChartHistoryTests
     {
         DateTime today = new(2026, 6, 25);
 
-        List<UserDailyXp> points = XpTopChartHistory.Build(UserId, [], today, currentXp: 500);
+        List<UserDailyXp> points = XpTopChartHistory.Build(UserId, [], today, currentXp: 500, XpTopChartPeriodo.Anual);
 
         UserDailyXp point = Assert.Single(points);
         Assert.Equal(today, point.Date);
@@ -27,7 +27,7 @@ public class XpTopChartHistoryTests
         DateTime today = new(2026, 6, 25);
         List<UserDailyXp> history = [Day(today.AddYears(-3), 100), Day(today, 9000)];
 
-        List<UserDailyXp> points = XpTopChartHistory.Build(UserId, history, today, currentXp: 9000);
+        List<UserDailyXp> points = XpTopChartHistory.Build(UserId, history, today, currentXp: 9000, XpTopChartPeriodo.Anual);
 
         // 365 no es múltiplo de 7: el primer checkpoint cae dentro de la semana previa al límite
         // (nunca antes), y el resto son pasos exactos de 7 días terminando hoy.
@@ -44,7 +44,7 @@ public class XpTopChartHistoryTests
         DateTime joined = today.AddDays(-30);
         List<UserDailyXp> history = [Day(joined, 50), Day(today, 800)];
 
-        List<UserDailyXp> points = XpTopChartHistory.Build(UserId, history, today, currentXp: 800);
+        List<UserDailyXp> points = XpTopChartHistory.Build(UserId, history, today, currentXp: 800, XpTopChartPeriodo.Anual);
 
         // No pasos de 7 días caen justo en la fecha de ingreso: el primer checkpoint arranca
         // después (nunca antes), dentro de la semana siguiente a que se unió.
@@ -59,7 +59,7 @@ public class XpTopChartHistoryTests
         DateTime joined = today.AddDays(-21);
         List<UserDailyXp> history = [Day(joined, 100), Day(joined.AddDays(10), 400)];
 
-        List<UserDailyXp> points = XpTopChartHistory.Build(UserId, history, today, currentXp: 900);
+        List<UserDailyXp> points = XpTopChartHistory.Build(UserId, history, today, currentXp: 900, XpTopChartPeriodo.Anual);
 
         // Checkpoints: joined(100), +7d (70% del camino entre el registro de joined y el día 10:
         // 100 + (400-100)*7/10 = 310), +14d (ya pasó el registro del día 10, se sostiene en 400
@@ -73,10 +73,39 @@ public class XpTopChartHistoryTests
         DateTime today = new(2026, 6, 25);
         List<UserDailyXp> history = [Day(today.AddDays(-10), 100), Day(today, 500)];
 
-        List<UserDailyXp> points = XpTopChartHistory.Build(UserId, history, today, currentXp: 750);
+        List<UserDailyXp> points = XpTopChartHistory.Build(UserId, history, today, currentXp: 750, XpTopChartPeriodo.Anual);
 
         Assert.Equal(today, points[^1].Date);
         Assert.Equal(750, points[^1].Xp);
+    }
+
+    [Theory]
+    [InlineData(XpTopChartPeriodo.Mensual, 30)]
+    [InlineData(XpTopChartPeriodo.Semanal, 7)]
+    public void Build_DailyPeriods_WindowIsCappedAndStepsDaily(XpTopChartPeriodo periodo, int windowDays)
+    {
+        DateTime today = new(2026, 6, 25);
+        List<UserDailyXp> history = [Day(today.AddYears(-1), 100), Day(today, 9000)];
+
+        List<UserDailyXp> points = XpTopChartHistory.Build(UserId, history, today, currentXp: 9000, periodo);
+
+        Assert.Equal(windowDays + 1, points.Count);
+        Assert.Equal(today.AddDays(-windowDays), points[0].Date);
+        Assert.Equal(today, points[^1].Date);
+        Assert.All(points.Zip(points.Skip(1)), pair => Assert.Equal(1, (pair.Second.Date - pair.First.Date).Days));
+    }
+
+    [Fact]
+    public void Build_MonthlyUserNewerThanWindow_StartsAtFirstRecord()
+    {
+        DateTime today = new(2026, 6, 25);
+        DateTime joined = today.AddDays(-5);
+        List<UserDailyXp> history = [Day(joined, 50), Day(today, 800)];
+
+        List<UserDailyXp> points = XpTopChartHistory.Build(UserId, history, today, currentXp: 800, XpTopChartPeriodo.Mensual);
+
+        Assert.Equal(joined, points[0].Date);
+        Assert.Equal(6, points.Count);
     }
 
     [Fact]

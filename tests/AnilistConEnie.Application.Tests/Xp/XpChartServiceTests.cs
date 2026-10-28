@@ -81,7 +81,7 @@ public class XpChartServiceTests
     }
 
     [Fact]
-    public async Task GetUserWeeklyHistory_WithHistory_MatchesXpTopChartHistory()
+    public async Task GetUserTopChartHistory_WithHistory_MatchesXpTopChartHistory()
     {
         const ulong userId = 99;
         const long currentXp = 1234;
@@ -93,8 +93,8 @@ public class XpChartServiceTests
         FakeXpDiarioRepo repo = new(historial);
         XpChartService service = new(repo);
 
-        List<UserDailyXp> esperado = XpTopChartHistory.Build((long)userId, historial, RelojServidor.Hoy, currentXp);
-        List<UserDailyXp> resultado = await service.GetUserWeeklyHistory(userId, currentXp);
+        List<UserDailyXp> esperado = XpTopChartHistory.Build((long)userId, historial, RelojServidor.Hoy, currentXp, XpTopChartPeriodo.Mensual);
+        List<UserDailyXp> resultado = await service.GetUserTopChartHistory(userId, currentXp, XpTopChartPeriodo.Mensual);
 
         Assert.Equal(esperado.Select(p => (p.Date, p.Xp)), resultado.Select(p => (p.Date, p.Xp)));
     }

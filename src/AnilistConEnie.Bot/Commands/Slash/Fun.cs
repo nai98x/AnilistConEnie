@@ -530,6 +530,79 @@ public class Fun(
         await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embed));
     }
 
+    [Command("florida_man")]
+    [Description("Descubre qué hizo el Florida Man el día de tu cumpleaños")]
+    public async Task FloridaMan(
+        SlashCommandContext ctx,
+        [Parameter("Usuario")] [Description("El usuario del que quieres ver su Florida Man")] DiscordUser? usuario = null)
+    {
+        if (!await ctx.BotInicializadoAsync(discordBotService)) return;
+
+        await ctx.DeferResponseAsync();
+
+        usuario ??= ctx.User;
+        ctx.Guild!.Members.TryGetValue(usuario.Id, out DiscordMember? miembro);
+        string nombre = miembro?.DisplayName ?? usuario.Username;
+
+        List<Usuario> cumples = await usuariosRepository.GetCumples();
+        Usuario? cumple = cumples.Find(x => x.UserId == (long)usuario.Id);
+
+        if (cumple is null || !CumpleCalculator.EsFechaValida(cumple.CumpleDia!.Value, cumple.CumpleMes!.Value))
+        {
+            string error = usuario.Id == ctx.User.Id
+                ? "No tienes registrado tu cumpleaños en el servidor."
+                : $"{nombre} no tiene registrado su cumpleaños en el servidor.";
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De(error)));
+            return;
+        }
+
+        HttpClient client = httpClientFactory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(
+            $"https://juliayxhuang.github.io/florida-man-api/api/{cumple.CumpleMes.Value:D2}/{cumple.CumpleDia.Value:D2}.json");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("Hubo un error tratando de obtener el Florida Man.")));
+            return;
+        }
+
+        string content = await response.Content.ReadAsStringAsync();
+        List<FloridaManHeadline> candidatos = (JsonSerializer.Deserialize<List<FloridaManHeadline>>(content, JsonOptions) ?? [])
+            .Where(x => FloridaManCalculator.EsFloridaMan(x.Title))
+            .ToList();
+
+        if (candidatos.Count == 0)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("No hay ningún Florida Man para esa fecha.")));
+            return;
+        }
+
+        FloridaManHeadline elegido = candidatos[Random.Shared.Next(candidatos.Count)];
+        string titular = elegido.Title;
+
+        try
+        {
+            titular = await TranslationHelper.TranslateAsync(client, titular, "en", "es");
+        }
+        catch (Exception ex)
+        {
+            // Si el traductor no está disponible mostramos el texto original en inglés de la API.
+            logger.LogWarning(ex, "No se pudo traducir el Florida Man, se muestra el texto original en inglés");
+        }
+
+        DateTime fecha = DateTime.Parse(elegido.Date, CultureInfo.InvariantCulture);
+
+        DiscordEmbedBuilder embed = new DiscordEmbedBuilder()
+            .WithColor(DiscordColor.Orange)
+            .WithTitle($"El Florida Man de {nombre}")
+            .WithDescription($"### {titular}\n\n{Formatter.MaskedUrl("Leer la noticia", new Uri(elegido.Url))}")
+            .WithFooter($"{fecha.ToString("d 'de' MMMM 'de' yyyy", new CultureInfo("es-ES"))} · {elegido.Source}")
+            .WithThumbnail(miembro?.AvatarUrlPreferido() ?? usuario.GetAvatarUrl(MediaFormat.Png, 512));
+
+        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embed));
+    }
+
     [Command("confesion")]
     [Description("Confiesa algo")]
     public async Task Confesion(
@@ -596,5 +669,13 @@ public class Fun(
     {
         [JsonPropertyName("date")] public string Date { get; set; } = string.Empty;
         [JsonPropertyName("horoscope")] public string HoroscopeData { get; set; } = string.Empty;
+    }
+
+    private sealed class FloridaManHeadline
+    {
+        [JsonPropertyName("title")] public string Title { get; set; } = string.Empty;
+        [JsonPropertyName("url")] public string Url { get; set; } = string.Empty;
+        [JsonPropertyName("source")] public string Source { get; set; } = string.Empty;
+        [JsonPropertyName("date")] public string Date { get; set; } = string.Empty;
     }
 }

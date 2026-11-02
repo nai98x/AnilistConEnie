@@ -46,4 +46,39 @@ public static class BoludometroCalculator
 
         return puntosPorDia;
     }
+
+    // Promedio de "boludez" de cada mes del año hasta hoy (mes → valor 0-100). Cada mes usa su propia
+    // semilla, así que coincide con el historial mensual; el mes en curso promedia solo hasta hoy.
+    public static Dictionary<int, int> GenerarHistorialAnual(ulong userId, int anio, int mesActual, int diaHoy)
+    {
+        Dictionary<int, int> puntosPorMes = new();
+
+        for (int mes = 1; mes <= mesActual; mes++)
+        {
+            int totalDiasDelMes = DateTime.DaysInMonth(anio, mes);
+            int ultimoDia = mes == mesActual ? diaHoy : totalDiasDelMes;
+            Dictionary<int, int> historial = GenerarHistorial(new Random(Seed(userId, anio, mes)), ultimoDia, totalDiasDelMes);
+
+            puntosPorMes[mes] = (int)Math.Round(historial.Values.Average(), MidpointRounding.AwayFromZero);
+        }
+
+        return puntosPorMes;
+    }
+
+    public static int ValorDelDia(ulong userId, int anio, int mes, int dia)
+    {
+        Random rnd = new(Seed(userId, anio, mes));
+        return GenerarHistorial(rnd, dia, DateTime.DaysInMonth(anio, mes))[dia];
+    }
+
+    // Candidato con el valor más alto del día. Los empates se resuelven por menor id para que el
+    // resultado no dependa del orden de los candidatos.
+    public static (ulong UserId, int Valor)? BoluditoDelDia(IEnumerable<ulong> candidatos, int anio, int mes, int dia)
+    {
+        List<(ulong UserId, int Valor)> puntajes = [.. candidatos.Select(id => (id, ValorDelDia(id, anio, mes, dia)))];
+
+        return puntajes.Count == 0
+            ? null
+            : puntajes.OrderByDescending(x => x.Valor).ThenBy(x => x.UserId).First();
+    }
 }

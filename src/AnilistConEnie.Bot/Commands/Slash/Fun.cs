@@ -414,9 +414,18 @@ public class Fun(
         KeyValuePair<int, int> min = puntosPorDia.MinBy(x => x.Value);
 
         byte[] gaugeImage = await chartRenderer.RenderAsync(FunCharts.BoludoGauge(value));
-        byte[] lineImage = await chartRenderer.RenderAsync(FunCharts.BoludoLine(member.DisplayName, puntosPorDia.Keys, puntosPorDia.Values));
+        byte[] mensualImage = await chartRenderer.RenderAsync(FunCharts.BoludoLine(member.DisplayName, puntosPorDia.Keys, puntosPorDia.Values));
         const string gaugeFile = "boludometrogauge.png";
-        const string lineFile = "boludometrohistorial.png";
+        const string mensualFile = "boludometromensual.png";
+
+        Dictionary<int, int> puntosPorMes = BoludometroCalculator.GenerarHistorialAnual(ctx.User.Id, hoy.Year, hoy.Month, hoy.Day);
+        double promedioAnual = puntosPorMes.Values.Average();
+        KeyValuePair<int, int> maxMes = puntosPorMes.MaxBy(x => x.Value);
+        KeyValuePair<int, int> minMes = puntosPorMes.MinBy(x => x.Value);
+        DateTimeFormatInfo formatoFecha = new CultureInfo("es-ES").DateTimeFormat;
+
+        byte[] anualImage = await chartRenderer.RenderAsync(FunCharts.BoludoLine(member.DisplayName, puntosPorMes.Keys, puntosPorMes.Values));
+        const string anualFile = "boludometroanual.png";
 
         char genero = funService.GetGenero(member);
         DiscordEmoji loreaEste = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.Bot.LoreaEste);
@@ -428,7 +437,7 @@ public class Fun(
             .WithImageUrl($"attachment://{gaugeFile}")
             .Build();
 
-        DiscordEmbed embedHistorial = new DiscordEmbedBuilder()
+        DiscordEmbed embedMensual = new DiscordEmbedBuilder()
             .WithTitle("Boludómetro")
             .WithDescription(
                 $"**{member.DisplayName}** este mes fue un {promedio:0}% bolud{genero}\n\n" +
@@ -436,16 +445,64 @@ public class Fun(
                 $"- Su día de mayor boludez fue el **{max.Key}/{hoy.Month}** siendo un **{max.Value:0}% bolud{genero}**")
             .WithThumbnail(member.AvatarUrlPreferido())
             .WithFooter("La gráfica se resetea mensualmente.")
-            .WithImageUrl($"attachment://{lineFile}")
+            .WithImageUrl($"attachment://{mensualFile}")
+            .Build();
+
+        DiscordEmbed embedAnual = new DiscordEmbedBuilder()
+            .WithTitle("Boludómetro")
+            .WithDescription(
+                $"**{member.DisplayName}** este año fue un {promedioAnual:0}% bolud{genero}\n\n" +
+                $"- Su mes de menor boludez fue **{formatoFecha.GetMonthName(minMes.Key)}** siendo un **{minMes.Value:0}% bolud{genero}**\n" +
+                $"- Su mes de mayor boludez fue **{formatoFecha.GetMonthName(maxMes.Key)}** siendo un **{maxMes.Value:0}% bolud{genero}**")
+            .WithThumbnail(member.AvatarUrlPreferido())
+            .WithFooter("La gráfica se resetea anualmente.")
+            .WithImageUrl($"attachment://{anualFile}")
             .Build();
 
         Dictionary<string, DiscordInteractivity.TabContent> tabs = new()
         {
             { "Diario", new DiscordInteractivity.TabContent(embedDiario, gaugeImage, gaugeFile) },
-            { "Historial", new DiscordInteractivity.TabContent(embedHistorial, lineImage, lineFile) }
+            { "Mensual", new DiscordInteractivity.TabContent(embedMensual, mensualImage, mensualFile) },
+            { "Anual", new DiscordInteractivity.TabContent(embedAnual, anualImage, anualFile) }
         };
 
         await DiscordInteractivity.SwitchTabsAsync(ctx, tabs);
+    }
+
+    [Command("boludito_daily")]
+    [Description("Descubre quien es la persona mas boludita del dia en el servidor")]
+    public async Task BoluditoDaily(SlashCommandContext ctx)
+    {
+        if (!await ctx.BotInicializadoAsync(discordBotService)) return;
+
+        await ctx.DeferResponseAsync();
+
+        IEnumerable<ulong> candidatos = ctx.Guild!.Members.Values
+            .Where(m => !m.IsBot && m.Roles.Any(r => r.Id == config.Roles.ActivoEnComunidad))
+            .Select(m => m.Id);
+
+        DateTime hoy = RelojServidor.Hoy;
+
+        if (BoludometroCalculator.BoluditoDelDia(candidatos, hoy.Year, hoy.Month, hoy.Day) is not { } boludito)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("No hay miembros activos en la comunidad.")));
+            return;
+        }
+
+        DiscordMember member = ctx.Guild.Members[boludito.UserId];
+        const string gaugeFile = "boluditodaily.png";
+        byte[] gaugeImage = await chartRenderer.RenderAsync(FunCharts.BoludoGauge(boludito.Valor));
+
+        DiscordEmbed embed = new DiscordEmbedBuilder()
+            .WithTitle($"Boludit{funService.GetGenero(member)} del día")
+            .WithDescription($"El boludómetro de hoy lo encabeza **{member.DisplayName}** con un **{boludito.Valor}%** de boludez.")
+            .WithThumbnail(member.AvatarUrlPreferido())
+            .WithImageUrl($"attachment://{gaugeFile}")
+            .Build();
+
+        await ctx.EditResponseAsync(new DiscordWebhookBuilder()
+            .AddEmbed(embed)
+            .AddFile(gaugeFile, gaugeImage.ToMemoryStream()));
     }
 
     [Command("horoscopo")]

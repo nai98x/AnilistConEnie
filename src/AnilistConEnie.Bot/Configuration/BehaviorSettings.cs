@@ -170,6 +170,21 @@ public record BackupsSettings
     }
 }
 
+/// <summary>Gateway health watchdog.</summary>
+/// <param name="WatchdogSilenceTimeout">
+/// Time without receiving any gateway event after which the process is stopped to be restarted.
+/// </param>
+public record GatewaySettings(TimeSpan WatchdogCheckInterval, TimeSpan WatchdogSilenceTimeout)
+{
+    public static GatewaySettings FromConfiguration(IConfiguration configuration)
+    {
+        IConfigurationSection section = configuration.GetSection("Gateway");
+        return new GatewaySettings(
+            TimeSpan.FromSeconds(section.GetValue<int?>("WatchdogCheckIntervaloSegundos") ?? 30),
+            TimeSpan.FromSeconds(section.GetValue<int?>("WatchdogSilencioTimeoutSegundos") ?? 300));
+    }
+}
+
 internal static class SettingsBindingExtensions
 {
     public static int RequireInt(this IConfigurationSection section, string key)
@@ -208,7 +223,8 @@ public static class BehaviorSettingsExtensions
             .AddSingleton(XpSettings.FromConfiguration(configuration))
             .AddSingleton(MensajesDiariosSettings.FromConfiguration(configuration))
             .AddSingleton(ConfesionesSettings.FromConfiguration(configuration))
-            .AddSingleton(SubirImagenSettings.FromConfiguration(configuration));
+            .AddSingleton(SubirImagenSettings.FromConfiguration(configuration))
+            .AddSingleton(GatewaySettings.FromConfiguration(configuration));
 
 #if !DEBUG
         // El backup solo existe en el bot desplegado; en debug no se exige la ruta.

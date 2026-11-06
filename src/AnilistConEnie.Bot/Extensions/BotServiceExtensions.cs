@@ -45,6 +45,7 @@ public static class BotServiceExtensions
         services.AddHostedService<MinuteScheduledService>();
         services.AddHostedService<HourlyScheduledService>();
         services.AddHostedService<DailyScheduledService>();
+        services.AddHostedService<GatewayWatchdogService>();
 
 #if !DEBUG
         // El backup de la base es del bot desplegado: en debug no corre ni se pide su configuración.

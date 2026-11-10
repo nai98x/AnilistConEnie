@@ -40,7 +40,7 @@ public abstract class CronBackgroundService(IServiceScopeFactory scopeFactory, D
 
             try
             {
-                await Telemetria.TrazarAsync($"tarea {GetType().Name}", () => DoWorkAsync(stoppingToken));
+                await Telemetria.TrazarTareaAsync(GetType().Name, () => DoWorkAsync(stoppingToken));
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {

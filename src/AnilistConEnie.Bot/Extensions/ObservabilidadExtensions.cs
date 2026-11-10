@@ -1,5 +1,6 @@
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Observabilidad;
+using DSharpPlus;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
@@ -13,7 +14,7 @@ namespace AnilistConEnie.Bot.Extensions;
 public static class ObservabilidadExtensions
 {
     private static readonly string[] FuentesTrazas = [Telemetria.NombreFuente, "System.Net.Http", "Npgsql"];
-    private static readonly string[] Medidores = ["System.Runtime", "System.Net.Http", "System.Net.NameResolution", "Npgsql"];
+    private static readonly string[] Medidores = [Telemetria.NombreFuente, "System.Runtime", "System.Net.Http", "System.Net.NameResolution", "Npgsql"];
 
     public static bool OtlpHabilitado { get; } =
         !BotEnvironment.EsDebug
@@ -33,6 +34,12 @@ public static class ObservabilidadExtensions
                 .AddOtlpExporter())
             .WithMetrics(metrics => metrics
                 .AddMeter(Medidores)
+                .AddInstrumentation(sp =>
+                {
+                    DiscordClient client = sp.GetRequiredService<DiscordClient>();
+                    ulong guildId = sp.GetRequiredService<BotConfiguration>().GuildId;
+                    return Telemetria.CrearLatenciaGateway(() => client.GetConnectionLatency(guildId));
+                })
                 .AddOtlpExporter());
 
         return services;

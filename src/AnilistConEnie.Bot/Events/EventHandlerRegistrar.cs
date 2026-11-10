@@ -45,10 +45,10 @@ public static class EventHandlerRegistrar
     }
 
     private static Task Trazar<TArgs>(TArgs _, Func<Task> handle) where TArgs : DiscordEventArgs =>
-        Telemetria.TrazarAsync(NombreSpan<TArgs>.Valor, handle);
+        Telemetria.TrazarEventoAsync(NombreEvento<TArgs>.Valor, handle);
 
-    private static class NombreSpan<TArgs>
+    private static class NombreEvento<TArgs>
     {
-        public static readonly string Valor = $"evento {typeof(TArgs).Name.Replace("EventArgs", "")}";
+        public static readonly string Valor = typeof(TArgs).Name.Replace("EventArgs", "");
     }
 }

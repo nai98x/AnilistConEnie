@@ -134,7 +134,16 @@ El bot exporta por **OTLP** (Grafana Cloud) logs, trazas y métricas:
 - **Trazas**: un span raíz por comando (`comando xp rank`), evento de Discord (`evento MessageCreated`)
   y tarea programada (`tarea DailyScheduledService`), con las llamadas HTTP (Discord REST, AniList,
   etc.) y las queries a PostgreSQL (Npgsql) que hace adentro como hijas.
-- **Métricas**: runtime de .NET (GC, threads, memoria), HttpClient, DNS y pool de conexiones de Npgsql.
+- **Métricas**: runtime de .NET (GC, threads, memoria), HttpClient, DNS y pool de conexiones de Npgsql,
+  más las propias del bot:
+  - `bot_command_duration_seconds` (histograma) — por `command`, `type` (slash/text/user/message) y
+    `outcome` (`ok`/`error`/`checks_failed`). Su `_count` es la cantidad de ejecuciones.
+  - `bot_event_duration_seconds` — por `event` (ej. `MessageCreated`) y `outcome`.
+  - `bot_task_duration_seconds` — por `task` (ej. `DailyScheduledService`) y `outcome`.
+  - `bot_gateway_latency_milliseconds` — latencia del heartbeat con el gateway de Discord.
+
+  Las métricas propias solo llevan etiquetas acotadas (nada de ids de usuario/canal, que van en las
+  trazas): el plan gratuito de Grafana Cloud limita las **series activas**.
 
 Se configura **solo** con las variables de entorno estándar de OpenTelemetry; si
 `OTEL_EXPORTER_OTLP_ENDPOINT` no está definida no se registra nada:

@@ -279,10 +279,10 @@ public static class DiscordInteractivity
     }
 
     /// <summary>
-    /// Pagina una lista en un container de Components V2 con botones "Anterior"/"Siguiente". Cada item se
+    /// Pagina una lista en un container de Components V2 con botones de primera/anterior/siguiente/última página. Cada item se
     /// renderiza con <paramref name="renderItem"/>; el header recibe una línea "Página x/x" cuando hay más
     /// de una página. Arranca en la página que contiene el item en <paramref name="indiceInicial"/>.
-    /// "Anterior" se deshabilita en la primera página y "Siguiente" en la última; ambos se
+    /// "Primera"/"Anterior" se deshabilitan en la primera página y "Siguiente"/"Última" en la última; todos se
     /// deshabilitan tras 3 minutos de inactividad o al acercarse al límite de vida de la interacción (15
     /// minutos por regla de Discord). Requiere que la respuesta ya haya sido diferida.
     /// </summary>
@@ -329,9 +329,7 @@ public static class DiscordInteractivity
                 .AddContainerComponent(new DiscordContainerComponent(componentes, color: color ?? DiscordColor.Blurple));
 
             if (totalPaginas > 1)
-                builder.AddActionRowComponent(
-                    new DiscordButtonComponent(DiscordButtonStyle.Secondary, "anterior", "Anterior", inactivo || pagina == 0),
-                    new DiscordButtonComponent(DiscordButtonStyle.Secondary, "siguiente", "Siguiente", inactivo || pagina == totalPaginas - 1));
+                builder.AddActionRowComponent(BotonesNavegacion(inactivo || pagina == 0, inactivo || pagina == totalPaginas - 1));
 
             return builder;
         }
@@ -363,16 +361,33 @@ public static class DiscordInteractivity
 
             await response.Result.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
 
-            pagina = response.Result.Id switch
-            {
-                "anterior" => Math.Max(0, pagina - 1),
-                "siguiente" => Math.Min(totalPaginas - 1, pagina + 1),
-                _ => pagina
-            };
+            pagina = NuevaPagina(response.Result.Id, pagina, totalPaginas);
         }
 
         await ctx.EditResponseAsync(Build(inactivo: true));
     }
+
+    public const string BotonPrimera = "primera";
+    public const string BotonAnterior = "anterior";
+    public const string BotonSiguiente = "siguiente";
+    public const string BotonUltima = "ultima";
+
+    public static DiscordButtonComponent[] BotonesNavegacion(bool inicioDeshabilitado, bool finDeshabilitado) =>
+    [
+        new(DiscordButtonStyle.Secondary, BotonPrimera, null!, inicioDeshabilitado, new DiscordComponentEmoji("⏮️")),
+        new(DiscordButtonStyle.Secondary, BotonAnterior, null!, inicioDeshabilitado, new DiscordComponentEmoji("◀️")),
+        new(DiscordButtonStyle.Secondary, BotonSiguiente, null!, finDeshabilitado, new DiscordComponentEmoji("▶️")),
+        new(DiscordButtonStyle.Secondary, BotonUltima, null!, finDeshabilitado, new DiscordComponentEmoji("⏭️"))
+    ];
+
+    public static int NuevaPagina(string botonId, int pagina, int totalPaginas) => botonId switch
+    {
+        BotonPrimera => 0,
+        BotonAnterior => Math.Max(0, pagina - 1),
+        BotonSiguiente => Math.Min(totalPaginas - 1, pagina + 1),
+        BotonUltima => totalPaginas - 1,
+        _ => pagina
+    };
 
     private const int LimiteComponentesV2 = 40;
 
@@ -381,9 +396,9 @@ public static class DiscordInteractivity
         if (items.Count == 0) return Math.Max(1, porPagina);
 
         // Overhead fijo del container: el propio container, el text display del header, el separador y la
-        // fila de botones (acción + Anterior + Siguiente) por si hay más de una página. Con thumbnail, el
+        // fila de botones (acción + los 4 de navegación) por si hay más de una página. Con thumbnail, el
         // header es una section (section + text display + thumbnail).
-        int overhead = 1 + (headerConThumbnail ? 3 : 1) + 1 + 3;
+        int overhead = 1 + (headerConThumbnail ? 3 : 1) + 1 + 5;
         int costoItem = ContarComponentes(renderItem(items[0])) + (separarItems ? 1 : 0);
 
         int maximo = Math.Max(1, (LimiteComponentesV2 - overhead) / costoItem);

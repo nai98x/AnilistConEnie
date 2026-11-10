@@ -358,9 +358,7 @@ public class Xp(
                     BotonPeriodo(XpTopChartPeriodo.Anual, "Anual", periodo),
                     BotonPeriodo(XpTopChartPeriodo.Mensual, "Mensual", periodo),
                     BotonPeriodo(XpTopChartPeriodo.Semanal, "Semanal", periodo))
-                .AddActionRowComponent(
-                    new DiscordButtonComponent(DiscordButtonStyle.Secondary, "anterior", "Anterior"),
-                    new DiscordButtonComponent(DiscordButtonStyle.Secondary, "siguiente", "Siguiente"))
+                .AddActionRowComponent(DiscordInteractivity.BotonesNavegacion(start == 0, start + porPagina >= serverRanking.Count))
                 .AddEmbed(new DiscordEmbedBuilder()
                     .WithTitle("Top de experiencia")
                     .WithDescription($"Puestos del {start + 1} al {end} · {DescripcionPeriodo(periodo)}")
@@ -382,10 +380,8 @@ public class Xp(
                 continue;
             }
 
-            if ((value == "anterior" && start == 0) || (value == "siguiente" && start + porPagina >= serverRanking.Count))
-                continue;
-
-            start += value == "anterior" ? -porPagina : porPagina;
+            int totalPaginas = (serverRanking.Count + porPagina - 1) / porPagina;
+            start = DiscordInteractivity.NuevaPagina(value, start / porPagina, totalPaginas) * porPagina;
         }
     }
 

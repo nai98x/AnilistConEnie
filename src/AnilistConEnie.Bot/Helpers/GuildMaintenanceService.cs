@@ -5,6 +5,7 @@ using AnilistConEnie.Application.Membership;
 using AnilistConEnie.Application.Xp;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Extensions;
+using AnilistConEnie.Bot.Observabilidad;
 using AnilistConEnie.Bot.Services;
 using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Domain.Enum;
@@ -85,6 +86,8 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
 
             DiscordRole roleBefore = rangoRoles.GetRoleByXpActual(guild, member);
             UserXp memberXp = await xpUsuariosRepository.AddRemove(userId, new UserXpDelta { Total = accrual.TotalGranted, Booster = accrual.BoosterXp });
+            Telemetria.RegistrarXp(accrual.BaseXp, OrigenXp.Mensaje);
+            Telemetria.RegistrarXp(accrual.BoosterXp, OrigenXp.Booster);
             long xpAntes = memberXp.Total - accrual.TotalGranted;
             DiscordRole roleAfter = rangoRoles.GetRoleByXp(guild, memberXp.Total);
 

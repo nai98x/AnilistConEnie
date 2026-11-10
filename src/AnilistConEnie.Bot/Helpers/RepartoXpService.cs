@@ -221,6 +221,7 @@ public class RepartoXpService(
 
                 DiscordRole rangoAntes = rangoRoles.GetRoleByXpActual(guild, member);
                 UserXp actual = await xpUsuariosRepository.AddRemove(asignacion.UserId, new UserXpDelta { Total = magnitud, Intercambios = magnitud }, operacion);
+                Telemetria.RegistrarXp(magnitud, OrigenXp.Reparto, operacion);
                 DiscordRole rangoDespues = rangoRoles.GetRoleByXp(guild, actual.Total);
                 string cambioRango = string.Empty;
 

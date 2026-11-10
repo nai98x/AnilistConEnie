@@ -148,6 +148,11 @@ El bot exporta por **OTLP** (Grafana Cloud) logs, trazas y métricas:
     activo.
   - `bot_task_duration_seconds` — por `task` (ej. `DailyScheduledService`) y `outcome`.
   - `bot_gateway_latency_milliseconds` — latencia del heartbeat con el gateway de Discord.
+  - `bot_messages_total` — mensajes del servidor por `kind`: `activity` (cuentan para XP y mensajes
+    diarios), `other` (de usuarios, en canales excluidos o sin contenido válido) y `bot`.
+  - `bot_xp_total` — XP por `source` (`mensaje`, `booster`, `reparto`, `admin`) y `operation`
+    (`add`/`remove`). Las transferencias entre cuentas no cuentan: no crean XP nueva.
+  - `bot_rank_changes_total` — cambios de rango por `rank` (el nuevo) y `direction` (`up`/`down`).
 
   Las métricas propias solo llevan etiquetas acotadas (nada de ids de usuario/canal, que van en las
   trazas): el plan gratuito de Grafana Cloud limita las **series activas**.

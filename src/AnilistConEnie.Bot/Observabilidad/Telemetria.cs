@@ -1,8 +1,17 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using AnilistConEnie.Domain.Enum;
 using Serilog.Context;
 
 namespace AnilistConEnie.Bot.Observabilidad;
+
+public enum OrigenXp
+{
+    Mensaje,
+    Booster,
+    Reparto,
+    Admin
+}
 
 // Spans raíz de lo que dispara el bot (comandos, eventos de Discord, tareas programadas): las llamadas
 // HTTP y las queries que ocurren adentro quedan como hijas en la misma traza, y los logs escritos
@@ -34,6 +43,39 @@ public static class Telemetria
 
     private static readonly Histogram<double> DuracionTareas = Medidor.CreateHistogram(
         "bot.task.duration", "s", "Duración de las tareas programadas", advice: BucketsDuracion);
+
+    private static readonly Counter<long> Xp = Medidor.CreateCounter<long>(
+        "bot.xp", "{xp}", "XP otorgada o quitada, por origen");
+
+    private static readonly Counter<long> Mensajes = Medidor.CreateCounter<long>(
+        "bot.messages", "{message}", "Mensajes recibidos en el servidor");
+
+    private static readonly Counter<long> CambiosRango = Medidor.CreateCounter<long>(
+        "bot.rank.changes", "{change}", "Cambios de rango por XP");
+
+    public static void RegistrarXp(long cantidad, OrigenXp origen, XpOperation operacion = XpOperation.Add)
+    {
+        if (cantidad <= 0)
+            return;
+
+        Xp.Add(cantidad,
+            new KeyValuePair<string, object?>("source", origen switch
+            {
+                OrigenXp.Mensaje => "mensaje",
+                OrigenXp.Booster => "booster",
+                OrigenXp.Reparto => "reparto",
+                _ => "admin"
+            }),
+            new KeyValuePair<string, object?>("operation", operacion == XpOperation.Add ? "add" : "remove"));
+    }
+
+    public static void RegistrarMensaje(bool esBot, bool cuentaComoActividad) =>
+        Mensajes.Add(1, new KeyValuePair<string, object?>("kind", esBot ? "bot" : cuentaComoActividad ? "activity" : "other"));
+
+    public static void RegistrarCambioRango(RangoEnum anterior, RangoEnum nuevo) =>
+        CambiosRango.Add(1,
+            new KeyValuePair<string, object?>("rank", nuevo.ToString()),
+            new KeyValuePair<string, object?>("direction", nuevo > anterior ? "up" : "down"));
 
     public static Task TrazarEventoAsync(string evento, Func<Task> trabajo) =>
         TrazarAsync($"evento {evento}", DuracionEventos, new KeyValuePair<string, object?>("event", evento), trabajo);

@@ -310,6 +310,7 @@ public class Admin(
                     if (darXp)
                     {
                         await xpUsuariosRepository.AddRemove(miembro.Id, new UserXpDelta { Total = (int)xp, Challenges = challenges, Eventos = eventos, Intercambios = intercambios, Otros = otros }, operation);
+                        Telemetria.RegistrarXp((int)xp, OrigenXp.Admin, operation);
 
                         await channel.SendMessageAsync(new DiscordEmbedBuilder()
                             .WithTitle("Experiencia modificada")

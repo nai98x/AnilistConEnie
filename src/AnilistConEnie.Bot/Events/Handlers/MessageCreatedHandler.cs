@@ -2,6 +2,7 @@ using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Application.Triggers;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
+using AnilistConEnie.Bot.Observabilidad;
 using AnilistConEnie.Bot.Services;
 using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Domain.Entities;
@@ -56,6 +57,8 @@ public class MessageCreatedHandler(
             && !discordBotService.Debug
             && !canalesSinXp.Contains(canalId)
             && ContenidoMensaje.CuentaComoActividad(args.Message.Content);
+
+        Telemetria.RegistrarMensaje(args.Author.IsBot, cuentaComoActividad);
 
         if (cuentaComoActividad)
             await guildMaintenanceService.GrantXpPorMensaje(args.Guild, args.Author.Id);

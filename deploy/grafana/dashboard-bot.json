@@ -437,13 +437,436 @@
     },
     {
       "type": "row",
-      "title": "Comandos",
+      "title": "Actividad del servidor",
       "collapsed": false,
       "panels": [],
       "id": 8,
       "gridPos": {
         "x": 0,
         "y": 5,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Mensajes de usuarios (rango)",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "sum(increase(bot_messages_total{kind!=\"bot\"}[$__range])) or vector(0)",
+          "refId": "A",
+          "legendFormat": "__auto",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "id": 9,
+      "gridPos": {
+        "x": 0,
+        "y": 6,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Mensajes con actividad (rango)",
+      "description": "Mensajes que cuentan para XP y mensajes diarios (fuera de canales excluidos).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "sum(increase(bot_messages_total{kind=\"activity\"}[$__range])) or vector(0)",
+          "refId": "A",
+          "legendFormat": "__auto",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "id": 10,
+      "gridPos": {
+        "x": 6,
+        "y": 6,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "type": "stat",
+      "title": "XP otorgada (rango)",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "sum(increase(bot_xp_total{operation=\"add\"}[$__range])) or vector(0)",
+          "refId": "A",
+          "legendFormat": "__auto",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "id": 11,
+      "gridPos": {
+        "x": 12,
+        "y": 6,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Subidas de rango (rango)",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "sum(increase(bot_rank_changes_total{direction=\"up\"}[$__range])) or vector(0)",
+          "refId": "A",
+          "legendFormat": "__auto",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "id": 12,
+      "gridPos": {
+        "x": 18,
+        "y": 6,
+        "w": 6,
+        "h": 4
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Mensajes por hora",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "sum by (kind) (rate(bot_messages_total[$__rate_interval])) * 3600",
+          "refId": "A",
+          "legendFormat": "{{kind}}",
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 40,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 13,
+      "gridPos": {
+        "x": 0,
+        "y": 10,
+        "w": 8,
+        "h": 9
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "XP otorgada por hora",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "sum by (source) (rate(bot_xp_total{operation=\"add\"}[$__rate_interval])) * 3600",
+          "refId": "A",
+          "legendFormat": "{{source}}",
+          "range": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 40,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 14,
+      "gridPos": {
+        "x": 8,
+        "y": 10,
+        "w": 8,
+        "h": 9
+      }
+    },
+    {
+      "type": "bargauge",
+      "title": "Subidas por rango",
+      "description": "Cambios de rango hacia arriba en el rango de tiempo.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "sum by (rank) (increase(bot_rank_changes_total{direction=\"up\"}[$__range])) > 0",
+          "refId": "A",
+          "legendFormat": "{{rank}}",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "color": {
+            "mode": "continuous-BlPu"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "valueMode": "color",
+        "namePlacement": "left",
+        "sizing": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 15,
+      "gridPos": {
+        "x": 16,
+        "y": 10,
+        "w": 8,
+        "h": 9
+      }
+    },
+    {
+      "type": "row",
+      "title": "Comandos",
+      "collapsed": false,
+      "panels": [],
+      "id": 16,
+      "gridPos": {
+        "x": 0,
+        "y": 19,
         "w": 24,
         "h": 1
       }
@@ -494,10 +917,10 @@
           "values": false
         }
       },
-      "id": 9,
+      "id": 17,
       "gridPos": {
         "x": 0,
-        "y": 6,
+        "y": 20,
         "w": 8,
         "h": 10
       }
@@ -550,10 +973,10 @@
           "sort": "desc"
         }
       },
-      "id": 10,
+      "id": 18,
       "gridPos": {
         "x": 8,
-        "y": 6,
+        "y": 20,
         "w": 16,
         "h": 10
       }
@@ -604,10 +1027,10 @@
           "values": false
         }
       },
-      "id": 11,
+      "id": 19,
       "gridPos": {
         "x": 0,
-        "y": 16,
+        "y": 30,
         "w": 12,
         "h": 10
       }
@@ -659,10 +1082,10 @@
           "values": false
         }
       },
-      "id": 12,
+      "id": 20,
       "gridPos": {
         "x": 12,
-        "y": 16,
+        "y": 30,
         "w": 12,
         "h": 10
       }
@@ -672,10 +1095,10 @@
       "title": "Eventos y tareas",
       "collapsed": false,
       "panels": [],
-      "id": 13,
+      "id": 21,
       "gridPos": {
         "x": 0,
-        "y": 26,
+        "y": 40,
         "w": 24,
         "h": 1
       }
@@ -724,10 +1147,10 @@
           "sort": "desc"
         }
       },
-      "id": 14,
+      "id": 22,
       "gridPos": {
         "x": 0,
-        "y": 27,
+        "y": 41,
         "w": 12,
         "h": 9
       }
@@ -776,10 +1199,10 @@
           "sort": "desc"
         }
       },
-      "id": 15,
+      "id": 23,
       "gridPos": {
         "x": 12,
-        "y": 27,
+        "y": 41,
         "w": 12,
         "h": 9
       }
@@ -830,10 +1253,10 @@
           "values": false
         }
       },
-      "id": 16,
+      "id": 24,
       "gridPos": {
         "x": 0,
-        "y": 36,
+        "y": 50,
         "w": 12,
         "h": 7
       }
@@ -884,10 +1307,10 @@
           "values": false
         }
       },
-      "id": 17,
+      "id": 25,
       "gridPos": {
         "x": 12,
-        "y": 36,
+        "y": 50,
         "w": 12,
         "h": 7
       }
@@ -897,10 +1320,10 @@
       "title": "Dependencias",
       "collapsed": false,
       "panels": [],
-      "id": 18,
+      "id": 26,
       "gridPos": {
         "x": 0,
-        "y": 43,
+        "y": 57,
         "w": 24,
         "h": 1
       }
@@ -949,10 +1372,10 @@
           "sort": "desc"
         }
       },
-      "id": 19,
+      "id": 27,
       "gridPos": {
         "x": 0,
-        "y": 44,
+        "y": 58,
         "w": 8,
         "h": 8
       }
@@ -1001,10 +1424,10 @@
           "sort": "desc"
         }
       },
-      "id": 20,
+      "id": 28,
       "gridPos": {
         "x": 8,
-        "y": 44,
+        "y": 58,
         "w": 8,
         "h": 8
       }
@@ -1053,10 +1476,10 @@
           "sort": "desc"
         }
       },
-      "id": 21,
+      "id": 29,
       "gridPos": {
         "x": 16,
-        "y": 44,
+        "y": 58,
         "w": 8,
         "h": 8
       }
@@ -1109,10 +1532,10 @@
           "sort": "desc"
         }
       },
-      "id": 22,
+      "id": 30,
       "gridPos": {
         "x": 0,
-        "y": 52,
+        "y": 66,
         "w": 8,
         "h": 8
       }
@@ -1161,10 +1584,10 @@
           "sort": "desc"
         }
       },
-      "id": 23,
+      "id": 31,
       "gridPos": {
         "x": 8,
-        "y": 52,
+        "y": 66,
         "w": 8,
         "h": 8
       }
@@ -1223,10 +1646,10 @@
           "sort": "desc"
         }
       },
-      "id": 24,
+      "id": 32,
       "gridPos": {
         "x": 16,
-        "y": 52,
+        "y": 66,
         "w": 8,
         "h": 8
       }
@@ -1236,10 +1659,10 @@
       "title": "Logs",
       "collapsed": false,
       "panels": [],
-      "id": 25,
+      "id": 33,
       "gridPos": {
         "x": 0,
-        "y": 60,
+        "y": 74,
         "w": 24,
         "h": 1
       }
@@ -1269,10 +1692,10 @@
         "prettifyLogMessage": false,
         "dedupStrategy": "none"
       },
-      "id": 26,
+      "id": 34,
       "gridPos": {
         "x": 0,
-        "y": 61,
+        "y": 75,
         "w": 24,
         "h": 10
       }

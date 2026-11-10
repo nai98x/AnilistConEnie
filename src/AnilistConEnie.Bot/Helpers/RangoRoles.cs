@@ -1,5 +1,6 @@
 using AnilistConEnie.Application.Xp;
 using AnilistConEnie.Bot.Configuration;
+using AnilistConEnie.Bot.Observabilidad;
 using AnilistConEnie.Domain.Enum;
 using DSharpPlus.Entities;
 
@@ -35,6 +36,9 @@ public class RangoRoles(BotConfiguration config)
             await member.RevokeRoleAsync(rangoViejo);
 
         await member.GrantRoleAsync(rangoNuevo);
+
+        if (rangoViejo.Id != rangoNuevo.Id)
+            Telemetria.RegistrarCambioRango(RangoForRole(rangoViejo.Id), RangoForRole(rangoNuevo.Id));
     }
 
     public RangoEnum RangoForRole(ulong roleId) =>

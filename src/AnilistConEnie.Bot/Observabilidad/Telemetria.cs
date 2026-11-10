@@ -1,10 +1,12 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using Serilog.Context;
 
 namespace AnilistConEnie.Bot.Observabilidad;
 
 // Spans raíz de lo que dispara el bot (comandos, eventos de Discord, tareas programadas): las llamadas
-// HTTP y las queries que ocurren adentro quedan como hijas en la misma traza.
+// HTTP y las queries que ocurren adentro quedan como hijas en la misma traza, y los logs escritos
+// adentro llevan el comando/evento/tarea como propiedad para poder filtrarlos en Loki.
 // Las métricas solo llevan etiquetas de cardinalidad acotada (nombres de comando/evento/tarea y
 // resultado): cada combinación es una serie y el plan de Grafana Cloud limita las series activas.
 public static class Telemetria
@@ -58,6 +60,7 @@ public static class Telemetria
     private static async Task TrazarAsync(string nombreSpan, Histogram<double> duracion, KeyValuePair<string, object?> etiqueta, Func<Task> trabajo)
     {
         using Activity? activity = Fuente.StartActivity(nombreSpan);
+        using IDisposable contextoLogs = LogContext.PushProperty(etiqueta.Key, etiqueta.Value);
         long inicio = Stopwatch.GetTimestamp();
         string resultado = ResultadoOk;
 

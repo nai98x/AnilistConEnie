@@ -130,7 +130,10 @@ dotnet user-secrets --project src/AnilistConEnie.Bot \
 
 El bot exporta por **OTLP** (Grafana Cloud) logs, trazas y métricas:
 
-- **Logs**: todo lo que pasa por Serilog, con el trace/span id cuando ocurre dentro de una traza.
+- **Logs**: todo lo que pasa por Serilog, con el trace/span id cuando ocurre dentro de una traza. Los
+  escritos durante un comando llevan `command`, `command_type`, `user_id` y `channel_id`; los de un
+  evento, `event`; los de una tarea programada, `task`. En Loki se filtran directo, ej.
+  `{service_name="anilistconenie"} | command = "usuarios birthdays"`.
 - **Trazas**: un span raíz por comando (`comando xp rank`), evento de Discord (`evento MessageCreated`)
   y tarea programada (`tarea DailyScheduledService`), con las llamadas HTTP (Discord REST, AniList,
   etc.) y las queries a PostgreSQL (Npgsql) que hace adentro como hijas.

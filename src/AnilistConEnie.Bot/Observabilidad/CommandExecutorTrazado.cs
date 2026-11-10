@@ -7,6 +7,8 @@ using DSharpPlus.Commands.Processors.MessageCommands;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Commands.Processors.UserCommands;
+using Serilog.Context;
+using Serilog.Core.Enrichers;
 
 namespace AnilistConEnie.Bot.Observabilidad;
 
@@ -30,6 +32,12 @@ public class CommandExecutorTrazado : DefaultCommandExecutor
             activity.SetTag("discord.user.id", context.User.Id.ToString());
             activity.SetTag("discord.channel.id", context.Channel.Id.ToString());
         }
+
+        using IDisposable contextoLogs = LogContext.Push(
+            new PropertyEnricher("command", comando),
+            new PropertyEnricher("command_type", tipo),
+            new PropertyEnricher("user_id", context.User.Id.ToString()),
+            new PropertyEnricher("channel_id", context.Channel.Id.ToString()));
 
         StrongBox<string> resultado = new(Telemetria.ResultadoOk);
         ResultadoActual.Value = resultado;

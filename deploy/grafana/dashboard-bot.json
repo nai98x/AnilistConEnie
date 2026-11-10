@@ -695,7 +695,7 @@
     {
       "type": "timeseries",
       "title": "Mensajes por hora",
-      "description": "",
+      "description": "Ritmo de mensajes del servidor llevado a mensajes por hora. Conversación: mensajes de personas que dan XP. Personas sin XP: mensajes en canales sin XP (bots, comandos) o que son solo un emote/sticker. Bots: mensajes de cualquier bot.",
       "datasource": {
         "type": "prometheus",
         "uid": "${ds_prom}"
@@ -727,7 +727,44 @@
             }
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "activity"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Conversación (da XP)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "other"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Personas sin XP (canales de bots / solo emote)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bot"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Bots"
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "legend": {
@@ -744,7 +781,7 @@
       "gridPos": {
         "x": 0,
         "y": 10,
-        "w": 8,
+        "w": 12,
         "h": 9
       }
     },
@@ -798,63 +835,9 @@
       },
       "id": 14,
       "gridPos": {
-        "x": 8,
+        "x": 12,
         "y": 10,
-        "w": 8,
-        "h": 9
-      }
-    },
-    {
-      "type": "bargauge",
-      "title": "Subidas por rango",
-      "description": "Cambios de rango hacia arriba en el rango de tiempo.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${ds_prom}"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${ds_prom}"
-          },
-          "expr": "sum by (rank) (increase(bot_rank_changes_total{job=~\".*/anilistconenie\", direction=\"up\"}[$__range])) > 0",
-          "refId": "A",
-          "legendFormat": "{{rank}}",
-          "instant": true,
-          "range": false
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "min": 0,
-          "color": {
-            "mode": "continuous-BlPu"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "orientation": "horizontal",
-        "displayMode": "gradient",
-        "showUnfilled": true,
-        "valueMode": "color",
-        "namePlacement": "left",
-        "sizing": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        }
-      },
-      "id": 15,
-      "gridPos": {
-        "x": 16,
-        "y": 10,
-        "w": 8,
+        "w": 12,
         "h": 9
       }
     },
@@ -895,6 +878,7 @@
       "fieldConfig": {
         "defaults": {
           "unit": "short",
+          "decimals": 0,
           "min": 0,
           "color": {
             "mode": "continuous-BlPu"
@@ -1059,6 +1043,7 @@
       "fieldConfig": {
         "defaults": {
           "unit": "short",
+          "decimals": 0,
           "min": 0,
           "color": {
             "mode": "fixed",
@@ -1285,6 +1270,7 @@
       "fieldConfig": {
         "defaults": {
           "unit": "short",
+          "decimals": 0,
           "min": 0,
           "color": {
             "mode": "continuous-BlPu"

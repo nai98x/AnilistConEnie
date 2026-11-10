@@ -173,6 +173,12 @@ systemctl --user restart anilistconenie
 **En local** (compilación DEBUG) no se exporta nada aunque las variables estén definidas: la
 observabilidad es solo del bot desplegado.
 
+**Dashboard**: `grafana/dashboard-bot.json` se importa en Grafana (*Dashboards → New → Import →
+Upload dashboard JSON file*). Los datasources de métricas y logs se eligen con las variables de
+arriba del dashboard, así que el JSON no depende del nombre del stack. Si se modifica en Grafana,
+exportarlo (*Share → Export → Save to file*, sin "Export for sharing externally") y reemplazar el
+archivo para que quede versionado.
+
 ## Operación
 
 ```bash

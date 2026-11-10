@@ -131,7 +131,9 @@ dotnet user-secrets --project src/AnilistConEnie.Bot \
 El bot exporta por **OTLP** (Grafana Cloud) logs, trazas y métricas:
 
 - **Logs**: todo lo que pasa por Serilog, con el trace/span id cuando ocurre dentro de una traza.
-- **Trazas**: llamadas HTTP salientes (Discord REST, AniList, etc.) y queries a PostgreSQL (Npgsql).
+- **Trazas**: un span raíz por comando (`comando xp rank`), evento de Discord (`evento MessageCreated`)
+  y tarea programada (`tarea DailyScheduledService`), con las llamadas HTTP (Discord REST, AniList,
+  etc.) y las queries a PostgreSQL (Npgsql) que hace adentro como hijas.
 - **Métricas**: runtime de .NET (GC, threads, memoria), HttpClient, DNS y pool de conexiones de Npgsql.
 
 Se configura **solo** con las variables de entorno estándar de OpenTelemetry; si
@@ -156,9 +158,8 @@ systemctl --user daemon-reload
 systemctl --user restart anilistconenie
 ```
 
-**En local** no se lee de User Secrets (Serilog se arma antes que el host): para probar, exportar
-las mismas variables en la shell o en la *Run Configuration* de Rider. Conviene usar otro
-`OTEL_SERVICE_NAME` (ej. `anilistconenie-dev`) para no mezclar con producción.
+**En local** (compilación DEBUG) no se exporta nada aunque las variables estén definidas: la
+observabilidad es solo del bot desplegado.
 
 ## Operación
 

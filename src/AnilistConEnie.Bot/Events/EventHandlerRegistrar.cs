@@ -1,5 +1,7 @@
 using AnilistConEnie.Bot.Events.Handlers;
+using AnilistConEnie.Bot.Observabilidad;
 using DSharpPlus;
+using DSharpPlus.EventArgs;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AnilistConEnie.Bot.Events;
@@ -29,16 +31,24 @@ public static class EventHandlerRegistrar
     public static EventHandlingBuilder BindEventHandlers(this EventHandlingBuilder builder)
     {
         return builder
-            .HandleGuildDownloadCompleted((c, e) => c.ServiceProvider.GetRequiredService<GuildDownloadCompletedHandler>().Handle(c, e))
-            .HandleMessageCreated((c, e) => c.ServiceProvider.GetRequiredService<MessageCreatedHandler>().Handle(c, e))
-            .HandleMessageUpdated((c, e) => c.ServiceProvider.GetRequiredService<MessageUpdatedHandler>().Handle(c, e))
-            .HandleMessageDeleted((c, e) => c.ServiceProvider.GetRequiredService<MessageDeletedHandler>().Handle(c, e))
-            .HandleMessageReactionAdded((c, e) => c.ServiceProvider.GetRequiredService<MessageReactionAddedHandler>().Handle(c, e))
-            .HandleComponentInteractionCreated((c, e) => c.ServiceProvider.GetRequiredService<ComponentInteractionHandler>().Handle(c, e))
-            .HandleGuildMemberAdded((c, e) => c.ServiceProvider.GetRequiredService<GuildMemberAddedHandler>().Handle(c, e))
-            .HandleGuildMemberRemoved((c, e) => c.ServiceProvider.GetRequiredService<GuildMemberRemovedHandler>().Handle(c, e))
-            .HandleSessionCreated((c, e) => c.ServiceProvider.GetRequiredService<SessionCreatedHandler>().Handle(c, e))
-            .HandleSessionResumed((c, e) => c.ServiceProvider.GetRequiredService<SessionResumedHandler>().Handle(c, e))
-            .HandleZombied((c, e) => c.ServiceProvider.GetRequiredService<ZombiedHandler>().Handle(c, e));
+            .HandleGuildDownloadCompleted((c, e) => Trazar(e, () => c.ServiceProvider.GetRequiredService<GuildDownloadCompletedHandler>().Handle(c, e)))
+            .HandleMessageCreated((c, e) => Trazar(e, () => c.ServiceProvider.GetRequiredService<MessageCreatedHandler>().Handle(c, e)))
+            .HandleMessageUpdated((c, e) => Trazar(e, () => c.ServiceProvider.GetRequiredService<MessageUpdatedHandler>().Handle(c, e)))
+            .HandleMessageDeleted((c, e) => Trazar(e, () => c.ServiceProvider.GetRequiredService<MessageDeletedHandler>().Handle(c, e)))
+            .HandleMessageReactionAdded((c, e) => Trazar(e, () => c.ServiceProvider.GetRequiredService<MessageReactionAddedHandler>().Handle(c, e)))
+            .HandleComponentInteractionCreated((c, e) => Trazar(e, () => c.ServiceProvider.GetRequiredService<ComponentInteractionHandler>().Handle(c, e)))
+            .HandleGuildMemberAdded((c, e) => Trazar(e, () => c.ServiceProvider.GetRequiredService<GuildMemberAddedHandler>().Handle(c, e)))
+            .HandleGuildMemberRemoved((c, e) => Trazar(e, () => c.ServiceProvider.GetRequiredService<GuildMemberRemovedHandler>().Handle(c, e)))
+            .HandleSessionCreated((c, e) => Trazar(e, () => c.ServiceProvider.GetRequiredService<SessionCreatedHandler>().Handle(c, e)))
+            .HandleSessionResumed((c, e) => Trazar(e, () => c.ServiceProvider.GetRequiredService<SessionResumedHandler>().Handle(c, e)))
+            .HandleZombied((c, e) => Trazar(e, () => c.ServiceProvider.GetRequiredService<ZombiedHandler>().Handle(c, e)));
+    }
+
+    private static Task Trazar<TArgs>(TArgs _, Func<Task> handle) where TArgs : DiscordEventArgs =>
+        Telemetria.TrazarAsync(NombreSpan<TArgs>.Valor, handle);
+
+    private static class NombreSpan<TArgs>
+    {
+        public static readonly string Valor = $"evento {typeof(TArgs).Name.Replace("EventArgs", "")}";
     }
 }

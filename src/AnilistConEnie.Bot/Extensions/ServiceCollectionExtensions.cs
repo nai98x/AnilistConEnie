@@ -3,6 +3,7 @@ using AnilistConEnie.Bot.Commands.Framework.Checks;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Events;
 using AnilistConEnie.Bot.Helpers;
+using AnilistConEnie.Bot.Observabilidad;
 using DSharpPlus;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
@@ -69,7 +70,8 @@ public static class ServiceCollectionExtensions
         }, new CommandsConfiguration
         {
             RegisterDefaultCommandProcessors = true,
-            UseDefaultCommandErrorHandler = false
+            UseDefaultCommandErrorHandler = false,
+            CommandExecutor = new CommandExecutorTrazado()
         });
 
         return services;

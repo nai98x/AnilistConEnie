@@ -64,7 +64,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "bot_gateway_latency_milliseconds",
+          "expr": "bot_gateway_latency_milliseconds{job=~\".*/anilistconenie\"}",
           "refId": "A",
           "legendFormat": "__auto",
           "instant": true,
@@ -133,7 +133,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sum(increase(bot_command_duration_seconds_count[$__range])) or vector(0)",
+          "expr": "sum(increase(bot_command_duration_seconds_count{job=~\".*/anilistconenie\"}[$__range])) or vector(0)",
           "refId": "A",
           "legendFormat": "__auto",
           "instant": true,
@@ -194,7 +194,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sum(increase(bot_command_duration_seconds_count{outcome=\"error\"}[$__range])) or vector(0)",
+          "expr": "sum(increase(bot_command_duration_seconds_count{job=~\".*/anilistconenie\", outcome=\"error\"}[$__range])) or vector(0)",
           "refId": "A",
           "legendFormat": "__auto",
           "instant": true,
@@ -328,7 +328,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "max(dotnet_process_memory_working_set_bytes)",
+          "expr": "max(dotnet_process_memory_working_set_bytes{job=~\".*/anilistconenie\"})",
           "refId": "A",
           "legendFormat": "__auto",
           "instant": true,
@@ -388,7 +388,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sum(rate(dotnet_process_cpu_time_seconds_total[5m]))",
+          "expr": "sum(rate(dotnet_process_cpu_time_seconds_total{job=~\".*/anilistconenie\"}[5m]))",
           "refId": "A",
           "legendFormat": "__auto",
           "instant": true,
@@ -462,7 +462,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sum(increase(bot_messages_total{kind!=\"bot\"}[$__range])) or vector(0)",
+          "expr": "sum(increase(bot_messages_total{job=~\".*/anilistconenie\", kind!=\"bot\"}[$__range])) or vector(0)",
           "refId": "A",
           "legendFormat": "__auto",
           "instant": true,
@@ -523,7 +523,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sum(increase(bot_messages_total{kind=\"activity\"}[$__range])) or vector(0)",
+          "expr": "sum(increase(bot_messages_total{job=~\".*/anilistconenie\", kind=\"activity\"}[$__range])) or vector(0)",
           "refId": "A",
           "legendFormat": "__auto",
           "instant": true,
@@ -584,7 +584,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sum(increase(bot_xp_total{operation=\"add\"}[$__range])) or vector(0)",
+          "expr": "sum(increase(bot_xp_total{job=~\".*/anilistconenie\", operation=\"add\"}[$__range])) or vector(0)",
           "refId": "A",
           "legendFormat": "__auto",
           "instant": true,
@@ -645,7 +645,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sum(increase(bot_rank_changes_total{direction=\"up\"}[$__range])) or vector(0)",
+          "expr": "sum(increase(bot_rank_changes_total{job=~\".*/anilistconenie\", direction=\"up\"}[$__range])) or vector(0)",
           "refId": "A",
           "legendFormat": "__auto",
           "instant": true,
@@ -706,7 +706,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sum by (kind) (rate(bot_messages_total[$__rate_interval])) * 3600",
+          "expr": "sum by (kind) (rate(bot_messages_total{job=~\".*/anilistconenie\"}[$__rate_interval])) * 3600",
           "refId": "A",
           "legendFormat": "{{kind}}",
           "range": true
@@ -762,7 +762,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sum by (source) (rate(bot_xp_total{operation=\"add\"}[$__rate_interval])) * 3600",
+          "expr": "sum by (source) (rate(bot_xp_total{job=~\".*/anilistconenie\", operation=\"add\"}[$__rate_interval])) * 3600",
           "refId": "A",
           "legendFormat": "{{source}}",
           "range": true
@@ -818,7 +818,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sum by (rank) (increase(bot_rank_changes_total{direction=\"up\"}[$__range])) > 0",
+          "expr": "sum by (rank) (increase(bot_rank_changes_total{job=~\".*/anilistconenie\", direction=\"up\"}[$__range])) > 0",
           "refId": "A",
           "legendFormat": "{{rank}}",
           "instant": true,
@@ -885,7 +885,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sort_desc(topk(15, sum by (command) (increase(bot_command_duration_seconds_count[$__range])) > 0))",
+          "expr": "sort_desc(topk(15, sum by (command) (increase(bot_command_duration_seconds_count{job=~\".*/anilistconenie\"}[$__range])) > 0))",
           "refId": "A",
           "legendFormat": "{{command}}",
           "instant": true,
@@ -939,7 +939,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sum by (outcome) (rate(bot_command_duration_seconds_count[$__rate_interval])) * 60",
+          "expr": "sum by (outcome) (rate(bot_command_duration_seconds_count{job=~\".*/anilistconenie\"}[$__rate_interval])) * 60",
           "refId": "A",
           "legendFormat": "{{outcome}}",
           "range": true
@@ -995,7 +995,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sort_desc(topk(15, histogram_quantile(0.95, sum by (le, command) (rate(bot_command_duration_seconds_bucket[$__range])))))",
+          "expr": "sort_desc(topk(15, histogram_quantile(0.95, sum by (le, command) (rate(bot_command_duration_seconds_bucket{job=~\".*/anilistconenie\"}[$__range])))))",
           "refId": "A",
           "legendFormat": "{{command}}",
           "instant": true,
@@ -1049,7 +1049,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sort_desc(sum by (command) (increase(bot_command_duration_seconds_count{outcome=\"error\"}[$__range])) > 0)",
+          "expr": "sort_desc(sum by (command) (increase(bot_command_duration_seconds_count{job=~\".*/anilistconenie\", outcome=\"error\"}[$__range])) > 0)",
           "refId": "A",
           "legendFormat": "{{command}}",
           "instant": true,
@@ -1117,7 +1117,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sum by (event) (rate(bot_event_duration_seconds_count[$__rate_interval])) * 60",
+          "expr": "sum by (event) (rate(bot_event_duration_seconds_count{job=~\".*/anilistconenie\"}[$__rate_interval])) * 60",
           "refId": "A",
           "legendFormat": "{{event}}",
           "range": true
@@ -1169,7 +1169,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "histogram_quantile(0.95, sum by (le, event) (rate(bot_event_duration_seconds_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by (le, event) (rate(bot_event_duration_seconds_bucket{job=~\".*/anilistconenie\"}[$__rate_interval])))",
           "refId": "A",
           "legendFormat": "{{event}}",
           "range": true
@@ -1221,7 +1221,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sum by (task) (increase(bot_task_duration_seconds_sum[$__range])) / sum by (task) (increase(bot_task_duration_seconds_count[$__range]))",
+          "expr": "sum by (task) (increase(bot_task_duration_seconds_sum{job=~\".*/anilistconenie\"}[$__range])) / sum by (task) (increase(bot_task_duration_seconds_count{job=~\".*/anilistconenie\"}[$__range]))",
           "refId": "A",
           "legendFormat": "{{task}}",
           "instant": true,
@@ -1275,7 +1275,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sum by (task, outcome) (increase(bot_task_duration_seconds_count[$__range])) > 0",
+          "expr": "sum by (task, outcome) (increase(bot_task_duration_seconds_count{job=~\".*/anilistconenie\"}[$__range])) > 0",
           "refId": "A",
           "legendFormat": "{{task}} · {{outcome}}",
           "instant": true,
@@ -1342,7 +1342,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "bot_gateway_latency_milliseconds",
+          "expr": "bot_gateway_latency_milliseconds{job=~\".*/anilistconenie\"}",
           "refId": "A",
           "legendFormat": "ping",
           "range": true
@@ -1394,7 +1394,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "histogram_quantile(0.95, sum by (le, server_address) (rate(http_client_request_duration_seconds_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by (le, server_address) (rate(http_client_request_duration_seconds_bucket{job=~\".*/anilistconenie\"}[$__rate_interval])))",
           "refId": "A",
           "legendFormat": "{{server_address}}",
           "range": true
@@ -1446,7 +1446,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sum by (server_address, http_response_status_code) (rate(http_client_request_duration_seconds_count{http_response_status_code!~\"2..\"}[$__rate_interval])) * 60",
+          "expr": "sum by (server_address, http_response_status_code) (rate(http_client_request_duration_seconds_count{job=~\".*/anilistconenie\", http_response_status_code!~\"2..\"}[$__rate_interval])) * 60",
           "refId": "A",
           "legendFormat": "{{server_address}} {{http_response_status_code}}",
           "range": true
@@ -1498,7 +1498,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sum by (db_client_connection_state) (db_client_connection_count)",
+          "expr": "sum by (db_client_connection_state) (db_client_connection_count{job=~\".*/anilistconenie\"})",
           "refId": "A",
           "legendFormat": "{{db_client_connection_state}}",
           "range": true
@@ -1554,7 +1554,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(db_client_operation_duration_seconds_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(db_client_operation_duration_seconds_bucket{job=~\".*/anilistconenie\"}[$__rate_interval])))",
           "refId": "A",
           "legendFormat": "p95",
           "range": true
@@ -1606,7 +1606,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "max(dotnet_process_memory_working_set_bytes)",
+          "expr": "max(dotnet_process_memory_working_set_bytes{job=~\".*/anilistconenie\"})",
           "refId": "A",
           "legendFormat": "working set",
           "range": true
@@ -1616,7 +1616,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sum(dotnet_gc_last_collection_heap_size_bytes)",
+          "expr": "sum(dotnet_gc_last_collection_heap_size_bytes{job=~\".*/anilistconenie\"})",
           "refId": "B",
           "legendFormat": "heap tras último GC",
           "range": true

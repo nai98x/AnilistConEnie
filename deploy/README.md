@@ -184,7 +184,10 @@ observabilidad es solo del bot desplegado.
 
 **Dashboard**: `grafana/dashboard-bot.json` se importa en Grafana (*Dashboards → New → Import →
 Upload dashboard JSON file*). Los datasources de métricas y logs se eligen con las variables de
-arriba del dashboard, así que el JSON no depende del nombre del stack. Si se modifica en Grafana,
+arriba del dashboard, así que el JSON no depende del nombre del stack. Las queries de métricas
+filtran por `job=~".*/anilistconenie"` (Grafana Cloud arma `job` como
+`<service.namespace>/<service.name>`), así no se mezclan las métricas `bot_*` de otros servicios que
+exportan al mismo stack (ej. Yumiko). Si se modifica en Grafana,
 exportarlo (*Share → Export → Save to file*, sin "Export for sharing externally") y reemplazar el
 archivo para que quede versionado.
 

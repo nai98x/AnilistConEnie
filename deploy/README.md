@@ -141,7 +141,11 @@ El bot exporta por **OTLP** (Grafana Cloud) logs, trazas y métricas:
   más las propias del bot:
   - `bot_command_duration_seconds` (histograma) — por `command`, `type` (slash/text/user/message) y
     `outcome` (`ok`/`error`/`checks_failed`). Su `_count` es la cantidad de ejecuciones.
-  - `bot_event_duration_seconds` — por `event` (ej. `MessageCreated`) y `outcome`.
+    Mide el **tiempo activo**: las esperas de interacción del usuario (botones, selects, modales)
+    marcadas con `.EsperandoUsuario()` se descuentan. Toda espera nueva de interactivity tiene que
+    llevarlo; en la traza el total de espera queda como `bot.user_wait.duration`.
+  - `bot_event_duration_seconds` — por `event` (ej. `MessageCreated`) y `outcome`, también en tiempo
+    activo.
   - `bot_task_duration_seconds` — por `task` (ej. `DailyScheduledService`) y `outcome`.
   - `bot_gateway_latency_milliseconds` — latencia del heartbeat con el gateway de Discord.
 

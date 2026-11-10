@@ -11,6 +11,7 @@ using AnilistConEnie.Bot.Commands.Framework.Attributes;
 using AnilistConEnie.Bot.Commands.Framework.Checks;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
+using AnilistConEnie.Bot.Observabilidad;
 using AnilistConEnie.Bot.Services;
 using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Domain.Entities;
@@ -309,7 +310,7 @@ public class Fun(
             .AddActionRowComponent(new DiscordButtonComponent(DiscordButtonStyle.Primary, "btnElegirFMK", "Elegir")));
 
         InteractivityResult<ComponentInteractionCreatedEventArgs> btnInteraction =
-            await interactivity.WaitForButtonAsync(elegirMsg, ctx.User, TimeSpan.FromMinutes(5));
+            await interactivity.WaitForButtonAsync(elegirMsg, ctx.User, TimeSpan.FromMinutes(5)).EsperandoUsuario();
 
         if (btnInteraction.TimedOut)
         {
@@ -334,7 +335,7 @@ public class Fun(
         await btnInteraction.Result.Interaction.CreateResponseAsync(DiscordInteractionResponseType.Modal, modal);
 
         InteractivityResult<ModalSubmittedEventArgs> modalInteraction =
-            await interactivity.WaitForModalAsync(modalId, ctx.User, TimeSpan.FromMinutes(5));
+            await interactivity.WaitForModalAsync(modalId, ctx.User, TimeSpan.FromMinutes(5)).EsperandoUsuario();
 
         if (modalInteraction.TimedOut)
         {

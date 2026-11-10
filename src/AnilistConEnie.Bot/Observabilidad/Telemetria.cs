@@ -48,6 +48,12 @@ public static class Telemetria
             "ms",
             "Latencia del heartbeat con el gateway de Discord");
 
+    public static void RegistrarEspera(Activity? activity, Medicion medicion)
+    {
+        if (activity is not null && medicion.EsperaUsuario > TimeSpan.Zero)
+            activity.SetTag("bot.user_wait.duration", medicion.EsperaUsuario.TotalSeconds);
+    }
+
     public static void MarcarError(Activity? activity, Exception ex)
     {
         if (activity is null)
@@ -61,8 +67,7 @@ public static class Telemetria
     {
         using Activity? activity = Fuente.StartActivity(nombreSpan);
         using IDisposable contextoLogs = LogContext.PushProperty(etiqueta.Key, etiqueta.Value);
-        long inicio = Stopwatch.GetTimestamp();
-        string resultado = ResultadoOk;
+        Medicion medicion = Medicion.Iniciar();
 
         try
         {
@@ -70,13 +75,14 @@ public static class Telemetria
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            resultado = ResultadoError;
+            medicion.Resultado = ResultadoError;
             MarcarError(activity, ex);
             throw;
         }
         finally
         {
-            duracion.Record(Stopwatch.GetElapsedTime(inicio).TotalSeconds, etiqueta, new KeyValuePair<string, object?>("outcome", resultado));
+            RegistrarEspera(activity, medicion);
+            duracion.Record(medicion.TiempoActivo.TotalSeconds, etiqueta, new KeyValuePair<string, object?>("outcome", medicion.Resultado));
         }
     }
 }

@@ -1,5 +1,6 @@
 using AnilistConEnie.Application.Xp;
 using AnilistConEnie.Bot.Configuration;
+using AnilistConEnie.Bot.Observabilidad;
 using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Domain.Entities;
 using AnilistConEnie.Domain.Enum;
@@ -164,7 +165,7 @@ public class RepartoXpService(
 
         await args.Interaction.CreateResponseAsync(DiscordInteractionResponseType.Modal, modal);
 
-        InteractivityResult<ModalSubmittedEventArgs> respuesta = await interactivity.WaitForModalAsync(modalId, args.User, TimeSpan.FromMinutes(10));
+        InteractivityResult<ModalSubmittedEventArgs> respuesta = await interactivity.WaitForModalAsync(modalId, args.User, TimeSpan.FromMinutes(10)).EsperandoUsuario();
         if (respuesta.TimedOut) return;
 
         await respuesta.Result.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);

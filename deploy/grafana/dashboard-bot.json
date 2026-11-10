@@ -561,7 +561,7 @@
     {
       "type": "bargauge",
       "title": "Comandos más lentos (p95)",
-      "description": "Percentil 95 de duración en el rango. Con pocas ejecuciones es aproximado.",
+      "description": "Percentil 95 del tiempo activo en el rango (sin la espera de botones o modales). Con pocas ejecuciones es aproximado; el tope es 10 s.",
       "datasource": {
         "type": "prometheus",
         "uid": "${ds_prom}"

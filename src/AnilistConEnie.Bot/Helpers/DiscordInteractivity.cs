@@ -1,4 +1,5 @@
 using AnilistConEnie.Application.Helpers;
+using AnilistConEnie.Bot.Observabilidad;
 using AnilistConEnie.Domain.Entities.Anilist;
 using DSharpPlus;
 using DSharpPlus.Commands;
@@ -34,7 +35,7 @@ public static class DiscordInteractivity
         DiscordMessage msg = await ctx.FollowupAsync(builder);
 
         InteractivityResult<ComponentInteractionCreatedEventArgs> result =
-            await interactivity.WaitForButtonAsync(msg, ctx.User, TimeSpan.FromMinutes(2));
+            await interactivity.WaitForButtonAsync(msg, ctx.User, TimeSpan.FromMinutes(2)).EsperandoUsuario();
 
         if (result.TimedOut)
         {
@@ -79,7 +80,7 @@ public static class DiscordInteractivity
 
         DiscordMessage elegirMsg = await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddActionRowComponent(dropdown).AddEmbed(embed));
 
-        InteractivityResult<ComponentInteractionCreatedEventArgs> msgElegirInter = await interactivity.WaitForSelectAsync(elegirMsg, ctx.User, customId, TimeSpan.FromSeconds(timeoutGeneral));
+        InteractivityResult<ComponentInteractionCreatedEventArgs> msgElegirInter = await interactivity.WaitForSelectAsync(elegirMsg, ctx.User, customId, TimeSpan.FromSeconds(timeoutGeneral)).EsperandoUsuario();
 
         if (msgElegirInter.TimedOut) return -1;
 
@@ -145,7 +146,7 @@ public static class DiscordInteractivity
             TimeSpan waitFor = remaining < inactivityTimeout ? remaining : inactivityTimeout;
 
             InteractivityResult<ComponentInteractionCreatedEventArgs> response =
-                await interactivity.WaitForButtonAsync(message, ctx.User, waitFor);
+                await interactivity.WaitForButtonAsync(message, ctx.User, waitFor).EsperandoUsuario();
 
             if (response.TimedOut) break;
 
@@ -250,7 +251,7 @@ public static class DiscordInteractivity
             TimeSpan waitFor = remaining < inactivityTimeout ? remaining : inactivityTimeout;
 
             InteractivityResult<ComponentInteractionCreatedEventArgs> response =
-                await interactivity.WaitForButtonAsync(message, ctx.User, waitFor);
+                await interactivity.WaitForButtonAsync(message, ctx.User, waitFor).EsperandoUsuario();
 
             if (response.TimedOut) break;
 
@@ -356,7 +357,7 @@ public static class DiscordInteractivity
             TimeSpan waitFor = remaining < inactivityTimeout ? remaining : inactivityTimeout;
 
             InteractivityResult<ComponentInteractionCreatedEventArgs> response =
-                await interactivity.WaitForButtonAsync(message, ctx.User, waitFor);
+                await interactivity.WaitForButtonAsync(message, ctx.User, waitFor).EsperandoUsuario();
 
             if (response.TimedOut) break;
 

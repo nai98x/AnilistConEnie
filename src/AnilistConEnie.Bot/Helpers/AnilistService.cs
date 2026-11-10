@@ -1,6 +1,7 @@
 using AnilistConEnie.Application.Anilist;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Extensions;
+using AnilistConEnie.Bot.Observabilidad;
 using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Domain.Entities.Anilist;
 using AnilistConEnie.Domain.Enum;
@@ -159,7 +160,7 @@ public class AnilistService(ChallengePostsState challengePostsState, FechaEntrad
 
         await interaction.CreateResponseAsync(DiscordInteractionResponseType.Modal, modal);
 
-        var modalResult = await interactivity.WaitForModalAsync(modalId, TimeSpan.FromMinutes(5));
+        var modalResult = await interactivity.WaitForModalAsync(modalId, TimeSpan.FromMinutes(5)).EsperandoUsuario();
         if (modalResult.TimedOut) return;
 
         DiscordInteraction modalInteraction = modalResult.Result.Interaction;

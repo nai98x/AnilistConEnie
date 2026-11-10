@@ -8,6 +8,7 @@ using AnilistConEnie.Bot.Commands.Framework.Choices;
 using AnilistConEnie.Bot.Commands.Framework.Attributes;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
+using AnilistConEnie.Bot.Observabilidad;
 using AnilistConEnie.Bot.Services;
 using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Domain.Entities;
@@ -368,7 +369,7 @@ public class Xp(
                 .AddFile(fileName, image.ToMemoryStream()));
 
             InteractivityResult<DSharpPlus.EventArgs.ComponentInteractionCreatedEventArgs> interaction =
-                await interactivity.WaitForButtonAsync(message, ctx.User, TimeSpan.FromMinutes(3));
+                await interactivity.WaitForButtonAsync(message, ctx.User, TimeSpan.FromMinutes(3)).EsperandoUsuario();
 
             if (interaction.TimedOut) return;
 

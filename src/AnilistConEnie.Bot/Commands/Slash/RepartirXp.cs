@@ -7,6 +7,7 @@ using AnilistConEnie.Bot.Commands.Framework.Choices;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Extensions;
 using AnilistConEnie.Bot.Helpers;
+using AnilistConEnie.Bot.Observabilidad;
 using AnilistConEnie.Bot.Services;
 using DSharpPlus;
 using DSharpPlus.Commands;
@@ -78,7 +79,7 @@ public class RepartirXp(
                 Panel(Titulo(categoria, detalle), aviso, categoria, detalle, elegidos, cargado, pagina));
 
             InteractivityResult<ComponentInteractionCreatedEventArgs> accion = await interactivity
-                .WaitForEventArgsAsync<ComponentInteractionCreatedEventArgs>(x => x.Message.Id == panel.Id && x.User.Id == ctx.User.Id, Espera);
+                .WaitForEventArgsAsync<ComponentInteractionCreatedEventArgs>(x => x.Message.Id == panel.Id && x.User.Id == ctx.User.Id, Espera).EsperandoUsuario();
 
             if (accion.TimedOut)
             {
@@ -177,7 +178,7 @@ public class RepartirXp(
 
         await interaccion.CreateResponseAsync(DiscordInteractionResponseType.Modal, modal);
 
-        InteractivityResult<ModalSubmittedEventArgs> respuesta = await interactivity.WaitForModalAsync(modalId, autor, Espera);
+        InteractivityResult<ModalSubmittedEventArgs> respuesta = await interactivity.WaitForModalAsync(modalId, autor, Espera).EsperandoUsuario();
         if (respuesta.TimedOut) return "No cargaste la XP a tiempo, no se perdió nada.";
 
         await respuesta.Result.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
@@ -208,7 +209,7 @@ public class RepartirXp(
 
         await interaccion.CreateResponseAsync(DiscordInteractionResponseType.Modal, modal);
 
-        InteractivityResult<ModalSubmittedEventArgs> respuesta = await interactivity.WaitForModalAsync(modalId, interaccion.User, Espera);
+        InteractivityResult<ModalSubmittedEventArgs> respuesta = await interactivity.WaitForModalAsync(modalId, interaccion.User, Espera).EsperandoUsuario();
         if (respuesta.TimedOut) return null;
 
         await respuesta.Result.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
@@ -335,7 +336,7 @@ public class RepartirXp(
                 new DiscordButtonComponent(DiscordButtonStyle.Success, "reparto-confirmar", "Confirmar"),
                 new DiscordButtonComponent(DiscordButtonStyle.Secondary, "reparto-cancelar", "Cancelar")));
 
-        InteractivityResult<ComponentInteractionCreatedEventArgs> respuesta = await interactivity.WaitForButtonAsync(mensaje, ctx.User, Espera);
+        InteractivityResult<ComponentInteractionCreatedEventArgs> respuesta = await interactivity.WaitForButtonAsync(mensaje, ctx.User, Espera).EsperandoUsuario();
         if (respuesta.TimedOut) return false;
 
         await respuesta.Result.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);

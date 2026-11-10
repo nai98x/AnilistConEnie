@@ -90,6 +90,13 @@ inversas.
 - **Catch amplios**: la resiliencia de los loops (no frenar ante miembro/mensaje ausente) es
   intencional. Loguear con `DiscordLogService.LogException(guild, ex, contexto)` sin cambiar el flujo;
   `NotFoundException` es benigno (solo Debug local).
+- **Observabilidad** (OTLP a Grafana Cloud, solo en release; detalle en `deploy/README.md` →
+  Observabilidad): comandos, eventos y tareas programadas ya abren su span y métrica en
+  `Bot/Observabilidad/` (no instrumentarlos a mano). Toda espera de interacción del usuario
+  (`WaitForButtonAsync`, `WaitForModalAsync`, `WaitForSelectAsync`, `WaitForEventArgsAsync`, etc.)
+  lleva **`.EsperandoUsuario()`**: si no, ese tiempo cuenta como procesamiento y el comando aparece
+  como lento. Las métricas solo llevan etiquetas de cardinalidad acotada (nunca ids de usuario/canal,
+  que van en trazas y logs): el plan de Grafana Cloud limita las series activas.
 - **Tests**: solo **unitarios de lógica pura** de Application, en `tests/AnilistConEnie.Application.Tests`
   (xUnit; carpetas y namespaces espejan los de Application). **Un archivo de tests por clase**
   (`<Clase>Tests.cs`) y métodos nombrados `Metodo_Escenario_Resultado` **en inglés**, conservando el

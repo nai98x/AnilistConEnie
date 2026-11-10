@@ -8,6 +8,7 @@ using AnilistConEnie.Bot.Commands.Framework.Choices;
 using AnilistConEnie.Bot.Commands.Framework.Attributes;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Helpers;
+using AnilistConEnie.Bot.Observabilidad;
 using AnilistConEnie.Bot.Services;
 using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Domain.Entities;
@@ -453,7 +454,7 @@ public class Admin(
 
         await ctx.Interaction.CreateResponseAsync(DiscordInteractionResponseType.Modal, modal);
 
-        InteractivityResult<ModalSubmittedEventArgs> modalInteraction = await interactivity.WaitForModalAsync(modalId, ctx.User, TimeSpan.FromMinutes(5));
+        InteractivityResult<ModalSubmittedEventArgs> modalInteraction = await interactivity.WaitForModalAsync(modalId, ctx.User, TimeSpan.FromMinutes(5)).EsperandoUsuario();
 
         if (modalInteraction.TimedOut) return;
 

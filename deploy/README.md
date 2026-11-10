@@ -76,7 +76,12 @@ dotnet user-secrets --project src/AnilistConEnie.Bot \
      ConnectionStrings__Database=Host=localhost;Port=...;Database=...;Username=...;Password=...
      ConnectionStrings__Yumiko=Host=...;Port=...;Database=...;Username=...;Password=...
      Backups__RutaEstado=/home/USUARIO/.config/anilist-backup/ultimo-ok
+     OTEL_EXPORTER_OTLP_ENDPOINT=https://otlp-gateway-prod-<region>.grafana.net/otlp
+     OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic <token de Grafana Cloud>
      ```
+
+     Las dos `OTEL_*` son opcionales (ver [Observabilidad](#observabilidad)): sin el endpoint el bot
+     arranca igual y no exporta nada.
 
      `Backups__RutaEstado` no admite `%h` ni `$HOME`: systemd no expande nada en un
      `EnvironmentFile`, va la ruta absoluta.
@@ -120,6 +125,40 @@ dotnet user-secrets --project src/AnilistConEnie.Bot \
    - `HOST` — host o IP del server.
    - `USERNAME` — usuario SSH (el mismo que corre el servicio de systemd).
    - `PRIVATE_KEY` — clave privada SSH con acceso a ese usuario.
+
+## Observabilidad
+
+El bot exporta por **OTLP** (Grafana Cloud) logs, trazas y métricas:
+
+- **Logs**: todo lo que pasa por Serilog, con el trace/span id cuando ocurre dentro de una traza.
+- **Trazas**: llamadas HTTP salientes (Discord REST, AniList, etc.) y queries a PostgreSQL (Npgsql).
+- **Métricas**: runtime de .NET (GC, threads, memoria), HttpClient, DNS y pool de conexiones de Npgsql.
+
+Se configura **solo** con las variables de entorno estándar de OpenTelemetry; si
+`OTEL_EXPORTER_OTLP_ENDPOINT` no está definida no se registra nada:
+
+| Variable | Dónde | Valor |
+| --- | --- | --- |
+| `OTEL_SERVICE_NAME` | unit de systemd | `anilistconenie` |
+| `OTEL_RESOURCE_ATTRIBUTES` | unit de systemd | `service.namespace=bots-logs-group` |
+| `OTEL_EXPORTER_OTLP_PROTOCOL` | unit de systemd | `http/protobuf` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `anilistconenie.env` | gateway OTLP del stack de Grafana Cloud |
+| `OTEL_EXPORTER_OTLP_HEADERS` | `anilistconenie.env` | `Authorization=Basic <token>` (**secreto**) |
+
+Los valores de endpoint y token salen de Grafana Cloud → *Connections* → *OpenTelemetry (OTLP)*.
+En el `.env` el header va literal, sin comillas (systemd respeta el espacio después de `Basic`).
+
+Como el unit cambió, después de copiarlo hay que recargarlo (el CI no lo toca):
+
+```bash
+cp deploy/anilistconenie.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user restart anilistconenie
+```
+
+**En local** no se lee de User Secrets (Serilog se arma antes que el host): para probar, exportar
+las mismas variables en la shell o en la *Run Configuration* de Rider. Conviene usar otro
+`OTEL_SERVICE_NAME` (ej. `anilistconenie-dev`) para no mezclar con producción.
 
 ## Operación
 

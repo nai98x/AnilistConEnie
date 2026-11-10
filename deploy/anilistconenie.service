@@ -6,6 +6,9 @@ After=network-online.target
 WorkingDirectory=%h/bots/AnilistConEnie-app
 ExecStart=%h/bots/AnilistConEnie-app/AnilistConEnie.Bot
 Environment=FIREBASE_CREDENTIALS_DIR=%h/bots/secrets
+Environment=OTEL_SERVICE_NAME=anilistconenie
+Environment=OTEL_RESOURCE_ATTRIBUTES=service.namespace=bots-logs-group
+Environment=OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
 EnvironmentFile=%h/bots/secrets/anilistconenie.env
 Restart=always
 RestartSec=5

@@ -38,6 +38,7 @@ public static class Program
                 fileSizeLimitBytes: logsSettings.TamanoArchivoBytes,
                 rollOnFileSizeLimit: true,
                 retainedFileCountLimit: logsSettings.ArchivosRetenidos)
+            .WriteToOtlpSiHabilitado()
             .CreateLogger();
 
         try
@@ -92,6 +93,7 @@ public static class Program
             .AddInfrastructure(firebaseCredentialsDir, dbConnectionString, yumikoConnectionString)
             .AddConfiguredDiscordClient(host.Configuration)
             .AddSerilog()
+            .AddObservabilidad()
             .AddBotServices();
 
         return host.Build();

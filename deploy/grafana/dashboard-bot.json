@@ -874,7 +874,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sort_desc(topk(5, sum by (channel) (increase(bot_messages_total{job=~\".*/anilistconenie\", kind=\"activity\"}[$__range])) > 0))",
+          "expr": "sort_desc(topk(5, sum by (channel) (increase(bot_messages_total{job=~\".*/anilistconenie\", kind=\"activity\", channel!=\"\"}[$__range])) > 0))",
           "refId": "A",
           "legendFormat": "{{channel}}",
           "instant": true,
@@ -929,7 +929,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sort_desc(topk(3, sum by (channel) (increase(bot_messages_total{job=~\".*/anilistconenie\", kind=\"other\"}[$__range])) > 0))",
+          "expr": "sort_desc(topk(3, sum by (channel) (increase(bot_messages_total{job=~\".*/anilistconenie\", kind=\"other\", channel!=\"\"}[$__range])) > 0))",
           "refId": "A",
           "legendFormat": "{{channel}}",
           "instant": true,

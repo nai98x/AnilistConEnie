@@ -17,7 +17,8 @@ public enum OrigenXp
 // HTTP y las queries que ocurren adentro quedan como hijas en la misma traza, y los logs escritos
 // adentro llevan el comando/evento/tarea como propiedad para poder filtrarlos en Loki.
 // Las métricas solo llevan etiquetas de cardinalidad acotada (nombres de comando/evento/tarea y
-// resultado): cada combinación es una serie y el plan de Grafana Cloud limita las series activas.
+// resultado; los mensajes van por nombre del canal, con los hilos agrupados en su canal padre): cada
+// combinación es una serie y el plan de Grafana Cloud limita las series activas.
 public static class Telemetria
 {
     public const string NombreFuente = "AnilistConEnie";
@@ -69,8 +70,18 @@ public static class Telemetria
             new KeyValuePair<string, object?>("operation", operacion == XpOperation.Add ? "add" : "remove"));
     }
 
-    public static void RegistrarMensaje(bool esBot, bool cuentaComoActividad) =>
-        Mensajes.Add(1, new KeyValuePair<string, object?>("kind", esBot ? "bot" : cuentaComoActividad ? "activity" : "other"));
+    public static void RegistrarMensaje(bool esBot, bool cuentaComoActividad, string canal)
+    {
+        if (esBot)
+        {
+            Mensajes.Add(1, new KeyValuePair<string, object?>("kind", "bot"));
+            return;
+        }
+
+        Mensajes.Add(1,
+            new KeyValuePair<string, object?>("kind", cuentaComoActividad ? "activity" : "other"),
+            new KeyValuePair<string, object?>("channel", canal));
+    }
 
     public static void RegistrarCambioRango(RangoEnum anterior, RangoEnum nuevo) =>
         CambiosRango.Add(1,

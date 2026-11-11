@@ -52,13 +52,14 @@ public class MessageCreatedHandler(
             config.Channels.ComandosForo
         ];
 
-        ulong canalId = args.Channel is DiscordThreadChannel ? args.Channel.Parent.Id : args.Channel.Id;
+        DiscordChannel canal = args.Channel is DiscordThreadChannel ? args.Channel.Parent : args.Channel;
+        ulong canalId = canal.Id;
         bool cuentaComoActividad = !args.Author.IsBot
             && !discordBotService.Debug
             && !canalesSinXp.Contains(canalId)
             && ContenidoMensaje.CuentaComoActividad(args.Message.Content);
 
-        Telemetria.RegistrarMensaje(args.Author.IsBot, cuentaComoActividad);
+        Telemetria.RegistrarMensaje(args.Author.IsBot, cuentaComoActividad, canal.Name);
 
         if (cuentaComoActividad)
             await guildMaintenanceService.GrantXpPorMensaje(args.Guild, args.Author.Id);

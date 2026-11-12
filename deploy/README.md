@@ -148,6 +148,10 @@ El bot exporta por **OTLP** (Grafana Cloud) logs, trazas y métricas:
     activo.
   - `bot_task_duration_seconds` — por `task` (ej. `DailyScheduledService`) y `outcome`.
   - `bot_gateway_latency_milliseconds` — latencia del heartbeat con el gateway de Discord.
+  - `bot_anilist_up` / `bot_anilist_latency_milliseconds` — sonda a la API de AniList que corre cada
+    5 minutos desde `MinuteScheduledService` (la consulta liviana de rate limit, con tope de 15 s): `up` es
+    1/0 según si respondió la última y `latency` la de la última respuesta exitosa (incluye reintentos
+    y esperas por rate limit del cliente). Al pasar de disponible a caído se loguea un Warning.
   - `bot_messages_total` — mensajes del servidor por `kind`: `activity` (cuentan para XP y mensajes
     diarios), `other` (de usuarios, en canales excluidos o sin contenido válido) y `bot`. Los de
     usuarios llevan además `channel` (nombre del canal; los hilos y posts de foro cuentan en su canal

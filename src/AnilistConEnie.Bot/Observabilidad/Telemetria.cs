@@ -101,6 +101,19 @@ public static class Telemetria
             "ms",
             "Latencia del heartbeat con el gateway de Discord");
 
+    public static ObservableGauge<int> CrearEstadoAnilist(Func<EstadoAnilist?> leer) =>
+        Medidor.CreateObservableGauge<int>(
+            "bot.anilist.up",
+            () => leer() is { } estado ? [new Measurement<int>(estado.Disponible ? 1 : 0)] : Array.Empty<Measurement<int>>(),
+            description: "Si la API de AniList respondió a la última sonda (1) o no (0)");
+
+    public static ObservableGauge<double> CrearLatenciaAnilist(Func<EstadoAnilist?> leer) =>
+        Medidor.CreateObservableGauge<double>(
+            "bot.anilist.latency",
+            () => leer() is { } estado ? [new Measurement<double>(estado.UltimaLatenciaMs)] : Array.Empty<Measurement<double>>(),
+            "ms",
+            "Latencia de la última sonda exitosa a la API de AniList");
+
     public static void RegistrarEspera(Activity? activity, Medicion medicion)
     {
         if (activity is not null && medicion.EsperaUsuario > TimeSpan.Zero)

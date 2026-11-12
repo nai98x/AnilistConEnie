@@ -2,6 +2,7 @@ using AnilistConEnie.Application.Extensions;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Extensions;
 using AnilistConEnie.Infrastructure.Extensions;
+using DSharpPlus.Net.Gateway;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -27,6 +28,7 @@ public static class Program
             .MinimumLevel.Override("System.Net.Http.HttpClient", LogEventLevel.Warning)
             .Enrich.WithProcessId()
             .Enrich.FromLogContext()
+            .Filter.ByExcluding(EsCierreDelGatewayPedido)
             .WriteTo.Console(
                 theme: SystemConsoleTheme.Colored,
                 outputTemplate: "[{Timestamp:HH:mm:ss}] [{ProcessId}] [{Level:u3}]: {Message:lj}{NewLine}{Exception}")
@@ -59,6 +61,13 @@ public static class Program
             await Log.CloseAndFlushAsync();
         }
     }
+
+    // DSharpPlus loguea como Error el fin del gateway aunque lo haya pedido el propio bot al apagarse (cada deploy).
+    private static bool EsCierreDelGatewayPedido(LogEvent logEvent) =>
+        logEvent.Properties.TryGetValue("SourceContext", out LogEventPropertyValue? fuente)
+        && fuente is ScalarValue { Value: "DSharpPlus.Clients.IShardOrchestrator" }
+        && logEvent.Properties.TryGetValue("reason", out LogEventPropertyValue? motivo)
+        && motivo is ScalarValue { Value: GatewayDisconnectReason.UserRequested };
 
     private static IHost CreateHostBuilder(string[] args)
     {

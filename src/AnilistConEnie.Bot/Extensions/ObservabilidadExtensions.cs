@@ -25,6 +25,8 @@ public static class ObservabilidadExtensions
 
     public static IServiceCollection AddObservabilidad(this IServiceCollection services)
     {
+        services.AddSingleton<SondaAnilist>();
+
         if (!OtlpHabilitado)
             return services;
 
@@ -39,6 +41,15 @@ public static class ObservabilidadExtensions
                     DiscordClient client = sp.GetRequiredService<DiscordClient>();
                     ulong guildId = sp.GetRequiredService<BotConfiguration>().GuildId;
                     return Telemetria.CrearLatenciaGateway(() => client.GetConnectionLatency(guildId));
+                })
+                .AddInstrumentation(sp =>
+                {
+                    SondaAnilist sonda = sp.GetRequiredService<SondaAnilist>();
+                    return new object[]
+                    {
+                        Telemetria.CrearEstadoAnilist(() => sonda.Ultimo),
+                        Telemetria.CrearLatenciaAnilist(() => sonda.Ultimo)
+                    };
                 })
                 .AddOtlpExporter());
 

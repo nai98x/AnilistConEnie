@@ -137,7 +137,9 @@ El bot exporta por **OTLP** (Grafana Cloud) logs, trazas y métricas:
 - **Trazas**: un span raíz por comando (`comando xp rank`), evento de Discord (`evento MessageCreated`)
   y tarea programada (`tarea DailyScheduledService`), con las llamadas HTTP (Discord REST, AniList,
   etc.) y las queries a PostgreSQL (Npgsql) que hace adentro como hijas.
-- **Métricas**: runtime de .NET (GC, threads, memoria), HttpClient, DNS y pool de conexiones de Npgsql,
+- **Métricas**: runtime de .NET (GC, threads, memoria), duración de requests de HttpClient (por host,
+  método, status y error, con los mismos 8 buckets que las propias) y duración de queries y pool de
+  conexiones de Npgsql; el resto de los instrumentos de esas librerías se descarta para no gastar series,
   más las propias del bot:
   - `bot_command_duration_seconds` (histograma) — por `command`, `type` (slash/text/user/message) y
     `outcome` (`ok`/`error`/`checks_failed`). Su `_count` es la cantidad de ejecuciones.

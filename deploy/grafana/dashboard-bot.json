@@ -1602,7 +1602,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "histogram_quantile(0.95, sum by (le, server_address) (rate(http_client_request_duration_seconds_bucket{job=~\".*/anilistconenie\"}[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by (le, server_address) (rate(http_client_request_duration_seconds_bucket{job=~\".*/anilistconenie\", server_address!~\"otlp-.*\\\\.grafana\\\\.net\"}[$__rate_interval])))",
           "refId": "A",
           "legendFormat": "{{server_address}}",
           "range": true
@@ -1654,7 +1654,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sum by (server_address, http_response_status_code) (rate(http_client_request_duration_seconds_count{job=~\".*/anilistconenie\", http_response_status_code!~\"2..\"}[$__rate_interval])) * 60",
+          "expr": "sum by (server_address, http_response_status_code) (rate(http_client_request_duration_seconds_count{job=~\".*/anilistconenie\", http_response_status_code!~\"2..|101\"}[$__rate_interval])) * 60",
           "refId": "A",
           "legendFormat": "{{server_address}} {{http_response_status_code}}",
           "range": true

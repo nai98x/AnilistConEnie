@@ -1,6 +1,7 @@
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Observabilidad;
 using DSharpPlus;
+using System.Diagnostics.Metrics;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
@@ -14,7 +15,18 @@ namespace AnilistConEnie.Bot.Extensions;
 public static class ObservabilidadExtensions
 {
     private static readonly string[] FuentesTrazas = [Telemetria.NombreFuente, "System.Net.Http", "Npgsql"];
-    private static readonly string[] Medidores = [Telemetria.NombreFuente, "System.Runtime", "System.Net.Http", "System.Net.NameResolution", "Npgsql"];
+    private static readonly string[] Medidores = [Telemetria.NombreFuente, "System.Runtime", "System.Net.Http", "Npgsql"];
+
+    // Instrumentos de librerías que no se consultan en el dashboard ni en alertas: solo consumen series activas.
+    private static readonly HashSet<string> InstrumentosDescartados =
+    [
+        "http.client.connection.duration",
+        "http.client.request.time_in_queue",
+        "http.client.open_connections",
+        "db.client.connection.npgsql.create_time"
+    ];
+
+    private static readonly string[] EtiquetasHttp = ["server.address", "http.request.method", "http.response.status_code", "error.type"];
 
     public static bool OtlpHabilitado { get; } =
         !BotEnvironment.EsDebug
@@ -36,6 +48,7 @@ public static class ObservabilidadExtensions
                 .AddOtlpExporter())
             .WithMetrics(metrics => metrics
                 .AddMeter(Medidores)
+                .AddView(ConfigurarInstrumento)
                 .AddInstrumentation(sp =>
                 {
                     DiscordClient client = sp.GetRequiredService<DiscordClient>();
@@ -54,5 +67,20 @@ public static class ObservabilidadExtensions
                 .AddOtlpExporter());
 
         return services;
+    }
+
+    private static MetricStreamConfiguration? ConfigurarInstrumento(Instrument instrumento)
+    {
+        if (InstrumentosDescartados.Contains(instrumento.Name))
+            return MetricStreamConfiguration.Drop;
+
+        if (instrumento.Name != "http.client.request.duration")
+            return null;
+
+        return new ExplicitBucketHistogramConfiguration
+        {
+            Boundaries = Telemetria.LimitesDuracion,
+            TagKeys = EtiquetasHttp
+        };
     }
 }

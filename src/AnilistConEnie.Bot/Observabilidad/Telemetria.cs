@@ -31,9 +31,11 @@ public static class Telemetria
 
     private static readonly Meter Medidor = new(NombreFuente);
 
+    public static readonly double[] LimitesDuracion = [0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10];
+
     private static readonly InstrumentAdvice<double> BucketsDuracion = new()
     {
-        HistogramBucketBoundaries = [0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10]
+        HistogramBucketBoundaries = LimitesDuracion
     };
 
     public static readonly Histogram<double> DuracionComandos = Medidor.CreateHistogram(

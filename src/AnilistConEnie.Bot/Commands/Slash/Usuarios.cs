@@ -224,7 +224,7 @@ public class Usuarios(
             miembrosFundadores,
             porPagina: 7,
             header: "# Miembros fundadores del servidor\n" +
-                    "Personas que entraron al server el día 7 de julio.\n" +
+                    $"Personas que entraron al server el día {guildCreation.ToString("d 'de' MMMM", CultureInfo.GetCultureInfo("es"))}.\n" +
                     "-# Horarios en hora de Argentina (UTC-3).",
             renderItem: miembro =>
             {

@@ -4,6 +4,7 @@ using System.Globalization;
 using AnilistConEnie.Application.Actividad;
 using AnilistConEnie.Application.Helpers;
 using AnilistConEnie.Bot.Commands.Framework.Attributes;
+using AnilistConEnie.Bot.Commands.Framework.Checks;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Extensions;
 using AnilistConEnie.Bot.Helpers;
@@ -27,7 +28,7 @@ namespace AnilistConEnie.Bot.Commands.Slash;
 
 [Command("owner")]
 [TestCommand]
-[RequirePermissions(DiscordPermission.Administrator)]
+[RequireOwner]
 public class Owner(XpState xpState, PermanentUsernameState permanentUsernameState, FechaEntradaState fechaEntradaState, DiscordBotService discordBotService, IAnilistClient anilistClient, IHostApplicationLifetime appLifetime, BotConfiguration config, IXpUsuariosRepository xpUsuariosRepository, IUsuariosRepository usuariosRepository, IMensajesDiariosRepository mensajesDiariosRepository, MensajesDiariosSettings mensajesDiariosSettings, ILogger<Owner> logger)
 {
     [Command("test")]
@@ -68,7 +69,7 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
                     text: "## Section con botón\n" +
                           "El accessory también puede ser un botón interactivo.",
                     accessory: new DiscordButtonComponent(
-                        DiscordButtonStyle.Primary, "owner-testv2-boton", "Tocame")),
+                        DiscordButtonStyle.Primary, "owner-testv2-boton", "Tócame")),
 
                 new DiscordSeparatorComponent(divider: true, spacing: DiscordSeparatorSpacing.Small),
 

@@ -23,7 +23,6 @@ public class HourlyScheduledService(
         if (!Inicializado || !client.Guilds.TryGetValue(config.GuildId, out DiscordGuild? guild))
             return;
 
-        guildMaintenanceService.ManageBoosters(guild);
         await guildMaintenanceService.ManageBirthdayRole(guild);
         await guildMaintenanceService.ManageAniversaries(guild);
         await guildMaintenanceService.ManageUnlinkedAccounts(client);

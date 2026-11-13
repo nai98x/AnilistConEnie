@@ -8,18 +8,8 @@ namespace AnilistConEnie.Infrastructure.Anilist;
 
 internal sealed class AnilistClient(AnilistGraphQLExecutor executor) : IAnilistClient
 {
-    public async Task<AnilistMedia?> GetMediaAsync(int id, CancellationToken cancellationToken = default)
-    {
-        GraphQLRequest request = new()
-        {
-            Query = AnilistQueries.MediaById,
-            Variables = new { id }
-        };
-
-        AnilistResponse<MediaQueryResponse> response = await executor.SendQueryAsync<MediaQueryResponse>(request, cancellationToken);
-        MediaDto? media = response.Data?.Media;
-        return media is null ? null : MediaMapper.ToDomain(media);
-    }
+    // Tope de requests por post: cada página cuenta contra el rate limit de AniList.
+    private const int MaxPaginasReplies = 20;
 
     public async Task<IReadOnlyList<AnilistMedia>> SearchMediaAsync(
         string search,
@@ -97,15 +87,26 @@ internal sealed class AnilistClient(AnilistGraphQLExecutor executor) : IAnilistC
 
     public async Task<IReadOnlyList<int>> GetActivityReplyUserIdsAsync(int activityId, CancellationToken cancellationToken = default)
     {
-        GraphQLRequest request = new()
+        List<int> userIds = [];
+
+        for (int page = 1; page <= MaxPaginasReplies; page++)
         {
-            Query = AnilistQueries.ActivityReplies,
-            Variables = new { id = activityId }
-        };
+            GraphQLRequest request = new()
+            {
+                Query = AnilistQueries.ActivityReplies,
+                Variables = new { id = activityId, page }
+            };
 
-        AnilistResponse<ActivityRepliesResponse> response = await executor.SendQueryAsync<ActivityRepliesResponse>(request, cancellationToken);
-        List<ActivityReplyDto>? replies = response.Data?.Page?.ActivityReplies;
+            AnilistResponse<ActivityRepliesResponse> response = await executor.SendQueryAsync<ActivityRepliesResponse>(request, cancellationToken);
+            ActivityRepliesPageDto? pagina = response.Data?.Page;
 
-        return replies is null ? [] : replies.Select(r => r.UserId).ToList();
+            if (pagina?.ActivityReplies is { } replies)
+                userIds.AddRange(replies.Select(r => r.UserId));
+
+            if (pagina?.PageInfo?.HasNextPage != true)
+                break;
+        }
+
+        return userIds;
     }
 }

@@ -31,15 +31,6 @@ internal static class AnilistQueries
         externalLinks { site url }
         """;
 
-    public static readonly string MediaById =
-        $$"""
-        query ($id: Int) {
-            Media(id: $id) {
-                {{MediaFields}}
-            }
-        }
-        """;
-
     public static readonly string SearchMedia =
         $$"""
         query ($search: String, $type: MediaType, $perPage: Int) {
@@ -114,8 +105,9 @@ internal static class AnilistQueries
     /// </summary>
     public const string ActivityReplies =
         """
-        query ($id: Int) {
-            Page {
+        query ($id: Int, $page: Int) {
+            Page(page: $page, perPage: 50) {
+                pageInfo { hasNextPage }
                 activityReplies(activityId: $id) {
                     userId
                 }

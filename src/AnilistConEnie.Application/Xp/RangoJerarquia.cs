@@ -13,4 +13,6 @@ public static class RangoJerarquia
 
     public static IReadOnlyList<RangoEnum> IgualOSuperior(RangoEnum rango) =>
         Orden.Where(r => r >= rango).ToArray();
+
+    public static bool EsDescenso(RangoEnum anterior, RangoEnum nuevo) => nuevo < anterior;
 }

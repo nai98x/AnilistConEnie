@@ -1,3 +1,4 @@
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -8,15 +9,16 @@ public static class TranslationHelper
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     /// <summary>
-    /// Traduce un texto usando la instancia local de LibreTranslate. Si el servicio no está disponible
-    /// o falla, devuelve el texto original sin modificar.
+    /// Traduce un texto usando la instancia local de LibreTranslate. Si el servicio responde con error
+    /// devuelve el texto original sin modificar; si no se lo puede contactar, lanza.
     /// </summary>
-    public static async Task<string> TranslateAsync(HttpClient client, string text, string source, string target)
+    public static async Task<string> TranslateAsync(HttpClient client, string url, string text, string source, string target)
     {
         if (string.IsNullOrEmpty(text)) return text;
 
-        string url = $"http://127.0.0.1:5000/translate?q={Uri.EscapeDataString(text)}&source={source}&target={target}";
-        HttpResponseMessage response = await client.PostAsync(url, null);
+        HttpResponseMessage response = await client.PostAsJsonAsync(
+            url,
+            new { q = text, source, target, format = "text" });
         if (!response.IsSuccessStatusCode) return text;
 
         TranslateResponse? result = JsonSerializer.Deserialize<TranslateResponse>(await response.Content.ReadAsStringAsync(), JsonOptions);

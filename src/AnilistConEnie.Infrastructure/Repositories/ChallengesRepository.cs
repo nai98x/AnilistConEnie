@@ -25,15 +25,6 @@ public class ChallengesRepository(DbConnectionFactory connectionFactory) : IChal
             commandType: CommandType.StoredProcedure);
     }
 
-    public async Task UpsertCompletado(long challengeId, ulong userId, int xp, DateTimeOffset fecha, int completados)
-    {
-        using var connection = await connectionFactory.OpenConnectionAsync();
-        await connection.ExecuteAsync(
-            "challenge_usuario_upsert",
-            new { p_challenge_id = challengeId, p_user_id = (long)userId, p_xp = xp, p_fecha = fecha, p_completados = completados },
-            commandType: CommandType.StoredProcedure);
-    }
-
     public async Task<int?> SetUsuarioChallenge(string nombre, ulong userId, int xp, DateTimeOffset fecha)
     {
         using var connection = await connectionFactory.OpenConnectionAsync();

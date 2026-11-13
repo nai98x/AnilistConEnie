@@ -28,12 +28,15 @@ public class MessageUpdatedHandler(
                 {
                     DiscordChannel repostChannel = args.Guild.Channels[mensaje.IdCanalMensajeRepost];
                     DiscordMessage repostMessage = await repostChannel.GetMessageAsync(mensaje.IdMensajeRepost, true);
-                    DiscordEmbed embed = repostMessage.Embeds[0];
+                    DiscordMessageBuilder edicion = new DiscordMessageBuilder()
+                        .WithContent(repostMessage.Content)
+                        .AddEmbed(new DiscordEmbedBuilder(repostMessage.Embeds[0]) { Description = args.Message.Content });
 
-                    DiscordEmbedBuilder newEmbed = new(embed);
-                    newEmbed.Description = args.Message.Content;
+                    // Las imágenes adicionales del post van cada una en su propio embed.
+                    foreach (DiscordEmbed imagen in repostMessage.Embeds.Skip(1))
+                        edicion.AddEmbed(imagen);
 
-                    await repostMessage.ModifyAsync(embed: newEmbed.Build());
+                    await repostMessage.ModifyAsync(edicion);
                 }
                 catch (Exception ex) { await logService.LogException(args.Guild, ex, "Intercambios repost - editar mensaje"); }
             }

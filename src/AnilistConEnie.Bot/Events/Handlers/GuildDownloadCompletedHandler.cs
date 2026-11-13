@@ -18,6 +18,25 @@ public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, 
 {
     public async Task Handle(DiscordClient client, GuildDownloadCompletedEventArgs args)
     {
+        try
+        {
+            await InicializarAsync(client);
+        }
+        catch (Exception ex)
+        {
+            logger.LogCritical(ex, "Falló la inicialización del bot");
+            discordBotService.SetErrorInicializacion();
+
+            if (client.Guilds.TryGetValue(config.GuildId, out DiscordGuild? guild)
+                && guild.Channels.TryGetValue(config.Channels.Playroom, out DiscordChannel? playroom))
+            {
+                await playroom.SendMessageAsync("⚠️ **Falló la inicialización del bot.** Los comandos no están disponibles; revisar los logs.");
+            }
+        }
+    }
+
+    private async Task InicializarAsync(DiscordClient client)
+    {
         Stopwatch sw = Stopwatch.StartNew();
         DiscordGuild guild = client.Guilds[config.GuildId];
 
@@ -54,58 +73,34 @@ public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, 
         }
         #endregion
 
-        #region Triggers
-        List<Trigger> triggers = await triggersRepository.GetLista();
-        triggersState.FillTriggers(triggers);
-        logger.LogInformation("Triggers cargados correctamente");
-        #endregion
+        bool miembrosCompletos = await guildMaintenanceService.CargarMiembros(guild);
+        if (miembrosCompletos)
+            logger.LogInformation("Miembros del servidor cargados: {Cantidad}", guild.Members.Count);
 
-        #region Fechas de entrada
-        await guildMaintenanceService.ManageFechasEntrada(guild);
-        logger.LogInformation("Fechas de entrada gestionadas correctamente");
-        #endregion
+        List<string> pasosFallidos = [];
 
-        #region Control de roles en startup
-        try
+        async Task Paso(string nombre, Func<Task> paso)
         {
-            DiscordRole noVinculadoRole = guild.Roles[config.Roles.NoVinculado];
-            foreach (DiscordMember member in guild.Members.Values)
-            {
-                if (!member.Roles.Any(x => x.Id == config.Roles.Miembro) && !member.Roles.Any(x => x.Id == config.Roles.NoVinculado) && !member.IsBot)
-                {
-                    await member.GrantRoleAsync(noVinculadoRole);
-                }
-            }
+            if (await logService.IntentarAsync(guild, $"Inicialización - {nombre}", paso))
+                logger.LogInformation("Inicialización - {Paso}: correcto", nombre);
+            else
+                pasosFallidos.Add(nombre);
         }
-        catch (Exception ex) { await logService.LogException(guild, ex, "Control de roles en startup"); }
-        #endregion
 
-        #region Behavior
-        await guildMaintenanceService.ClearInvitesRoleOnStartup(guild);
-        logger.LogInformation("Roles de invitacion limpiados correctamente");
-        
-        guildMaintenanceService.ManageBoosters(guild);
-        logger.LogInformation("Boosters cargados correctamente");
-        
-        await guildMaintenanceService.ManageNewUsuarios(guild);
-        logger.LogInformation("Nuevos usuarios gestionados correctamente");
-        
-        await guildMaintenanceService.ManageUsuariosAusentes(guild);
-        logger.LogInformation("Usuarios ausentes desvinculados correctamente");
+        await Paso("Triggers", async () => triggersState.FillTriggers(await triggersRepository.GetLista()));
+        await Paso("Fechas de entrada", () => guildMaintenanceService.ManageFechasEntrada(guild));
+        await Paso("Roles de invitación", () => guildMaintenanceService.ClearInvitesRoleOnStartup(guild));
+        await Paso("Nuevos usuarios", () => guildMaintenanceService.ManageNewUsuarios(guild));
 
-        await guildMaintenanceService.ManageUsuariosActivos(guild);
-        logger.LogInformation("Usuarios activos gestionados correctamente");
-        
-        await guildMaintenanceService.ManageRolActivoEnComunidad(guild);
-        logger.LogInformation("Rol activo en comunidad gestionado correctamente");
-        
-        await guildMaintenanceService.ManageUnlinkedAccounts(client);
-        logger.LogInformation("Cuentas sin vincular gestionadas correctamente");
-        
-        await guildMaintenanceService.ManageFundadores(guild);
-        logger.LogInformation("Fundadores gestionados correctamente");
-        #endregion
-        
+        // Sin la lista completa, un miembro offline pasaría por ausente y se lo desvincularía.
+        if (miembrosCompletos)
+            await Paso("Usuarios ausentes", () => guildMaintenanceService.ManageUsuariosAusentes(guild));
+
+        await Paso("Usuarios activos", () => guildMaintenanceService.ManageUsuariosActivos(guild));
+        await Paso("Rol activo en comunidad", () => guildMaintenanceService.ManageRolActivoEnComunidad(guild));
+        await Paso("Cuentas sin vincular", () => guildMaintenanceService.ManageUnlinkedAccounts(client));
+        await Paso("Fundadores", () => guildMaintenanceService.ManageFundadores(guild));
+
         discordBotService.SetInicializado();
         sw.Stop();
         logger.LogInformation("Bot inicializado correctamente");
@@ -116,9 +111,23 @@ public class GuildDownloadCompletedHandler(DiscordBotService discordBotService, 
             new DiscordSeparatorComponent(divider: true, spacing: DiscordSeparatorSpacing.Large),
             new DiscordTextDisplayComponent(
                 $"⏱️ **Tiempo de inicialización:** {sw.Elapsed.TotalSeconds:0.00} s\n" +
-                $"⚡ **Triggers:** {triggers.Count}\n" +
+                $"⚡ **Triggers:** {triggersState.GetActiveTriggers().Count}\n" +
                 $"🧑‍🤝‍🧑 **Miembros:** {guild.MemberCount}")
         ];
+
+        if (!miembrosCompletos)
+        {
+            componentes.Add(new DiscordSeparatorComponent(divider: true, spacing: DiscordSeparatorSpacing.Small));
+            componentes.Add(new DiscordTextDisplayComponent(
+                "⚠️ **No se pudo cargar la lista completa de miembros:** los miembros desconectados pueden faltar en rankings y listados hasta el próximo reinicio."));
+        }
+
+        if (pasosFallidos.Count > 0)
+        {
+            componentes.Add(new DiscordSeparatorComponent(divider: true, spacing: DiscordSeparatorSpacing.Small));
+            componentes.Add(new DiscordTextDisplayComponent(
+                $"⚠️ **Pasos de inicialización con error:** {string.Join(", ", pasosFallidos)}. El detalle está en el canal de errores."));
+        }
 
         if (!yumikoOk)
         {

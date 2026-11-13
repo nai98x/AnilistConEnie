@@ -9,15 +9,6 @@ namespace AnilistConEnie.Infrastructure.Repositories;
 
 public class UsuariosRepository(DbConnectionFactory connectionFactory) : IUsuariosRepository
 {
-    public async Task<Usuario?> Obtener(ulong userId)
-    {
-        using var connection = await connectionFactory.OpenConnectionAsync();
-        return await connection.QuerySingleOrDefaultAsync<Usuario>(
-            "usuario_obtener",
-            new { p_user_id = (long)userId },
-            commandType: CommandType.StoredProcedure);
-    }
-
     public async Task<List<UsuarioAnilist>> GetVinculados()
     {
         using var connection = await connectionFactory.OpenConnectionAsync();
@@ -59,15 +50,6 @@ public class UsuariosRepository(DbConnectionFactory connectionFactory) : IUsuari
         await connection.ExecuteAsync(
             "usuario_set_cumple",
             new { p_user_id = (long)userId, p_cumple_dia = cumpleDia, p_cumple_mes = cumpleMes },
-            commandType: CommandType.StoredProcedure);
-    }
-
-    public async Task Asegurar(ulong userId)
-    {
-        using var connection = await connectionFactory.OpenConnectionAsync();
-        await connection.ExecuteAsync(
-            "usuario_asegurar",
-            new { p_user_id = (long)userId },
             commandType: CommandType.StoredProcedure);
     }
 
@@ -149,12 +131,4 @@ public class UsuariosRepository(DbConnectionFactory connectionFactory) : IUsuari
     private static DateTime FechaCorte() =>
         new(RelojServidor.Hoy.Year, RelojServidor.Hoy.Month, RelojServidor.Hoy.Day, 5, 0, 0, DateTimeKind.Utc);
 
-    public async Task Desactivar(ulong userId)
-    {
-        using var connection = await connectionFactory.OpenConnectionAsync();
-        await connection.ExecuteAsync(
-            "usuario_desactivar",
-            new { p_user_id = (long)userId },
-            commandType: CommandType.StoredProcedure);
-    }
 }

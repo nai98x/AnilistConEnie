@@ -51,15 +51,6 @@ public class XpDiarioRepository(DbConnectionFactory connectionFactory) : IXpDiar
             commandType: CommandType.StoredProcedure)).AsList();
     }
 
-    public async Task Upsert(ulong userId, DateTime fecha, long xp)
-    {
-        using var connection = await connectionFactory.OpenConnectionAsync();
-        await connection.ExecuteAsync(
-            "xp_diario_upsert",
-            new { p_user_id = (long)userId, p_fecha = DateOnly.FromDateTime(fecha), p_xp = xp },
-            commandType: CommandType.StoredProcedure);
-    }
-
     public async Task Snapshot(DateOnly fecha, IReadOnlyList<UserXp> usuarios)
     {
         if (usuarios.Count == 0) return;

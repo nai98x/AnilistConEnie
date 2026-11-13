@@ -22,8 +22,6 @@ public class AnilistServerScoreServiceTests
         // Estos métodos no se usan en estos tests; si alguno se invoca, debe explotar de forma visible.
         private static Exception NoEsperado() => new InvalidOperationException("Método de IAnilistClient no esperado en estos tests");
 
-        public Task<AnilistMedia?> GetMediaAsync(int id, CancellationToken cancellationToken = default) =>
-            throw NoEsperado();
         public Task<IReadOnlyList<AnilistMedia>> SearchMediaAsync(string search, AnilistMediaType type, int perPage = 5, CancellationToken cancellationToken = default) =>
             throw NoEsperado();
         public Task<AnilistUser?> SearchUserAsync(string search, CancellationToken cancellationToken = default) =>

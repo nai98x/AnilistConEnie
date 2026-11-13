@@ -20,7 +20,7 @@ public class Admin
         DiscordMessage? referenciado = ctx.Message.ReferencedMessage;
         if (referenciado is null)
         {
-            await ctx.RespondAsync("Respondé a un mensaje con emotes para poder robarlos.");
+            await ctx.RespondAsync("Responde a un mensaje con emotes para poder robarlos.");
             return;
         }
 

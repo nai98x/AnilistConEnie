@@ -130,7 +130,7 @@ public class Triggers(ITriggersRepository triggersRepository, TriggersState trig
         }
         catch (Exception ex)
         {
-            await logService.GrabarLogGeneralError(ctx.Guild!, $"Error en SetFromMessageText:\n\n{ex.Message}:\n{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
+            await logService.LogException(ctx.Guild!, ex, "Trigger desde mensaje");
 
             await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(ErrorEmbed.De($"Trigger {Formatter.InlineCode(nombre)} no pudo crearse.")));
         }

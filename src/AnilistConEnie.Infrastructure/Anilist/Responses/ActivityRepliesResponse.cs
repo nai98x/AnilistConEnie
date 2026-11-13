@@ -8,7 +8,13 @@ internal sealed class ActivityRepliesResponse
 
 internal sealed class ActivityRepliesPageDto
 {
+    public PageInfoDto? PageInfo { get; set; }
     public List<ActivityReplyDto>? ActivityReplies { get; set; }
+}
+
+internal sealed class PageInfoDto
+{
+    public bool HasNextPage { get; set; }
 }
 
 internal sealed class ActivityReplyDto

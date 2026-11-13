@@ -18,6 +18,8 @@ namespace AnilistConEnie.Bot.Commands.Slash;
 //[TestCommand]
 public class Teiou(CooldownsSettings cooldownsSettings, RangoRoles rangoRoles, ITeiouCooldownRepository teiouCooldownRepository, DiscordBotService discordBotService)
 {
+    private const int MaxLargoNickname = 32;
+
     [Command("nickname")]
     [Description("Cambia el nickname de una persona")]
     public async Task Nickname(
@@ -38,6 +40,12 @@ public class Teiou(CooldownsSettings cooldownsSettings, RangoRoles rangoRoles, I
             return;
         }
 
+        if (nickname.Length > MaxLargoNickname)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De($"El nickname no puede superar los {MaxLargoNickname} caracteres.")));
+            return;
+        }
+
         DateTime? cooldown = await teiouCooldownRepository.Obtener(ctx.User.Id);
 
         if (cooldown is null || cooldown.Value <= DateTime.UtcNow)
@@ -45,9 +53,9 @@ public class Teiou(CooldownsSettings cooldownsSettings, RangoRoles rangoRoles, I
             DiscordMember member = await ctx.Guild!.GetMemberAsync(user.Id);
             string oldNickname = member.Nickname ?? member.DisplayName;
 
-            await teiouCooldownRepository.Upsert(ctx.User.Id, DateTime.UtcNow.AddHours(cooldownsSettings.TeiouApodoHoras));
-
             await member.ModifyAsync(x => x.Nickname = nickname);
+
+            await teiouCooldownRepository.Upsert(ctx.User.Id, DateTime.UtcNow.AddHours(cooldownsSettings.TeiouApodoHoras));
 
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 .WithTitle("Nickname modificado")

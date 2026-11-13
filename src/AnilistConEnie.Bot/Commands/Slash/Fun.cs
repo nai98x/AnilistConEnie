@@ -42,6 +42,7 @@ public class Fun(
     ConfessionsState confessionsState,
     SubirImagenState subirImagenState,
     SubirImagenSettings subirImagenSettings,
+    TraduccionSettings traduccionSettings,
     IFirebaseRepository firebaseRepository,
     IUsuariosRepository usuariosRepository,
     IChartRenderer chartRenderer,
@@ -352,15 +353,15 @@ public class Fun(
             switch (respuesta)
             {
                 case "1":
-                    if (cojer != 0) { await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Solo te podes cojer a uno")); return; }
+                    if (cojer != 0) { await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Solo te puedes cojer a uno")); return; }
                     cojer = ulong.Parse(valor.Key);
                     break;
                 case "2":
-                    if (casarse != 0) { await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Solo podes casarte con uno")); return; }
+                    if (casarse != 0) { await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Solo puedes casarte con uno")); return; }
                     casarse = ulong.Parse(valor.Key);
                     break;
                 case "3":
-                    if (matar != 0) { await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Solo podes matar a uno")); return; }
+                    if (matar != 0) { await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Solo puedes matar a uno")); return; }
                     matar = ulong.Parse(valor.Key);
                     break;
                 default:
@@ -558,7 +559,7 @@ public class Fun(
 
         try
         {
-            horoscopo = await TranslationHelper.TranslateAsync(client, horoscopo, "en", "es");
+            horoscopo = await TranslationHelper.TranslateAsync(client, traduccionSettings.Url, horoscopo, "en", "es");
         }
         catch (Exception ex)
         {
@@ -641,7 +642,7 @@ public class Fun(
 
         try
         {
-            titular = await TranslationHelper.TranslateAsync(client, titular, "en", "es");
+            titular = await TranslationHelper.TranslateAsync(client, traduccionSettings.Url, titular, "en", "es");
         }
         catch (Exception ex)
         {

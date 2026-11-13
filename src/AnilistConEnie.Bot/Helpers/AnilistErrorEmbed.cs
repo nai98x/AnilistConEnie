@@ -9,7 +9,7 @@ public static class AnilistErrorEmbed
         new()
         {
             Title = "AniList no disponible",
-            Description = "No se pudo consultar AniList: la API probablemente esté caída. Probá de nuevo en unos minutos.",
+            Description = "No se pudo consultar AniList: la API probablemente esté caída. Prueba de nuevo en unos minutos.",
             Color = DiscordColor.Orange
         };
 }

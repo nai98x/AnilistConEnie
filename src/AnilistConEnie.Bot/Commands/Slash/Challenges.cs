@@ -28,6 +28,8 @@ namespace AnilistConEnie.Bot.Commands.Slash;
 public class Challenges(
     IChallengesRepository challengesRepository,
     IUsuariosRepository usuariosRepository,
+    IXpUsuariosRepository xpUsuariosRepository,
+    GuildMaintenanceService guildMaintenanceService,
     AnilistService anilistService,
     DiscordBotService discordBotService,
     DiscordLogService logService,
@@ -308,13 +310,14 @@ public class Challenges(
             await logService.LogException(ctx.Guild!, ex, $"Challenges de {usuario.DisplayName}");
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
                 .WithTitle($"Error obteniendo challenges de {usuario.DisplayName}")
-                .WithDescription("Ocurrió un error inesperado. Probá de nuevo en unos minutos.")
+                .WithDescription("Ocurrió un error inesperado. Prueba de nuevo en unos minutos.")
                 .WithColor(DiscordColor.Red)));
         }
     }
 
     [Command("completar")]
     [Description("Agrega un challenge a un usuario (Staff)")]
+    [RequireStaff]
     public async Task Completar(
         SlashCommandContext ctx,
         [Parameter("Challenge")] [Description("Challenge a elegir")] [SlashAutoCompleteProvider<ChallengesAutoCompleteProvider>] string challenge,
@@ -328,9 +331,9 @@ public class Challenges(
 
         await ctx.DeferResponseAsync();
 
-        if (ctx.Member is null || ctx.Member.Roles.All(r => r.Id != config.Roles.Colaborador))
+        if (xp < 0 || xp != Math.Floor(xp))
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.SinPermiso("Solo el staff puede usar este comando.")));
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("La xp debe ser un número entero, sin decimales ni signo.")));
             return;
         }
 
@@ -388,5 +391,12 @@ public class Challenges(
             builder.AddEmbed(new DiscordEmbedBuilder { Color = DiscordColor.Blurple, ImageUrl = imagen3 });
 
         await ctx.FollowupAsync(builder);
+
+        if (ctx.Guild!.Members.TryGetValue(usuario.Id, out DiscordMember? miembro)
+            && await xpUsuariosRepository.Obtener(usuario.Id) is { } xpActual)
+        {
+            await logService.IntentarAsync(ctx.Guild, $"Challenge completado - rango de {usuario.Id}",
+                () => guildMaintenanceService.SincronizarRango(ctx.Guild, miembro, xpActual.Total));
+        }
     }
 }

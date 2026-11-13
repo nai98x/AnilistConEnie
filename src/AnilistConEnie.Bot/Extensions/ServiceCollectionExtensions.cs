@@ -52,6 +52,7 @@ public static class ServiceCollectionExtensions
 
             extension.AddCheck<RequireKamiSamaCheck>();
             extension.AddCheck<RequireStaffCheck>();
+            extension.AddCheck<RequireOwnerCheck>();
 
             SlashCommandProcessor slashCommandProcessor = new(new SlashCommandConfiguration());
             extension.AddProcessor(slashCommandProcessor);

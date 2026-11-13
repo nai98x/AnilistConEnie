@@ -4,15 +4,9 @@ namespace AnilistConEnie.Bot.Services.State;
 
 public class XpState
 {
-    private List<ulong> _boosters = [];
     private (bool, ulong) _debugXp = (false, 0);
 
     private readonly ConcurrentDictionary<ulong, DateTime> _xpCooldowns = new();
-
-    #region Boosters extra xp
-    public void FillBoosters(List<ulong> users) => _boosters = users;
-    public List<ulong> GetBoosters() => _boosters;
-    #endregion
 
     #region Cooldown de xp por mensaje
     public bool TryClaimXp(ulong userId, TimeSpan cooldown)

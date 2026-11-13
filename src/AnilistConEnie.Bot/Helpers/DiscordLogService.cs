@@ -131,9 +131,9 @@ public class DiscordLogService(BotConfiguration config, ILogger<DiscordLogServic
         }
     }
 
-    public async Task GrabarLogGeneralError(DiscordGuild guild, string descripcion)
+    public async Task GrabarLogGeneralError(DiscordGuild guild, string descripcion, Exception? excepcion = null)
     {
-        logger.LogError("Error no controlado: {Descripcion}", descripcion);
+        logger.LogError(excepcion, "Error no controlado: {Descripcion}", descripcion);
         try
         {
             DiscordChannel channelErrores = guild.Channels[config.Channels.LogChannelError];
@@ -219,6 +219,27 @@ public class DiscordLogService(BotConfiguration config, ILogger<DiscordLogServic
         }
     }
 
+    /// <summary>Ejecuta un paso de una secuencia sin que su fallo corte los siguientes. Devuelve si terminó bien.</summary>
+    public async Task<bool> IntentarAsync(DiscordGuild guild, string contexto, Func<Task> paso)
+    {
+        try
+        {
+            await paso();
+            return true;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            await GrabarLogGeneralError(guild, $"{contexto}: {ex.Message}\n\n{Formatter.BlockCode(RecortarStackTrace(ex))}", ex);
+            return false;
+        }
+    }
+
+    private static string RecortarStackTrace(Exception ex)
+    {
+        string stackTrace = ex.StackTrace ?? string.Empty;
+        return stackTrace.Length > 1500 ? stackTrace[..1500] : stackTrace;
+    }
+
     public async Task LogException(DiscordGuild guild, Exception ex, string contexto)
     {
         if (ex is NotFoundException)
@@ -227,10 +248,6 @@ public class DiscordLogService(BotConfiguration config, ILogger<DiscordLogServic
             return;
         }
 
-        string stackTrace = ex.StackTrace ?? string.Empty;
-        if (stackTrace.Length > 1500)
-            stackTrace = stackTrace[..1500];
-
-        await GrabarLogGeneralError(guild, $"{contexto}: {ex.Message}\n\n{Formatter.BlockCode(stackTrace)}");
+        await GrabarLogGeneralError(guild, $"{contexto}: {ex.Message}\n\n{Formatter.BlockCode(RecortarStackTrace(ex))}", ex);
     }
 }

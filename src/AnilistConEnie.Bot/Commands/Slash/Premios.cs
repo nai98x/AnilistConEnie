@@ -69,6 +69,12 @@ public class Premios(IPremiosRepository premiosRepository, DiscordBotService dis
     {
         if (!await ctx.BotInicializadoAsync(discordBotService)) return;
 
+        if (!Uri.TryCreate(link, UriKind.Absolute, out Uri? uri) || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(ErrorEmbed.De($"El link {Formatter.InlineCode(link)} no es una URL válida (debe empezar con http:// o https://).")));
+            return;
+        }
+
         await premiosRepository.Upsert(PremioFactory.Crear(anio, season, link));
 
         await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(new DiscordEmbedBuilder()

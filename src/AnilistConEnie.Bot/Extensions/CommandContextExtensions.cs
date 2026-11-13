@@ -24,7 +24,7 @@ public static class CommandContextExtensions
             ? new DiscordEmbedBuilder
             {
                 Title = "Error al inicializar el bot",
-                Description = "Hubo un error al inicializar el bot. Avisá a un administrador.",
+                Description = "Hubo un error al inicializar el bot. Avisa a un administrador.",
                 Color = DiscordColor.Red
             }
             : new DiscordEmbedBuilder

@@ -62,7 +62,7 @@ En `src/AnilistConEnie.Bot/appsettings.json`. Tiene dos bloques:
 
 - **`Ids`** — IDs del servidor, canales, roles, emotes y timezones. Se bindean en `BotConfiguration.cs`.
 - **Reglas de negocio configurables** — secciones `AntiSpam`, `LimpiezaMiembros`, `Cooldowns`, `Xp`,
-  `MensajesDiarios`, `Confesiones`, `SubirImagen` y `Logs`. Se bindean en `BehaviorSettings.cs` (cada sección tiene
+  `MensajesDiarios`, `Confesiones`, `SubirImagen`, `Traduccion` y `Logs`. Se bindean en `BehaviorSettings.cs` (cada sección tiene
   sus defaults).
 
 ### Token de Discord

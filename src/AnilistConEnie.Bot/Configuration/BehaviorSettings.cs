@@ -139,6 +139,19 @@ public record SubirImagenSettings
     }
 }
 
+public record TraduccionSettings
+{
+    public required string Url { get; init; }
+
+    public static TraduccionSettings FromConfiguration(IConfiguration configuration)
+    {
+        string? url = configuration["Traduccion:Url"];
+        if (string.IsNullOrWhiteSpace(url))
+            throw new InvalidOperationException("Configuración faltante o inválida en appsettings.json: Traduccion:Url");
+        return new TraduccionSettings { Url = url };
+    }
+}
+
 public record LogsSettings
 {
     public required long TamanoArchivoBytes { get; init; }
@@ -224,6 +237,7 @@ public static class BehaviorSettingsExtensions
             .AddSingleton(MensajesDiariosSettings.FromConfiguration(configuration))
             .AddSingleton(ConfesionesSettings.FromConfiguration(configuration))
             .AddSingleton(SubirImagenSettings.FromConfiguration(configuration))
+            .AddSingleton(TraduccionSettings.FromConfiguration(configuration))
             .AddSingleton(GatewaySettings.FromConfiguration(configuration));
 
 #if !DEBUG

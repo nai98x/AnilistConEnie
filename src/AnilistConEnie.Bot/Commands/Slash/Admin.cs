@@ -41,6 +41,7 @@ public class Admin(
     DiscordLogService logService,
     EmoteModeState emoteModeState,
     AnilistService anilistService,
+    GuildMaintenanceService guildMaintenanceService,
     InviteLinkState inviteLinkState,
     IAnilistClient anilistClient,
     IUsuariosRepository usuariosRepository,
@@ -66,8 +67,12 @@ public class Admin(
         List<DiscordMember> miembrosNoVerificados = ctx.Guild.Members.Values.Where(x => x.Roles.Contains(noVerificadoRole)).ToList();
         foreach (DiscordMember memberToKick in miembrosNoVerificados)
         {
-            await memberToKick.RemoveAsync("AUTO KICK POR NO VINCULAR ANILIST");
-            kickeados++;
+            try
+            {
+                await memberToKick.RemoveAsync("AUTO KICK POR NO VINCULAR ANILIST");
+                kickeados++;
+            }
+            catch (Exception ex) { await logService.LogException(ctx.Guild, ex, $"Kick no verificados ({memberToKick.Id})"); }
         }
 
         await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent($"Miembros expulsados por no verificarse: {kickeados}"));
@@ -267,6 +272,12 @@ public class Admin(
             return;
         }
 
+        if (xp <= 0 || xp != Math.Floor(xp))
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("La xp debe ser un número entero mayor a cero. Para quitar xp usa la acción Quitar.")));
+            return;
+        }
+
         if (categoria is TipoXp.Total or TipoXp.Booster)
         {
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder()
@@ -309,7 +320,7 @@ public class Admin(
 
                     if (darXp)
                     {
-                        await xpUsuariosRepository.AddRemove(miembro.Id, new UserXpDelta { Total = (int)xp, Challenges = challenges, Eventos = eventos, Intercambios = intercambios, Otros = otros }, operation);
+                        UserXp actual = await xpUsuariosRepository.AddRemove(miembro.Id, new UserXpDelta { Total = (int)xp, Challenges = challenges, Eventos = eventos, Intercambios = intercambios, Otros = otros }, operation);
                         Telemetria.RegistrarXp((int)xp, OrigenXp.Admin, operation);
 
                         await channel.SendMessageAsync(new DiscordEmbedBuilder()
@@ -317,6 +328,9 @@ public class Admin(
                             .WithColor(DiscordColor.Green)
                             .WithDescription($"## - {miembro.DisplayName} ({miembro.Mention})\n{desc2}")
                             .WithThumbnail(miembro.AvatarUrlPreferido()));
+
+                        await logService.IntentarAsync(ctx.Guild, $"Admin xp - rango de {miembro.Id}",
+                            () => guildMaintenanceService.SincronizarRango(ctx.Guild, miembro, actual.Total));
                     }
                     else
                     {
@@ -331,7 +345,7 @@ public class Admin(
                 }
                 catch (Exception ex)
                 {
-                    await logService.GrabarLogGeneralError(ctx.Guild, $"Error agregando xp\n{ex.Message}\n{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
+                    await logService.LogException(ctx.Guild, ex, $"Admin xp - {miembro.Id}");
 
                     await channel.SendMessageAsync(new DiscordEmbedBuilder()
                         .WithTitle("Experiencia no agregada")
@@ -422,7 +436,7 @@ public class Admin(
         }
         catch (Exception ex)
         {
-            await logService.GrabarLogGeneralError(ctx.Guild!, $"Error transfiriendo xp\n{ex.Message}\n{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
+            await logService.LogException(ctx.Guild!, ex, $"Transferir xp de {origen.Id} a {destino.Id}");
 
             await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder()
                 .WithTitle("Experiencia no transferida")
@@ -735,7 +749,8 @@ public class Admin(
         }
         catch (Exception ex)
         {
-            await logService.GrabarLogGeneralError(ctx.Guild!, $"{ex.Message}\n\n{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
+            await logService.LogException(ctx.Guild!, ex, "Rol por reacción");
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("No se pudo asignar el rol. Verifica el canal, el id del mensaje y el emoji.")));
         }
     }
 

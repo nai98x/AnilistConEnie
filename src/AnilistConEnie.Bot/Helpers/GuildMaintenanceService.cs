@@ -19,6 +19,29 @@ namespace AnilistConEnie.Bot.Helpers;
 
 public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, XpState xpState, InviteLinkState inviteLinkState, PermanentUsernameState permanentUsernameState, FechaEntradaState fechaEntradaState, BotConfiguration config, XpSettings xpSettings, LimpiezaMiembrosSettings limpiezaSettings, RangoRoles rangoRoles, RelojPais relojPais, DiscordLogService logService, DiscordBotService discordBotService, IUsuariosRepository usuariosRepository, IXpUsuariosRepository xpUsuariosRepository, IXpDiarioRepository xpDiarioRepository, IChallengesRepository challengesRepository, IMensajesDiariosRepository mensajesDiariosRepository, MensajesDiariosSettings mensajesDiariosSettings)
 {
+    private static readonly TimeSpan EsperaCargaMiembros = TimeSpan.FromSeconds(60);
+
+    // Con más de 250 miembros Discord no manda los offline al conectar y DSharpPlus no los pide solo:
+    // sin esto guild.Members solo tiene a quienes estaban conectados al arrancar.
+    public async Task<bool> CargarMiembros(DiscordGuild guild)
+    {
+        try
+        {
+            using CancellationTokenSource limite = new(EsperaCargaMiembros);
+            await foreach (DiscordMember _ in guild.EnumerateRequestMembersAsync(nonce: "startup", cancellationToken: limite.Token))
+            {
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "No se pudo cargar la lista completa de miembros del servidor");
+            await logService.GrabarLogGeneralError(guild, $"Carga de miembros en el arranque: {ex.Message}");
+            return false;
+        }
+    }
+
     public async Task ClearInvitesRoleOnStartup(DiscordGuild guild)
     {
         try
@@ -121,8 +144,18 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
         }
         catch (Exception ex)
         {
-            await logService.GrabarLogGeneralError(guild, $"Error al dar XP\n{ex.Message}: {ex.StackTrace}");
+            await logService.LogException(guild, ex, $"XP por mensaje de {userId}");
         }
+    }
+
+    /// <summary>Deja el rol de rango del miembro acorde a su XP; si subió, lo anuncia en general.</summary>
+    public async Task SincronizarRango(DiscordGuild guild, DiscordMember member, long xpTotal)
+    {
+        DiscordRole rangoActual = rangoRoles.GetRoleByXpActual(guild, member);
+        DiscordRole rangoPorXp = rangoRoles.GetRoleByXp(guild, xpTotal);
+
+        if (rangoActual.Id != rangoPorXp.Id)
+            await SubirRango(guild, member, rangoActual, rangoPorXp);
     }
 
     private async Task SubirRango(DiscordGuild guild, DiscordMember member, DiscordRole oldRango, DiscordRole newRango)
@@ -139,8 +172,11 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
         }
         catch (Exception ex)
         {
-            await logService.GrabarLogGeneralError(guild, $"ERROR subiendo de rango {member.Mention} al rango {newRango.Mention}\n\n{ex.Message}:{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
+            await logService.LogException(guild, ex, $"Cambio de rango de {member.Id} a {newRango.Name}");
         }
+
+        if (RangoJerarquia.EsDescenso(rangoRoles.RangoForRole(oldRango.Id), rangoRoles.RangoForRole(newRango.Id)))
+            return;
 
         if (!yaTieneNuevoRango)
         {
@@ -166,18 +202,6 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
         {
             await logService.GrabarLogGeneralError(guild, $"El usuario {member.Mention} ya tenia el rango {newRango.Mention}\nSe omite mensaje de subir rango en general");
         }
-    }
-
-    public void ManageBoosters(DiscordGuild guild)
-    {
-        List<ulong> boostersIds = [];
-        foreach (DiscordMember member in guild.Members.Values)
-        {
-            if (member.PremiumSince != null)
-                boostersIds.Add(member.Id);
-        }
-
-        xpState.FillBoosters(boostersIds);
     }
 
     public async Task ManageBirthdayRole(DiscordGuild guild)
@@ -219,10 +243,13 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
             IEnumerable<KeyValuePair<ulong, DiscordMember>> usersWithBirthdayRole = guild.Members.Where(x => x.Value.Roles.Any(y => y.Id == role.Id));
             foreach (KeyValuePair<ulong, DiscordMember> userPair in usersWithBirthdayRole)
             {
-                if (!cumpleaneros.Contains(userPair.Key))
+                if (cumpleaneros.Contains(userPair.Key)) continue;
+
+                try
                 {
                     await userPair.Value.RevokeRoleAsync(role);
                 }
+                catch (Exception ex) { await logService.LogException(guild, ex, $"ManageBirthdayRole (revocar a {userPair.Key})"); }
             }
         }
         catch (Exception ex) { await logService.LogException(guild, ex, "ManageBirthdayRole"); }
@@ -263,13 +290,13 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
                 }
                 catch (Exception ex)
                 {
-                    await logService.GrabarLogGeneralError(guild, $"Error al procesar aniversario de {memberPair.Value.DisplayName}: {ex.Message}");
+                    await logService.LogException(guild, ex, $"Aniversario de {memberPair.Key}");
                 }
             }
         }
         catch (Exception ex)
         {
-            await logService.GrabarLogGeneralError(guild, $"Error en ManageAniversaries: {ex.Message}\n\n{Formatter.BlockCode(ex.StackTrace ?? string.Empty)}");
+            await logService.LogException(guild, ex, "ManageAniversaries");
         }
     }
 
@@ -393,15 +420,8 @@ public class GuildMaintenanceService(ILogger<GuildMaintenanceService> logger, Xp
 
     public async Task ManageXpUserHistory(DiscordGuild guild)
     {
-        try
-        {
-            List<UserXp> rankings = await xpUsuariosRepository.ObtenerRankingDelGuild(guild);
-            await xpDiarioRepository.Snapshot(DateOnly.FromDateTime(RelojServidor.Hoy), rankings);
-        }
-        catch (Exception e)
-        {
-            logger.LogError(e, "Error leyendo el history de experiencia");
-        }
+        List<UserXp> rankings = await xpUsuariosRepository.ObtenerRankingDelGuild(guild);
+        await xpDiarioRepository.Snapshot(DateOnly.FromDateTime(RelojServidor.Hoy), rankings);
     }
     
     public async Task ManageUnlinkedAccounts(DiscordClient client)

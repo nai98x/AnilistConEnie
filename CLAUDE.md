@@ -78,7 +78,7 @@ inversas.
     `appsettings.json`. `RequireUlong` falla si falta una clave.
   - Reglas de negocio tuneables (thresholds, cooldowns, durations, amounts) → **una sección por
     dominio** en `appsettings.json` (`AntiSpam`, `LimpiezaMiembros`, `Cooldowns`, `Xp`, `MensajesDiarios`,
-    `Confesiones`, `SubirImagen`, `Logs`), bindeadas en `BehaviorSettings.cs` con defaults. La lógica de Application recibe esos
+    `Confesiones`, `SubirImagen`, `Traduccion`, `Logs`), bindeadas en `BehaviorSettings.cs` con defaults. La lógica de Application recibe esos
     valores por parámetro (no como `const`). No externalizar límites duros de Discord/AniList ni
     cosméticos.
 - **Secrets**: se resuelven todos por `IConfiguration` (env var en el server, User Secrets en local):

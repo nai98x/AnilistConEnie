@@ -109,7 +109,7 @@ public class AnilistService(ChallengePostsState challengePostsState, FechaEntrad
         }
         catch (Exception ex)
         {
-            await logService.GrabarLogGeneralError(guild, $"Error agregando rol miembro al vincular AniList para el usuario {user.Id}\n\n{ex.Message}:\n\n{ex.StackTrace}");
+            await logService.LogException(guild, ex, $"Vinculación de AniList - rol miembro de {user.Id}");
         }
 
         await logService.GrabarLogUsuarioVinculado(guild, member, anilistUser.SiteUrl, aprobadaManualmente);
@@ -117,14 +117,10 @@ public class AnilistService(ChallengePostsState challengePostsState, FechaEntrad
 
     public async Task<ServerScoresView> GetServerScoresAsync(DiscordGuild guild, AnilistMedia media, bool includeUsersWithoutScore)
     {
-        Dictionary<ulong, DiscordMember> miembros = [];
-        await foreach (DiscordMember miembro in guild.GetAllMembersAsync())
-            miembros[miembro.Id] = miembro;
-
         Dictionary<int, string> porAnilistId = [];
         foreach (UsuarioAnilist usuario in await usuariosRepository.GetVinculados())
         {
-            if (!miembros.TryGetValue((ulong)usuario.UserId, out DiscordMember? miembro)
+            if (!guild.Members.TryGetValue((ulong)usuario.UserId, out DiscordMember? miembro)
                 || !rangoRoles.RangoAPartirDe(guild, miembro, RangoEnum.Miembro, true))
                 continue;
 

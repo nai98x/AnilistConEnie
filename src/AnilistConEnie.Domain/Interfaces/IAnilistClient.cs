@@ -9,10 +9,6 @@ namespace AnilistConEnie.Domain.Interfaces;
 /// </summary>
 public interface IAnilistClient
 {
-    /// <summary>Obtiene un Media (anime/manga) por su id de AniList.</summary>
-    /// <returns>El media, o <c>null</c> si la consulta no devolvió datos.</returns>
-    Task<AnilistMedia?> GetMediaAsync(int id, CancellationToken cancellationToken = default);
-
     /// <summary>
     /// Busca media por nombre, devolviendo hasta <paramref name="perPage"/> candidatos ordenados por
     /// relevancia (igual que la búsqueda de AniList). La selección entre los resultados es

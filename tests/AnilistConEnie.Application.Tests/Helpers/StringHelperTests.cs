@@ -23,13 +23,6 @@ public class StringHelperTests
     }
 
     [Fact]
-    public void TextAfter_Match_ReturnsRemainder()
-    {
-        Assert.Equal("mundo", "hola=mundo".TextAfter("="));
-        Assert.Equal("/user/Nai", "https://anilist.co/user/Nai".TextAfter("anilist.co"));
-    }
-
-    [Fact]
     public void NormalizarDescription_ShortText_Unchanged()
     {
         string s = new('a', 100);

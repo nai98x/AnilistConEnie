@@ -8,6 +8,5 @@ public interface IXpDiarioRepository
     Task<List<UserDailyXp>> ObtenerChart(ulong userId);
     Task<List<UserDailyXp>> ObtenerBaseline(DateOnly fecha);
     Task<List<XpDiarioExtremos>> ObtenerExtremos();
-    Task Upsert(ulong userId, DateTime fecha, long xp);
     Task Snapshot(DateOnly fecha, IReadOnlyList<UserXp> usuarios);
 }

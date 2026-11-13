@@ -18,6 +18,7 @@ public class DailyScheduledService(
     BotConfiguration config,
     DiscordBotService discordBotService,
     GuildMaintenanceService guildMaintenanceService,
+    DiscordLogService logService,
     ConfessionsState confessionsState,
     BoluditosState boluditosState,
     MemberActivityState memberActivityState,
@@ -33,14 +34,19 @@ public class DailyScheduledService(
         if (!Inicializado || !client.Guilds.TryGetValue(config.GuildId, out DiscordGuild? guild))
             return;
 
-        await guildMaintenanceService.ManageNewUsuarios(guild);
-        await guildMaintenanceService.ManageChallenges();
-        await guildMaintenanceService.ManageUsuariosActivos(guild);
-        await guildMaintenanceService.ManageXpUserHistory(guild);
-        await mensajesDiariosRepository.Purgar(RetencionMensajes.FechaMinima(DateOnly.FromDateTime(RelojServidor.Hoy), mensajesDiariosSettings.DiasRetencion));
         confessionsState.ResetDailyConfessions();
         boluditosState.ResetBoluditos();
         memberActivityState.ResetDailyActiveUsers();
         hackedAccountState.PruneStale();
+
+        await Paso(guild, "nuevos usuarios", () => guildMaintenanceService.ManageNewUsuarios(guild));
+        await Paso(guild, "challenges vencidos", guildMaintenanceService.ManageChallenges);
+        await Paso(guild, "usuarios activos", () => guildMaintenanceService.ManageUsuariosActivos(guild));
+        await Paso(guild, "historial de XP", () => guildMaintenanceService.ManageXpUserHistory(guild));
+        await Paso(guild, "purga de mensajes diarios", () => mensajesDiariosRepository.Purgar(
+            RetencionMensajes.FechaMinima(DateOnly.FromDateTime(RelojServidor.Hoy), mensajesDiariosSettings.DiasRetencion)));
     }
+
+    private Task Paso(DiscordGuild guild, string nombre, Func<Task> paso) =>
+        logService.IntentarAsync(guild, $"Tarea diaria - {nombre}", paso);
 }

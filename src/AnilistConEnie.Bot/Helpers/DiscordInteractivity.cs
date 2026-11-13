@@ -39,15 +39,24 @@ public static class DiscordInteractivity
 
         if (result.TimedOut)
         {
-            if (borrarMensaje) await msg.DeleteAsync();
+            if (borrarMensaje) await BorrarFollowupAsync(ctx, msg);
             return false;
         }
 
         await result.Result.Interaction.CreateResponseAsync(DiscordInteractionResponseType.DeferredMessageUpdate);
 
-        if (borrarMensaje) await msg.DeleteAsync();
+        if (borrarMensaje) await BorrarFollowupAsync(ctx, msg);
 
         return bool.Parse(result.Result.Id);
+    }
+
+    // Un followup efímero no existe para el endpoint de canales: hay que borrarlo por el webhook de la interacción.
+    private static async Task BorrarFollowupAsync(CommandContext ctx, DiscordMessage msg)
+    {
+        if (ctx is SlashCommandContext slashCtx)
+            await slashCtx.Interaction.DeleteFollowupMessageAsync(msg.Id);
+        else
+            await msg.DeleteAsync();
     }
 
     public static async Task<int> GetElegidoAsync(CommandContext ctx, double timeoutGeneral, List<TitleDescription> opciones)

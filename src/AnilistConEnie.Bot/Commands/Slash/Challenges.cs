@@ -337,6 +337,12 @@ public class Challenges(
             return;
         }
 
+        if (usuario.IsBot)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(ErrorEmbed.De("Un bot no puede completar challenges.")));
+            return;
+        }
+
         List<Challenge> challenges = await challengesRepository.GetLista();
         Challenge? challengeData = challenges.Find(x => x.Nombre == challenge);
         if (challengeData is null)

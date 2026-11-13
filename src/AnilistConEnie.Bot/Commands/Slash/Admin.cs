@@ -262,6 +262,7 @@ public class Admin(
         {
             if (ulong.TryParse(m.Groups[1].Value, out ulong id)
                 && ctx.Guild.Members.TryGetValue(id, out DiscordMember? member)
+                && !member.IsBot
                 && members.All(x => x.Id != id))
                 members.Add(member);
         }

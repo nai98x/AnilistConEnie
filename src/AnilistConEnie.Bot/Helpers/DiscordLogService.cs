@@ -240,9 +240,9 @@ public class DiscordLogService(BotConfiguration config, ILogger<DiscordLogServic
         return stackTrace.Length > 1500 ? stackTrace[..1500] : stackTrace;
     }
 
-    public async Task LogException(DiscordGuild guild, Exception ex, string contexto)
+    public async Task LogException(DiscordGuild guild, Exception ex, string contexto, bool notFoundEsBenigno = true)
     {
-        if (ex is NotFoundException)
+        if (notFoundEsBenigno && ex is NotFoundException)
         {
             logger.LogDebug("{Contexto}: entidad no encontrada ({Message})", contexto, ex.Message);
             return;

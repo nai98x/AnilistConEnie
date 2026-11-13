@@ -26,7 +26,7 @@ public sealed class CommandErrorHandler(DiscordLogService logService)
         {
             embed = ErrorEmbed.De("Ocurrió un error inesperado al ejecutar el comando.");
             if (args.Context.Guild is not null)
-                await logService.LogException(args.Context.Guild, args.Exception, $"Comando {args.Context.Command.FullName}");
+                await logService.LogException(args.Context.Guild, args.Exception, $"Comando {args.Context.Command.FullName}", notFoundEsBenigno: false);
         }
 
         await ResponderAsync(args.Context, embed);

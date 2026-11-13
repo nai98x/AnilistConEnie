@@ -56,6 +56,31 @@ public class XpRankingTests
         Assert.Equal(500, ranking[0].Score);
     }
 
+    [Theory]
+    [InlineData(XpRankingCategory.Intercambios, 30)]
+    [InlineData(XpRankingCategory.Eventos, 40)]
+    [InlineData(XpRankingCategory.Challenges, 50)]
+    [InlineData(XpRankingCategory.Booster, 20)]
+    [InlineData(XpRankingCategory.Otros, 60)]
+    public void Build_SingleCategory_UsesThatCategoryScore(XpRankingCategory category, long esperado)
+    {
+        List<UserXp> users = [User(1, total: 1000, booster: 20, intercambios: 30, eventos: 40, challenges: 50, otros: 60)];
+
+        IReadOnlyList<XpRankEntry> ranking = XpRanking.Build(users, category);
+
+        Assert.Equal(esperado, Assert.Single(ranking).Score);
+    }
+
+    [Fact]
+    public void Build_NonTotalCategory_ExcludesNegativeScores()
+    {
+        List<UserXp> users = [User(1, total: 100, eventos: -10), User(2, total: 100, eventos: 5)];
+
+        IReadOnlyList<XpRankEntry> ranking = XpRanking.Build(users, XpRankingCategory.Eventos);
+
+        Assert.Equal(2ul, Assert.Single(ranking).UserId);
+    }
+
     [Fact]
     public void Build_EmptyList_ReturnsEmptyRanking()
     {

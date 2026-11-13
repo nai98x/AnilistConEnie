@@ -21,6 +21,12 @@ public class TriggerMatcherTests
     }
 
     [Fact]
+    public void Coincide_UnknownTipo_ReturnsFalse()
+    {
+        Assert.False(TriggerMatcher.Coincide("hola", "hola", (TipoTrigger)999));
+    }
+
+    [Fact]
     public void Aplicables_MixedCaseMessage_ReturnsMatching()
     {
         Dictionary<string, Trigger> triggers = new()

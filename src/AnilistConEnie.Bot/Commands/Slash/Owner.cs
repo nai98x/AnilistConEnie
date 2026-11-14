@@ -272,17 +272,16 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
         await ctx.DeferEphemeralAsync();
 
         DiscordChannel channel = ctx.Guild!.Channels[config.Channels.Bienvenida];
+        DiscordEmoji umaPoints = await DiscordEmojiHelper.GetApplicationEmojiAsync(ctx.Client, config.Emotes.Bot.UmaPoints);
 
         DiscordMessageBuilder msgBuilder = new DiscordMessageBuilder()
             .AddEmbed(new DiscordEmbedBuilder()
                 .WithThumbnail("https://media.discordapp.net/attachments/879612956848062514/879628082921762826/imagen_2021-07-15_150953_1.png")
                 .WithTitle("Vincula tu AniList")
                 .WithDescription(
-                    "# **Instrucciones**:\n\n" +
-                    "- Haz click en el botón llamado **Vincular AniList**\n" +
-                    "- Haz click en **Autorizar en AniList** y, en la página que se abre, en el botón verde **Authorize**\n" +
-                    "- Vuelve a Discord: la vinculación se completa sola")
-                .WithFooter("Apenas tengas tu cuenta de AniList vinculada, se te desbloquearán todos los canales del servidor.")
+                    "# Bienvenid@!\n\n" +
+                    "Para acceder a los canales del servidor y charlar, es necesario que vincules tu cuenta de AniList.\n" +
+                    $"Solo haz click en el botón de abajo y sigue los pasos {umaPoints}")
                 .WithColor(DiscordEmojiHelper.GetColor()))
             .AddActionRowComponent(
                 new DiscordButtonComponent(DiscordButtonStyle.Success, VinculacionAnilistWeb.IdBoton, "Vincular AniList"));

@@ -31,12 +31,10 @@ public class VinculacionAnilistWeb(DiscordClient client, VinculacionAnilistState
             .AsEphemeral()
             .AddEmbed(new DiscordEmbedBuilder
             {
-                Title = "Vincular AniList",
+                Title = "Tu enlace está listo",
                 Description =
-                    "- Haz click en **Autorizar en AniList**\n" +
-                    "- En la página que se abre, haz click en el botón verde **Authorize**\n" +
-                    "- Vuelve a Discord: este mensaje se actualizará solo con el resultado\n\n" +
-                    $"El enlace es personal y vence {Formatter.Timestamp(DateTimeOffset.UtcNow + validez, TimestampFormat.RelativeTime)}.",
+                    $"Vence {Formatter.Timestamp(DateTimeOffset.UtcNow + validez, TimestampFormat.RelativeTime)}.\n\n" +
+                    $"Una vez vinculada tu cuenta, puedes revocar el acceso del bot desde AniList en {Formatter.MaskedUrl("Settings → Apps", new Uri("https://anilist.co/settings/apps"))}.",
                 Color = DiscordEmojiHelper.GetColor()
             })
             .AddActionRowComponent(new DiscordLinkButtonComponent(url, "Autorizar en AniList")));

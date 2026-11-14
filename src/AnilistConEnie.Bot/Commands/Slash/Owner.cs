@@ -279,15 +279,13 @@ public class Owner(XpState xpState, PermanentUsernameState permanentUsernameStat
                 .WithTitle("Vincula tu AniList")
                 .WithDescription(
                     "# **Instrucciones**:\n\n" +
-                    "- Haz click en el botón llamado **Autorizar**\n" +
-                    "- Una vez se abra la página web, haz click en el botón verde **Authorize** y luego copia el texto que te aparecerá para copiar\n" +
-                    "- Cierra la página web y haz click en el botón llamado **Pegar código aquí**\n" +
-                    "- Pega el código en el formulario y envíalo")
+                    "- Haz click en el botón llamado **Vincular AniList**\n" +
+                    "- Haz click en **Autorizar en AniList** y, en la página que se abre, en el botón verde **Authorize**\n" +
+                    "- Vuelve a Discord: la vinculación se completa sola")
                 .WithFooter("Apenas tengas tu cuenta de AniList vinculada, se te desbloquearán todos los canales del servidor.")
                 .WithColor(DiscordEmojiHelper.GetColor()))
             .AddActionRowComponent(
-                new DiscordLinkButtonComponent("https://anilist.co/api/v2/oauth/authorize?client_id=8655&response_type=token", "Autorizar"),
-                new DiscordButtonComponent(DiscordButtonStyle.Primary, "modal-anilistprofileset", "Pegar código aquí"));
+                new DiscordButtonComponent(DiscordButtonStyle.Success, VinculacionAnilistWeb.IdBoton, "Vincular AniList"));
 
         await channel.SendMessageAsync(msgBuilder);
 

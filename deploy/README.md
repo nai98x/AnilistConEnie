@@ -22,7 +22,7 @@ server por **SCP** → lo descomprime en `~/bots/AnilistConEnie-app` y reinicia 
 El proceso lo administra **systemd (servicio de usuario)**: sobrevive a la sesión SSH del deploy,
 reinicia solo y loguea en journald.
 
-El bot necesita **cinco claves** para arrancar, ninguna versionada:
+El bot necesita **siete claves** para arrancar, ninguna versionada:
 
 - `discordToken` — token del bot de Discord.
 - `FIREBASE_CREDENTIALS_DIR` — carpeta que contiene el `firebase-anilistconenie.json` (credenciales
@@ -33,8 +33,12 @@ El bot necesita **cinco claves** para arrancar, ninguna versionada:
 - `Backups:RutaEstado` — **solo en release**: ruta del archivo de marca del backup. No es un secreto,
   pero no va en `appsettings.json` porque es público. Tiene que coincidir con el `ESTADO` de
   `~/.config/anilist-backup/backup.env` (ver más abajo).
+- `VinculacionAnilist:ClientSecret` — secret del cliente OAuth de AniList (ver
+  [Vinculación de AniList](#vinculación-de-anilist-tailscale-funnel)).
+- `VinculacionAnilist:RedirectUri` — URL pública del callback (la de Tailscale Funnel). No es un
+  secreto, pero no va en `appsettings.json` porque el repo es público.
 
-Las cinco se resuelven por el **mismo mecanismo** (`IConfiguration`): en el servidor por variable de
+Las siete se resuelven por el **mismo mecanismo** (`IConfiguration`): en el servidor por variable de
 entorno (las setea el unit de systemd) y en local por User Secrets. Son obligatorias; si falta
 cualquiera, el bot falla al arrancar. La excepción es `Backups:RutaEstado`: el chequeo de backup es
 del bot desplegado, así que en compilaciones DEBUG no se registra ni se pide.
@@ -49,7 +53,13 @@ dotnet user-secrets --project src/AnilistConEnie.Bot \
   set "ConnectionStrings:Database" 'Host=...;Port=...;Database=...;Username=...;Password=...'
 dotnet user-secrets --project src/AnilistConEnie.Bot \
   set "ConnectionStrings:Yumiko" 'Host=...;Port=...;Database=...;Username=...;Password=...'
+dotnet user-secrets --project src/AnilistConEnie.Bot set "VinculacionAnilist:ClientSecret" '...'
+dotnet user-secrets --project src/AnilistConEnie.Bot \
+  set "VinculacionAnilist:RedirectUri" https://<maquina>.<tailnet>.ts.net/anilist/callback
 ```
+
+El bot hostea el callback con Kestrel, así que además del runtime de .NET necesita el de ASP.NET Core
+(en Arch: `aspnet-runtime` y `aspnet-targeting-pack`).
 
 (`Backups:RutaEstado` no hace falta en local: en DEBUG el chequeo de backup no corre).
 
@@ -76,6 +86,8 @@ dotnet user-secrets --project src/AnilistConEnie.Bot \
      ConnectionStrings__Database=Host=localhost;Port=...;Database=...;Username=...;Password=...
      ConnectionStrings__Yumiko=Host=...;Port=...;Database=...;Username=...;Password=...
      Backups__RutaEstado=/home/USUARIO/.config/anilist-backup/ultimo-ok
+     VinculacionAnilist__ClientSecret=...
+     VinculacionAnilist__RedirectUri=https://<maquina>.<tailnet>.ts.net/anilist/callback
      OTEL_EXPORTER_OTLP_ENDPOINT=https://otlp-gateway-prod-<region>.grafana.net/otlp
      OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic <token de Grafana Cloud>
      ```
@@ -198,6 +210,57 @@ filtran por `job=~".*/anilistconenie"` (Grafana Cloud arma `job` como
 exportan al mismo stack (ej. Yumiko). Si se modifica en Grafana,
 exportarlo (*Share → Export → Save to file*, sin "Export for sharing externally") y reemplazar el
 archivo para que quede versionado.
+
+## Vinculación de AniList (Tailscale Funnel)
+
+El botón **Vincular AniList** usa el flujo *Authorization Code* de AniList: el bot le da al miembro
+un enlace de autorización personal (con un `state` de un solo uso que vence según
+`VinculacionAnilist:ValidezEnlaceMinutos`) y AniList lo redirige a `VinculacionAnilist:RedirectUri`,
+donde el bot canjea el código por el token y completa la vinculación. Es el único flujo de
+vinculación: el cliente de AniList del bot tiene como redirect URI la del callback.
+
+El callback lo atiende Kestrel dentro del mismo proceso, escuchando **solo en `127.0.0.1`**
+(`VinculacionAnilist:PuertoLocal`). Lo publica **Tailscale Funnel**: el agente de Tailscale sale
+hacia afuera, así que no se abre ningún puerto en el firewall ni en la VCN de Oracle y la IP del
+server no queda expuesta (el tráfico entra por los relays de Tailscale).
+
+Setup (una sola vez):
+
+1. Runtime de ASP.NET Core en el server, del mismo origen que el runtime de .NET ya instalado (ej.
+   `sudo dnf install aspnetcore-runtime-10.0`). Sin él el bot no arranca (`You must install or update
+   .NET to run this application` con `Microsoft.AspNetCore.App`).
+2. Instalar Tailscale y loguear el server:
+
+   ```bash
+   sudo dnf config-manager --add-repo https://pkgs.tailscale.com/stable/oracle/8/tailscale.repo
+   sudo dnf install tailscale
+   sudo systemctl enable --now tailscaled
+   sudo tailscale up
+   ```
+
+   En la consola de Tailscale (Machines → el server → *Disable key expiry*) desactivar el vencimiento
+   de la clave: si vence, el Funnel se corta sin aviso.
+
+3. En la consola de Tailscale: habilitar **MagicDNS** y **HTTPS Certificates** (DNS) y dar el atributo
+   `funnel` al nodo en la policy (la primera vez, `tailscale funnel` imprime el link para hacerlo).
+4. Publicar el puerto del callback (`--bg` lo deja persistente entre reinicios):
+
+   ```bash
+   sudo tailscale funnel --bg http://127.0.0.1:5080
+   tailscale funnel status
+   ```
+
+   La URL pública queda `https://<maquina>.<tailnet>.ts.net`. Se apunta a `127.0.0.1` y no a
+   `localhost` porque Kestrel escucha solo en IPv4 y `localhost` puede resolver a `::1`.
+5. En [AniList → Settings → Developer](https://anilist.co/settings/developer), en el cliente de AniList del bot,
+   poner como Redirect URL `https://<maquina>.<tailnet>.ts.net/anilist/callback` (AniList admite una
+   sola por cliente). Su id va en `VinculacionAnilist:ClientId` de `appsettings.json`, y el secret y
+   la URL en `anilistconenie.env`. Para probar en local conviene un cliente aparte con redirect
+   `http://localhost:5080/anilist/callback`, cargado en User Secrets.
+6. Verificar: `curl -i https://<maquina>.<tailnet>.ts.net/anilist/callback` responde `400` con la
+   página de enlace vencido.
+7. Después del deploy, correr `/configurarbienvenida` y borrar el mensaje de bienvenida anterior (el
+   botón nuevo solo existe en el mensaje recreado).
 
 ## Operación
 

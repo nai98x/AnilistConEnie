@@ -24,12 +24,14 @@ public static class BotServiceExtensions
         services.AddSingleton<SubirImagenState>();
         services.AddSingleton<FechaEntradaState>();
         services.AddSingleton<ResolucionesState>();
+        services.AddSingleton<VinculacionAnilistState>();
 
         // Helpers
         services.AddSingleton<RangoRoles>();
         services.AddSingleton<RelojPais>();
         services.AddSingleton<DiscordLogService>();
         services.AddSingleton<AnilistService>();
+        services.AddSingleton<VinculacionAnilistWeb>();
         services.AddSingleton<GuildMaintenanceService>();
         services.AddSingleton<FunService>();
         services.AddSingleton<RepartoXpService>();

@@ -1,8 +1,12 @@
+using System.Net;
 using AnilistConEnie.Application.Extensions;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Extensions;
+using AnilistConEnie.Infrastructure.Anilist;
 using AnilistConEnie.Infrastructure.Extensions;
 using DSharpPlus.Net.Gateway;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -71,7 +75,7 @@ public static class Program
 
     private static IHost CreateHostBuilder(string[] args)
     {
-        HostApplicationBuilder host = Host.CreateApplicationBuilder(args);
+        WebApplicationBuilder host = WebApplication.CreateSlimBuilder(args);
 
         // El token de Discord no se versiona: local via User Secrets, en el servidor via variable de entorno (discordToken).
         host.Configuration
@@ -95,16 +99,31 @@ public static class Program
             ? yumiko
             : throw new InvalidOperationException("'ConnectionStrings:Yumiko' es obligatoria: configurala via User Secrets (local) o variable de entorno (servidor)");
 
+        // Callback de la vinculación de AniList: Kestrel escucha solo en loopback y Tailscale Funnel lo publica.
+        VinculacionAnilistSettings vinculacion = VinculacionAnilistSettings.FromConfiguration(host.Configuration);
+        string anilistClientSecret = host.Configuration.GetValue<string>("VinculacionAnilist:ClientSecret") is { Length: > 0 } secret
+            ? secret
+            : throw new InvalidOperationException("'VinculacionAnilist:ClientSecret' es obligatorio: configuralo via User Secrets (local) o variable de entorno VinculacionAnilist__ClientSecret (servidor)");
+        AnilistOAuthCredenciales anilistOAuth = new(vinculacion.ClientId, anilistClientSecret, vinculacion.RedirectUri.OriginalString);
+
+        host.WebHost.ConfigureKestrel(kestrel =>
+        {
+            kestrel.AddServerHeader = false;
+            kestrel.Listen(IPAddress.Loopback, vinculacion.PuertoLocal);
+        });
+
         host.Services
             .AddSingleton(botConfig)
             .AddBehaviorSettings(host.Configuration)
             .AddApplication()
-            .AddInfrastructure(firebaseCredentialsDir, dbConnectionString, yumikoConnectionString)
+            .AddInfrastructure(firebaseCredentialsDir, dbConnectionString, yumikoConnectionString, anilistOAuth)
             .AddConfiguredDiscordClient(host.Configuration)
             .AddSerilog()
             .AddObservabilidad()
             .AddBotServices();
 
-        return host.Build();
+        WebApplication app = host.Build();
+        app.MapVinculacionAnilist();
+        return app;
     }
 }

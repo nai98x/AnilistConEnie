@@ -11,7 +11,7 @@ namespace AnilistConEnie.Infrastructure.Extensions;
 
 public static class InfrastructureServiceExtensions
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, string firebaseCredentialsDir, string dbConnectionString, string yumikoConnectionString)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, string firebaseCredentialsDir, string dbConnectionString, string yumikoConnectionString, AnilistOAuthCredenciales anilistOAuth)
     {
         services.AddSingleton(new FirebaseService(firebaseCredentialsDir));
         services.AddSingleton(new DbConnectionFactory(dbConnectionString));
@@ -38,6 +38,9 @@ public static class InfrastructureServiceExtensions
         // nivel son singletons para reutilizar la conexión HTTP entre todas las consultas.
         services.AddSingleton<AnilistGraphQLExecutor>();
         services.AddSingleton<IAnilistClient, AnilistClient>();
+
+        services.AddSingleton(anilistOAuth);
+        services.AddHttpClient<IAnilistOAuthClient, AnilistOAuthClient>(http => http.Timeout = TimeSpan.FromSeconds(30));
 
         // Renderer de charts local (ScottPlot/SkiaSharp).
         services.AddSingleton<IChartRenderer, ScottPlotChartRenderer>();

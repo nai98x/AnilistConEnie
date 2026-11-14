@@ -1,7 +1,6 @@
 using AnilistConEnie.Application.Anilist;
 using AnilistConEnie.Bot.Configuration;
 using AnilistConEnie.Bot.Extensions;
-using AnilistConEnie.Bot.Observabilidad;
 using AnilistConEnie.Bot.Services.State;
 using AnilistConEnie.Domain.Entities.Anilist;
 using AnilistConEnie.Domain.Enum;
@@ -11,10 +10,7 @@ using AnilistConEnie.Domain.Interfaces.Repositories;
 using AnilistConEnie.Domain.Entities;
 using DSharpPlus;
 using DSharpPlus.Entities;
-using DSharpPlus.EventArgs;
 using DSharpPlus.Exceptions;
-using DSharpPlus.Interactivity;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace AnilistConEnie.Bot.Helpers;
 
@@ -132,38 +128,22 @@ public class AnilistService(ChallengePostsState challengePostsState, FechaEntrad
         return BuildScoresView(result, media);
     }
     
-    public async Task VincularAniList(DiscordInteraction interaction, DiscordClient client)
+    public async Task<bool> ResponderSiAprobacionPendienteAsync(DiscordInteraction interaction)
     {
         UserApprovalAnilist? pendiente = await anilistApprovalRepository.Obtener((long)interaction.User.Id);
-        if (pendiente is not null)
+        if (pendiente is null) return false;
+
+        await interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
         {
-            await interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Solicitud pendiente",
-                Description = "Tu cuenta ya está en proceso de ser aprobada manualmente por el staff. Espera a que revisen tu solicitud.",
-                Color = DiscordColor.Yellow
-            }));
-            return;
-        }
+            Title = "Solicitud pendiente",
+            Description = "Tu cuenta ya está en proceso de ser aprobada manualmente por el staff. Espera a que revisen tu solicitud.",
+            Color = DiscordColor.Yellow
+        }));
+        return true;
+    }
 
-        InteractivityExtension interactivity = client.ServiceProvider.GetRequiredService<InteractivityExtension>();
-        string modalId = $"modal-{interaction.Id}";
-
-        DiscordModalBuilder modal = new DiscordModalBuilder()
-            .WithCustomId(modalId)
-            .WithTitle("Vincular AniList")
-            .AddTextInput(new DiscordTextInputComponent("AniListToken", placeholder: "Pegar código aquí"), "Código");
-
-        await interaction.CreateResponseAsync(DiscordInteractionResponseType.Modal, modal);
-
-        var modalResult = await interactivity.WaitForModalAsync(modalId, TimeSpan.FromMinutes(5)).EsperandoUsuario();
-        if (modalResult.TimedOut) return;
-
-        DiscordInteraction modalInteraction = modalResult.Result.Interaction;
-        string accessToken = ((TextInputModalSubmission)modalResult.Result.Values["AniListToken"]).Value;
-
-        await modalInteraction.CreateResponseAsync(DiscordInteractionResponseType.DeferredChannelMessageWithSource, new DiscordInteractionResponseBuilder().AsEphemeral(true));
-
+    public async Task<ResultadoVinculacion> ProcesarVinculacionAsync(DiscordClient client, DiscordGuild guild, DiscordUser user, string accessToken)
+    {
         AnilistViewer? viewer;
         try
         {
@@ -171,22 +151,18 @@ public class AnilistService(ChallengePostsState challengePostsState, FechaEntrad
         }
         catch (AnilistApiException ex)
         {
-            await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(ErrorEmbed.De(ex.Message)));
-            return;
+            return ResultadoVinculacion.ConError(ex.Message);
         }
 
         if (viewer is null)
-        {
-            await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(ErrorEmbed.De("Error desconocido")));
-            return;
-        }
+            return ResultadoVinculacion.ConError("Error desconocido");
 
-        DiscordMember member = await interaction.Guild!.GetMemberAsync(interaction.User.Id, true);
+        DiscordMember member = await guild.GetMemberAsync(user.Id, true);
 
         if (await anilistBaneadosRepository.Existe(viewer.Id))
         {
-            await interaction.Guild.BanMemberAsync(interaction.User.Id, TimeSpan.Zero, "Usuario baneado por AniList baneado");
-            return;
+            await guild.BanMemberAsync(user.Id, TimeSpan.Zero, "Usuario baneado por AniList baneado");
+            return new ResultadoVinculacion(EstadoVinculacion.Baneada);
         }
 
         AnilistUser anilistUser = new()
@@ -200,8 +176,8 @@ public class AnilistService(ChallengePostsState challengePostsState, FechaEntrad
 
         IReadOnlyList<MotivoAprobacionDetalle> motivosAprobacion = AnilistApprovalPolicy.Evaluar(
             await usuariosRepository.GetVinculados(),
-            interaction.User.Id, viewer.Id,
-            interaction.User.CreationTimestamp, viewer.CreatedAt,
+            user.Id, viewer.Id,
+            user.CreationTimestamp, viewer.CreatedAt,
             limpiezaSettings.CuentaNuevaMeses, DateTimeOffset.UtcNow);
 
         if (motivosAprobacion.Count > 0)
@@ -211,19 +187,19 @@ public class AnilistService(ChallengePostsState challengePostsState, FechaEntrad
             {
                 if (r.Motivo == MotivoAprobacion.PosibleMulticuenta)
                 {
-                    DiscordMember? otroMiembro = await TryGetMemberAsync(interaction.Guild, (ulong)r.OtroMiembroId!.Value);
+                    DiscordMember? otroMiembro = await TryGetMemberAsync(guild, (ulong)r.OtroMiembroId!.Value);
                     string otroNombre = otroMiembro?.DisplayName ?? "desconocido";
                     lineas.Add($"Su AniList ya está vinculado a otro miembro activo ({Formatter.InlineCode(otroNombre)} | Id: {Formatter.InlineCode(((ulong)r.OtroMiembroId.Value).ToString())}), posible multicuenta");
                 }
                 else
                     lineas.Add("Su cuenta de Discord o AniList es muy reciente:\n" +
-                               $"  - Discord: {interaction.User.CreationTimestamp:dd/MM/yyyy}\n" +
+                               $"  - Discord: {user.CreationTimestamp:dd/MM/yyyy}\n" +
                                $"  - AniList: {viewer.CreatedAt.ToLocalTime():dd/MM/yyyy}");
             }
             string motivos = string.Concat(lineas.Select(m => $"- {m}\n"));
 
-            DiscordButtonComponent aprobar = new(DiscordButtonStyle.Success, $"sync-true-{interaction.User.Id}", "Aprobar");
-            DiscordButtonComponent denegar = new(DiscordButtonStyle.Danger, $"sync-false-{interaction.User.Id}", "Denegar");
+            DiscordButtonComponent aprobar = new(DiscordButtonStyle.Success, $"sync-true-{user.Id}", "Aprobar");
+            DiscordButtonComponent denegar = new(DiscordButtonStyle.Danger, $"sync-false-{user.Id}", "Denegar");
 
             DiscordMessageBuilder msgBuilderApproval = new DiscordMessageBuilder()
                 .AddEmbed(new DiscordEmbedBuilder
@@ -231,15 +207,15 @@ public class AnilistService(ChallengePostsState challengePostsState, FechaEntrad
                     Color = DiscordColor.Yellow,
                     Title = "Vinculacion de AniList pendiente de aprobación",
                     Description =
-                        $"La vinculacion de {Formatter.InlineCode(member.DisplayName)} | Id: {Formatter.InlineCode(interaction.User.Id.ToString())} ({Formatter.MaskedUrl("AniList", new Uri(viewer.SiteUrl))}) debe ser aprobada manualmente por los siguientes motivos:\n{motivos}",
+                        $"La vinculacion de {Formatter.InlineCode(member.DisplayName)} | Id: {Formatter.InlineCode(user.Id.ToString())} ({Formatter.MaskedUrl("AniList", new Uri(viewer.SiteUrl))}) debe ser aprobada manualmente por los siguientes motivos:\n{motivos}",
                 })
                 .AddActionRowComponent(aprobar, denegar);
 
-            DiscordMessage mensajeAprobacion = await interaction.Guild.Channels[config.Channels.Moderacion].SendMessageAsync(msgBuilderApproval);
+            DiscordMessage mensajeAprobacion = await guild.Channels[config.Channels.Moderacion].SendMessageAsync(msgBuilderApproval);
 
             UserApprovalAnilist userApproval = new()
             {
-                IdDiscord = (long)interaction.User.Id,
+                IdDiscord = (long)user.Id,
                 IdAnilist = viewer.Id,
                 Name = viewer.Name,
                 SiteUrl = viewer.SiteUrl,
@@ -250,18 +226,11 @@ public class AnilistService(ChallengePostsState challengePostsState, FechaEntrad
 
             await anilistApprovalRepository.Upsert(userApproval);
 
-            await modalInteraction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AsEphemeral(true).AddEmbed(new DiscordEmbedBuilder
-            {
-                Title = "Atencion",
-                Description = "La cuenta debe ser vinculada manualmente por el staff.",
-                Color = DiscordColor.Yellow
-            }));
-
-            return;
+            return new ResultadoVinculacion(EstadoVinculacion.PendienteAprobacion);
         }
 
-        await TerminarVinculacion(client, interaction.User, member, interaction.Guild, anilistUser, false);
-        await modalInteraction.DeleteOriginalResponseAsync();
+        await TerminarVinculacion(client, user, member, guild, anilistUser, false);
+        return new ResultadoVinculacion(EstadoVinculacion.Vinculada);
     }
 
     /// <summary>
@@ -370,6 +339,19 @@ public class AnilistService(ChallengePostsState challengePostsState, FechaEntrad
 /// Notas de un media ordenadas por XP del servidor (mayor a menor), listas para renderizar. Cada
 /// entrada de <see cref="ConScore"/>/<see cref="SinScore"/> ya es el texto final de esa línea.
 /// </summary>
+public enum EstadoVinculacion
+{
+    Vinculada,
+    PendienteAprobacion,
+    Baneada,
+    Error
+}
+
+public sealed record ResultadoVinculacion(EstadoVinculacion Estado, string? Error = null)
+{
+    public static ResultadoVinculacion ConError(string error) => new(EstadoVinculacion.Error, error);
+}
+
 public sealed record ServerScoresView(double? Average100, IReadOnlyList<string> ConScore, IReadOnlyList<string> SinScore)
 {
     public bool IsEmpty => ConScore.Count == 0 && SinScore.Count == 0;

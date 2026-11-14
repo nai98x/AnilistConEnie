@@ -13,15 +13,15 @@ using DSharpPlus.Exceptions;
 
 namespace AnilistConEnie.Bot.Events.Handlers;
 
-public class ComponentInteractionHandler(DiscordBotService discordBotService, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, AnilistService anilistService, RepartoXpService repartoXpService, ResolucionesState resolucionesState, IAnilistApprovalRepository anilistApprovalRepository, IHttpClientFactory httpClientFactory)
+public class ComponentInteractionHandler(DiscordBotService discordBotService, BotConfiguration config, RangoRoles rangoRoles, DiscordLogService logService, AnilistService anilistService, VinculacionAnilistWeb vinculacionWeb, RepartoXpService repartoXpService, ResolucionesState resolucionesState, IAnilistApprovalRepository anilistApprovalRepository, IHttpClientFactory httpClientFactory)
 {
     public async Task Handle(DiscordClient client, ComponentInteractionCreatedEventArgs args)
     {
         if (args.Guild?.Id != config.GuildId) return;
 
-        if (args.Interaction.Data.CustomId.StartsWith("modal-anilistprofileset") && !discordBotService.Debug)
+        if (args.Interaction.Data.CustomId == VinculacionAnilistWeb.IdBoton && !discordBotService.Debug)
         {
-            await anilistService.VincularAniList(args.Interaction, client);
+            await vinculacionWeb.IniciarAsync(args.Interaction);
         }
         else if (args.Interaction.Data.CustomId.StartsWith("colores"))
         {

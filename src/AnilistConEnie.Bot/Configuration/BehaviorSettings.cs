@@ -183,6 +183,43 @@ public record BackupsSettings
     }
 }
 
+// La redirect URI no va en appsettings.json (repo público): se pasa por variable de entorno
+// VinculacionAnilist__RedirectUri, igual que el client secret.
+public record VinculacionAnilistSettings
+{
+    // Discord deja editar la respuesta de una interacción solo durante 15 minutos.
+    private const int ValidezMaximaMinutos = 14;
+
+    public required int ClientId { get; init; }
+    public required Uri RedirectUri { get; init; }
+    public required int PuertoLocal { get; init; }
+    public required int ValidezEnlaceMinutos { get; init; }
+
+    public static VinculacionAnilistSettings FromConfiguration(IConfiguration configuration)
+    {
+        IConfigurationSection section = configuration.GetSection("VinculacionAnilist");
+
+        if (!Uri.TryCreate(section["RedirectUri"], UriKind.Absolute, out Uri? redirectUri) || (redirectUri.Scheme != Uri.UriSchemeHttps && !redirectUri.IsLoopback))
+            throw new InvalidOperationException("'VinculacionAnilist:RedirectUri' es obligatoria y debe ser una URL https (o http en localhost): configurala via User Secrets (local) o variable de entorno VinculacionAnilist__RedirectUri (servidor)");
+
+        VinculacionAnilistSettings settings = new()
+        {
+            ClientId = section.RequireInt("ClientId"),
+            RedirectUri = redirectUri,
+            PuertoLocal = section.RequireInt("PuertoLocal"),
+            ValidezEnlaceMinutos = section.RequireInt("ValidezEnlaceMinutos"),
+        };
+
+        if (settings.ClientId <= 0)
+            throw new InvalidOperationException($"{section.Path}:ClientId debe ser el id del cliente de AniList configurado con la redirect URI");
+
+        if (settings.ValidezEnlaceMinutos is < 1 or > ValidezMaximaMinutos)
+            throw new InvalidOperationException($"{section.Path}:ValidezEnlaceMinutos debe estar entre 1 y {ValidezMaximaMinutos}");
+
+        return settings;
+    }
+}
+
 /// <summary>Gateway health watchdog.</summary>
 /// <param name="WatchdogSilenceTimeout">
 /// Time without receiving any gateway event after which the process is stopped to be restarted.
@@ -238,7 +275,8 @@ public static class BehaviorSettingsExtensions
             .AddSingleton(ConfesionesSettings.FromConfiguration(configuration))
             .AddSingleton(SubirImagenSettings.FromConfiguration(configuration))
             .AddSingleton(TraduccionSettings.FromConfiguration(configuration))
-            .AddSingleton(GatewaySettings.FromConfiguration(configuration));
+            .AddSingleton(GatewaySettings.FromConfiguration(configuration))
+            .AddSingleton(VinculacionAnilistSettings.FromConfiguration(configuration));
 
 #if !DEBUG
         // El backup solo existe en el bot desplegado; en debug no se exige la ruta.

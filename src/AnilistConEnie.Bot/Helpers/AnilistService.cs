@@ -21,7 +21,8 @@ public class AnilistService(ChallengePostsState challengePostsState, FechaEntrad
         DiscordEmbedBuilder bienvenidaEmbed = new()
         {
             Title = $"¡Bienvenido {member.DisplayName}!",
-            Description = $"Hola {member.Mention}, ¡Bienvenido a **Añilist**! Eres nuestro **miembro nº {guild.MemberCount}**",
+            Description = $"Hola {member.Mention}, ¡Bienvenido a **Añilist**! Eres nuestro **miembro nº {guild.MemberCount}**\n\n" +
+                          $"Puedes revocar el acceso del bot desde AniList en {Formatter.MaskedUrl("Settings → Apps", new Uri(VinculacionAnilistWeb.UrlAppsAnilist))}.",
             ImageUrl = $"https://images-ext-2.discordapp.net/external/S1VMfYfgS0oqoMukCNxKw5HsZxZQTEvWkpG-4Q3qVyA/https/cdn-longterm.mee6.xyz/plugins/welcome/images/{config.GuildId}/20b91584d1b680f1905f5b2f5295a44907bd17e876c56ab10de43f1cd406d1db.gif",
             Color = DiscordEmojiHelper.GetColor()
         };

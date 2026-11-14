@@ -18,6 +18,7 @@ namespace AnilistConEnie.Bot.Helpers;
 public class VinculacionAnilistWeb(DiscordClient client, VinculacionAnilistState vinculacionState, VinculacionAnilistSettings settings, AnilistService anilistService, IAnilistOAuthClient oauthClient, DiscordLogService logService)
 {
     public const string IdBoton = "anilist-vincular";
+    public const string UrlAppsAnilist = "https://anilist.co/settings/apps";
 
     public async Task IniciarAsync(DiscordInteraction interaction)
     {
@@ -34,7 +35,7 @@ public class VinculacionAnilistWeb(DiscordClient client, VinculacionAnilistState
                 Title = "Tu enlace está listo",
                 Description =
                     $"Vence {Formatter.Timestamp(DateTimeOffset.UtcNow + validez, TimestampFormat.RelativeTime)}.\n\n" +
-                    $"Una vez vinculada tu cuenta, puedes revocar el acceso del bot desde AniList en {Formatter.MaskedUrl("Settings → Apps", new Uri("https://anilist.co/settings/apps"))}.",
+                    $"Una vez vinculada tu cuenta, puedes revocar el acceso del bot desde AniList en {Formatter.MaskedUrl("Settings → Apps", new Uri(UrlAppsAnilist))}.",
                 Color = DiscordEmojiHelper.GetColor()
             })
             .AddActionRowComponent(new DiscordLinkButtonComponent(url, "Autorizar en AniList")));
@@ -85,9 +86,9 @@ public class VinculacionAnilistWeb(DiscordClient client, VinculacionAnilistState
         return resultado.Estado switch
         {
             EstadoVinculacion.Vinculada => Pagina(HttpStatusCode.OK, "¡Cuenta vinculada!",
-                "Tu cuenta de AniList quedó vinculada. Ya puedes cerrar esta página y volver a Discord."),
+                "Tu cuenta de AniList quedó vinculada. Ya puedes cerrar esta página y volver a Discord.", avisoRevocar: true),
             EstadoVinculacion.PendienteAprobacion => Pagina(HttpStatusCode.OK, "Pendiente de aprobación",
-                "El staff tiene que aprobar la vinculación de tu cuenta. Ya puedes cerrar esta página y volver a Discord."),
+                "El staff tiene que aprobar la vinculación de tu cuenta. Ya puedes cerrar esta página y volver a Discord.", avisoRevocar: true),
             EstadoVinculacion.Error => Pagina(HttpStatusCode.BadGateway, "No se pudo vincular",
                 $"{resultado.Error?.TrimEnd('.')}. Vuelve a Discord para intentarlo de nuevo."),
             _ => Pagina(HttpStatusCode.Forbidden, "No se pudo vincular", "No se pudo completar la vinculación.")
@@ -124,7 +125,7 @@ public class VinculacionAnilistWeb(DiscordClient client, VinculacionAnilistState
         }
     }
 
-    private static IResult Pagina(HttpStatusCode status, string titulo, string mensaje) =>
+    private static IResult Pagina(HttpStatusCode status, string titulo, string mensaje, bool avisoRevocar = false) =>
         Results.Content($$"""
             <!doctype html>
             <html lang="es">
@@ -139,12 +140,14 @@ public class VinculacionAnilistWeb(DiscordClient client, VinculacionAnilistState
             main { max-width: 28rem; text-align: center; }
             h1 { font-size: 1.5rem; }
             p { line-height: 1.5; }
+            .nota { font-size: 0.875rem; opacity: 0.75; }
             </style>
             </head>
             <body>
             <main>
             <h1>{{WebUtility.HtmlEncode(titulo)}}</h1>
             <p>{{WebUtility.HtmlEncode(mensaje)}}</p>
+            {{(avisoRevocar ? $"""<p class="nota">Puedes revocar el acceso del bot desde AniList en <a href="{UrlAppsAnilist}">Settings → Apps</a>.</p>""" : "")}}
             </main>
             </body>
             </html>

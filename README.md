@@ -1,8 +1,15 @@
-# Añilist
+<p align="center"><img src="https://i.imgur.com/Rgt68L2.png" width="200px" height="200px"></p>
+<p align="center">
+  Bot multipropósito para el servidor de Discord Añilist, desarrollado en DSharpPlus sobre .NET 10.
+  <br><br>
+  <a href="https://www.codefactor.io/repository/github/nai98x/anilistconenie" target="_blank"><img src="https://www.codefactor.io/repository/github/nai98x/anilistconenie/badge" alt="Codefactor"></a>
+  <a href="https://github.com/nai98x/yumiko/actions/workflows/deploy.yml" target="_blank"><img src="https://github.com/nai98x/yumiko/actions/workflows/deploy.yml/badge.svg?branch=master" alt="CI/CD"></a>
+  <a><img src="https://img.shields.io/github/languages/code-size/nai98x/anilistconenie?style=?style=plastic&color=blueviolet" alt="Code size"></a>
+  <br><br>
+  <a href="https://discord.gg/W3Ds9jbeGA" target="_blank"><img src="https://discord.com/api/guilds/862408834693070898/embed.png?style=banner2" alt="Yumiko support server"></a>
+</p>
 
-[![CodeFactor](https://www.codefactor.io/repository/github/nai98x/anilistconenie/badge)](https://www.codefactor.io/repository/github/nai98x/anilistconenie)
-
-Bot multipropósito para el servidor de Discord **Añilist**, desarrollado en DSharpPlus sobre .NET 10.
+---
 
 ## Stack
 
